@@ -180,14 +180,16 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
     let newTopic = lastQueryTopic;
 
     if (query.includes("bradley") && (query.includes("web dev") || query.includes("developer") || query.includes("summarize"))) {
-      if (query.includes("full") || (lastQueryTopic === "summary" && (query.includes("more") || query.includes("full")))) {
+      if (query.includes("full") && lastQueryTopic === "summary") {
         reply = summarizeBradleyAsWebDev(projects, codePens);
+        newTopic = "summary";
       } else if (query.includes("short") || query.includes("paragraph")) {
         reply = shortSummaryBradleyAsWebDev(projects, codePens);
+        newTopic = "summary";
       } else {
         reply = shortSummaryBradleyAsWebDev(projects, codePens) + " Want to know more? Just ask for the 'full summary'!";
+        newTopic = "summary";
       }
-      newTopic = "summary";
     }
 
     if (query.includes("github") && (query.includes("bradley") || query.includes("profile") || query.includes("url"))) {
