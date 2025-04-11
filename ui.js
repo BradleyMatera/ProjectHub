@@ -172,7 +172,11 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     lastQueryTopic = newTopic;
 
     loadingIcon.style.display = "none";
-    chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> ${reply}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+    // Create a new message div and set its innerHTML to render the HTML formatting
+    const messageDiv = document.createElement("div");
+    messageDiv.className = "message bot-message";
+    messageDiv.innerHTML = `<strong>Bot:</strong> ${reply}<div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
+    chatOutput.appendChild(messageDiv);
     chatOutput.scrollTop = chatOutput.scrollHeight;
     chatInput.value = "";
     chatInput.style.height = "40px";
