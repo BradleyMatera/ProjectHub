@@ -9,21 +9,21 @@ function summarizeBradleyAsWebDev(projects, codePens) {
   const otherTech = allTech.filter(tech => ["Docker", "Jest", "GitHub", "Netlify", "Vercel", "GitHub Pages"].includes(tech));
 
   let summary = "Bradley Matera is a versatile and growth-oriented web developer with a strong foundation in front-end development and a growing expertise in full-stack technologies. ";
-  summary += `He has worked on ${projectCount} projects and ${codePenCount} CodePen projects, showcasing a diverse skill set across multiple platforms: ${platforms.join(", ")}. `;
+  summary += `He has worked on ${projectCount} projects and ${codePenCount} CodePen projects, showcasing a diverse skill set across multiple platforms: ${platforms.join(", ")}.<br><br>`;
 
   if (frontEndTech.length > 0) {
-    summary += `Bradley excels in front-end development, using technologies like ${frontEndTech.join(", ")} to create engaging, user-friendly interfaces. For example, his Interactive Pokedex integrates Pokémon APIs for a dynamic experience, and WebGPU Shapes Renderer experiments with cutting-edge WebGPU for high-performance graphics. `;
+    summary += `<strong>Front-End Development:</strong><br>- Uses technologies like ${frontEndTech.join(", ")} to create engaging, user-friendly interfaces.<br>- For example, his Interactive Pokedex integrates Pokémon APIs for a dynamic experience, and WebGPU Shapes Renderer experiments with cutting-edge WebGPU for high-performance graphics.<br><br>`;
   }
 
   if (backEndTech.length > 0) {
-    summary += `He’s also explored back-end development with ${backEndTech.join(", ")}, as seen in projects like React Native Anime CRUD App, which uses Node.js and MongoDB, and RESTful Routes Using ExpressJS, a RESTful API. `;
+    summary += `<strong>Back-End Development:</strong><br>- Has explored back-end development with ${backEndTech.join(", ")}.<br>- Projects like React Native Anime CRUD App use Node.js and MongoDB, and RESTful Routes Using ExpressJS is a RESTful API.<br><br>`;
   }
 
   if (otherTech.length > 0) {
-    summary += `Bradley leverages modern tools and practices like ${otherTech.join(", ")}, showing a focus on testing (Jest in CheeseMath Jest Tests), containerization (Docker in Docker Multilang Project), and deployment across various platforms. `;
+    summary += `<strong>Modern Tools and Practices:</strong><br>- Leverages tools like ${otherTech.join(", ")}.<br>- Shows a focus on testing (Jest in CheeseMath Jest Tests), containerization (Docker in Docker Multilang Project), and deployment across various platforms.<br><br>`;
   }
 
-  summary += `His CodePens, like React Calculator and Markdown Previewer, highlight a hands-on learning approach, covering React, JavaScript fundamentals, and practical applications. Overall, Bradley is a developer who balances creativity, technical skill, and user-focused design, with potential to deepen his back-end expertise.`;
+  summary += `<strong>Learning and Experimentation:</strong><br>- His CodePens, like React Calculator and Markdown Previewer, highlight a hands-on learning approach, covering React, JavaScript fundamentals, and practical applications.<br>- Overall, Bradley is a developer who balances creativity, technical skill, and user-focused design, with potential to deepen his back-end expertise.`;
   return summary;
 }
 
@@ -38,7 +38,6 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   let reply = "I don’t know that one. Try asking about Bradley Matera's projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), live data (e.g., 'What project has the most stars?'), or about Bradley as a web developer (e.g., 'Summarize Bradley as a web dev').";
   let newTopic = lastQueryTopic;
 
-  // Check for Bradley Matera summary queries
   if (query.includes("bradley") && (query.includes("web dev") || query.includes("developer") || query.includes("summarize"))) {
     if (query.includes("full") || (lastQueryTopic === "summary" && (query.includes("more") || query.includes("full")))) {
       reply = summarizeBradleyAsWebDev(projects, codePens);
@@ -50,19 +49,16 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     newTopic = "summary";
   }
 
-  // Check for GitHub profile query
   if (query.includes("github") && (query.includes("bradley") || query.includes("profile"))) {
     reply = "Bradley Matera's GitHub profile is at https://github.com/BradleyMatera. He describes himself as a Web Development student at Full Sail University, focusing on front-end technologies and proficient in HTML, CSS, and JavaScript. You can explore his repositories there, including projects like Interactive Pokedex, WebGPU Shapes Renderer, and more.";
     newTopic = "github";
   }
 
-  // Check for LinkedIn profile query
   if (query.includes("linkedin") && (query.includes("bradley") || query.includes("profile"))) {
     reply = "I don’t have direct access to Bradley Matera’s LinkedIn profile, but you can likely find him by searching for 'Bradley Matera' on LinkedIn. Based on his GitHub, he’s a Web Development student at Full Sail University with a focus on front-end technologies, so his LinkedIn might highlight his education, projects, and skills in HTML, CSS, JavaScript, and more.";
     newTopic = "linkedin";
   }
 
-  // Check for project-specific queries (with typo tolerance)
   for (const p of projects) {
     const projectNameLower = p.name.toLowerCase();
     if (query.includes(projectNameLower) || query.includes(projectNameLower.replace(" ", "")) || query.includes(projectNameLower.replace("_", ""))) {
@@ -73,7 +69,6 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     }
   }
 
-  // Check for CodePen-specific queries (with typo tolerance)
   for (const cp of codePens) {
     const codePenNameLower = cp.name.toLowerCase();
     if (query.includes(codePenNameLower) || query.includes(codePenNameLower.replace(" ", ""))) {
@@ -83,7 +78,6 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     }
   }
 
-  // Check for platform-specific queries
   const platforms = [...new Set(projects.map(p => p.platform.toLowerCase()))];
   for (const platform of platforms) {
     if (query.includes(platform)) {
@@ -97,7 +91,6 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     }
   }
 
-  // Check for tech-specific queries
   const techs = [...new Set(projects.flatMap(p => p.tech.map(t => t.toLowerCase())))];
   for (const tech of techs) {
     if (query.includes(tech)) {
@@ -108,7 +101,6 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     }
   }
 
-  // Check for "list" or "all" queries
   if (query.includes("list") || query.includes("all")) {
     if (query.includes("codepen")) {
       reply = `Here are Bradley Matera's CodePen projects: ${codePens.map(cp => cp.name).join(", ")}. Ask about a specific one for more details!`;
@@ -119,7 +111,6 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     }
   }
 
-  // Check for cross-project interaction (e.g., "Compare Pokedex and Pong_Deluxe")
   if (query.includes("compare")) {
     const projectNames = projects.map(p => p.name.toLowerCase());
     const matches = projectNames.filter(name => query.includes(name));
@@ -131,7 +122,6 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     }
   }
 
-  // Check for "most stars" query
   if (query.includes("most stars")) {
     const projectData = await fetchAllGitHubData(projects);
     const sortedProjects = projectData.sort((a, b) => b.githubData.stars - a.githubData.stars);
@@ -140,7 +130,6 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     newTopic = "stars";
   }
 
-  // Edge case: Non-related queries (e.g., "What's the weather like?")
   if (reply.includes("I don’t know") && !query.includes("bradley")) {
     reply = "I’m here to help with Bradley Matera’s projects and CodePens—try asking about Pokedex, React Calculator, or something related to his work! For unrelated topics, I can provide general info.";
     try {
