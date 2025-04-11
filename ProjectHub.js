@@ -9,9 +9,18 @@ const projects = [
 ];
 const chatDiv = document.createElement("div");
 chatDiv.id = "bradley-chat";
-chatDiv.innerHTML = "<input id=\"chat-input\" placeholder=\"Ask about my projects!\"><div id=\"chat-output\"></div>";
+chatDiv.style.position = "fixed";
+chatDiv.style.bottom = "20px";
+chatDiv.style.right = "20px";
+chatDiv.style.width = "300px";
+chatDiv.style.background = "#333";
+chatDiv.style.borderRadius = "10px";
+chatDiv.style.padding = "10px";
+chatDiv.style.color = "#fff";
+chatDiv.innerHTML = "<input id=\"chat-input\" placeholder=\"Ask about my projects!\" style=\"width: 100%; margin-bottom: 10px;\"><div id=\"chat-output\"></div>";
 document.body.appendChild(chatDiv);
 const input = document.getElementById("chat-input");
+const output = document.getElementById("chat-output");
 input.addEventListener("keypress", (e) => {
   if (e.key === "Enter") {
     const query = input.value.toLowerCase();
@@ -19,7 +28,8 @@ input.addEventListener("keypress", (e) => {
     projects.forEach(p => {
       if (query.includes(p.name.toLowerCase())) reply = `${p.name}: ${p.desc} - ${p.url}`;
     });
-    document.getElementById("chat-output").innerHTML += `<p>${reply}</p>`;
+    output.innerHTML += `<p>${reply}</p>`;
+    output.scrollTop = output.scrollHeight;
     input.value = "";
   }
 });
