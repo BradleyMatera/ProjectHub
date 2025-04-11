@@ -1,0 +1,20 @@
+{
+  "name": "projecthub",
+  "version": "1.0.0",
+  "description": "CDN-like script with AI chat for my projects",
+  "main": "ProjectHub.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BradleyMatera/ProjectHub.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BradleyMatera/ProjectHub/issues"
+  },
+  "homepage": "https://github.com/BradleyMatera/ProjectHub#readme"
+}
