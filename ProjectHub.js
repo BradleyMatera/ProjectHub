@@ -23,16 +23,41 @@ chatDiv.innerHTML = "<div style=\"margin-bottom: 10px; font-weight: bold;\">Brad
 document.body.appendChild(chatDiv);
 const input = document.getElementById("chat-input");
 const output = document.getElementById("chat-output");
-input.addEventListener("keypress", (e) => {
+let lastRequestTime = 0;
+const requestInterval = 1000; // 1 second between requests
+input.addEventListener("keypress", async (e) => {
   if (e.key === "Enter") {
-    const query = input.value.toLowerCase();
+    const now = Date.now();
+    if (now - lastRequestTime < requestInterval) {
+      output.innerHTML += "<p>Please wait a moment before sending another message.</p>";
+      output.scrollTop = output.scrollHeight;
+      return;
+    }
+    lastRequestTime = now;
+    const query = input.value;
     let reply = "I don’t know that one. Try asking about my projects (e.g., Pokedex, Anime CRUD)!";
-    if (query.includes("list") || query.includes("all")) {
+    if (query.toLowerCase().includes("list") || query.toLowerCase().includes("all")) {
       reply = "Here are my projects: " + projects.map(p => p.name).join(", ") + ".";
     } else {
-      projects.forEach(p => {
-        if (query.includes(p.name.toLowerCase())) reply = `${p.name}: ${p.desc} - ${p.url}`;
-      });
+      for (const p of projects) {
+        if (query.toLowerCase().includes(p.name.toLowerCase())) {
+          reply = `${p.name}: ${p.desc} - ${p.url}`;
+          break;
+        }
+      }
+    }
+    if (reply.includes("I don’t know")) {
+      try {
+        const res = await fetch("https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: query })
+        });
+        const data = await res.json();
+        reply = data.reply || "Sorry, I couldn’t get a response.";
+      } catch (error) {
+        reply = "Error connecting to the chat service.";
+      }
     }
     output.innerHTML += `<p>${reply}</p>`;
     output.scrollTop = output.scrollHeight;
