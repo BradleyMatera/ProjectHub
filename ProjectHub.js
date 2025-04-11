@@ -21,7 +21,7 @@ const { projects, codePens, suggestions } = (function() {
     },
     { 
       name: "Interactive Pokedex", 
-      desc: "An engaging Pokedex application built with HTML, Tailwind CSS, and JavaScript, integrating Pokémon APIs.", 
+      desc: "An engaging Pokedex application built with HTML, Tailwind CSS, and JavaScript, integrating Pokemon APIs.", 
       url: "https://bradleymatera.github.io/Interactive-Pokedex/", 
       platform: "GitHub Pages", 
       repo: "https://github.com/BradleyMatera/Interactive-Pokedex", 
@@ -165,21 +165,29 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
     const otherTech = allTech.filter(tech => ["Docker", "Jest", "GitHub", "Netlify", "Vercel", "GitHub Pages"].includes(tech));
 
     let summary = "Bradley Matera is a versatile and growth-oriented web developer with a strong foundation in front-end development and a growing expertise in full-stack technologies. ";
-    summary += `He has worked on ${projectCount} projects and ${codePenCount} CodePen projects, showcasing a diverse skill set across multiple platforms: ${platforms.join(", ")}.<br><br>`;
+    summary += "He has worked on " + projectCount + " projects and " + codePenCount + " CodePen projects, showcasing a diverse skill set across multiple platforms: " + platforms.join(", ") + ".<br><br>";
 
     if (frontEndTech.length > 0) {
-      summary += `<strong>Front-End Development:</strong><br>- Uses technologies like ${frontEndTech.join(", ")} to create engaging, user-friendly interfaces.<br>- For example, his Interactive Pokedex integrates Pokémon APIs for a dynamic experience, and WebGPU Shapes Renderer experiments with cutting-edge WebGPU for high-performance graphics.<br><br>`;
+      summary += "<strong>Front-End Development:</strong><br>";
+      summary += "- Uses technologies like " + frontEndTech.join(", ") + " to create engaging, user-friendly interfaces.<br>";
+      summary += "- For example, his Interactive Pokedex integrates Pokemon APIs for a dynamic experience, and WebGPU Shapes Renderer experiments with cutting-edge WebGPU for high-performance graphics.<br><br>";
     }
 
     if (backEndTech.length > 0) {
-      summary += `<strong>Back-End Development:</strong><br>- Has explored back-end development with ${backEndTech.join(", ")}.<br>- Projects like React Native Anime CRUD App use Node.js and MongoDB, and RESTful Routes Using ExpressJS is a RESTful API.<br><br>`;
+      summary += "<strong>Back-End Development:</strong><br>";
+      summary += "- Has explored back-end development with " + backEndTech.join(", ") + ".<br>";
+      summary += "- Projects like React Native Anime CRUD App use Node.js and MongoDB, and RESTful Routes Using ExpressJS is a RESTful API.<br><br>";
     }
 
     if (otherTech.length > 0) {
-      summary += `<strong>Modern Tools and Practices:</strong><br>- Leverages tools like ${otherTech.join(", ")}.<br>- Shows a focus on testing (Jest in CheeseMath Jest Tests), containerization (Docker in Docker Multilang Project), and deployment across various platforms.<br><br>`;
+      summary += "<strong>Modern Tools and Practices:</strong><br>";
+      summary += "- Leverages tools like " + otherTech.join(", ") + ".<br>";
+      summary += "- Shows a focus on testing (Jest in CheeseMath Jest Tests), containerization (Docker in Docker Multilang Project), and deployment across various platforms.<br><br>";
     }
 
-    summary += `<strong>Learning and Experimentation:</strong><br>- His CodePens, like React Calculator and Markdown Previewer, highlight a hands-on learning approach, covering React, JavaScript fundamentals, and practical applications.<br>- Overall, Bradley is a developer who balances creativity, technical skill, and user-focused design, with potential to deepen his back-end expertise.`;
+    summary += "<strong>Learning and Experimentation:</strong><br>";
+    summary += "- His CodePens, like React Calculator and Markdown Previewer, highlight a hands-on learning approach, covering React, JavaScript fundamentals, and practical applications.<br>";
+    summary += "- Overall, Bradley is a developer who balances creativity, technical skill, and user-focused design, with potential to deepen his back-end expertise.";
     return summary;
   }
 
@@ -475,7 +483,11 @@ const setupChatUI = (function() {
       lastQueryTopic = newTopic;
 
       loadingIcon.style.display = "none";
-      chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> ${reply}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+      // Create a new message div and set its innerHTML to render the HTML formatting
+      const messageDiv = document.createElement("div");
+      messageDiv.className = "message bot-message";
+      messageDiv.innerHTML = `<strong>Bot:</strong> ${reply}<div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
+      chatOutput.appendChild(messageDiv);
       chatOutput.scrollTop = chatOutput.scrollHeight;
       chatInput.value = "";
       chatInput.style.height = "40px";
