@@ -17,17 +17,23 @@ chatDiv.style.background = "#333";
 chatDiv.style.borderRadius = "10px";
 chatDiv.style.padding = "10px";
 chatDiv.style.color = "#fff";
-chatDiv.innerHTML = "<input id=\"chat-input\" placeholder=\"Ask about my projects!\" style=\"width: 100%; margin-bottom: 10px;\"><div id=\"chat-output\"></div>";
+chatDiv.style.boxShadow = "0 0 15px rgba(0, 216, 255, 0.5)";
+chatDiv.style.fontFamily = "Arial, sans-serif";
+chatDiv.innerHTML = "<div style=\"margin-bottom: 10px; font-weight: bold;\">Bradley\'s Project Chat</div><input id=\"chat-input\" placeholder=\"Ask about my projects!\" style=\"width: 100%; padding: 5px; border-radius: 5px; border: none; margin-bottom: 10px;\"><div id=\"chat-output\" style=\"max-height: 300px; overflow-y: auto;\"><p>Welcome! Ask about my projects (e.g., Pokedex, Anime CRUD).</p></div>";
 document.body.appendChild(chatDiv);
 const input = document.getElementById("chat-input");
 const output = document.getElementById("chat-output");
 input.addEventListener("keypress", (e) => {
   if (e.key === "Enter") {
     const query = input.value.toLowerCase();
-    let reply = "I don’t know that one. Try asking about my projects!";
-    projects.forEach(p => {
-      if (query.includes(p.name.toLowerCase())) reply = `${p.name}: ${p.desc} - ${p.url}`;
-    });
+    let reply = "I don’t know that one. Try asking about my projects (e.g., Pokedex, Anime CRUD)!";
+    if (query.includes("list") || query.includes("all")) {
+      reply = "Here are my projects: " + projects.map(p => p.name).join(", ") + ".";
+    } else {
+      projects.forEach(p => {
+        if (query.includes(p.name.toLowerCase())) reply = `${p.name}: ${p.desc} - ${p.url}`;
+      });
+    }
     output.innerHTML += `<p>${reply}</p>`;
     output.scrollTop = output.scrollHeight;
     input.value = "";
