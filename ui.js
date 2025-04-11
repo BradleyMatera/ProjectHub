@@ -1,4 +1,4 @@
-function setupChatUI(projects, codePens, suggestions, handleQuery) {
+function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData) {
   // Context tracking for follow-up queries
   let lastQueryTopic = null;
 
@@ -76,6 +76,20 @@ function setupChatUI(projects, codePens, suggestions, handleQuery) {
   chatInput.style.overflowY = "hidden";
   chatDiv.appendChild(chatInput);
 
+  // Send button
+  const sendButton = document.createElement("button");
+  sendButton.innerHTML = "Send";
+  sendButton.style.marginTop = "5px";
+  sendButton.style.padding = "8px 16px";
+  sendButton.style.background = "#3498db";
+  sendButton.style.color = "#fff";
+  sendButton.style.border = "none";
+  sendButton.style.borderRadius = "5px";
+  sendButton.style.cursor = "pointer";
+  sendButton.style.fontSize = "16px";
+  sendButton.style.width = "100%";
+  chatDiv.appendChild(sendButton);
+
   // Loading icon
   const loadingIcon = document.createElement("div");
   loadingIcon.id = "loading-icon";
@@ -115,9 +129,8 @@ function setupChatUI(projects, codePens, suggestions, handleQuery) {
 
   document.body.appendChild(chatDiv);
 
-  // Event handlers
   let lastRequestTime = 0;
-  const requestInterval = 1000; // 1 second between requests
+  const requestInterval = 1000;
 
   minimizeBtn.onclick = () => {
     chatOutput.style.display = chatOutput.style.display === "none" ? "block" : "none";
@@ -127,46 +140,50 @@ function setupChatUI(projects, codePens, suggestions, handleQuery) {
   };
 
   chatInput.oninput = () => {
-    chatInput.style.height = "40px"; // Reset height
-    chatInput.style.height = `${chatInput.scrollHeight}px`; // Adjust height based on content
+    chatInput.style.height = "40px";
+    chatInput.style.height = `${chatInput.scrollHeight}px`;
   };
 
   dropdown.onchange = () => {
     if (dropdown.value) {
       chatInput.value = dropdown.value;
-      dropdown.value = ""; // Reset dropdown
+      dropdown.value = "";
     }
   };
 
+  // Event handler for Send button and Enter key
+  const submitChat = async () => {
+    const now = Date.now();
+    if (now - lastRequestTime < requestInterval) {
+      chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> Please wait a moment before sending another message.<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+      chatOutput.scrollTop = chatOutput.scrollHeight;
+      return;
+    }
+    lastRequestTime = now;
+    const userQuery = chatInput.value.trim();
+    if (!userQuery) return;
+
+    chatOutput.innerHTML += `<div class="message user-message"><strong>You:</strong> ${userQuery}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+
+    loadingIcon.style.display = "block";
+    chatOutput.scrollTop = chatOutput.scrollHeight;
+
+    const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData);
+    lastQueryTopic = newTopic;
+
+    loadingIcon.style.display = "none";
+    chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> ${reply}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+    chatOutput.scrollTop = chatOutput.scrollHeight;
+    chatInput.value = "";
+    chatInput.style.height = "40px";
+  };
+
+  sendButton.onclick = submitChat;
+
   chatInput.addEventListener("keypress", async (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault(); // Prevent newline on Enter
-      const now = Date.now();
-      if (now - lastRequestTime < requestInterval) {
-        chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> Please wait a moment before sending another message.<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
-        chatOutput.scrollTop = chatOutput.scrollHeight;
-        return;
-      }
-      lastRequestTime = now;
-      const userQuery = chatInput.value.trim();
-      if (!userQuery) return;
-
-      // Display the user's input in the chat
-      chatOutput.innerHTML += `<div class="message user-message"><strong>You:</strong> ${userQuery}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
-
-      // Show loading icon
-      loadingIcon.style.display = "block";
-      chatOutput.scrollTop = chatOutput.scrollHeight;
-
-      const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData);
-      lastQueryTopic = newTopic;
-
-      // Hide loading icon and display the bot's response
-      loadingIcon.style.display = "none";
-      chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> ${reply}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
-      chatOutput.scrollTop = chatOutput.scrollHeight;
-      chatInput.value = "";
-      chatInput.style.height = "40px"; // Reset input height
+      e.preventDefault();
+      submitChat();
     }
   });
 

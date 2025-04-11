@@ -380,6 +380,20 @@ const setupChatUI = (function() {
     chatInput.style.overflowY = "hidden";
     chatDiv.appendChild(chatInput);
 
+    // Send button
+    const sendButton = document.createElement("button");
+    sendButton.innerHTML = "Send";
+    sendButton.style.marginTop = "5px";
+    sendButton.style.padding = "8px 16px";
+    sendButton.style.background = "#3498db";
+    sendButton.style.color = "#fff";
+    sendButton.style.border = "none";
+    sendButton.style.borderRadius = "5px";
+    sendButton.style.cursor = "pointer";
+    sendButton.style.fontSize = "16px";
+    sendButton.style.width = "100%";
+    chatDiv.appendChild(sendButton);
+
     const loadingIcon = document.createElement("div");
     loadingIcon.id = "loading-icon";
     loadingIcon.style.display = "none";
@@ -439,32 +453,39 @@ const setupChatUI = (function() {
       }
     };
 
+    // Event handler for Send button and Enter key
+    const submitChat = async () => {
+      const now = Date.now();
+      if (now - lastRequestTime < requestInterval) {
+        chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> Please wait a moment before sending another message.<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+        chatOutput.scrollTop = chatOutput.scrollHeight;
+        return;
+      }
+      lastRequestTime = now;
+      const userQuery = chatInput.value.trim();
+      if (!userQuery) return;
+
+      chatOutput.innerHTML += `<div class="message user-message"><strong>You:</strong> ${userQuery}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+
+      loadingIcon.style.display = "block";
+      chatOutput.scrollTop = chatOutput.scrollHeight;
+
+      const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData);
+      lastQueryTopic = newTopic;
+
+      loadingIcon.style.display = "none";
+      chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> ${reply}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+      chatOutput.scrollTop = chatOutput.scrollHeight;
+      chatInput.value = "";
+      chatInput.style.height = "40px";
+    };
+
+    sendButton.onclick = submitChat;
+
     chatInput.addEventListener("keypress", async (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        const now = Date.now();
-        if (now - lastRequestTime < requestInterval) {
-          chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> Please wait a moment before sending another message.<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
-          chatOutput.scrollTop = chatOutput.scrollHeight;
-          return;
-        }
-        lastRequestTime = now;
-        const userQuery = chatInput.value.trim();
-        if (!userQuery) return;
-
-        chatOutput.innerHTML += `<div class="message user-message"><strong>You:</strong> ${userQuery}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
-
-        loadingIcon.style.display = "block";
-        chatOutput.scrollTop = chatOutput.scrollHeight;
-
-        const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData);
-        lastQueryTopic = newTopic;
-
-        loadingIcon.style.display = "none";
-        chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> ${reply}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
-        chatOutput.scrollTop = chatOutput.scrollHeight;
-        chatInput.value = "";
-        chatInput.style.height = "40px";
+        submitChat();
       }
     });
 
