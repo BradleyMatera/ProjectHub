@@ -154,30 +154,29 @@ const { fetchGitHubRepoData, fetchAllGitHubData } = (function() {
 
 // Import logic
 const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (function() {
-  // Function to summarize Bradley Matera as a web developer based on projects
   function summarizeBradleyAsWebDev(projects, codePens) {
     const allTech = [...new Set(projects.flatMap(p => p.tech))];
     const platforms = [...new Set(projects.map(p => p.platform))];
     const projectCount = projects.length;
     const codePenCount = codePens.length;
 
-    let summary = "I’m Bradley Matera, a B.S. Web Development student at Full Sail University, started in August 2023 and graduating in October 2025 with a 3.85 GPA. I’ve been learning web development through my courses and on my own, focusing on JavaScript, HTML, CSS, SQL, and C#. Through school projects, I’ve worked with React, Gatsby, Next.js, React Native, Node.js, Express.js, MongoDB, Docker, Jest, PixiJS, WebGPU, and Tailwind CSS.<br><br>";
+    let summary = "Hey, I’m Bradley Matera, a Web Development student at Full Sail University since August 2023, working towards my B.S. with a 3.85 GPA—I’ll be graduating in October 2025. I’ve been learning web dev through my courses and on my own, mostly focusing on JavaScript, HTML, CSS, SQL, and C#. I’ve also gotten some experience with React, Gatsby, Next.js, React Native, Node.js, Express.js, MongoDB, Docker, Jest, PixiJS, WebGPU, and Tailwind CSS through school projects.<br><br>";
 
-    summary += `I’ve built ${projectCount} projects and ${codePenCount} CodePen projects as part of my learning. These are deployed on platforms like ${platforms.join(", ")} using tools like Git, Netlify, Vercel, Heroku, and Docker. For example, my Interactive Pokedex project uses HTML, Tailwind CSS, and JavaScript to pull data from Pokemon APIs, and my WebGPU Shapes Renderer experiments with WebGPU for rendering shapes on a canvas.<br><br>`;
+    summary += "So far, I’ve worked on " + projectCount + " projects and " + codePenCount + " CodePen projects, which I’ve deployed on platforms like " + platforms.join(", ") + " using tools like Git, Netlify, Vercel, Heroku, and Docker. For example, my Interactive Pokedex project uses HTML, Tailwind CSS, and JavaScript to pull data from Pokemon APIs, and my WebGPU Shapes Renderer plays around with WebGPU for rendering shapes on a canvas.<br><br>";
 
-    summary += "I’m comfortable styling with Tailwind CSS, Flexbox, and Grid, and I focus on accessibility by following ADA requirements. On the back-end, I’ve built RESTful APIs with Node.js and Express.js, connecting them to MongoDB or MySQL databases, like in my RESTful Routes Using ExpressJS project. I’ve also used Jest for unit testing, like in my CheeseMath Jest Tests project, and I’ve explored tools like PixiJS for real-time graphics, WebGPU for rendering, Postman for API testing, and Canvas for data visualizations. Other projects include interactive soundboards, Markdown previewers, quote generators, and bar chart visualizations.<br><br>";
+    summary += "I’m pretty comfortable styling with Tailwind CSS, Flexbox, and Grid, and I try to keep accessibility in mind by following ADA requirements. On the back-end, I’ve built a few RESTful APIs with Node.js and Express.js, connecting them to MongoDB or MySQL databases—like in my RESTful Routes Using ExpressJS project. I’ve also used Jest for unit testing, like in my CheeseMath Jest Tests project, and I’ve explored tools like PixiJS for real-time graphics, WebGPU for rendering, Postman for API testing, and Canvas for data visualizations. Some other projects I’ve done include interactive soundboards, Markdown previewers, quote generators, and bar chart visualizations.<br><br>";
 
-    summary += "I’ve earned certifications from freeCodeCamp in JavaScript Algorithms and Data Structures, Responsive Web Design, and Foundational C# with Microsoft, plus LinkedIn courses on personal branding, productivity, and communication. I’m still growing as a developer, but I’m passionate about coding and exploring new technologies, and I’m always looking to improve my skills.";
+    summary += "I’ve earned a few certifications from freeCodeCamp, like JavaScript Algorithms and Data Structures, Responsive Web Design, and Foundational C# with Microsoft, plus some LinkedIn courses on personal branding, productivity, and communication. I’m still figuring things out as a developer, but I’m really passionate about coding and trying out new tech, and I’m always looking to get better.";
     return summary;
   }
 
   function shortSummaryBradleyAsWebDev(projects, codePens) {
-    return "I’m Bradley Matera, a Web Development student at Full Sail University, graduating in October 2025. I’ve been learning JavaScript, HTML, CSS, and tools like React, Node.js, and Tailwind CSS through my courses and self-study. I’ve worked on various projects and CodePens, deploying them on platforms like GitHub Pages, Netlify, and Vercel, and I’m focused on building responsive, accessible web applications.";
+    return "I’m Bradley Matera, a Web Development student at Full Sail University, graduating in October 2025. I’ve been learning JavaScript, HTML, CSS, and tools like React, Node.js, and Tailwind CSS through my courses and self-study. I’ve worked on a few projects and CodePens, deploying them on platforms like GitHub Pages, Netlify, and Vercel, and I’m focused on building responsive, accessible web apps.";
   }
 
   async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData) {
     const query = userQuery.toLowerCase();
-    let reply = "I don’t know that one. Try asking about my projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), live data (e.g., 'What project has the most stars?'), or about me as a web developer (e.g., 'Summarize Bradley as a web dev').";
+    let reply = "I’m not sure about that one. Try asking about my projects (like Pokedex or Pong_Deluxe), CodePens (like React Calculator or Data Visualization), platforms (like GitHub or Netlify), tech (like React or Docker), live data (like 'What project has the most stars?'), or about me as a web developer (like 'Summarize Bradley as a web dev').";
     let newTopic = lastQueryTopic;
 
     if (query.includes("bradley") && (query.includes("web dev") || query.includes("developer") || query.includes("summarize"))) {
@@ -191,12 +190,12 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
       newTopic = "summary";
     }
 
-    if (query.includes("github") && (query.includes("bradley") || query.includes("profile"))) {
+    if (query.includes("github") && (query.includes("bradley") || query.includes("profile") || query.includes("url"))) {
       reply = "My GitHub profile is at https://github.com/BradleyMatera. I’m a Web Development student at Full Sail University, and I’ve been learning a lot through my courses and on my own. You can check out my repositories there, like Interactive Pokedex and WebGPU Shapes Renderer, which show some of the JavaScript and deployment skills I’ve been working on with tools like Git, Netlify, Vercel, and Docker.";
       newTopic = "github";
     }
 
-    if (query.includes("linkedin") && (query.includes("bradley") || query.includes("profile"))) {
+    if (query.includes("linkedin") && (query.includes("bradley") || query.includes("profile") || query.includes("url"))) {
       reply = "You can find my LinkedIn profile at https://www.linkedin.com/in/championingempatheticwebsolutionsthroughcode/. I’m a Web Development student at Full Sail University, graduating in October 2025, and I’ve been focusing on JavaScript, HTML, CSS, and tools like React and Node.js through my coursework. I also have certifications in JavaScript, C#, and responsive design from freeCodeCamp, plus some LinkedIn courses on personal branding and communication.";
       newTopic = "linkedin";
     }
@@ -259,7 +258,7 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
       if (matches.length >= 2) {
         const p1 = projects.find(p => p.name.toLowerCase() === matches[0]);
         const p2 = projects.find(p => p.name.toLowerCase() === matches[1]);
-        reply = `Comparing ${p1.name} and ${p2.name}:\n- ${p1.name} uses ${p1.tech.join(", ")} and is on ${p1.platform}.\n- ${p2.name} uses ${p2.tech.join(", ")} and is on ${p2.platform}.\nCommon tech: ${p1.tech.filter(t => p2.tech.includes(t)).join(", ") || "None"}.`;
+        reply = `Comparing ${p1.name} and ${p2.name}:\n- ${p1.name}: ${p1.desc} It uses ${p1.tech.join(", ")} and is on ${p1.platform}.\n- ${p2.name}: ${p2.desc} It uses ${p2.tech.join(", ")} and is on ${p2.platform}.\nCommon tech: ${p1.tech.filter(t => p2.tech.includes(t)).join(", ") || "None"}.`;
         newTopic = "compare";
       }
     }
@@ -339,7 +338,7 @@ const setupChatUI = (function() {
     chatOutput.style.maxHeight = "400px";
     chatOutput.style.overflowY = "auto";
     chatOutput.style.marginBottom = "10px";
-    chatOutput.innerHTML = `<div class="message bot-message"><strong>Bot:</strong> Welcome! I’m here to help you explore Bradley Matera’s web development work. Ask about his projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), live data (e.g., 'What project has the most stars?'), or about Bradley as a web developer (e.g., 'Summarize Bradley as a web dev'). What would you like to know?<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+    chatOutput.innerHTML = `<div class="message bot-message"><strong>Bot:</strong> Hey there! I’m here to chat about my web dev projects and stuff I’ve been learning. You can ask about my projects (like Pokedex or Pong_Deluxe), CodePens (like React Calculator or Data Visualization), platforms (like GitHub or Netlify), tech (like React or Docker), or even something like 'What project has the most stars?' Want to know more about me as a web dev? Just ask 'Summarize Bradley as a web dev'. What’s on your mind?<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
     chatDiv.appendChild(chatOutput);
 
     const dropdown = document.createElement("select");
@@ -356,7 +355,7 @@ const setupChatUI = (function() {
 
     const chatInput = document.createElement("textarea");
     chatInput.id = "chat-input";
-    chatInput.placeholder = "Ask about Bradley's projects!";
+    chatInput.placeholder = "Ask about my projects!";
     chatInput.style.width = "100%";
     chatInput.style.padding = "8px";
     chatInput.style.borderRadius = "5px";
@@ -445,7 +444,7 @@ const setupChatUI = (function() {
     const submitChat = async () => {
       const now = Date.now();
       if (now - lastRequestTime < requestInterval) {
-        chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> Please wait a moment before sending another message.<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+        chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> Hang on a sec—give me a moment before sending another message.<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
         chatOutput.scrollTop = chatOutput.scrollHeight;
         return;
       }
