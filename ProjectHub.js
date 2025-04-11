@@ -179,8 +179,15 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
     let reply = "I’m not sure about that one. Try asking about my projects (like Pokedex or Pong_Deluxe), CodePens (like React Calculator or Data Visualization), platforms (like GitHub or Netlify), tech (like React or Docker), live data (like 'What project has the most stars?'), or about me as a web developer (like 'Summarize Bradley as a web dev').";
     let newTopic = lastQueryTopic;
 
-    if (query.includes("bradley") && (query.includes("web dev") || query.includes("developer") || query.includes("summarize"))) {
-      if (query.includes("full") && lastQueryTopic === "summary") {
+    // Handle greetings like "hi" or "hello"
+    if (query === "hi" || query === "hello") {
+      reply = "Hey there! Nice to see you! I’m here to chat about my web dev projects and stuff I’ve been learning. What’s on your mind? You can ask about my projects, CodePens, or even something like 'Summarize Bradley as a web dev'.";
+      newTopic = "greeting";
+    }
+
+    // Handle summary requests
+    if (query.includes("bradley") && (query.includes("web dev") || query.includes("developer") || query.includes("summarize")) || (query.includes("full") && lastQueryTopic === "summary")) {
+      if ((query.includes("full") && lastQueryTopic === "summary") || (query.includes("full summary"))) {
         reply = summarizeBradleyAsWebDev(projects, codePens);
         newTopic = "summary";
       } else if (query.includes("short") || query.includes("paragraph")) {
@@ -271,24 +278,6 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
       const topProject = sortedProjects[0];
       reply = `The project with the most stars is ${topProject.name} with ${topProject.githubData.stars} stars. It’s hosted on ${topProject.platform}${topProject.url !== topProject.repo ? ` (${topProject.url})` : ""}. Source: ${topProject.repo}.`;
       newTopic = "stars";
-    }
-
-    if (reply.includes("I don’t know") && !query.includes("bradley")) {
-      reply = "I’m here to help with my projects and CodePens—try asking about Pokedex, React Calculator, or something related to my work! For unrelated topics, I can provide general info.";
-      try {
-        const res = await fetch("https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: userQuery })
-        });
-        const data = await res.json();
-        if (data.reply) {
-          reply += ` Here's a general response: ${data.reply}`;
-        }
-      } catch (error) {
-        reply += " However, I couldn’t fetch a general response due to a connection issue.";
-      }
-      newTopic = "unrelated";
     }
 
     return { reply, newTopic };
