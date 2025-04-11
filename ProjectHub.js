@@ -6,7 +6,7 @@ const projects = [
     platform: "GitHub Pages", 
     repo: "https://github.com/BradleyMatera/leaf-js", 
     tech: ["WebGPU", "JavaScript", "GitHub Pages"],
-    apiEndpoint: null // No API for static GitHub Pages
+    apiEndpoint: null
   },
   { 
     name: "Gatsby Starter Minimal Blog", 
@@ -15,7 +15,7 @@ const projects = [
     platform: "Netlify", 
     repo: "https://github.com/BradleyMatera/gatsby-starter-minimal-blog", 
     tech: ["React", "Express", "Netlify"],
-    apiEndpoint: "https://bradleysgatsbyblog.netlify.app/.netlify/functions/api" // Hypothetical API endpoint
+    apiEndpoint: "https://bradleysgatsbyblog.netlify.app/.netlify/functions/api"
   },
   { 
     name: "Interactive Pokedex", 
@@ -24,7 +24,7 @@ const projects = [
     platform: "GitHub Pages", 
     repo: "https://github.com/BradleyMatera/Interactive-Pokedex", 
     tech: ["HTML", "Tailwind CSS", "JavaScript", "GitHub Pages"],
-    apiEndpoint: null // No API for static GitHub Pages
+    apiEndpoint: null
   },
   { 
     name: "Mom's Business Website", 
@@ -33,16 +33,16 @@ const projects = [
     platform: "GitHub Pages", 
     repo: "https://github.com/BradleyMatera/Moms-website", 
     tech: ["HTML", "CSS", "JavaScript", "GitHub Pages"],
-    apiEndpoint: null // No API for static GitHub Pages
+    apiEndpoint: null
   },
   { 
     name: "React Native Anime CRUD App", 
     desc: "Mobile CRUD app with React Native, Node.js, MongoDB, deployed on Vercel.", 
     url: "https://cruddemo-one.vercel.app/", 
     platform: "Vercel", 
-    repo: "https://github.com/BradleyMatera", // Update if specific repo exists
+    repo: "https://github.com/BradleyMatera",
     tech: ["React Native", "Node.js", "MongoDB", "Vercel"],
-    apiEndpoint: "https://cruddemo-one.vercel.app/api/anime" // Hypothetical API endpoint
+    apiEndpoint: "https://cruddemo-one.vercel.app/api/anime"
   },
   { 
     name: "Docker Multilang Project", 
@@ -51,7 +51,7 @@ const projects = [
     platform: "GitHub", 
     repo: "https://github.com/BradleyMatera/docker_multilang_project", 
     tech: ["Docker", "Python", "Node.js", "GitHub"],
-    apiEndpoint: null // No API for this project
+    apiEndpoint: null
   },
   { 
     name: "RESTful Routes Using ExpressJS", 
@@ -60,7 +60,7 @@ const projects = [
     platform: "GitHub", 
     repo: "https://github.com/BradleyMatera/RESTfulRoutesUsingExpressJS", 
     tech: ["Express", "Node.js", "GitHub"],
-    apiEndpoint: null // No API for this project
+    apiEndpoint: null
   },
   { 
     name: "Pong_Deluxe", 
@@ -69,7 +69,7 @@ const projects = [
     platform: "Netlify", 
     repo: "https://github.com/BradleyMatera/Pong-Deluxe", 
     tech: ["PixiJS", "JavaScript", "Netlify"],
-    apiEndpoint: null // No API for this project
+    apiEndpoint: null
   },
   { 
     name: "CheeseMath Jest Tests", 
@@ -78,7 +78,7 @@ const projects = [
     platform: "Vercel", 
     repo: "https://github.com/BradleyMatera/CheeseMath-Jest-Tests", 
     tech: ["JavaScript", "Jest", "Vercel"],
-    apiEndpoint: null // No API for this project
+    apiEndpoint: null
   },
   { 
     name: "Animal Sounds", 
@@ -87,7 +87,7 @@ const projects = [
     platform: "GitHub Pages", 
     repo: "https://github.com/BradleyMatera/AnimalSounds", 
     tech: ["HTML", "CSS", "JavaScript", "GitHub Pages"],
-    apiEndpoint: null // No API for static GitHub Pages
+    apiEndpoint: null
   }
 ];
 
@@ -102,8 +102,23 @@ const codePens = [
 ];
 
 // Context tracking for follow-up queries
-let lastQueryTopic = null;
+// Removed duplicate declaration of lastQueryTopic
 
+// Dropdown suggestions
+const suggestions = [
+  "What project has the most stars?",
+  "Summarize Bradley as a web dev",
+  "What’s Bradley’s GitHub?",
+  "What’s Bradley’s LinkedIn?",
+  "Tell me about Interactive Pokedex",
+  "Tell me about React Calculator",
+  "List all projects",
+  "List all CodePens",
+  "Compare Pokedex and Pong_Deluxe",
+  "What projects use React?"
+];
+
+// Create the chat interface
 const chatDiv = document.createElement("div");
 chatDiv.id = "bradley-chat";
 chatDiv.style.position = "fixed";
@@ -117,12 +132,120 @@ chatDiv.style.color = "#fff";
 chatDiv.style.boxShadow = "0 0 15px rgba(0, 216, 255, 0.5)";
 chatDiv.style.fontFamily = "Arial, sans-serif";
 chatDiv.style.fontSize = "16px";
-chatDiv.innerHTML = "<div style=\"margin-bottom: 10px; font-weight: bold;\">Bradley Matera's Project Chat</div><input id=\"chat-input\" placeholder=\"Ask about Bradley's projects!\" style=\"width: 100%; padding: 8px; border-radius: 5px; border: none; margin-bottom: 10px; font-size: 16px;\"><div id=\"chat-output\" style=\"max-height: 400px; overflow-y: auto;\"><p><strong>Bot:</strong> Welcome! I’m here to help you explore Bradley Matera’s web development work. Ask about his projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), live data (e.g., 'What project has the most stars?'), or about Bradley as a web developer (e.g., 'Summarize Bradley as a web dev'). What would you like to know?</p></div>";
+chatDiv.style.zIndex = "1000";
+
+// Chat header
+const chatHeader = document.createElement("div");
+chatHeader.style.marginBottom = "10px";
+chatHeader.style.fontWeight = "bold";
+chatHeader.style.display = "flex";
+chatHeader.style.justifyContent = "space-between";
+chatHeader.style.alignItems = "center";
+chatHeader.innerHTML = "Bradley Matera's Project Chat";
+chatDiv.appendChild(chatHeader);
+
+// Minimize button
+const minimizeBtn = document.createElement("button");
+minimizeBtn.innerHTML = "−";
+minimizeBtn.style.background = "none";
+minimizeBtn.style.border = "none";
+minimizeBtn.style.color = "#fff";
+minimizeBtn.style.fontSize = "18px";
+minimizeBtn.style.cursor = "pointer";
+minimizeBtn.onclick = () => {
+  chatOutput.style.display = chatOutput.style.display === "none" ? "block" : "none";
+  chatInput.style.display = chatInput.style.display === "none" ? "block" : "none";
+  dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+  minimizeBtn.innerHTML = chatOutput.style.display === "none" ? "+" : "−";
+};
+chatHeader.appendChild(minimizeBtn);
+
+// Chat output
+const chatOutput = document.createElement("div");
+chatOutput.id = "chat-output";
+chatOutput.style.maxHeight = "400px";
+chatOutput.style.overflowY = "auto";
+chatOutput.style.marginBottom = "10px";
+chatOutput.innerHTML = `<div class="message bot-message"><strong>Bot:</strong> Welcome! I’m here to help you explore Bradley Matera’s web development work. Ask about his projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), live data (e.g., 'What project has the most stars?'), or about Bradley as a web developer (e.g., 'Summarize Bradley as a web dev'). What would you like to know?</div>`;
+chatDiv.appendChild(chatOutput);
+
+// Dropdown for suggestions
+const dropdown = document.createElement("select");
+dropdown.style.width = "100%";
+dropdown.style.padding = "8px";
+dropdown.style.borderRadius = "5px";
+dropdown.style.border = "none";
+dropdown.style.marginBottom = "10px";
+dropdown.style.background = "#444";
+dropdown.style.color = "#fff";
+dropdown.style.fontSize = "16px";
+dropdown.innerHTML = `<option value="">Select a suggestion...</option>` + suggestions.map(s => `<option value="${s}">${s}</option>`).join("");
+dropdown.onchange = () => {
+  if (dropdown.value) {
+    input.value = dropdown.value;
+    dropdown.value = ""; // Reset dropdown
+  }
+};
+chatDiv.appendChild(dropdown);
+
+// Chat input
+const chatInput = document.createElement("textarea");
+chatInput.id = "chat-input";
+chatInput.placeholder = "Ask about Bradley's projects!";
+chatInput.style.width = "100%";
+chatInput.style.padding = "8px";
+chatInput.style.borderRadius = "5px";
+chatInput.style.border = "none";
+chatInput.style.background = "#444";
+chatInput.style.color = "#fff";
+chatInput.style.fontSize = "16px";
+chatInput.style.resize = "none";
+chatInput.style.height = "40px";
+chatInput.style.overflowY = "hidden";
+chatInput.oninput = () => {
+  chatInput.style.height = "40px"; // Reset height
+  chatInput.style.height = `${chatInput.scrollHeight}px`; // Adjust height based on content
+};
+chatDiv.appendChild(chatInput);
+
+// Loading icon
+const loadingIcon = document.createElement("div");
+loadingIcon.id = "loading-icon";
+loadingIcon.style.display = "none";
+loadingIcon.style.textAlign = "center";
+loadingIcon.style.marginTop = "10px";
+loadingIcon.innerHTML = `<div style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 0 auto;"></div>`;
+chatDiv.appendChild(loadingIcon);
+
+// Add CSS for loading animation
+const style = document.createElement("style");
+style.innerHTML = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .message {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    word-wrap: break-word;
+  }
+  .user-message {
+    background: #555;
+    text-align: right;
+  }
+  .bot-message {
+    background: #444;
+  }
+  .timestamp {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 5px;
+  }
+`;
+document.head.appendChild(style);
+
 document.body.appendChild(chatDiv);
-const input = document.getElementById("chat-input");
-const output = document.getElementById("chat-output");
-let lastRequestTime = 0;
-const requestInterval = 1000; // 1 second between requests
 
 // Function to fetch GitHub repo data (e.g., stars, last commit)
 async function fetchGitHubRepoData(repoUrl) {
@@ -188,21 +311,31 @@ function shortSummaryBradleyAsWebDev() {
   return "Bradley Matera is a versatile web developer with a strong focus on front-end technologies like HTML, CSS, JavaScript, and React, as well as a growing expertise in full-stack development. He has worked on diverse projects and CodePens, showcasing creativity and technical skill across platforms like GitHub Pages, Netlify, and Vercel.";
 }
 
+let lastRequestTime = 0;
+const requestInterval = 1000; // 1 second between requests
+let lastQueryTopic = null;
+
 input.addEventListener("keypress", async (e) => {
-  if (e.key === "Enter") {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault(); // Prevent newline on Enter
     const now = Date.now();
     if (now - lastRequestTime < requestInterval) {
-      output.innerHTML += "<p><strong>Bot:</strong> Please wait a moment before sending another message.</p>";
+      output.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> Please wait a moment before sending another message.<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
       output.scrollTop = output.scrollHeight;
       return;
     }
     lastRequestTime = now;
-    const userQuery = input.value;
-    const query = userQuery.toLowerCase();
+    const userQuery = input.value.trim();
+    if (!userQuery) return;
 
     // Display the user's input in the chat
-    output.innerHTML += `<p><strong>You:</strong> ${userQuery}</p>`;
+    output.innerHTML += `<div class="message user-message"><strong>You:</strong> ${userQuery}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
 
+    // Show loading icon
+    loadingIcon.style.display = "block";
+    output.scrollTop = output.scrollHeight;
+
+    const query = userQuery.toLowerCase();
     let reply = "I don’t know that one. Try asking about Bradley Matera's projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), live data (e.g., 'What project has the most stars?'), or about Bradley as a web developer (e.g., 'Summarize Bradley as a web dev').";
 
     // Check for Bradley Matera summary queries
@@ -326,10 +459,12 @@ input.addEventListener("keypress", async (e) => {
       lastQueryTopic = "unrelated";
     }
 
-    // Display the bot's response in the chat
-    output.innerHTML += `<p><strong>Bot:</strong> ${reply}</p>`;
+    // Hide loading icon and display the bot's response
+    loadingIcon.style.display = "none";
+    output.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> ${reply}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
     output.scrollTop = output.scrollHeight;
     input.value = "";
+    chatInput.style.height = "40px"; // Reset input height
   }
 });
 
