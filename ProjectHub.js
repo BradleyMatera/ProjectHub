@@ -113,7 +113,7 @@ chatDiv.style.padding = "10px";
 chatDiv.style.color = "#fff";
 chatDiv.style.boxShadow = "0 0 15px rgba(0, 216, 255, 0.5)";
 chatDiv.style.fontFamily = "Arial, sans-serif";
-chatDiv.innerHTML = "<div style=\"margin-bottom: 10px; font-weight: bold;\">Bradley\'s Project Chat</div><input id=\"chat-input\" placeholder=\"Ask about my projects!\" style=\"width: 100%; padding: 5px; border-radius: 5px; border: none; margin-bottom: 10px;\"><div id=\"chat-output\" style=\"max-height: 300px; overflow-y: auto;\"><p><strong>Bot:</strong> Welcome! Ask about my projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), or fetch live data (e.g., 'What project has the most stars?').</p></div>";
+chatDiv.innerHTML = "<div style=\"margin-bottom: 10px; font-weight: bold;\">Bradley\'s Project Chat</div><input id=\"chat-input\" placeholder=\"Ask about my projects!\" style=\"width: 100%; padding: 5px; border-radius: 5px; border: none; margin-bottom: 10px;\"><div id=\"chat-output\" style=\"max-height: 300px; overflow-y: auto;\"><p><strong>Bot:</strong> Welcome! Ask about my projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), or fetch live data (e.g., 'What project has the most stars?'). You can also ask about Bradley Matera as a web developer!</p></div>";
 document.body.appendChild(chatDiv);
 const input = document.getElementById("chat-input");
 const output = document.getElementById("chat-output");
@@ -150,6 +150,35 @@ async function fetchAllGitHubData() {
   return projectData;
 }
 
+// Function to summarize Bradley Matera as a web developer based on projects
+function summarizeBradleyAsWebDev() {
+  const allTech = [...new Set(projects.flatMap(p => p.tech))];
+  const platforms = [...new Set(projects.map(p => p.platform))];
+  const projectCount = projects.length;
+  const codePenCount = codePens.length;
+  const frontEndTech = allTech.filter(tech => ["HTML", "CSS", "JavaScript", "React", "React Native", "Tailwind CSS", "PixiJS", "WebGPU"].includes(tech));
+  const backEndTech = allTech.filter(tech => ["Node.js", "Express", "MongoDB"].includes(tech));
+  const otherTech = allTech.filter(tech => ["Docker", "Jest", "GitHub", "Netlify", "Vercel", "GitHub Pages"].includes(tech));
+
+  let summary = "Bradley Matera is a versatile web developer with a strong focus on front-end development and a growing interest in full-stack technologies. ";
+  summary += `He has worked on ${projectCount} projects and ${codePenCount} CodePen projects, showcasing a diverse skill set across multiple platforms: ${platforms.join(", ")}. `;
+
+  if (frontEndTech.length > 0) {
+    summary += `Bradley excels in front-end development, using technologies like ${frontEndTech.join(", ")} to create engaging, user-friendly interfaces. For example, his Interactive Pokedex integrates Pokémon APIs for a dynamic experience, and WebGPU Shapes Renderer experiments with cutting-edge WebGPU for high-performance graphics. `;
+  }
+
+  if (backEndTech.length > 0) {
+    summary += `He’s also explored back-end development with ${backEndTech.join(", ")}, as seen in projects like React Native Anime CRUD App, which uses Node.js and MongoDB, and RESTful Routes Using ExpressJS, a RESTful API. `;
+  }
+
+  if (otherTech.length > 0) {
+    summary += `Bradley leverages modern tools and practices like ${otherTech.join(", ")}, showing a focus on testing (Jest in CheeseMath Jest Tests), containerization (Docker in Docker Multilang Project), and deployment across various platforms. `;
+  }
+
+  summary += `His CodePens, like React Calculator and Markdown Previewer, highlight a hands-on learning approach, covering React, JavaScript fundamentals, and practical applications. Overall, Bradley is a growth-oriented developer who balances creativity, technical skill, and user-focused design, with room to deepen his back-end expertise.`;
+  return summary;
+}
+
 input.addEventListener("keypress", async (e) => {
   if (e.key === "Enter") {
     const now = Date.now();
@@ -165,7 +194,12 @@ input.addEventListener("keypress", async (e) => {
     // Display the user's input in the chat
     output.innerHTML += `<p><strong>You:</strong> ${userQuery}</p>`;
 
-    let reply = "I don’t know that one. Try asking about my projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), or fetch live data (e.g., 'What project has the most stars?')!";
+    let reply = "I don’t know that one. Try asking about my projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), or fetch live data (e.g., 'What project has the most stars?'). You can also ask about Bradley Matera as a web developer!";
+
+    // Check for Bradley Matera summary queries
+    if (query.includes("bradley matera") && (query.includes("web dev") || query.includes("developer") || query.includes("summarize"))) {
+      reply = summarizeBradleyAsWebDev();
+    }
 
     // Check for project-specific queries
     for (const p of projects) {
@@ -235,8 +269,9 @@ input.addEventListener("keypress", async (e) => {
       reply = `The project with the most stars is ${topProject.name} with ${topProject.githubData.stars} stars. It’s hosted on ${topProject.platform}${topProject.url !== topProject.repo ? ` (${topProject.url})` : ""}. Source: ${topProject.repo}.`;
     }
 
-    // If no match, send to xAI Grok API for a general response
-    if (reply.includes("I don’t know")) {
+    // Edge case: Non-related queries (e.g., "What's the weather like?")
+    if (reply.includes("I don’t know") && !query.includes("bradley matera")) {
+      reply = "I’m here to help with Bradley’s projects and CodePens—try asking about Pokedex, React Calculator, or something related to his work! For unrelated topics, I can provide general info.";
       try {
         const res = await fetch("https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat", {
           method: "POST",
@@ -244,9 +279,11 @@ input.addEventListener("keypress", async (e) => {
           body: JSON.stringify({ message: userQuery })
         });
         const data = await res.json();
-        reply = data.reply || "Sorry, I couldn’t get a response.";
+        if (data.reply) {
+          reply += ` Here's a general response: ${data.reply}`;
+        }
       } catch (error) {
-        reply = "Error connecting to the chat service.";
+        reply += " However, I couldn’t fetch a general response due to a connection issue.";
       }
     }
 
