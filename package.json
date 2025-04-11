@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/BradleyMatera/ProjectHub/issues"
   },
-  "homepage": "https://github.com/BradleyMatera/ProjectHub#readme"
+  "homepage": "https://github.com/BradleyMatera/ProjectHub#readme",
+  "dependencies": {
+    "openai": "^4.93.0"
+  }
 }
