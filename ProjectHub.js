@@ -3,7 +3,7 @@ const { projects, codePens, suggestions } = (function() {
   const projects = [
     { 
       name: "WebGPU Shapes Renderer", 
-      desc: "Demo of a WebGPU-based renderer displaying selectable 2D shapes (triangle, square, pentagon, diamond, hexagon) on a canvas, forked and enhanced from an original project (only works on Chrome).", 
+      desc: "A demo of a WebGPU-based renderer displaying selectable 2D shapes (triangle, square, pentagon, diamond, hexagon) on a canvas, forked and enhanced from an original project as part of my coursework (only works on Chrome).", 
       url: "https://bradleymatera.github.io/leaf-js/", 
       platform: "GitHub Pages", 
       repo: "https://github.com/BradleyMatera/leaf-js", 
@@ -12,16 +12,16 @@ const { projects, codePens, suggestions } = (function() {
     },
     { 
       name: "Gatsby Starter Minimal Blog", 
-      desc: "React-based blog fetching data from an Express API, deployed on Netlify.", 
+      desc: "A React-based blog fetching data from an Express API, deployed on Netlify as a learning project for my courses.", 
       url: "https://bradleysgatsbyblog.netlify.app/", 
       platform: "Netlify", 
       repo: "https://github.com/BradleyMatera/gatsby-starter-minimal-blog", 
-      tech: ["React", "Express", "Netlify"],
+      tech: ["React", "Express", "Netlify", "Gatsby"],
       apiEndpoint: "https://bradleysgatsbyblog.netlify.app/.netlify/functions/api"
     },
     { 
       name: "Interactive Pokedex", 
-      desc: "An engaging Pokedex application built with HTML, Tailwind CSS, and JavaScript, integrating Pokemon APIs.", 
+      desc: "A Pokedex app built with HTML, Tailwind CSS, and JavaScript, integrating Pokemon APIs, created as part of my coursework to practice API integration.", 
       url: "https://bradleymatera.github.io/Interactive-Pokedex/", 
       platform: "GitHub Pages", 
       repo: "https://github.com/BradleyMatera/Interactive-Pokedex", 
@@ -30,7 +30,7 @@ const { projects, codePens, suggestions } = (function() {
     },
     { 
       name: "Mom's Business Website", 
-      desc: "A responsive website for my mom’s fitness business using HTML, CSS, and JavaScript, with a photo gallery and contact form.", 
+      desc: "A responsive website for my mom’s fitness business using HTML, CSS, and JavaScript, with a photo gallery and contact form, built to practice my front-end skills.", 
       url: "https://bradleymatera.github.io/Moms-website/", 
       platform: "GitHub Pages", 
       repo: "https://github.com/BradleyMatera/Moms-website", 
@@ -39,7 +39,7 @@ const { projects, codePens, suggestions } = (function() {
     },
     { 
       name: "React Native Anime CRUD App", 
-      desc: "Mobile CRUD app with React Native, Node.js, MongoDB, deployed on Vercel.", 
+      desc: "A mobile CRUD app built with React Native, Node.js, and MongoDB, deployed on Vercel, created to learn mobile development and back-end integration.", 
       url: "https://cruddemo-one.vercel.app/", 
       platform: "Vercel", 
       repo: "https://github.com/BradleyMatera",
@@ -48,7 +48,7 @@ const { projects, codePens, suggestions } = (function() {
     },
     { 
       name: "Docker Multilang Project", 
-      desc: "Dockerized multi-language app (Python/Node.js) for server tooling.", 
+      desc: "A Dockerized multi-language app (Python/Node.js) for server tooling, built to experiment with Docker during my studies.", 
       url: "https://github.com/BradleyMatera/docker_multilang_project", 
       platform: "GitHub", 
       repo: "https://github.com/BradleyMatera/docker_multilang_project", 
@@ -57,16 +57,16 @@ const { projects, codePens, suggestions } = (function() {
     },
     { 
       name: "RESTful Routes Using ExpressJS", 
-      desc: "RESTful API built with Express.js.", 
+      desc: "A RESTful API built with Express.js and Node.js, connected to MongoDB, created to practice back-end development.", 
       url: "https://github.com/BradleyMatera/RESTfulRoutesUsingExpressJS", 
       platform: "GitHub", 
       repo: "https://github.com/BradleyMatera/RESTfulRoutesUsingExpressJS", 
-      tech: ["Express", "Node.js", "GitHub"],
+      tech: ["Express", "Node.js", "MongoDB", "GitHub"],
       apiEndpoint: null
     },
     { 
       name: "Pong_Deluxe", 
-      desc: "Pong game using PixiJS for real-time graphics, deployed on Netlify.", 
+      desc: "A Pong game using PixiJS for real-time graphics, deployed on Netlify, built to explore game development with JavaScript.", 
       url: "https://pongdeluxe.netlify.app/", 
       platform: "Netlify", 
       repo: "https://github.com/BradleyMatera/Pong-Deluxe", 
@@ -75,7 +75,7 @@ const { projects, codePens, suggestions } = (function() {
     },
     { 
       name: "CheeseMath Jest Tests", 
-      desc: "Math utilities with Jest unit tests, deployed on Vercel.", 
+      desc: "Math utilities with Jest unit tests, deployed on Vercel, created to learn testing and debugging in JavaScript.", 
       url: "https://cheese-math.vercel.app/", 
       platform: "Vercel", 
       repo: "https://github.com/BradleyMatera/CheeseMath-Jest-Tests", 
@@ -84,7 +84,7 @@ const { projects, codePens, suggestions } = (function() {
     },
     { 
       name: "Animal Sounds", 
-      desc: "Animal Sounds app.", 
+      desc: "An interactive soundboard app using HTML, CSS, and JavaScript, built as a fun project to practice front-end skills.", 
       url: "https://bradleymatera.github.io/AnimalSounds/", 
       platform: "GitHub Pages", 
       repo: "https://github.com/BradleyMatera/AnimalSounds", 
@@ -160,44 +160,24 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
     const platforms = [...new Set(projects.map(p => p.platform))];
     const projectCount = projects.length;
     const codePenCount = codePens.length;
-    const frontEndTech = allTech.filter(tech => ["HTML", "CSS", "JavaScript", "React", "React Native", "Tailwind CSS", "PixiJS", "WebGPU"].includes(tech));
-    const backEndTech = allTech.filter(tech => ["Node.js", "Express", "MongoDB"].includes(tech));
-    const otherTech = allTech.filter(tech => ["Docker", "Jest", "GitHub", "Netlify", "Vercel", "GitHub Pages"].includes(tech));
 
-    let summary = "Bradley Matera is a versatile and growth-oriented web developer with a strong foundation in front-end development and a growing expertise in full-stack technologies. ";
-    summary += "He has worked on " + projectCount + " projects and " + codePenCount + " CodePen projects, showcasing a diverse skill set across multiple platforms: " + platforms.join(", ") + ".<br><br>";
+    let summary = "I’m Bradley Matera, a B.S. Web Development student at Full Sail University, started in August 2023 and graduating in October 2025 with a 3.85 GPA. I’ve been learning web development through my courses and on my own, focusing on JavaScript, HTML, CSS, SQL, and C#. Through school projects, I’ve worked with React, Gatsby, Next.js, React Native, Node.js, Express.js, MongoDB, Docker, Jest, PixiJS, WebGPU, and Tailwind CSS.<br><br>";
 
-    if (frontEndTech.length > 0) {
-      summary += "<strong>Front-End Development:</strong><br>";
-      summary += "- Uses technologies like " + frontEndTech.join(", ") + " to create engaging, user-friendly interfaces.<br>";
-      summary += "- For example, his Interactive Pokedex integrates Pokemon APIs for a dynamic experience, and WebGPU Shapes Renderer experiments with cutting-edge WebGPU for high-performance graphics.<br><br>";
-    }
+    summary += `I’ve built ${projectCount} projects and ${codePenCount} CodePen projects as part of my learning. These are deployed on platforms like ${platforms.join(", ")} using tools like Git, Netlify, Vercel, Heroku, and Docker. For example, my Interactive Pokedex project uses HTML, Tailwind CSS, and JavaScript to pull data from Pokemon APIs, and my WebGPU Shapes Renderer experiments with WebGPU for rendering shapes on a canvas.<br><br>`;
 
-    if (backEndTech.length > 0) {
-      summary += "<strong>Back-End Development:</strong><br>";
-      summary += "- Has explored back-end development with " + backEndTech.join(", ") + ".<br>";
-      summary += "- Projects like React Native Anime CRUD App use Node.js and MongoDB, and RESTful Routes Using ExpressJS is a RESTful API.<br><br>";
-    }
+    summary += "I’m comfortable styling with Tailwind CSS, Flexbox, and Grid, and I focus on accessibility by following ADA requirements. On the back-end, I’ve built RESTful APIs with Node.js and Express.js, connecting them to MongoDB or MySQL databases, like in my RESTful Routes Using ExpressJS project. I’ve also used Jest for unit testing, like in my CheeseMath Jest Tests project, and I’ve explored tools like PixiJS for real-time graphics, WebGPU for rendering, Postman for API testing, and Canvas for data visualizations. Other projects include interactive soundboards, Markdown previewers, quote generators, and bar chart visualizations.<br><br>";
 
-    if (otherTech.length > 0) {
-      summary += "<strong>Modern Tools and Practices:</strong><br>";
-      summary += "- Leverages tools like " + otherTech.join(", ") + ".<br>";
-      summary += "- Shows a focus on testing (Jest in CheeseMath Jest Tests), containerization (Docker in Docker Multilang Project), and deployment across various platforms.<br><br>";
-    }
-
-    summary += "<strong>Learning and Experimentation:</strong><br>";
-    summary += "- His CodePens, like React Calculator and Markdown Previewer, highlight a hands-on learning approach, covering React, JavaScript fundamentals, and practical applications.<br>";
-    summary += "- Overall, Bradley is a developer who balances creativity, technical skill, and user-focused design, with potential to deepen his back-end expertise.";
+    summary += "I’ve earned certifications from freeCodeCamp in JavaScript Algorithms and Data Structures, Responsive Web Design, and Foundational C# with Microsoft, plus LinkedIn courses on personal branding, productivity, and communication. I’m still growing as a developer, but I’m passionate about coding and exploring new technologies, and I’m always looking to improve my skills.";
     return summary;
   }
 
   function shortSummaryBradleyAsWebDev(projects, codePens) {
-    return "Bradley Matera is a versatile web developer with a strong focus on front-end technologies like HTML, CSS, JavaScript, and React, as well as a growing expertise in full-stack development. He has worked on diverse projects and CodePens, showcasing creativity and technical skill across platforms like GitHub Pages, Netlify, and Vercel.";
+    return "I’m Bradley Matera, a Web Development student at Full Sail University, graduating in October 2025. I’ve been learning JavaScript, HTML, CSS, and tools like React, Node.js, and Tailwind CSS through my courses and self-study. I’ve worked on various projects and CodePens, deploying them on platforms like GitHub Pages, Netlify, and Vercel, and I’m focused on building responsive, accessible web applications.";
   }
 
   async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData) {
     const query = userQuery.toLowerCase();
-    let reply = "I don’t know that one. Try asking about Bradley Matera's projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), live data (e.g., 'What project has the most stars?'), or about Bradley as a web developer (e.g., 'Summarize Bradley as a web dev').";
+    let reply = "I don’t know that one. Try asking about my projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), live data (e.g., 'What project has the most stars?'), or about me as a web developer (e.g., 'Summarize Bradley as a web dev').";
     let newTopic = lastQueryTopic;
 
     if (query.includes("bradley") && (query.includes("web dev") || query.includes("developer") || query.includes("summarize"))) {
@@ -206,18 +186,18 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
       } else if (query.includes("short") || query.includes("paragraph")) {
         reply = shortSummaryBradleyAsWebDev(projects, codePens);
       } else {
-        reply = shortSummaryBradleyAsWebDev(projects, codePens) + " Would you like a more detailed summary? Just ask for the 'full summary'!";
+        reply = shortSummaryBradleyAsWebDev(projects, codePens) + " Want to know more? Just ask for the 'full summary'!";
       }
       newTopic = "summary";
     }
 
     if (query.includes("github") && (query.includes("bradley") || query.includes("profile"))) {
-      reply = "Bradley Matera's GitHub profile is at https://github.com/BradleyMatera. He describes himself as a Web Development student at Full Sail University, focusing on front-end technologies and proficient in HTML, CSS, and JavaScript. You can explore his repositories there, including projects like Interactive Pokedex, WebGPU Shapes Renderer, and more.";
+      reply = "My GitHub profile is at https://github.com/BradleyMatera. I’m a Web Development student at Full Sail University, and I’ve been learning a lot through my courses and on my own. You can check out my repositories there, like Interactive Pokedex and WebGPU Shapes Renderer, which show some of the JavaScript and deployment skills I’ve been working on with tools like Git, Netlify, Vercel, and Docker.";
       newTopic = "github";
     }
 
     if (query.includes("linkedin") && (query.includes("bradley") || query.includes("profile"))) {
-      reply = "I don’t have direct access to Bradley Matera’s LinkedIn profile, but you can likely find him by searching for 'Bradley Matera' on LinkedIn. Based on his GitHub, he’s a Web Development student at Full Sail University with a focus on front-end technologies, so his LinkedIn might highlight his education, projects, and skills in HTML, CSS, JavaScript, and more.";
+      reply = "You can find my LinkedIn profile at https://www.linkedin.com/in/championingempatheticwebsolutionsthroughcode/. I’m a Web Development student at Full Sail University, graduating in October 2025, and I’ve been focusing on JavaScript, HTML, CSS, and tools like React and Node.js through my coursework. I also have certifications in JavaScript, C#, and responsive design from freeCodeCamp, plus some LinkedIn courses on personal branding and communication.";
       newTopic = "linkedin";
     }
 
@@ -234,7 +214,7 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
     for (const cp of codePens) {
       const codePenNameLower = cp.name.toLowerCase();
       if (query.includes(codePenNameLower) || query.includes(codePenNameLower.replace(" ", ""))) {
-        reply = `${cp.name}: A CodePen project by Bradley Matera. Check it out here: ${cp.url}.`;
+        reply = `${cp.name}: A CodePen project I worked on as part of my learning. Check it out here: ${cp.url}.`;
         newTopic = "codepen";
         break;
       }
@@ -244,9 +224,9 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
     for (const platform of platforms) {
       if (query.includes(platform)) {
         const platformProjects = projects.filter(p => p.platform.toLowerCase() === platform);
-        reply = `Bradley Matera has ${platformProjects.length} project(s) on ${platform}: ${platformProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
+        reply = `I have ${platformProjects.length} project(s) on ${platform}: ${platformProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
         if (platform === "github" && query.includes("codepen")) {
-          reply += ` He also has ${codePens.length} CodePen projects: ${codePens.map(cp => cp.name).join(", ")}.`;
+          reply += ` I also have ${codePens.length} CodePen projects: ${codePens.map(cp => cp.name).join(", ")}.`;
         }
         newTopic = "platform";
         break;
@@ -257,7 +237,7 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
     for (const tech of techs) {
       if (query.includes(tech)) {
         const techProjects = projects.filter(p => p.tech.map(t => t.toLowerCase()).includes(tech));
-        reply = `Bradley Matera used ${tech} in ${techProjects.length} project(s): ${techProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
+        reply = `I’ve used ${tech} in ${techProjects.length} project(s): ${techProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
         newTopic = "tech";
         break;
       }
@@ -265,10 +245,10 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
 
     if (query.includes("list") || query.includes("all")) {
       if (query.includes("codepen")) {
-        reply = `Here are Bradley Matera's CodePen projects: ${codePens.map(cp => cp.name).join(", ")}. Ask about a specific one for more details!`;
+        reply = `Here are my CodePen projects: ${codePens.map(cp => cp.name).join(", ")}. Ask about a specific one for more details!`;
         newTopic = "codepen";
       } else {
-        reply = `Here are Bradley Matera's projects: ${projects.map(p => p.name).join(", ")}. He also has ${codePens.length} CodePen projects—ask about those too!`;
+        reply = `Here are my projects: ${projects.map(p => p.name).join(", ")}. I also have ${codePens.length} CodePen projects—ask about those too!`;
         newTopic = "projects";
       }
     }
@@ -293,7 +273,7 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
     }
 
     if (reply.includes("I don’t know") && !query.includes("bradley")) {
-      reply = "I’m here to help with Bradley Matera’s projects and CodePens—try asking about Pokedex, React Calculator, or something related to his work! For unrelated topics, I can provide general info.";
+      reply = "I’m here to help with my projects and CodePens—try asking about Pokedex, React Calculator, or something related to my work! For unrelated topics, I can provide general info.";
       try {
         const res = await fetch("https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat", {
           method: "POST",
@@ -462,7 +442,6 @@ const setupChatUI = (function() {
       }
     };
 
-    // Event handler for Send button and Enter key
     const submitChat = async () => {
       const now = Date.now();
       if (now - lastRequestTime < requestInterval) {
@@ -483,7 +462,6 @@ const setupChatUI = (function() {
       lastQueryTopic = newTopic;
 
       loadingIcon.style.display = "none";
-      // Create a new message div and set its innerHTML to render the HTML formatting
       const messageDiv = document.createElement("div");
       messageDiv.className = "message bot-message";
       messageDiv.innerHTML = `<strong>Bot:</strong> ${reply}<div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
