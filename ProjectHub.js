@@ -1,67 +1,104 @@
 const projects = [
   { 
-    name: "Gatsby Blog", 
-    desc: "A blogging app built with Gatsby, hosted on Netlify.", 
-    url: "https://bradleysgatsbyblog.netlify.app", 
-    platform: "Netlify", 
-    repo: "https://github.com/BradleyMatera/gatsby-starter-minimal-blog", 
-    tech: ["Gatsby", "React", "Netlify"],
-    apiEndpoint: "https://bradleysgatsbyblog.netlify.app/.netlify/functions/api" // Hypothetical API endpoint
-  },
-  { 
-    name: "Pokedex", 
-    desc: "An interactive Pokémon data app, hosted on GitHub Pages.", 
-    url: "https://bradleymatera.github.io/Interactive-Pokedex", 
-    platform: "GitHub Pages", 
-    repo: "https://github.com/BradleyMatera/Interactive-Pokedex", 
-    tech: ["JavaScript", "HTML", "CSS", "GitHub Pages"],
-    apiEndpoint: null // No API for static GitHub Pages
-  },
-  { 
-    name: "Anime CRUD", 
-    desc: "A full-stack CRUD app for anime data, hosted on Vercel.", 
-    url: "https://cruddemo-one.vercel.app", 
-    platform: "Vercel", 
-    repo: "https://github.com/BradleyMatera/RESTfulRoutesUsingExpressJS", 
-    tech: ["Express", "Node.js", "MongoDB", "Vercel"],
-    apiEndpoint: "https://cruddemo-one.vercel.app/api/anime" // Hypothetical API endpoint
-  },
-  { 
-    name: "CheeseMath", 
-    desc: "A math library with Jest tests, hosted on Vercel.", 
-    url: "https://cheese-math.vercel.app", 
-    platform: "Vercel", 
-    repo: "https://github.com/BradleyMatera/CheeseMath-Jest-Tests", 
-    tech: ["JavaScript", "Jest", "Vercel"],
-    apiEndpoint: null // No API for this project
-  },
-  { 
-    name: "WebGPU Renderer", 
-    desc: "A 2D shapes renderer using WebGPU, hosted on GitHub Pages (Chrome-only).", 
-    url: "https://bradleymatera.github.io/leaf-js", 
+    name: "WebGPU Shapes Renderer", 
+    desc: "Demo of a WebGPU-based renderer displaying selectable 2D shapes (triangle, square, pentagon, diamond, hexagon) on a canvas, forked and enhanced from an original project (only works on Chrome).", 
+    url: "https://bradleymatera.github.io/leaf-js/", 
     platform: "GitHub Pages", 
     repo: "https://github.com/BradleyMatera/leaf-js", 
     tech: ["WebGPU", "JavaScript", "GitHub Pages"],
     apiEndpoint: null // No API for static GitHub Pages
   },
   { 
-    name: "Portfolio", 
-    desc: "My professional portfolio website, hosted on GitHub Pages.", 
-    url: "https://bradleymatera.github.io/Professional-Portfolio-Website", 
+    name: "Gatsby Starter Minimal Blog", 
+    desc: "React-based blog fetching data from an Express API, deployed on Netlify.", 
+    url: "https://bradleysgatsbyblog.netlify.app/", 
+    platform: "Netlify", 
+    repo: "https://github.com/BradleyMatera/gatsby-starter-minimal-blog", 
+    tech: ["React", "Express", "Netlify"],
+    apiEndpoint: "https://bradleysgatsbyblog.netlify.app/.netlify/functions/api" // Hypothetical API endpoint
+  },
+  { 
+    name: "Interactive Pokedex", 
+    desc: "An engaging Pokedex application built with HTML, Tailwind CSS, and JavaScript, integrating Pokémon APIs.", 
+    url: "https://bradleymatera.github.io/Interactive-Pokedex/", 
     platform: "GitHub Pages", 
-    repo: "https://github.com/BradleyMatera/Professional-Portfolio-Website", 
+    repo: "https://github.com/BradleyMatera/Interactive-Pokedex", 
+    tech: ["HTML", "Tailwind CSS", "JavaScript", "GitHub Pages"],
+    apiEndpoint: null // No API for static GitHub Pages
+  },
+  { 
+    name: "Mom's Business Website", 
+    desc: "A responsive website for my mom’s fitness business using HTML, CSS, and JavaScript, with a photo gallery and contact form.", 
+    url: "https://bradleymatera.github.io/Moms-website/", 
+    platform: "GitHub Pages", 
+    repo: "https://github.com/BradleyMatera/Moms-website", 
     tech: ["HTML", "CSS", "JavaScript", "GitHub Pages"],
     apiEndpoint: null // No API for static GitHub Pages
   },
   { 
-    name: "Docker Multilang", 
-    desc: "A multi-language app with Docker, source on GitHub.", 
+    name: "React Native Anime CRUD App", 
+    desc: "Mobile CRUD app with React Native, Node.js, MongoDB, deployed on Vercel.", 
+    url: "https://cruddemo-one.vercel.app/", 
+    platform: "Vercel", 
+    repo: "https://github.com/BradleyMatera", // Update if specific repo exists
+    tech: ["React Native", "Node.js", "MongoDB", "Vercel"],
+    apiEndpoint: "https://cruddemo-one.vercel.app/api/anime" // Hypothetical API endpoint
+  },
+  { 
+    name: "Docker Multilang Project", 
+    desc: "Dockerized multi-language app (Python/Node.js) for server tooling.", 
     url: "https://github.com/BradleyMatera/docker_multilang_project", 
     platform: "GitHub", 
     repo: "https://github.com/BradleyMatera/docker_multilang_project", 
-    tech: ["Docker", "Node.js", "Python", "GitHub"],
+    tech: ["Docker", "Python", "Node.js", "GitHub"],
     apiEndpoint: null // No API for this project
+  },
+  { 
+    name: "RESTful Routes Using ExpressJS", 
+    desc: "RESTful API built with Express.js.", 
+    url: "https://github.com/BradleyMatera/RESTfulRoutesUsingExpressJS", 
+    platform: "GitHub", 
+    repo: "https://github.com/BradleyMatera/RESTfulRoutesUsingExpressJS", 
+    tech: ["Express", "Node.js", "GitHub"],
+    apiEndpoint: null // No API for this project
+  },
+  { 
+    name: "Pong_Deluxe", 
+    desc: "Pong game using PixiJS for real-time graphics, deployed on Netlify.", 
+    url: "https://pongdeluxe.netlify.app/", 
+    platform: "Netlify", 
+    repo: "https://github.com/BradleyMatera/Pong-Deluxe", 
+    tech: ["PixiJS", "JavaScript", "Netlify"],
+    apiEndpoint: null // No API for this project
+  },
+  { 
+    name: "CheeseMath Jest Tests", 
+    desc: "Math utilities with Jest unit tests, deployed on Vercel.", 
+    url: "https://cheese-math.vercel.app/", 
+    platform: "Vercel", 
+    repo: "https://github.com/BradleyMatera/CheeseMath-Jest-Tests", 
+    tech: ["JavaScript", "Jest", "Vercel"],
+    apiEndpoint: null // No API for this project
+  },
+  { 
+    name: "Animal Sounds", 
+    desc: "Animal Sounds app.", 
+    url: "https://bradleymatera.github.io/AnimalSounds/", 
+    platform: "GitHub Pages", 
+    repo: "https://github.com/BradleyMatera/AnimalSounds", 
+    tech: ["HTML", "CSS", "JavaScript", "GitHub Pages"],
+    apiEndpoint: null // No API for static GitHub Pages
   }
+];
+
+const codePens = [
+  { name: "JavaScript Garbage Collection Tutorial", url: "https://codepen.io/student-account-bradley-matera/pen/ZYzoWpL" },
+  { name: "React Calculator", url: "https://codepen.io/student-account-bradley-matera/pen/ogvGZjJ" },
+  { name: "Sound Machine", url: "https://codepen.io/student-account-bradley-matera/details/dPbVvoa" },
+  { name: "Markdown Previewer", url: "https://codepen.io/student-account-bradley-matera/pen/ZYzXeEJ" },
+  { name: "Random Quote Machine", url: "https://codepen.io/student-account-bradley-matera/pen/azoLpeG" },
+  { name: "Random Quote Generator", url: "https://codepen.io/student-account-bradley-matera/pen/PwYJWMY" },
+  { name: "Data Visualization", url: "https://codepen.io/student-account-bradley-matera/details/dyEYbPO" }
 ];
 
 const chatDiv = document.createElement("div");
@@ -76,7 +113,7 @@ chatDiv.style.padding = "10px";
 chatDiv.style.color = "#fff";
 chatDiv.style.boxShadow = "0 0 15px rgba(0, 216, 255, 0.5)";
 chatDiv.style.fontFamily = "Arial, sans-serif";
-chatDiv.innerHTML = "<div style=\"margin-bottom: 10px; font-weight: bold;\">Bradley\'s Project Chat</div><input id=\"chat-input\" placeholder=\"Ask about my projects!\" style=\"width: 100%; padding: 5px; border-radius: 5px; border: none; margin-bottom: 10px;\"><div id=\"chat-output\" style=\"max-height: 300px; overflow-y: auto;\"><p>Welcome! Ask about my projects (e.g., Pokedex, Anime CRUD), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), or fetch live data (e.g., 'Get latest Anime CRUD data').</p></div>";
+chatDiv.innerHTML = "<div style=\"margin-bottom: 10px; font-weight: bold;\">Bradley\'s Project Chat</div><input id=\"chat-input\" placeholder=\"Ask about my projects!\" style=\"width: 100%; padding: 5px; border-radius: 5px; border: none; margin-bottom: 10px;\"><div id=\"chat-output\" style=\"max-height: 300px; overflow-y: auto;\"><p><strong>Bot:</strong> Welcome! Ask about my projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), or fetch live data (e.g., 'What project has the most stars?').</p></div>";
 document.body.appendChild(chatDiv);
 const input = document.getElementById("chat-input");
 const output = document.getElementById("chat-output");
@@ -99,48 +136,50 @@ async function fetchGitHubRepoData(repoUrl) {
     };
   } catch (error) {
     console.error("GitHub fetch error:", error);
-    return { stars: "Unknown", lastCommit: "Unknown" };
+    return { stars: 0, lastCommit: "Unknown" };
   }
 }
 
-// Function to fetch live data from project APIs (if available)
-async function fetchProjectData(project) {
-  if (!project.apiEndpoint) return null;
-  try {
-    const response = await fetch(project.apiEndpoint);
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error(`Error fetching data from ${project.name}:`, error);
-    return null;
+// Function to fetch all GitHub data for projects
+async function fetchAllGitHubData() {
+  const projectData = [];
+  for (const project of projects) {
+    const githubData = await fetchGitHubRepoData(project.repo);
+    projectData.push({ ...project, githubData });
   }
+  return projectData;
 }
 
 input.addEventListener("keypress", async (e) => {
   if (e.key === "Enter") {
     const now = Date.now();
     if (now - lastRequestTime < requestInterval) {
-      output.innerHTML += "<p>Please wait a moment before sending another message.</p>";
+      output.innerHTML += "<p><strong>Bot:</strong> Please wait a moment before sending another message.</p>";
       output.scrollTop = output.scrollHeight;
       return;
     }
     lastRequestTime = now;
-    const query = input.value.toLowerCase();
-    let reply = "I don’t know that one. Try asking about my projects (e.g., Pokedex, Anime CRUD), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), or fetch live data (e.g., 'Get latest Anime CRUD data')!";
+    const userQuery = input.value;
+    const query = userQuery.toLowerCase();
+
+    // Display the user's input in the chat
+    output.innerHTML += `<p><strong>You:</strong> ${userQuery}</p>`;
+
+    let reply = "I don’t know that one. Try asking about my projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), or fetch live data (e.g., 'What project has the most stars?')!";
 
     // Check for project-specific queries
     for (const p of projects) {
       if (query.includes(p.name.toLowerCase())) {
         const githubData = await fetchGitHubRepoData(p.repo);
-        reply = `${p.name}: ${p.desc} It’s hosted on ${p.platform} (${p.url}). Source: ${p.repo} (Stars: ${githubData.stars}, Last Commit: ${githubData.lastCommit}). Tech used: ${p.tech.join(", ")}.`;
-        if (query.includes("data") && p.apiEndpoint) {
-          const projectData = await fetchProjectData(p);
-          if (projectData) {
-            reply += ` Live data: ${JSON.stringify(projectData, null, 2)}.`;
-          } else {
-            reply += " Couldn’t fetch live data.";
-          }
-        }
+        reply = `${p.name}: ${p.desc} It’s hosted on ${p.platform}${p.url !== p.repo ? ` (${p.url})` : ""}. Source: ${p.repo} (Stars: ${githubData.stars}, Last Commit: ${githubData.lastCommit}). Tech used: ${p.tech.join(", ")}.`;
+        break;
+      }
+    }
+
+    // Check for CodePen-specific queries
+    for (const cp of codePens) {
+      if (query.includes(cp.name.toLowerCase())) {
+        reply = `${cp.name}: A CodePen project. Check it out here: ${cp.url}.`;
         break;
       }
     }
@@ -151,6 +190,9 @@ input.addEventListener("keypress", async (e) => {
       if (query.includes(platform)) {
         const platformProjects = projects.filter(p => p.platform.toLowerCase() === platform);
         reply = `I have ${platformProjects.length} project(s) on ${platform}: ${platformProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
+        if (platform === "github" && query.includes("codepen")) {
+          reply += ` I also have ${codePens.length} CodePen projects: ${codePens.map(cp => cp.name).join(", ")}.`;
+        }
         break;
       }
     }
@@ -167,10 +209,14 @@ input.addEventListener("keypress", async (e) => {
 
     // Check for "list" or "all" queries
     if (query.includes("list") || query.includes("all")) {
-      reply = "Here are my projects: " + projects.map(p => p.name).join(", ") + ". Ask about a specific one for more details!";
+      if (query.includes("codepen")) {
+        reply = `Here are my CodePen projects: ${codePens.map(cp => cp.name).join(", ")}. Ask about a specific one for more details!`;
+      } else {
+        reply = `Here are my projects: ${projects.map(p => p.name).join(", ")}. I also have ${codePens.length} CodePen projects—ask about those too!`;
+      }
     }
 
-    // Check for cross-project interaction (e.g., "Compare Pokedex and Anime CRUD")
+    // Check for cross-project interaction (e.g., "Compare Pokedex and Pong_Deluxe")
     if (query.includes("compare")) {
       const projectNames = projects.map(p => p.name.toLowerCase());
       const matches = projectNames.filter(name => query.includes(name));
@@ -181,13 +227,21 @@ input.addEventListener("keypress", async (e) => {
       }
     }
 
+    // Check for "most stars" query
+    if (query.includes("most stars")) {
+      const projectData = await fetchAllGitHubData();
+      const sortedProjects = projectData.sort((a, b) => b.githubData.stars - a.githubData.stars);
+      const topProject = sortedProjects[0];
+      reply = `The project with the most stars is ${topProject.name} with ${topProject.githubData.stars} stars. It’s hosted on ${topProject.platform}${topProject.url !== topProject.repo ? ` (${topProject.url})` : ""}. Source: ${topProject.repo}.`;
+    }
+
     // If no match, send to xAI Grok API for a general response
     if (reply.includes("I don’t know")) {
       try {
         const res = await fetch("https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: query })
+          body: JSON.stringify({ message: userQuery })
         });
         const data = await res.json();
         reply = data.reply || "Sorry, I couldn’t get a response.";
@@ -196,7 +250,8 @@ input.addEventListener("keypress", async (e) => {
       }
     }
 
-    output.innerHTML += `<p>${reply}</p>`;
+    // Display the bot's response in the chat
+    output.innerHTML += `<p><strong>Bot:</strong> ${reply}</p>`;
     output.scrollTop = output.scrollHeight;
     input.value = "";
   }
