@@ -106,14 +106,15 @@ chatDiv.id = "bradley-chat";
 chatDiv.style.position = "fixed";
 chatDiv.style.bottom = "20px";
 chatDiv.style.right = "20px";
-chatDiv.style.width = "300px";
+chatDiv.style.width = "400px"; // Increased width for better readability
 chatDiv.style.background = "#333";
 chatDiv.style.borderRadius = "10px";
-chatDiv.style.padding = "10px";
+chatDiv.style.padding = "15px"; // Increased padding
 chatDiv.style.color = "#fff";
 chatDiv.style.boxShadow = "0 0 15px rgba(0, 216, 255, 0.5)";
 chatDiv.style.fontFamily = "Arial, sans-serif";
-chatDiv.innerHTML = "<div style=\"margin-bottom: 10px; font-weight: bold;\">Bradley\'s Project Chat</div><input id=\"chat-input\" placeholder=\"Ask about my projects!\" style=\"width: 100%; padding: 5px; border-radius: 5px; border: none; margin-bottom: 10px;\"><div id=\"chat-output\" style=\"max-height: 300px; overflow-y: auto;\"><p><strong>Bot:</strong> Welcome! Ask about my projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), or fetch live data (e.g., 'What project has the most stars?'). You can also ask about Bradley Matera as a web developer!</p></div>";
+chatDiv.style.fontSize = "16px"; // Increased font size
+chatDiv.innerHTML = "<div style=\"margin-bottom: 10px; font-weight: bold;\">Bradley Matera's Project Chat</div><input id=\"chat-input\" placeholder=\"Ask about Bradley's projects!\" style=\"width: 100%; padding: 8px; border-radius: 5px; border: none; margin-bottom: 10px; font-size: 16px;\"><div id=\"chat-output\" style=\"max-height: 400px; overflow-y: auto;\"><p><strong>Bot:</strong> Welcome! I’m here to help you explore Bradley Matera’s web development work. Ask about his projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), live data (e.g., 'What project has the most stars?'), or about Bradley as a web developer (e.g., 'Summarize Bradley as a web dev'). What would you like to know?</p></div>";
 document.body.appendChild(chatDiv);
 const input = document.getElementById("chat-input");
 const output = document.getElementById("chat-output");
@@ -160,7 +161,7 @@ function summarizeBradleyAsWebDev() {
   const backEndTech = allTech.filter(tech => ["Node.js", "Express", "MongoDB"].includes(tech));
   const otherTech = allTech.filter(tech => ["Docker", "Jest", "GitHub", "Netlify", "Vercel", "GitHub Pages"].includes(tech));
 
-  let summary = "Bradley Matera is a versatile web developer with a strong focus on front-end development and a growing interest in full-stack technologies. ";
+  let summary = "Bradley Matera is a versatile and growth-oriented web developer with a strong foundation in front-end development and a growing expertise in full-stack technologies. ";
   summary += `He has worked on ${projectCount} projects and ${codePenCount} CodePen projects, showcasing a diverse skill set across multiple platforms: ${platforms.join(", ")}. `;
 
   if (frontEndTech.length > 0) {
@@ -175,7 +176,7 @@ function summarizeBradleyAsWebDev() {
     summary += `Bradley leverages modern tools and practices like ${otherTech.join(", ")}, showing a focus on testing (Jest in CheeseMath Jest Tests), containerization (Docker in Docker Multilang Project), and deployment across various platforms. `;
   }
 
-  summary += `His CodePens, like React Calculator and Markdown Previewer, highlight a hands-on learning approach, covering React, JavaScript fundamentals, and practical applications. Overall, Bradley is a growth-oriented developer who balances creativity, technical skill, and user-focused design, with room to deepen his back-end expertise.`;
+  summary += `His CodePens, like React Calculator and Markdown Previewer, highlight a hands-on learning approach, covering React, JavaScript fundamentals, and practical applications. Overall, Bradley is a developer who balances creativity, technical skill, and user-focused design, with potential to deepen his back-end expertise.`;
   return summary;
 }
 
@@ -194,11 +195,21 @@ input.addEventListener("keypress", async (e) => {
     // Display the user's input in the chat
     output.innerHTML += `<p><strong>You:</strong> ${userQuery}</p>`;
 
-    let reply = "I don’t know that one. Try asking about my projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), or fetch live data (e.g., 'What project has the most stars?'). You can also ask about Bradley Matera as a web developer!";
+    let reply = "I don’t know that one. Try asking about Bradley Matera's projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), live data (e.g., 'What project has the most stars?'), or about Bradley as a web developer (e.g., 'Summarize Bradley as a web dev').";
 
     // Check for Bradley Matera summary queries
     if (query.includes("bradley matera") && (query.includes("web dev") || query.includes("developer") || query.includes("summarize"))) {
       reply = summarizeBradleyAsWebDev();
+    }
+
+    // Check for GitHub profile query
+    if (query.includes("github") && (query.includes("bradley matera") || query.includes("profile"))) {
+      reply = "Bradley Matera's GitHub profile is at https://github.com/BradleyMatera. He describes himself as a Web Development student at Full Sail University, focusing on front-end technologies and proficient in HTML, CSS, and JavaScript. You can explore his repositories there, including projects like Interactive Pokedex, WebGPU Shapes Renderer, and more.";
+    }
+
+    // Check for LinkedIn profile query
+    if (query.includes("linkedin") && (query.includes("bradley matera") || query.includes("profile"))) {
+      reply = "I don’t have direct access to Bradley Matera’s LinkedIn profile, but you can likely find him by searching for 'Bradley Matera' on LinkedIn. Based on his GitHub, he’s a Web Development student at Full Sail University with a focus on front-end technologies, so his LinkedIn might highlight his education, projects, and skills in HTML, CSS, JavaScript, and more.";
     }
 
     // Check for project-specific queries
@@ -213,7 +224,7 @@ input.addEventListener("keypress", async (e) => {
     // Check for CodePen-specific queries
     for (const cp of codePens) {
       if (query.includes(cp.name.toLowerCase())) {
-        reply = `${cp.name}: A CodePen project. Check it out here: ${cp.url}.`;
+        reply = `${cp.name}: A CodePen project by Bradley Matera. Check it out here: ${cp.url}.`;
         break;
       }
     }
@@ -223,9 +234,9 @@ input.addEventListener("keypress", async (e) => {
     for (const platform of platforms) {
       if (query.includes(platform)) {
         const platformProjects = projects.filter(p => p.platform.toLowerCase() === platform);
-        reply = `I have ${platformProjects.length} project(s) on ${platform}: ${platformProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
+        reply = `Bradley Matera has ${platformProjects.length} project(s) on ${platform}: ${platformProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
         if (platform === "github" && query.includes("codepen")) {
-          reply += ` I also have ${codePens.length} CodePen projects: ${codePens.map(cp => cp.name).join(", ")}.`;
+          reply += ` He also has ${codePens.length} CodePen projects: ${codePens.map(cp => cp.name).join(", ")}.`;
         }
         break;
       }
@@ -236,7 +247,7 @@ input.addEventListener("keypress", async (e) => {
     for (const tech of techs) {
       if (query.includes(tech)) {
         const techProjects = projects.filter(p => p.tech.map(t => t.toLowerCase()).includes(tech));
-        reply = `I used ${tech} in ${techProjects.length} project(s): ${techProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
+        reply = `Bradley Matera used ${tech} in ${techProjects.length} project(s): ${techProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
         break;
       }
     }
@@ -244,9 +255,9 @@ input.addEventListener("keypress", async (e) => {
     // Check for "list" or "all" queries
     if (query.includes("list") || query.includes("all")) {
       if (query.includes("codepen")) {
-        reply = `Here are my CodePen projects: ${codePens.map(cp => cp.name).join(", ")}. Ask about a specific one for more details!`;
+        reply = `Here are Bradley Matera's CodePen projects: ${codePens.map(cp => cp.name).join(", ")}. Ask about a specific one for more details!`;
       } else {
-        reply = `Here are my projects: ${projects.map(p => p.name).join(", ")}. I also have ${codePens.length} CodePen projects—ask about those too!`;
+        reply = `Here are Bradley Matera's projects: ${projects.map(p => p.name).join(", ")}. He also has ${codePens.length} CodePen projects—ask about those too!`;
       }
     }
 
@@ -271,7 +282,7 @@ input.addEventListener("keypress", async (e) => {
 
     // Edge case: Non-related queries (e.g., "What's the weather like?")
     if (reply.includes("I don’t know") && !query.includes("bradley matera")) {
-      reply = "I’m here to help with Bradley’s projects and CodePens—try asking about Pokedex, React Calculator, or something related to his work! For unrelated topics, I can provide general info.";
+      reply = "I’m here to help with Bradley Matera’s projects and CodePens—try asking about Pokedex, React Calculator, or something related to his work! For unrelated topics, I can provide general info.";
       try {
         const res = await fetch("https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat", {
           method: "POST",
