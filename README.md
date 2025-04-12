@@ -29,20 +29,15 @@ This will add a chat interface to the bottom-right corner of your webpage, where
 Here are some example queries you can try with the chat bot:
 
 - **Project Inquiry**: "Tell me about Interactive Pokedex"  
-  *Response*: "Interactive Pokedex: A Pokedex app built with HTML, Tailwind CSS, and JavaScript, integrating Pokemon APIs, created as part of my coursework to practice API integration. It’s hosted on GitHub Pages (https://bradleymatera.github.io/Interactive-Pokedex/). Source: https://github.com/BradleyMatera/Interactive-Pokedex (Stars: 0, Last Commit: Unknown). Tech used: HTML, Tailwind CSS, JavaScript, GitHub Pages."
 
 - **CodePen Inquiry**: "Tell me about React Calculator"  
-  *Response*: "React Calculator: A CodePen project I worked on as part of my learning. Check it out here: https://codepen.io/student-account-bradley-matera/pen/ogvGZjJ."
 
 - **Summary Request**: "Summarize Bradley as a web dev"  
-  *Response*: "I’m Bradley Matera, a Web Development student at Full Sail University, graduating in October 2025. I’ve been learning JavaScript, HTML, CSS, and tools like React, Node.js, and Tailwind CSS through my courses and self-study. I’ve worked on a few projects and CodePens, deploying them on platforms like GitHub Pages, Netlify, and Vercel, and I’m focused on building responsive, accessible web apps. Want to know more? Just ask for the 'full summary'!"
 
 - **Full Summary**: "Full summary" (after asking for a summary)  
-  *Response*: "Hey, I’m Bradley Matera, a Web Development student at Full Sail University since August 2023, working towards my B.S. with a 3.85 GPA—I’ll be graduating in October 2025. I’ve been learning web dev through my courses and on my own, mostly focusing on JavaScript, HTML, CSS, SQL, and C#. I’ve also gotten some experience with React, Gatsby, Next.js, React Native, Node.js, Express.js, MongoDB, Docker, Jest, PixiJS, WebGPU, and Tailwind CSS through school projects.<br><br>So far, I’ve worked on 10 projects and 7 CodePen projects, which I’ve deployed on platforms like GitHub Pages, Netlify, Vercel, GitHub using tools like Git, Netlify, Vercel, Heroku, and Docker. For example, my Interactive Pokedex project uses HTML, Tailwind CSS, and JavaScript to pull data from Pokemon APIs, and my WebGPU Shapes Renderer plays around with WebGPU for rendering shapes on a canvas.<br><br>I’m pretty comfortable styling with Tailwind CSS, Flexbox, and Grid, and I try to keep accessibility in mind by following ADA requirements. On the back-end, I’ve built a few RESTful APIs with Node.js and Express.js, connecting them to MongoDB or MySQL databases—like in my RESTful Routes Using ExpressJS project. I’ve also used Jest for unit testing, like in my CheeseMath Jest Tests project, and I’ve explored tools like PixiJS for real-time graphics, WebGPU for rendering, Postman for API testing, and Canvas for data visualizations. Some other projects I’ve done include interactive soundboards, Markdown previewers, quote generators, and bar chart visualizations.<br><br>I’ve earned a few certifications from freeCodeCamp, like JavaScript Algorithms and Data Structures, Responsive Web Design, and Foundational C# with Microsoft, plus some LinkedIn courses on personal branding, productivity, and communication. I’m still figuring things out as a developer, but I’m really passionate about coding and trying out new tech, and I’m always looking to get better."
-
-- **General Query**: "What’s the weather like?"  
-  *Response*: "I’m not sure about the weather, but I can tell you about my projects! For example, have you checked out my Interactive Pokedex? It’s a cool app I built with HTML, Tailwind CSS, and JavaScript to pull data from Pokemon APIs. Or you can ask for a summary about me as a web dev if you’d like to know more about my work!"
-
+  
+- **General Query**: "What’s the weather like?"
+  
 ## Contributing
 
 Feel free to fork this repository and submit pull requests if you have suggestions for improving the chat bot or adding new features. You can also open issues if you encounter any bugs or have feature requests.
