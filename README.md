@@ -2,8 +2,6 @@
 
 A script that adds an AI-powered chat bot to your website, showcasing my web development projects, CodePens, and skills. The chat bot is designed to respond naturally to any input, remember the conversation context, and provide detailed insights into my work as a Web Development student at Full Sail University.
 
-**Updated**: Fri Apr 11 13:31:22 CDT 2025
-
 ## Usage
 
 To add the ProjectHub chat bot to your website, simply include the following script tag in your HTML:
