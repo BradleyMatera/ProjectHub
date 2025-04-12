@@ -160,7 +160,6 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
   // Bradley's bio data to pass to the AI
   const bradleyBio = {
     name: "Bradley Matera",
-    education: "B.S. Web Development student at Full Sail University, started August 2023, graduating October 2025, 3.85 GPA.",
     skills: "JavaScript, HTML, CSS, SQL, C#, React, Gatsby, Next.js, React Native, Node.js, Express.js, MongoDB, Docker, Jest, PixiJS, WebGPU, Tailwind CSS, Flexbox, Grid, CSS animations (animeJS, ThreeJS), TypeScript (learning), Postman, Canvas, Git, Netlify, Vercel, Heroku, Figma, VS Code.",
     focus: "Building responsive, accessible web applications with a focus on front-end development and growing full-stack skills.",
     certifications: "freeCodeCamp: JavaScript Algorithms and Data Structures, Responsive Web Design, Foundational C# with Microsoft; LinkedIn: Creating Your Personal Brand, Getting Things Done, Interpersonal Communication, Professional Networking.",
@@ -202,7 +201,7 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
   }
 
   function shortSummaryBradleyAsWebDev(projects, codePens) {
-    return "I’m Bradley Matera, a Web Development student at Full Sail University, graduating in October 2025. I’ve been learning JavaScript, HTML, CSS, and tools like React, Node.js, and Tailwind CSS through my courses and self-study. I’ve worked on a few projects and CodePens, deploying them on platforms like GitHub Pages, Netlify, and Vercel, and I’m focused on building responsive, accessible web apps.";
+    return "Im brad, i’ve been learning JavaScript, HTML, CSS, along with tools like React, Node.js, and Tailwind CSS through my courses and self-study. I’ve worked on a few projects and CodePens, deploying them on platforms like GitHub Pages, Netlify, and Vercel.";
   }
 
   async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData) {
@@ -214,9 +213,11 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
     conversationHistory.push({ role: "user", message: userQuery });
 
     // Handle greetings like "hi" or "hello"
-    if (query === "hi" || query === "hello") {
-      reply = "Hey there! Nice to see you! I’m here to chat about my web dev projects and stuff I’ve been learning. What’s on your mind? You can ask about my projects, CodePens, or even something like 'Summarize Bradley as a web dev'.";
-      newTopic = "greeting";
+    if (query === "hi" || query === "hello" || query === "hey" || query === "yo" || query === "sup" || query === "howdy" || query === "greetings") {
+      reply = "Hey there! Nice to see you! I’m here to chat about my web dev projects and stuff I’ve been learning. What’s on your mind? You can ask about my projects, CodePens, or even something like 'Summarize Bradley as a web dev'."||
+      "<br><br>Just a heads up, I’m not a therapist or anything, but I’m happy to chat about my projects and what I’ve been learning. If you’re looking for something specific, just let me know! If you want to know more about me as a web dev, just ask for the 'full summary'!"
+      + "<br><br>And if you want to know more about my projects, just ask! I’m always up for a chat about coding and web dev stuff."
+      newTopic = "greeting" || "hello" || "hi" || "hey" || "yo" || "sup" || "howdy" || "greetings";
       conversationHistory.push({ role: "bot", message: reply });
     }
 
@@ -236,18 +237,29 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
     }
 
     else if (query.includes("github") && (query.includes("bradley") || query.includes("profile") || query.includes("url"))) {
-      reply = "My GitHub profile is at https://github.com/BradleyMatera. I’m a Web Development student at Full Sail University, and I’ve been learning a lot through my courses and on my own. You can check out my repositories there, like Interactive Pokedex and WebGPU Shapes Renderer, which show some of the JavaScript and deployment skills I’ve been working on with tools like Git, Netlify, Vercel, and Docker.";
+      reply = "You can check out my GitHub here: https://github.com/BradleyMatera. It’s where I share most of my personal and school projects. Repos like the Interactive Pokedex and WebGPU Shapes Renderer highlight some of my work with JavaScript, APIs, and deployment using tools like Git, Netlify, Vercel, and Docker.";
       newTopic = "github";
       conversationHistory.push({ role: "bot", message: reply });
     }
 
     else if (query.includes("linkedin") && (query.includes("bradley") || query.includes("profile") || query.includes("url"))) {
-      reply = "You can find my LinkedIn profile at https://www.linkedin.com/in/championingempatheticwebsolutionsthroughcode/. I’m a Web Development student at Full Sail University, graduating in October 2025, and I’ve been focusing on JavaScript, HTML, CSS, and tools like React and Node.js through my coursework. I also have certifications in JavaScript, C#, and responsive design from freeCodeCamp, plus some LinkedIn courses on personal branding and communication.";
+      reply = "Here’s my LinkedIn profile: https://www.linkedin.com/in/championingempatheticwebsolutionsthroughcode/. I’m working toward a bachelor’s degree with a focus on Web Development, graduating in October 2025. I’ve been learning and applying JavaScript, HTML, CSS, React, and Node.js, along with certifications in responsive design, C#, and JavaScript.";
       newTopic = "linkedin";
       conversationHistory.push({ role: "bot", message: reply });
     }
-
-    else {
+    // Handle project-specific queries
+    else if (query.includes("project") || query.includes("projects")) {
+      reply = "I’ve worked on a bunch of projects, including the Interactive Pokedex, WebGPU Shapes Renderer, and React Native Anime CRUD App. You can ask about any specific project or for a summary of my work!";
+      newTopic = "projects";
+      conversationHistory.push({ role: "bot", message: reply });
+    }
+    else if (query.includes("codepen") || query.includes("code pens")) {
+      reply = "I have several CodePen projects showcasing my front-end skills. You can ask about any specific CodePen project or for a summary of my work!";
+      newTopic = "codepens";
+      conversationHistory.push({ role: "bot", message: reply });
+    }
+    else if (query.includes("compare") || query.includes("versus") || query.includes("vs")) {
+    } else {
       for (const p of projects) {
         const projectNameLower = p.name.toLowerCase();
         if (query.includes(projectNameLower) || query.includes(projectNameLower.replace(" ", "")) || query.includes(projectNameLower.replace("_", ""))) {
@@ -389,7 +401,6 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
 const setupChatUI = (function() {
   function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData) {
     let lastQueryTopic = null;
-
     const chatDiv = document.createElement("div");
     chatDiv.id = "bradley-chat";
     chatDiv.style.position = "fixed";

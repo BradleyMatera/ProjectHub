@@ -8,7 +8,7 @@ function summarizeBradleyAsWebDev(projects, codePens) {
   const backEndTech = allTech.filter(tech => ["Node.js", "Express", "MongoDB"].includes(tech));
   const otherTech = allTech.filter(tech => ["Docker", "Jest", "GitHub", "Netlify", "Vercel", "GitHub Pages"].includes(tech));
 
-  let summary = "Bradley Matera is a versatile and growth-oriented web developer with a strong foundation in front-end development and a growing expertise in full-stack technologies. ";
+  let summary = "Bradley Matera is a versatile and growth-oriented developer with a strong foundation in front-end development and a growing expertise in full-stack technologies. ";
   summary += `He has worked on ${projectCount} projects and ${codePenCount} CodePen projects, showcasing a diverse skill set across multiple platforms: ${platforms.join(", ")}.<br><br>`;
 
   if (frontEndTech.length > 0) {
