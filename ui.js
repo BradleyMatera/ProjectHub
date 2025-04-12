@@ -8,7 +8,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   chatDiv.style.position = "fixed";
   chatDiv.style.bottom = "20px";
   chatDiv.style.right = "20px";
-  chatDiv.style.width = "px";
+  chatDiv.style.width = "400px";
   chatDiv.style.background = "#333";
   chatDiv.style.borderRadius = "10px";
   chatDiv.style.padding = "15px";
