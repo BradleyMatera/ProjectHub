@@ -189,14 +189,26 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
     const platforms = [...new Set(projects.map(p => p.platform))];
     const projectCount = projects.length;
     const codePenCount = codePens.length;
+    const frontEndTech = allTech.filter(tech => ["HTML", "CSS", "JavaScript", "React", "React Native", "Tailwind CSS", "PixiJS", "WebGPU"].includes(tech));
+    const backEndTech = allTech.filter(tech => ["Node.js", "Express", "MongoDB"].includes(tech));
+    const otherTech = allTech.filter(tech => ["Docker", "Jest", "GitHub", "Netlify", "Vercel", "GitHub Pages"].includes(tech));
 
-    let summary = "Hey, I’m Bradley Matera, a Web Development student at Full Sail University since August 2023, working towards my B.S. with a 3.85 GPA—I’ll be graduating in October 2025. I’ve been learning web dev through my courses and on my own, mostly focusing on JavaScript, HTML, CSS, SQL, and C#. I’ve also gotten some experience with React, Gatsby, Next.js, React Native, Node.js, Express.js, MongoDB, Docker, Jest, PixiJS, WebGPU, and Tailwind CSS through school projects.<br><br>";
+    let summary = "Bradley Matera is a versatile and growth-oriented developer with a strong foundation in front-end development and a growing expertise in full-stack technologies. ";
+    summary += `He has worked on ${projectCount} projects and ${codePenCount} CodePen projects, showcasing a diverse skill set across multiple platforms: ${platforms.join(", ")}.<br><br>`;
 
-    summary += "So far, I’ve worked on " + projectCount + " projects and " + codePenCount + " CodePen projects, which I’ve deployed on platforms like " + platforms.join(", ") + " using tools like Git, Netlify, Vercel, Heroku, and Docker. For example, my Interactive Pokedex project uses HTML, Tailwind CSS, and JavaScript to pull data from Pokemon APIs, and my WebGPU Shapes Renderer plays around with WebGPU for rendering shapes on a canvas.<br><br>";
+    if (frontEndTech.length > 0) {
+      summary += `<strong>Front-End Development:</strong><br>- Uses technologies like ${frontEndTech.join(", ")} to create engaging, user-friendly interfaces.<br>- For example, his Interactive Pokedex integrates Pokémon APIs for a dynamic experience, and WebGPU Shapes Renderer experiments with cutting-edge WebGPU for high-performance graphics.<br><br>`;
+    }
 
-    summary += "I’m pretty comfortable styling with Tailwind CSS, Flexbox, and Grid, and I try to keep accessibility in mind by following ADA requirements. On the back-end, I’ve built a few RESTful APIs with Node.js and Express.js, connecting them to MongoDB or MySQL databases—like in my RESTful Routes Using ExpressJS project. I’ve also used Jest for unit testing, like in my CheeseMath Jest Tests project, and I’ve explored tools like PixiJS for real-time graphics, WebGPU for rendering, Postman for API testing, and Canvas for data visualizations. Some other projects I’ve done include interactive soundboards, Markdown previewers, quote generators, and bar chart visualizations.<br><br>";
+    if (backEndTech.length > 0) {
+      summary += `<strong>Back-End Development:</strong><br>- Has explored back-end development with ${backEndTech.join(", ")}.<br>- Projects like React Native Anime CRUD App use Node.js and MongoDB, and RESTful Routes Using ExpressJS is a RESTful API.<br><br>`;
+    }
 
-    summary += "I’ve earned a few certifications from freeCodeCamp, like JavaScript Algorithms and Data Structures, Responsive Web Design, and Foundational C# with Microsoft, plus some LinkedIn courses on personal branding, productivity, and communication. I’m still figuring things out as a developer, but I’m really passionate about coding and trying out new tech, and I’m always looking to get better.";
+    if (otherTech.length > 0) {
+      summary += `<strong>Modern Tools and Practices:</strong><br>- Leverages tools like ${otherTech.join(", ")}.<br>- Shows a focus on testing (Jest in CheeseMath Jest Tests), containerization (Docker in Docker Multilang Project), and deployment across various platforms.<br><br>`;
+    }
+
+    summary += `<strong>Learning and Experimentation:</strong><br>- His CodePens, like React Calculator and Markdown Previewer, highlight a hands-on learning approach, covering React, JavaScript fundamentals, and practical applications.<br>- Overall, Bradley is a developer who balances creativity, technical skill, and user-focused design, with potential to deepen his back-end expertise.`;
     return summary;
   }
 
@@ -214,10 +226,10 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
 
     // Handle greetings like "hi" or "hello"
     if (query === "hi" || query === "hello" || query === "hey" || query === "yo" || query === "sup" || query === "howdy" || query === "greetings") {
-      reply = "Hey there! Nice to see you! I’m here to chat about my web dev projects and stuff I’ve been learning. What’s on your mind? You can ask about my projects, CodePens, or even something like 'Summarize Bradley as a web dev'."||
-      "<br><br>Just a heads up, I’m not a therapist or anything, but I’m happy to chat about my projects and what I’ve been learning. If you’re looking for something specific, just let me know! If you want to know more about me as a web dev, just ask for the 'full summary'!"
-      + "<br><br>And if you want to know more about my projects, just ask! I’m always up for a chat about coding and web dev stuff."
-      newTopic = "greeting" || "hello" || "hi" || "hey" || "yo" || "sup" || "howdy" || "greetings";
+      reply = "Hey there! Nice to see you! I’m here to chat about my web dev projects and stuff I’ve been learning. What’s on your mind? You can ask about my projects, CodePens, or even something like 'Summarize Bradley as a web dev'." +
+      "<br><br>Just a heads up, I’m not a therapist or anything, but I’m happy to chat about my projects and what I’ve been learning. If you’re looking for something specific, just let me know! If you want to know more about me as a web dev, just ask for the 'full summary'!" +
+      "<br><br>And if you want to know more about my projects, just ask! I’m always up for a chat about coding and web dev stuff.";
+      newTopic = "greeting";
       conversationHistory.push({ role: "bot", message: reply });
     }
 
@@ -247,101 +259,127 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
       newTopic = "linkedin";
       conversationHistory.push({ role: "bot", message: reply });
     }
-    // Handle project-specific queries
-    else if (query.includes("project") || query.includes("projects")) {
-      reply = "I’ve worked on a bunch of projects, including the Interactive Pokedex, WebGPU Shapes Renderer, and React Native Anime CRUD App. You can ask about any specific project or for a summary of my work!";
-      newTopic = "projects";
-      conversationHistory.push({ role: "bot", message: reply });
-    }
-    else if (query.includes("codepen") || query.includes("code pens")) {
-      reply = "I have several CodePen projects showcasing my front-end skills. You can ask about any specific CodePen project or for a summary of my work!";
-      newTopic = "codepens";
-      conversationHistory.push({ role: "bot", message: reply });
-    }
-    else if (query.includes("compare") || query.includes("versus") || query.includes("vs")) {
-    } else {
-      for (const p of projects) {
-        const projectNameLower = p.name.toLowerCase();
-        if (query.includes(projectNameLower) || query.includes(projectNameLower.replace(" ", "")) || query.includes(projectNameLower.replace("_", ""))) {
-          const githubData = await fetchGitHubRepoData(p.repo);
-          reply = `${p.name}: ${p.desc} It’s hosted on ${p.platform}${p.url !== p.repo ? ` (${p.url})` : ""}. Source: ${p.repo} (Stars: ${githubData.stars}, Last Commit: ${githubData.lastCommit}). Tech used: ${p.tech.join(", ")}.`;
-          newTopic = "project";
-          conversationHistory.push({ role: "bot", message: reply });
-          break;
-        }
-      }
 
-      if (!reply) {
-        for (const cp of codePens) {
-          const codePenNameLower = cp.name.toLowerCase();
-          if (query.includes(codePenNameLower) || query.includes(codePenNameLower.replace(" ", ""))) {
-            reply = `${cp.name}: A CodePen project I worked on as part of my learning. Check it out here: ${cp.url}.`;
-            newTopic = "codepen";
-            conversationHistory.push({ role: "bot", message: reply });
-            break;
-          }
-        }
-      }
-
-      if (!reply) {
-        const platforms = [...new Set(projects.map(p => p.platform.toLowerCase()))];
-        for (const platform of platforms) {
-          if (query.includes(platform)) {
-            const platformProjects = projects.filter(p => p.platform.toLowerCase() === platform);
-            reply = `I have ${platformProjects.length} project(s) on ${platform}: ${platformProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
-            if (platform === "github" && query.includes("codepen")) {
-              reply += ` I also have ${codePens.length} CodePen projects: ${codePens.map(cp => cp.name).join(", ")}.`;
-            }
-            newTopic = "platform";
-            conversationHistory.push({ role: "bot", message: reply });
-            break;
-          }
-        }
-      }
-
-      if (!reply) {
-        const techs = [...new Set(projects.flatMap(p => p.tech.map(t => t.toLowerCase())))];
-        for (const tech of techs) {
-          if (query.includes(tech)) {
-            const techProjects = projects.filter(p => p.tech.map(t => t.toLowerCase()).includes(tech));
-            reply = `I’ve used ${tech} in ${techProjects.length} project(s): ${techProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
-            newTopic = "tech";
-            conversationHistory.push({ role: "bot", message: reply });
-            break;
-          }
-        }
-      }
-
-      if (!reply && (query.includes("list") || query.includes("all"))) {
-        if (query.includes("codepen")) {
-          reply = `Here are my CodePen projects: ${codePens.map(cp => cp.name).join(", ")}. Ask about a specific one for more details!`;
-          newTopic = "codepen";
+    else {
+      // Handle "What projects use React?" or "React projects"
+      if (query.includes("what projects use react") || query.includes("react projects")) {
+        const reactProjects = projects.filter(p => p.tech.includes("React") || p.tech.includes("React Native"));
+        if (reactProjects.length > 0) {
+          reply = `I’ve used React in ${reactProjects.length} project(s): ${reactProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
         } else {
-          reply = `Here are my projects: ${projects.map(p => p.name).join(", ")}. I also have ${codePens.length} CodePen projects—ask about those too!`;
-          newTopic = "projects";
+          reply = "I don’t have any projects using React right now, but I’m working on some! You can ask about other projects or tech I’ve used.";
         }
+        newTopic = "tech";
         conversationHistory.push({ role: "bot", message: reply });
       }
 
-      if (!reply && query.includes("compare")) {
-        const projectNames = projects.map(p => p.name.toLowerCase());
-        const matches = projectNames.filter(name => query.includes(name));
-        if (matches.length >= 2) {
-          const p1 = projects.find(p => p.name.toLowerCase() === matches[0]);
-          const p2 = projects.find(p => p.name.toLowerCase() === matches[1]);
-          reply = `Comparing ${p1.name} and ${p2.name}:\n- ${p1.name}: ${p1.desc} It uses ${p1.tech.join(", ")} and is on ${p1.platform}.\n- ${p2.name}: ${p2.desc} It uses ${p2.tech.join(", ")} and is on ${p2.platform}.\nCommon tech: ${p1.tech.filter(t => p2.tech.includes(t)).join(", ") || "None"}.`;
-          newTopic = "compare";
+      // Handle "List all CodePens" and "List all projects"
+      else if (query.includes("codepen") || query.includes("code pens") || query.includes("list all codepens")) {
+        reply = `Here are my CodePen projects: ${codePens.map(cp => cp.name).join(", ")}. Ask about a specific one for more details!`;
+        newTopic = "codepens";
+        conversationHistory.push({ role: "bot", message: reply });
+      }
+
+      else if (query.includes("project") || query.includes("projects") || query.includes("list all projects")) {
+        reply = `Here are my projects: ${projects.map(p => p.name).join(", ")}. Want details on a specific one?`;
+        newTopic = "projects";
+        conversationHistory.push({ role: "bot", message: reply });
+      }
+
+      // Handle project-specific queries
+      else {
+        for (const p of projects) {
+          const projectNameLower = p.name.toLowerCase();
+          if (query.includes(projectNameLower) || query.includes(projectNameLower.replace(" ", "")) || query.includes(projectNameLower.replace("_", ""))) {
+            const githubData = await fetchGitHubRepoData(p.repo);
+            reply = `${p.name}: ${p.desc} It’s hosted on ${p.platform}${p.url !== p.repo ? ` (${p.url})` : ""}. Source: ${p.repo} (Stars: ${githubData.stars}, Last Commit: ${githubData.lastCommit}). Tech used: ${p.tech.join(", ")}.`;
+            newTopic = "project";
+            conversationHistory.push({ role: "bot", message: reply });
+            break;
+          }
+        }
+
+        if (!reply) {
+          for (const cp of codePens) {
+            const codePenNameLower = cp.name.toLowerCase();
+            if (query.includes(codePenNameLower) || query.includes(codePenNameLower.replace(" ", ""))) {
+              reply = `${cp.name}: A CodePen project I worked on as part of my learning. Check it out here: ${cp.url}.`;
+              newTopic = "codepen";
+              conversationHistory.push({ role: "bot", message: reply });
+              break;
+            }
+          }
+        }
+
+        if (!reply) {
+          const platforms = [...new Set(projects.map(p => p.platform.toLowerCase()))];
+          for (const platform of platforms) {
+            if (query.includes(platform)) {
+              const platformProjects = projects.filter(p => p.platform.toLowerCase() === platform);
+              reply = `I have ${platformProjects.length} project(s) on ${platform}: ${platformProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
+              if (platform === "github" && query.includes("codepen")) {
+                reply += ` I also have ${codePens.length} CodePen projects: ${codePens.map(cp => cp.name).join(", ")}.`;
+              }
+              newTopic = "platform";
+              conversationHistory.push({ role: "bot", message: reply });
+              break;
+            }
+          }
+        }
+
+        if (!reply) {
+          const techs = [...new Set(projects.flatMap(p => p.tech.map(t => t.toLowerCase())))];
+          for (const tech of techs) {
+            if (query.includes(tech)) {
+              const techProjects = projects.filter(p => p.tech.map(t => t.toLowerCase()).includes(tech));
+              reply = `I’ve used ${tech} in ${techProjects.length} project(s): ${techProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
+              newTopic = "tech";
+              conversationHistory.push({ role: "bot", message: reply });
+              break;
+            }
+          }
+        }
+
+        if (!reply && (query.includes("list") || query.includes("all"))) {
+          if (query.includes("codepen")) {
+            reply = `Here are my CodePen projects: ${codePens.map(cp => cp.name).join(", ")}. Ask about a specific one for more details!`;
+            newTopic = "codepen";
+          } else {
+            reply = `Here are my projects: ${projects.map(p => p.name).join(", ")}. I also have ${codePens.length} CodePen projects—ask about those too!`;
+            newTopic = "projects";
+          }
           conversationHistory.push({ role: "bot", message: reply });
         }
-      }
 
-      if (!reply && query.includes("most stars")) {
-        const projectData = await fetchAllGitHubData(projects);
-        const sortedProjects = projectData.sort((a, b) => b.githubData.stars - a.githubData.stars);
-        const topProject = sortedProjects[0];
-        reply = `The project with the most stars is ${topProject.name} with ${topProject.githubData.stars} stars. It’s hosted on ${topProject.platform}${topProject.url !== topProject.repo ? ` (${topProject.url})` : ""}. Source: ${topProject.repo}.`;
-        newTopic = "stars";
-        conversationHistory.push({ role: "bot", message: reply });
+        // Handle "List 3 random CodePens"
+        if (!reply && (query.includes("list 3 random code pens") || query.includes("list 3 random codepens"))) {
+          const shuffledCodePens = [...codePens].sort(() => Math.random() - 0.5);
+          const randomCodePens = shuffledCodePens.slice(0, 3);
+          reply = `Here are 3 random CodePen projects: ${randomCodePens.map(cp => cp.name).join(", ")}. Want to know more about one of them?`;
+          newTopic = "codepens";
+          conversationHistory.push({ role: "bot", message: reply });
+        }
+
+        if (!reply && query.includes("compare")) {
+          const projectNames = projects.map(p => p.name.toLowerCase());
+          const matches = projectNames.filter(name => query.includes(name));
+          if (matches.length >= 2) {
+            const p1 = projects.find(p => p.name.toLowerCase() === matches[0]);
+            const p2 = projects.find(p => p.name.toLowerCase() === matches[1]);
+            reply = `Comparing ${p1.name} and ${p2.name}:\n- ${p1.name}: ${p1.desc} It uses ${p1.tech.join(", ")} and is on ${p1.platform}.\n- ${p2.name}: ${p2.desc} It uses ${p2.tech.join(", ")} and is on ${p2.platform}.\nCommon tech: ${p1.tech.filter(t => p2.tech.includes(t)).join(", ") || "None"}.`;
+            newTopic = "compare";
+            conversationHistory.push({ role: "bot", message: reply });
+          }
+        }
+
+        if (!reply && query.includes("most stars")) {
+          const projectData = await fetchAllGitHubData(projects);
+          const sortedProjects = projectData.sort((a, b) => b.githubData.stars - a.githubData.stars);
+          const topProject = sortedProjects[0];
+          reply = `The project with the most stars is ${topProject.name} with ${topProject.githubData.stars} stars. It’s hosted on ${topProject.platform}${topProject.url !== topProject.repo ? ` (${topProject.url})` : ""}. Source: ${topProject.repo}.`;
+          newTopic = "stars";
+          conversationHistory.push({ role: "bot", message: reply });
+        }
       }
     }
 
