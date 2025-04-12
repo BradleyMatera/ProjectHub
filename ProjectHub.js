@@ -307,6 +307,19 @@ const setupChatUI = (function() {
     chatDiv.style.fontFamily = "Arial, sans-serif";
     chatDiv.style.fontSize = "16px";
     chatDiv.style.zIndex = "1000";
+    chatDiv.style.display = "none"; // Initially hidden
+    chatDiv.style.transition = "all 0.3s ease";
+    chatDiv.style.opacity = "0.9";
+    chatDiv.style.overflow = "hidden";
+    chatDiv.style.border = "1px solid #3498db";
+    chatDiv.style.borderRadius = "10px";
+    chatDiv.style.background = "linear-gradient(135deg, #1a1a1a, #2b2b2b)";
+    chatDiv.style.boxSizing = "border-box";
+    chatDiv.style.padding = "20px";
+    chatDiv.style.maxHeight = "80vh";
+    chatDiv.style.overflowY = "auto";
+    chatDiv.style.overflowX = "hidden";
+
 
     const chatHeader = document.createElement("div");
     chatHeader.style.marginBottom = "10px";
