@@ -334,7 +334,7 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
     }
 
     // Handle all other queries with the external AI
-    if (!reply || reply.includes("I’m not sure")) {
+    if (!reply) {
       try {
         const prompt = `
           You are a friendly, conversational chat bot representing Bradley Matera, a Web Development student at Full Sail University. Respond in a natural, casual tone as if you were Bradley speaking directly to the user. Use "I" to refer to Bradley. Here’s some context about me:
@@ -395,7 +395,7 @@ const setupChatUI = (function() {
     chatDiv.style.position = "fixed";
     chatDiv.style.bottom = "20px";
     chatDiv.style.right = "20px";
-    chatDiv.style.width = "400px";
+    chatDiv.style.width = "600px"; // Increased width from 400px to 600px
     chatDiv.style.background = "#333";
     chatDiv.style.borderRadius = "10px";
     chatDiv.style.padding = "15px";
