@@ -153,13 +153,14 @@ const { fetchGitHubRepoData, fetchAllGitHubData } = (function() {
 })();
 
 // Import logic
-const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (function() {
+const { handleQuery } = (function() {
   // Store conversation history
   let conversationHistory = [];
 
   // Bradley's bio data to pass to the AI
   const bradleyBio = {
     name: "Bradley Matera",
+    education: "B.S. Web Development student at Full Sail University, started August 2023, graduating October 2025, 3.85 GPA.",
     skills: "JavaScript, HTML, CSS, SQL, C#, React, Gatsby, Next.js, React Native, Node.js, Express.js, MongoDB, Docker, Jest, PixiJS, WebGPU, Tailwind CSS, Flexbox, Grid, CSS animations (animeJS, ThreeJS), TypeScript (learning), Postman, Canvas, Git, Netlify, Vercel, Heroku, Figma, VS Code.",
     focus: "Building responsive, accessible web applications with a focus on front-end development and growing full-stack skills.",
     certifications: "freeCodeCamp: JavaScript Algorithms and Data Structures, Responsive Web Design, Foundational C# with Microsoft; LinkedIn: Creating Your Personal Brand, Getting Things Done, Interpersonal Communication, Professional Networking.",
@@ -181,40 +182,10 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
       { role: "Roof Loader", organization: "Stoneway Roofing Supply", duration: "2018 - 2019", desc: "Supported construction projects, emphasizing safety, teamwork, and efficient time management." },
       { role: "General Contracting/Construction", organization: "Ascend Roofing Company LLC", duration: "2017 - Aug 2018", desc: "Delivered exceptional customer service and community engagement in a fast-paced construction environment." },
       { role: "Healthcare Specialist", organization: "US Army", duration: "Jun 2011 - Apr 2014", desc: "Provided critical healthcare services, including physical examinations, medication administration, and medical procedure support." }
-    ]
+    ],
+    github: "https://github.com/BradleyMatera",
+    linkedin: "https://www.linkedin.com/in/championingempatheticwebsolutionsthroughcode/"
   };
-
-  function summarizeBradleyAsWebDev(projects, codePens) {
-    const allTech = [...new Set(projects.flatMap(p => p.tech))];
-    const platforms = [...new Set(projects.map(p => p.platform))];
-    const projectCount = projects.length;
-    const codePenCount = codePens.length;
-    const frontEndTech = allTech.filter(tech => ["HTML", "CSS", "JavaScript", "React", "React Native", "Tailwind CSS", "PixiJS", "WebGPU"].includes(tech));
-    const backEndTech = allTech.filter(tech => ["Node.js", "Express", "MongoDB"].includes(tech));
-    const otherTech = allTech.filter(tech => ["Docker", "Jest", "GitHub", "Netlify", "Vercel", "GitHub Pages"].includes(tech));
-
-    let summary = "Bradley Matera is a versatile and growth-oriented developer with a strong foundation in front-end development and a growing expertise in full-stack technologies. ";
-    summary += `He has worked on ${projectCount} projects and ${codePenCount} CodePen projects, showcasing a diverse skill set across multiple platforms: ${platforms.join(", ")}.<br><br>`;
-
-    if (frontEndTech.length > 0) {
-      summary += `<strong>Front-End Development:</strong><br>- Uses technologies like ${frontEndTech.join(", ")} to create engaging, user-friendly interfaces.<br>- For example, his Interactive Pokedex integrates Pokémon APIs for a dynamic experience, and WebGPU Shapes Renderer experiments with cutting-edge WebGPU for high-performance graphics.<br><br>`;
-    }
-
-    if (backEndTech.length > 0) {
-      summary += `<strong>Back-End Development:</strong><br>- Has explored back-end development with ${backEndTech.join(", ")}.<br>- Projects like React Native Anime CRUD App use Node.js and MongoDB, and RESTful Routes Using ExpressJS is a RESTful API.<br><br>`;
-    }
-
-    if (otherTech.length > 0) {
-      summary += `<strong>Modern Tools and Practices:</strong><br>- Leverages tools like ${otherTech.join(", ")}.<br>- Shows a focus on testing (Jest in CheeseMath Jest Tests), containerization (Docker in Docker Multilang Project), and deployment across various platforms.<br><br>`;
-    }
-
-    summary += `<strong>Learning and Experimentation:</strong><br>- His CodePens, like React Calculator and Markdown Previewer, highlight a hands-on learning approach, covering React, JavaScript fundamentals, and practical applications.<br>- Overall, Bradley is a developer who balances creativity, technical skill, and user-focused design, with potential to deepen his back-end expertise.`;
-    return summary;
-  }
-
-  function shortSummaryBradleyAsWebDev(projects, codePens) {
-    return "Im brad, i’ve been learning JavaScript, HTML, CSS, along with tools like React, Node.js, and Tailwind CSS through my courses and self-study. I’ve worked on a few projects and CodePens, deploying them on platforms like GitHub Pages, Netlify, and Vercel.";
-  }
 
   async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData) {
     const query = userQuery.toLowerCase();
@@ -224,184 +195,67 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
     // Add the current query to conversation history
     conversationHistory.push({ role: "user", message: userQuery });
 
-    // Handle greetings like "hi" or "hello"
+    // Base prompt structure for all queries
+    const basePrompt = `
+      You are a friendly, conversational chat bot representing Bradley Matera, a Web Development student at Full Sail University. Respond in a natural, casual tone as if you were Bradley speaking directly to the user. Use "I" to refer to Bradley. Here’s some context about me:
+
+      **Bio**: I’m Bradley Matera, a Web Development student at Full Sail University since August 2023, working towards my B.S. with a 3.85 GPA—I’ll be graduating in October 2025. I’ve been learning web dev through my courses and on my own, mostly focusing on JavaScript, HTML, CSS, SQL, and C#. I’ve also gotten some experience with React, Gatsby, Next.js, React Native, Node.js, Express.js, MongoDB, Docker, Jest, PixiJS, WebGPU, and Tailwind CSS through school projects. I’m comfortable styling with Tailwind CSS, Flexbox, and Grid, and I focus on accessibility by following ADA requirements. I’m still figuring things out as a developer, but I’m really passionate about coding and trying out new tech, and I’m always looking to get better.
+
+      **Certifications**: I’ve earned certifications from freeCodeCamp in JavaScript Algorithms and Data Structures, Responsive Web Design, and Foundational C# with Microsoft, plus LinkedIn courses on personal branding, productivity, and communication.
+
+      **Projects**: ${JSON.stringify(projects)}
+      **CodePens**: ${JSON.stringify(codePens)}
+      **Experience**: ${JSON.stringify(bradleyBio.experience)}
+      **GitHub**: ${bradleyBio.github}
+      **LinkedIn**: ${bradleyBio.linkedin}
+
+      **Conversation History**: ${JSON.stringify(conversationHistory)}
+    `;
+
+    // Handle greetings
     if (query === "hi" || query === "hello" || query === "hey" || query === "yo" || query === "sup" || query === "howdy" || query === "greetings") {
-      reply = "Hey there! Nice to see you! I’m here to chat about my web dev projects and stuff I’ve been learning. What’s on your mind? You can ask about my projects, CodePens, or even something like 'Summarize Bradley as a web dev'." +
-      "<br><br>Just a heads up, I’m not a therapist or anything, but I’m happy to chat about my projects and what I’ve been learning. If you’re looking for something specific, just let me know! If you want to know more about me as a web dev, just ask for the 'full summary'!" +
-      "<br><br>And if you want to know more about my projects, just ask! I’m always up for a chat about coding and web dev stuff.";
-      newTopic = "greeting";
-      conversationHistory.push({ role: "bot", message: reply });
-    }
-
-    // Handle summary requests
-    else if (query.includes("bradley") && (query.includes("web dev") || query.includes("developer") || query.includes("summarize")) || (query.includes("full") && lastQueryTopic === "summary")) {
-      if ((query.includes("full") && lastQueryTopic === "summary") || (query.includes("full summary"))) {
-        reply = summarizeBradleyAsWebDev(projects, codePens);
-        newTopic = "summary";
-      } else if (query.includes("short") || query.includes("paragraph")) {
-        reply = shortSummaryBradleyAsWebDev(projects, codePens);
-        newTopic = "summary";
-      } else {
-        reply = shortSummaryBradleyAsWebDev(projects, codePens) + " Want to know more? Just ask for the 'full summary'!";
-        newTopic = "summary";
-      }
-      conversationHistory.push({ role: "bot", message: reply });
-    }
-
-    else if (query.includes("github") && (query.includes("bradley") || query.includes("profile") || query.includes("url"))) {
-      reply = "You can check out my GitHub here: https://github.com/BradleyMatera. It’s where I share most of my personal and school projects. Repos like the Interactive Pokedex and WebGPU Shapes Renderer highlight some of my work with JavaScript, APIs, and deployment using tools like Git, Netlify, Vercel, and Docker.";
-      newTopic = "github";
-      conversationHistory.push({ role: "bot", message: reply });
-    }
-
-    else if (query.includes("linkedin") && (query.includes("bradley") || query.includes("profile") || query.includes("url"))) {
-      reply = "Here’s my LinkedIn profile: https://www.linkedin.com/in/championingempatheticwebsolutionsthroughcode/. I’m working toward a bachelor’s degree with a focus on Web Development, graduating in October 2025. I’ve been learning and applying JavaScript, HTML, CSS, React, and Node.js, along with certifications in responsive design, C#, and JavaScript.";
-      newTopic = "linkedin";
-      conversationHistory.push({ role: "bot", message: reply });
-    }
-
-    else {
-      // Handle "What projects use React?" or "React projects"
-      if (query.includes("what projects use react") || query.includes("react projects")) {
-        const reactProjects = projects.filter(p => p.tech.includes("React") || p.tech.includes("React Native"));
-        if (reactProjects.length > 0) {
-          reply = `I’ve used React in ${reactProjects.length} project(s): ${reactProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
-        } else {
-          reply = "I don’t have any projects using React right now, but I’m working on some! You can ask about other projects or tech I’ve used.";
-        }
-        newTopic = "tech";
-        conversationHistory.push({ role: "bot", message: reply });
-      }
-
-      // Handle "List all CodePens" and "List all projects"
-      else if (query.includes("codepen") || query.includes("code pens") || query.includes("list all codepens")) {
-        reply = `Here are my CodePen projects: ${codePens.map(cp => cp.name).join(", ")}. Ask about a specific one for more details!`;
-        newTopic = "codepens";
-        conversationHistory.push({ role: "bot", message: reply });
-      }
-
-      else if (query.includes("project") || query.includes("projects") || query.includes("list all projects")) {
-        reply = `Here are my projects: ${projects.map(p => p.name).join(", ")}. Want details on a specific one?`;
-        newTopic = "projects";
-        conversationHistory.push({ role: "bot", message: reply });
-      }
-
-      // Handle project-specific queries
-      else {
-        for (const p of projects) {
-          const projectNameLower = p.name.toLowerCase();
-          if (query.includes(projectNameLower) || query.includes(projectNameLower.replace(" ", "")) || query.includes(projectNameLower.replace("_", ""))) {
-            const githubData = await fetchGitHubRepoData(p.repo);
-            reply = `${p.name}: ${p.desc} It’s hosted on ${p.platform}${p.url !== p.repo ? ` (${p.url})` : ""}. Source: ${p.repo} (Stars: ${githubData.stars}, Last Commit: ${githubData.lastCommit}). Tech used: ${p.tech.join(", ")}.`;
-            newTopic = "project";
-            conversationHistory.push({ role: "bot", message: reply });
-            break;
-          }
-        }
-
-        if (!reply) {
-          for (const cp of codePens) {
-            const codePenNameLower = cp.name.toLowerCase();
-            if (query.includes(codePenNameLower) || query.includes(codePenNameLower.replace(" ", ""))) {
-              reply = `${cp.name}: A CodePen project I worked on as part of my learning. Check it out here: ${cp.url}.`;
-              newTopic = "codepen";
-              conversationHistory.push({ role: "bot", message: reply });
-              break;
-            }
-          }
-        }
-
-        if (!reply) {
-          const platforms = [...new Set(projects.map(p => p.platform.toLowerCase()))];
-          for (const platform of platforms) {
-            if (query.includes(platform)) {
-              const platformProjects = projects.filter(p => p.platform.toLowerCase() === platform);
-              reply = `I have ${platformProjects.length} project(s) on ${platform}: ${platformProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
-              if (platform === "github" && query.includes("codepen")) {
-                reply += ` I also have ${codePens.length} CodePen projects: ${codePens.map(cp => cp.name).join(", ")}.`;
-              }
-              newTopic = "platform";
-              conversationHistory.push({ role: "bot", message: reply });
-              break;
-            }
-          }
-        }
-
-        if (!reply) {
-          const techs = [...new Set(projects.flatMap(p => p.tech.map(t => t.toLowerCase())))];
-          for (const tech of techs) {
-            if (query.includes(tech)) {
-              const techProjects = projects.filter(p => p.tech.map(t => t.toLowerCase()).includes(tech));
-              reply = `I’ve used ${tech} in ${techProjects.length} project(s): ${techProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
-              newTopic = "tech";
-              conversationHistory.push({ role: "bot", message: reply });
-              break;
-            }
-          }
-        }
-
-        if (!reply && (query.includes("list") || query.includes("all"))) {
-          if (query.includes("codepen")) {
-            reply = `Here are my CodePen projects: ${codePens.map(cp => cp.name).join(", ")}. Ask about a specific one for more details!`;
-            newTopic = "codepen";
-          } else {
-            reply = `Here are my projects: ${projects.map(p => p.name).join(", ")}. I also have ${codePens.length} CodePen projects—ask about those too!`;
-            newTopic = "projects";
-          }
-          conversationHistory.push({ role: "bot", message: reply });
-        }
-
-        // Handle "List 3 random CodePens"
-        if (!reply && (query.includes("list 3 random code pens") || query.includes("list 3 random codepens"))) {
-          const shuffledCodePens = [...codePens].sort(() => Math.random() - 0.5);
-          const randomCodePens = shuffledCodePens.slice(0, 3);
-          reply = `Here are 3 random CodePen projects: ${randomCodePens.map(cp => cp.name).join(", ")}. Want to know more about one of them?`;
-          newTopic = "codepens";
-          conversationHistory.push({ role: "bot", message: reply });
-        }
-
-        if (!reply && query.includes("compare")) {
-          const projectNames = projects.map(p => p.name.toLowerCase());
-          const matches = projectNames.filter(name => query.includes(name));
-          if (matches.length >= 2) {
-            const p1 = projects.find(p => p.name.toLowerCase() === matches[0]);
-            const p2 = projects.find(p => p.name.toLowerCase() === matches[1]);
-            reply = `Comparing ${p1.name} and ${p2.name}:\n- ${p1.name}: ${p1.desc} It uses ${p1.tech.join(", ")} and is on ${p1.platform}.\n- ${p2.name}: ${p2.desc} It uses ${p2.tech.join(", ")} and is on ${p2.platform}.\nCommon tech: ${p1.tech.filter(t => p2.tech.includes(t)).join(", ") || "None"}.`;
-            newTopic = "compare";
-            conversationHistory.push({ role: "bot", message: reply });
-          }
-        }
-
-        if (!reply && query.includes("most stars")) {
-          const projectData = await fetchAllGitHubData(projects);
-          const sortedProjects = projectData.sort((a, b) => b.githubData.stars - a.githubData.stars);
-          const topProject = sortedProjects[0];
-          reply = `The project with the most stars is ${topProject.name} with ${topProject.githubData.stars} stars. It’s hosted on ${topProject.platform}${topProject.url !== topProject.repo ? ` (${topProject.url})` : ""}. Source: ${topProject.repo}.`;
-          newTopic = "stars";
-          conversationHistory.push({ role: "bot", message: reply });
-        }
-      }
-    }
-
-    // Handle all other queries with the external AI
-    if (!reply) {
+      const prompt = `
+        ${basePrompt}
+        The user said: "${userQuery}". Respond with a friendly greeting as Bradley, welcoming them to chat about your web dev projects and skills. Suggest they ask about your projects, CodePens, or a summary of you as a web dev, and mention they can ask for a 'full summary' for more details.
+      `;
       try {
-        const prompt = `
-          You are a friendly, conversational chat bot representing Bradley Matera, a Web Development student at Full Sail University. Respond in a natural, casual tone as if you were Bradley speaking directly to the user. Use "I" to refer to Bradley. Here’s some context about me:
+        const res = await fetch("https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: prompt })
+        });
+        const data = await res.json();
+        if (data.reply) {
+          reply = data.reply;
+          newTopic = "greeting";
+          conversationHistory.push({ role: "bot", message: reply });
+        }
+      } catch (error) {
+        reply = "Hey there! Nice to see you! I’m here to chat about my web dev projects and stuff I’ve been learning. What’s on your mind? You can ask about my projects, CodePens, or even something like 'Summarize Bradley as a web dev'.";
+        newTopic = "greeting";
+        conversationHistory.push({ role: "bot", message: reply });
+      }
+    }
 
-          **Bio**: I’m Bradley Matera, a Web Development student at Full Sail University since August 2023, working towards my B.S. with a 3.85 GPA—I’ll be graduating in October 2025. I’ve been learning web dev through my courses and on my own, mostly focusing on JavaScript, HTML, CSS, SQL, and C#. I’ve also gotten some experience with React, Gatsby, Next.js, React Native, Node.js, Express.js, MongoDB, Docker, Jest, PixiJS, WebGPU, and Tailwind CSS through school projects. I’m comfortable styling with Tailwind CSS, Flexbox, and Grid, and I focus on accessibility by following ADA requirements. I’m still figuring things out as a developer, but I’m really passionate about coding and trying out new tech, and I’m always looking to get better.
+    // Handle all other queries with a dynamic prompt
+    else {
+      const prompt = `
+        ${basePrompt}
+        The user asked: "${userQuery}". Respond naturally as Bradley, keeping the tone casual and conversational. Based on the query, provide a unique answer that fits the context. Here are some guidelines:
 
-          **Certifications**: I’ve earned certifications from freeCodeCamp in JavaScript Algorithms and Data Structures, Responsive Web Design, and Foundational C# with Microsoft, plus LinkedIn courses on personal branding, productivity, and communication.
+        - If the query asks for a summary (e.g., "Summarize Bradley as a web dev"), provide a brief summary of my skills, projects, and focus as a web developer. If they ask for a "full summary" or "more" after a summary, provide a detailed summary including my education, certifications, project details, and experience.
+        - If the query asks for my GitHub or LinkedIn (e.g., "What’s Bradley’s GitHub?"), provide the URL and a brief description of what they can find there.
+        - If the query asks about a specific project (e.g., "Tell me about Interactive Pokedex"), provide details about that project, including its description, platform, URL, repository, and tech used. Include GitHub stars and last commit if available.
+        - If the query asks about a specific CodePen (e.g., "Tell me about React Calculator"), provide the CodePen name and URL with a brief description.
+        - If the query asks for projects using a specific tech (e.g., "What projects use React?"), list the projects that use that technology.
+        - If the query asks to list all projects or CodePens (e.g., "List all projects"), provide a list of all project or CodePen names.
+        - If the query asks for random CodePens (e.g., "List 3 random CodePens"), select 3 random CodePens and list their names.
+        - If the query asks to compare projects (e.g., "Compare Pokedex and Pong_Deluxe"), compare the two projects by describing each, their tech, and platforms, and note any common technologies.
+        - If the query asks for the project with the most stars (e.g., "What project has the most stars?"), identify the project with the most GitHub stars and provide its details.
+        - For any other query, respond appropriately based on the context, and if unrelated to my projects or web dev work, provide a general response but try to steer the conversation back to my projects or skills.
+      `;
 
-          **Projects**: ${JSON.stringify(projects)}
-          **CodePens**: ${JSON.stringify(codePens)}
-          **Experience**: ${JSON.stringify(bradleyBio.experience)}
-
-          **Conversation History**: ${JSON.stringify(conversationHistory)}
-
-          The user asked: "${userQuery}". Respond naturally as Bradley, keeping the tone casual and conversational. If the query is unrelated to my projects or web dev work, provide a general response but try to steer the conversation back to my projects or skills. If the query asks for a summary, use the provided bio and project details to respond.
-        `;
-
+      try {
         const res = await fetch("https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -432,7 +286,7 @@ const { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery } = (
     return { reply, newTopic };
   }
 
-  return { summarizeBradleyAsWebDev, shortSummaryBradleyAsWebDev, handleQuery };
+  return { handleQuery };
 })();
 
 // Import UI setup
@@ -444,7 +298,7 @@ const setupChatUI = (function() {
     chatDiv.style.position = "fixed";
     chatDiv.style.bottom = "20px";
     chatDiv.style.right = "20px";
-    chatDiv.style.width = "800px"; // Increased width from 400px to 600px
+    chatDiv.style.width = "600px";
     chatDiv.style.background = "#333";
     chatDiv.style.borderRadius = "10px";
     chatDiv.style.padding = "15px";
