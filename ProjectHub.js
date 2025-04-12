@@ -216,7 +216,7 @@ const { handleQuery } = (function() {
     if (query === "hi" || query === "hello" || query === "hey" || query === "yo" || query === "sup" || query === "howdy" || query === "greetings") {
       const prompt = `
         ${basePrompt}
-        The user said: "${userQuery}". Respond with a friendly greeting as Bradley, welcoming them to chat about your web dev projects and skills. Suggest they ask about your projects, CodePens, or a summary of you as a web dev, and mention they can ask for a 'full summary' for more details.
+        The user said: "${userQuery}". Respond with a friendly greeting as Bradley, welcoming them to chat about your web dev projects and skills. Suggest they ask about your projects, CodePens, or a summary of you as a web dev, and mention they can ask for a 'full summary' for more details. Also, add a light-hearted note that you're not a therapist but happy to chat about coding, and encourage them to ask about your projects.
       `;
       try {
         const res = await fetch("https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat", {
@@ -231,7 +231,7 @@ const { handleQuery } = (function() {
           conversationHistory.push({ role: "bot", message: reply });
         }
       } catch (error) {
-        reply = "Hey there! Nice to see you! I’m here to chat about my web dev projects and stuff I’ve been learning. What’s on your mind? You can ask about my projects, CodePens, or even something like 'Summarize Bradley as a web dev'.";
+        reply = "Hey there! Nice to see you! I’m here to chat about my web dev projects and stuff I’ve been learning. What’s on your mind? You can ask about my projects, CodePens, or even something like 'Summarize Bradley as a web dev'. Just a heads up, I’m not a therapist or anything, but I’m happy to chat about coding! If you want to know more about me as a web dev, just ask for the 'full summary'!";
         newTopic = "greeting";
         conversationHistory.push({ role: "bot", message: reply });
       }
@@ -293,203 +293,215 @@ const { handleQuery } = (function() {
 const setupChatUI = (function() {
   function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData) {
     let lastQueryTopic = null;
-    const chatDiv = document.createElement("div");
-    chatDiv.id = "bradley-chat";
-    chatDiv.style.position = "fixed";
-    chatDiv.style.bottom = "20px";
-    chatDiv.style.right = "20px";
-    chatDiv.style.width = "600px";
-    chatDiv.style.background = "#333";
-    chatDiv.style.borderRadius = "10px";
-    chatDiv.style.padding = "15px";
-    chatDiv.style.color = "#fff";
-    chatDiv.style.boxShadow = "0 0 15px rgba(0, 216, 255, 0.5)";
-    chatDiv.style.fontFamily = "Arial, sans-serif";
-    chatDiv.style.fontSize = "16px";
-    chatDiv.style.zIndex = "1000";
-    chatDiv.style.display = "none"; // Initially hidden
-    chatDiv.style.transition = "all 0.3s ease";
-    chatDiv.style.opacity = "0.9";
-    chatDiv.style.overflow = "hidden";
-    chatDiv.style.border = "1px solid #3498db";
-    chatDiv.style.borderRadius = "10px";
-    chatDiv.style.background = "linear-gradient(135deg, #1a1a1a, #2b2b2b)";
-    chatDiv.style.boxSizing = "border-box";
-    chatDiv.style.padding = "20px";
-    chatDiv.style.maxHeight = "80vh";
-    chatDiv.style.overflowY = "auto";
-    chatDiv.style.overflowX = "hidden";
+    try {
+      const chatDiv = document.createElement("div");
+      chatDiv.id = "bradley-chat";
+      chatDiv.style.position = "fixed";
+      chatDiv.style.bottom = "20px";
+      chatDiv.style.right = "20px";
+      chatDiv.style.width = "600px";
+      chatDiv.style.background = "#333";
+      chatDiv.style.borderRadius = "10px";
+      chatDiv.style.padding = "15px";
+      chatDiv.style.color = "#fff";
+      chatDiv.style.boxShadow = "0 0 15px rgba(0, 216, 255, 0.5)";
+      chatDiv.style.fontFamily = "Arial, sans-serif";
+      chatDiv.style.fontSize = "16px";
+      chatDiv.style.zIndex = "1000";
 
+      const chatHeader = document.createElement("div");
+      chatHeader.style.marginBottom = "10px";
+      chatHeader.style.fontWeight = "bold";
+      chatHeader.style.display = "flex";
+      chatHeader.style.justifyContent = "space-between";
+      chatHeader.style.alignItems = "center";
+      chatHeader.innerHTML = "Bradley Matera's Project Chat";
+      chatDiv.appendChild(chatHeader);
 
-    const chatHeader = document.createElement("div");
-    chatHeader.style.marginBottom = "10px";
-    chatHeader.style.fontWeight = "bold";
-    chatHeader.style.display = "flex";
-    chatHeader.style.justifyContent = "space-between";
-    chatHeader.style.alignItems = "center";
-    chatHeader.innerHTML = "Bradley Matera's Project Chat";
-    chatDiv.appendChild(chatHeader);
+      const minimizeBtn = document.createElement("button");
+      minimizeBtn.innerHTML = "−";
+      minimizeBtn.style.background = "none";
+      minimizeBtn.style.border = "none";
+      minimizeBtn.style.color = "#fff";
+      minimizeBtn.style.fontSize = "18px";
+      minimizeBtn.style.cursor = "pointer";
+      chatHeader.appendChild(minimizeBtn);
 
-    const minimizeBtn = document.createElement("button");
-    minimizeBtn.innerHTML = "−";
-    minimizeBtn.style.background = "none";
-    minimizeBtn.style.border = "none";
-    minimizeBtn.style.color = "#fff";
-    minimizeBtn.style.fontSize = "18px";
-    minimizeBtn.style.cursor = "pointer";
-    chatHeader.appendChild(minimizeBtn);
+      const chatOutput = document.createElement("div");
+      chatOutput.id = "chat-output";
+      chatOutput.style.maxHeight = "400px";
+      chatOutput.style.overflowY = "auto";
+      chatOutput.style.marginBottom = "10px";
+      chatOutput.innerHTML = `<div class="message bot-message"><strong>Bot:</strong> Hey there! I’m here to chat about my web dev projects and stuff I’ve been learning. You can ask about my projects (like Pokedex or Pong_Deluxe), CodePens (like React Calculator or Data Visualization), platforms (like GitHub or Netlify), tech (like React or Docker), or even something like 'What project has the most stars?' Want to know more about me as a web dev? Just ask 'Summarize Bradley as a web dev'. What’s on your mind?<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+      chatDiv.appendChild(chatOutput);
 
-    const chatOutput = document.createElement("div");
-    chatOutput.id = "chat-output";
-    chatOutput.style.maxHeight = "400px";
-    chatOutput.style.overflowY = "auto";
-    chatOutput.style.marginBottom = "10px";
-    chatOutput.innerHTML = `<div class="message bot-message"><strong>Bot:</strong> Hey there! I’m here to chat about my web dev projects and stuff I’ve been learning. You can ask about my projects (like Pokedex or Pong_Deluxe), CodePens (like React Calculator or Data Visualization), platforms (like GitHub or Netlify), tech (like React or Docker), or even something like 'What project has the most stars?' Want to know more about me as a web dev? Just ask 'Summarize Bradley as a web dev'. What’s on your mind?<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
-    chatDiv.appendChild(chatOutput);
+      const dropdown = document.createElement("select");
+      dropdown.style.width = "100%";
+      dropdown.style.padding = "8px";
+      dropdown.style.borderRadius = "5px";
+      dropdown.style.border = "none";
+      dropdown.style.marginBottom = "10px";
+      dropdown.style.background = "#444";
+      dropdown.style.color = "#fff";
+      dropdown.style.fontSize = "16px";
+      dropdown.innerHTML = `<option value="">Select a suggestion...</option>` + suggestions.map(s => `<option value="${s}">${s}</option>`).join("");
+      chatDiv.appendChild(dropdown);
 
-    const dropdown = document.createElement("select");
-    dropdown.style.width = "100%";
-    dropdown.style.padding = "8px";
-    dropdown.style.borderRadius = "5px";
-    dropdown.style.border = "none";
-    dropdown.style.marginBottom = "10px";
-    dropdown.style.background = "#444";
-    dropdown.style.color = "#fff";
-    dropdown.style.fontSize = "16px";
-    dropdown.innerHTML = `<option value="">Select a suggestion...</option>` + suggestions.map(s => `<option value="${s}">${s}</option>`).join("");
-    chatDiv.appendChild(dropdown);
-
-    const chatInput = document.createElement("textarea");
-    chatInput.id = "chat-input";
-    chatInput.placeholder = "Ask about my projects!";
-    chatInput.style.width = "100%";
-    chatInput.style.padding = "8px";
-    chatInput.style.borderRadius = "5px";
-    chatInput.style.border = "none";
-    chatInput.style.background = "#444";
-    chatInput.style.color = "#fff";
-    chatInput.style.fontSize = "16px";
-    chatInput.style.resize = "none";
-    chatInput.style.height = "40px";
-    chatInput.style.overflowY = "hidden";
-    chatDiv.appendChild(chatInput);
-
-    // Send button
-    const sendButton = document.createElement("button");
-    sendButton.innerHTML = "Send";
-    sendButton.style.marginTop = "5px";
-    sendButton.style.padding = "8px 16px";
-    sendButton.style.background = "#3498db";
-    sendButton.style.color = "#fff";
-    sendButton.style.border = "none";
-    sendButton.style.borderRadius = "5px";
-    sendButton.style.cursor = "pointer";
-    sendButton.style.fontSize = "16px";
-    sendButton.style.width = "100%";
-    chatDiv.appendChild(sendButton);
-
-    const loadingIcon = document.createElement("div");
-    loadingIcon.id = "loading-icon";
-    loadingIcon.style.display = "none";
-    loadingIcon.style.textAlign = "center";
-    loadingIcon.style.marginTop = "10px";
-    loadingIcon.innerHTML = `<div style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 0 auto;"></div>`;
-    chatDiv.appendChild(loadingIcon);
-
-    const style = document.createElement("style");
-    style.innerHTML = `
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      .message {
-        margin-bottom: 10px;
-        padding: 10px;
-        border-radius: 5px;
-        word-wrap: break-word;
-      }
-      .user-message {
-        background: #555;
-        text-align: right;
-      }
-      .bot-message {
-        background: #444;
-      }
-      .timestamp {
-        font-size: 12px;
-        color: #aaa;
-        margin-top: 5px;
-      }
-    `;
-    document.head.appendChild(style);
-
-    document.body.appendChild(chatDiv);
-
-    let lastRequestTime = 0;
-    const requestInterval = 1000;
-
-    minimizeBtn.onclick = () => {
-      chatOutput.style.display = chatOutput.style.display === "none" ? "block" : "none";
-      chatInput.style.display = chatInput.style.display === "none" ? "block" : "none";
-      dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
-      minimizeBtn.innerHTML = chatOutput.style.display === "none" ? "+" : "−";
-    };
-
-    chatInput.oninput = () => {
+      const chatInput = document.createElement("textarea");
+      chatInput.id = "chat-input";
+      chatInput.placeholder = "Ask about my projects!";
+      chatInput.style.width = "100%";
+      chatInput.style.padding = "8px";
+      chatInput.style.borderRadius = "5px";
+      chatInput.style.border = "none";
+      chatInput.style.background = "#444";
+      chatInput.style.color = "#fff";
+      chatInput.style.fontSize = "16px";
+      chatInput.style.resize = "none";
       chatInput.style.height = "40px";
-      chatInput.style.height = `${chatInput.scrollHeight}px`;
-    };
+      chatInput.style.overflowY = "hidden";
+      chatDiv.appendChild(chatInput);
 
-    dropdown.onchange = () => {
-      if (dropdown.value) {
-        chatInput.value = dropdown.value;
-        dropdown.value = "";
-      }
-    };
+      const sendButton = document.createElement("button");
+      sendButton.innerHTML = "Send";
+      sendButton.style.marginTop = "5px";
+      sendButton.style.padding = "8px 16px";
+      sendButton.style.background = "#3498db";
+      sendButton.style.color = "#fff";
+      sendButton.style.border = "none";
+      sendButton.style.borderRadius = "5px";
+      sendButton.style.cursor = "pointer";
+      sendButton.style.fontSize = "16px";
+      sendButton.style.width = "100%";
+      chatDiv.appendChild(sendButton);
 
-    const submitChat = async () => {
-      const now = Date.now();
-      if (now - lastRequestTime < requestInterval) {
-        chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> Hang on a sec—give me a moment before sending another message.<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
-        chatOutput.scrollTop = chatOutput.scrollHeight;
-        return;
-      }
-      lastRequestTime = now;
-      const userQuery = chatInput.value.trim();
-      if (!userQuery) return;
-
-      chatOutput.innerHTML += `<div class="message user-message"><strong>You:</strong> ${userQuery}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
-
-      loadingIcon.style.display = "block";
-      chatOutput.scrollTop = chatOutput.scrollHeight;
-
-      const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData);
-      lastQueryTopic = newTopic;
-
+      const loadingIcon = document.createElement("div");
+      loadingIcon.id = "loading-icon";
       loadingIcon.style.display = "none";
-      const messageDiv = document.createElement("div");
-      messageDiv.className = "message bot-message";
-      messageDiv.innerHTML = `<strong>Bot:</strong> ${reply}<div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
-      chatOutput.appendChild(messageDiv);
-      chatOutput.scrollTop = chatOutput.scrollHeight;
-      chatInput.value = "";
-      chatInput.style.height = "40px";
-    };
+      loadingIcon.style.textAlign = "center";
+      loadingIcon.style.marginTop = "10px";
+      loadingIcon.innerHTML = `<div style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 0 auto;"></div>`;
+      chatDiv.appendChild(loadingIcon);
 
-    sendButton.onclick = submitChat;
+      const style = document.createElement("style");
+      style.innerHTML = `
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .message {
+          margin-bottom: 10px;
+          padding: 10px;
+          border-radius: 5px;
+          word-wrap: break-word;
+        }
+        .user-message {
+          background: #555;
+          text-align: right;
+        }
+        .bot-message {
+          background: #444;
+        }
+        .timestamp {
+          font-size: 12px;
+          color: #aaa;
+          margin-top: 5px;
+        }
+      `;
+      document.head.appendChild(style);
 
-    chatInput.addEventListener("keypress", async (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        submitChat();
+      // Ensure the DOM is fully loaded before appending the chatDiv
+      if (document.readyState === "complete" || document.readyState === "interactive") {
+        document.body.appendChild(chatDiv);
+      } else {
+        document.addEventListener("DOMContentLoaded", () => {
+          document.body.appendChild(chatDiv);
+        });
       }
-    });
 
-    console.log("ProjectHub loaded!");
+      let lastRequestTime = 0;
+      const requestInterval = 1000;
+
+      minimizeBtn.onclick = () => {
+        chatOutput.style.display = chatOutput.style.display === "none" ? "block" : "none";
+        chatInput.style.display = chatInput.style.display === "none" ? "block" : "none";
+        dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+        minimizeBtn.innerHTML = chatOutput.style.display === "none" ? "+" : "−";
+      };
+
+      chatInput.oninput = () => {
+        chatInput.style.height = "40px";
+        chatInput.style.height = `${chatInput.scrollHeight}px`;
+      };
+
+      dropdown.onchange = () => {
+        if (dropdown.value) {
+          chatInput.value = dropdown.value;
+          dropdown.value = "";
+        }
+      };
+
+      const submitChat = async () => {
+        const now = Date.now();
+        if (now - lastRequestTime < requestInterval) {
+          chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> Hang on a sec—give me a moment before sending another message.<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+          chatOutput.scrollTop = chatOutput.scrollHeight;
+          return;
+        }
+        lastRequestTime = now;
+        const userQuery = chatInput.value.trim();
+        if (!userQuery) return;
+
+        chatOutput.innerHTML += `<div class="message user-message"><strong>You:</strong> ${userQuery}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+
+        loadingIcon.style.display = "block";
+        chatOutput.scrollTop = chatOutput.scrollHeight;
+
+        try {
+          const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData);
+          lastQueryTopic = newTopic;
+
+          loadingIcon.style.display = "none";
+          const messageDiv = document.createElement("div");
+          messageDiv.className = "message bot-message";
+          messageDiv.innerHTML = `<strong>Bot:</strong> ${reply}<div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
+          chatOutput.appendChild(messageDiv);
+          chatOutput.scrollTop = chatOutput.scrollHeight;
+          chatInput.value = "";
+          chatInput.style.height = "40px";
+        } catch (error) {
+          console.error("Error in submitChat:", error);
+          loadingIcon.style.display = "none";
+          chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> Oops, something went wrong! Let’s try again—ask me anything about my projects or skills.<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+          chatOutput.scrollTop = chatOutput.scrollHeight;
+          chatInput.value = "";
+          chatInput.style.height = "40px";
+        }
+      };
+
+      sendButton.onclick = submitChat;
+
+      chatInput.addEventListener("keypress", async (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          submitChat();
+        }
+      });
+
+      console.log("ProjectHub loaded!");
+    } catch (error) {
+      console.error("Error in setupChatUI:", error);
+    }
   }
 
   return setupChatUI;
 })();
 
-// Initialize the chat
-setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData);
+// Ensure the script runs after the DOM is fully loaded
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData);
+  } catch (error) {
+    console.error("Error initializing ProjectHub:", error);
+  }
+});
