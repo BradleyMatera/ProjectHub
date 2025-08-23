@@ -1,37 +1,69 @@
-# ProjectHub
+# 💬 ProjectHub 🤖  
+[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=000&style=for-the-badge)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)  
+[![AI Powered](https://img.shields.io/badge/AI-Powered-blueviolet?style=for-the-badge)]()  
+[![Hosted on GitHub Pages](https://img.shields.io/badge/Hosted-GitHub_Pages-181717?logo=github&logoColor=white&style=for-the-badge)](https://bradleymatera.github.io/ProjectHub/)  
 
-A script that adds an AI-powered chat bot to your website, showcasing my web development projects, CodePens, and skills. The chat bot is designed to respond naturally to any input, remember the conversation context, and provide detailed insights into my work as a Web Development student at Full Sail University.
+> **ProjectHub** is an **AI-powered chatbot widget** that can be embedded into any website.  
+> It showcases my **web development projects, CodePens, and skills** while engaging users with natural, conversational AI.  
 
-## Usage
+---
 
-To add the ProjectHub chat bot to your website, simply include the following script tag in your HTML:
+## 🚀 Usage
+
+Add the ProjectHub chat bot to your site by including this script in your HTML:
 
 ```html
 <script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js"></script>
 ```
 
-This will add a chat interface to the bottom-right corner of your webpage, where users can interact with the bot to learn more about my projects, skills, and background.
+This automatically adds a floating **chat interface** in the bottom-right corner of your page.  
+Users can interact with the bot to explore projects, learn about my background, or even ask general questions.
 
-## Features
+---
 
-- **AI-Powered Chat**: The bot uses an external AI to handle a wide range of queries naturally, even for unrelated topics, while prioritizing predefined responses for project-related questions.
-- **Conversation Memory**: The bot remembers the conversation context, allowing for more coherent and personalized interactions.
-- **Project Showcase**: Users can ask about my projects (e.g., "Tell me about Interactive Pokedex") or CodePens (e.g., "Tell me about React Calculator") to get detailed information, including descriptions, tech stacks, and links.
-- **Bio and Skills**: Users can ask for a summary of me as a web developer (e.g., "Summarize Bradley as a web dev") to learn about my education, skills, certifications, and experience.
-- **Natural Tone**: Responses are crafted in a casual, conversational tone to make interactions feel friendly and approachable.
-- **Custom Queries**: The bot can handle any input, from project-related questions to general inquiries, by leveraging the AI to provide meaningful responses while steering the conversation back to my work when appropriate.
-- **GitHub and LinkedIn Links**: Users can ask for my GitHub or LinkedIn profile (e.g., "What’s Bradley’s GitHub?") to get direct links and a brief overview of what they’ll find there.
+## ✨ Features
 
-## Examples
+- 🤖 **AI-Powered Chat** → Handles a wide range of queries naturally, while prioritizing predefined project responses.  
+- 🧠 **Conversation Memory** → Remembers context for more coherent, continuous interactions.  
+- 🖼️ **Project Showcase** → Ask about projects (e.g., *"Tell me about Interactive Pokedex"*) or CodePens for details, stacks, and links.  
+- 👤 **Bio & Skills** → Provides summaries of my education, skills, and background as a Web Development student at Full Sail University.  
+- 🎨 **Natural Tone** → Responses feel conversational and approachable.  
+- 🛠️ **Custom Queries** → Can handle general questions, then steer back toward portfolio content.  
+- 🔗 **Direct Links** → Easily fetch my GitHub or LinkedIn profiles.  
 
-Here are some example queries you can try with the chat bot:
+---
 
-- **Project Inquiry**: "Tell me about Interactive Pokedex"  
+## 💡 Example Queries
 
-- **CodePen Inquiry**: "Tell me about React Calculator"  
+Try asking the bot:
 
-- **Summary Request**: "Summarize Bradley as a web dev"  
+- **Project Inquiry** → *"Tell me about Interactive Pokedex"*  
+- **CodePen Inquiry** → *"Tell me about React Calculator"*  
+- **Bio Request** → *"Summarize Bradley as a web dev"*  
+- **Full Summary** → *"Full summary"*  
+- **General Chat** → *"What’s the weather like?"*  
 
-- **Full Summary**: "Full summary" (after asking for a summary)  
-  
-- **General Query**: "What’s the weather like?"
+---
+
+## 🔗 Links
+
+- 🌍 [Live Demo (GitHub Pages)](https://bradleymatera.github.io/ProjectHub/)  
+- 📂 [Repository](https://github.com/BradleyMatera/ProjectHub)  
+- 💼 [LinkedIn](https://www.linkedin.com/in/championingempatheticwebsolutionsthroughcode/)  
+- 🐙 [GitHub Profile](https://github.com/BradleyMatera)  
+
+---
+
+## 🤝 Contributions
+Contributions welcome! Fork the repo, open issues, or submit PRs.  
+
+---
+
+## 📄 License
+MIT License  
+
+---
+
+<p align="center">
+  <img src="https://komarev.com/ghpvc/?username=BradleyMatera&style=flat-square&color=blue" alt="Profile views" />
+</p>
