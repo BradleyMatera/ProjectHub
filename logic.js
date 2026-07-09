@@ -30,6 +30,7 @@ function shortSummaryBradleyAsWebDev(projects, codePens) {
 // Function to handle user queries
 async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData, chatSession = {}) {
   const query = userQuery.toLowerCase();
+  const normalizedQuery = query.replace(/\bbrads\b|\bbrad\b/g, "bradley");
   let reply = "I don’t know that one. Try asking about Bradley Matera's current work — projects like ProjectHub, the AWS serverless workflow, or CIRIS Ethical AI; his GitHub or LinkedIn; the roles he's targeting; or his strongest technical skills. You can also ask for a summary of Bradley as a junior software engineer.";
   let newTopic = lastQueryTopic;
 
@@ -161,6 +162,14 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   if (query.includes("linkedin")) {
     reply = "Bradley Matera's LinkedIn profile is at https://www.linkedin.com/in/bradmatera. It highlights his transition into software engineering, AWS internship, freelance frontend work, education, and target roles.";
     newTopic = "linkedin";
+    return { reply, newTopic };
+  }
+
+  const asksForSingleStrongestRole = /\b(strongest|best|most|pick one|one role|if you had to pick|had to pick|which one|which role)\b/.test(normalizedQuery)
+    && /\b(role|job|position|fit|those|one)\b/.test(normalizedQuery);
+  if (asksForSingleStrongestRole) {
+    reply = "If I had to pick one strongest role for Bradley right now, I’d pick junior frontend/web developer. That is the cleanest fit because his strongest evidence is visible JavaScript/React/Next.js UI work, deployable portfolio projects, documentation, debugging, and enough backend/cloud exposure to be useful without overselling him as a production cloud engineer yet. Cloud support or software support are good adjacent fits, but frontend/web development is the strongest primary lane.";
+    newTopic = "strongest-role";
     return { reply, newTopic };
   }
 

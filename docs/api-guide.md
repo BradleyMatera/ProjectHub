@@ -102,6 +102,8 @@ Context-dependent messages such as “tell me more,” “what about that projec
 
 The widget asks for the visitor's name at the start of each browser tab session and stores it in `sessionStorage`. Personalization can be turned off in widget settings. Clear Memory resets the local transcript, session id, captured name, recent browser context, and router-persisted session memory.
 
+Repeated or semantically repeated questions should not return the same answer verbatim. The Netlify router checks recent session memory; if the same core question has already been answered, it politely says so, quotes the useful part of the earlier answer, and offers follow-ups for proof, tradeoffs, risk, or interview wording. Forced-choice recruiter questions such as “if you had to pick one strongest role” resolve to one answer instead of cycling through target-role lists.
+
 ## Security Requirements for New Proxy
 
 - Accept requests only from allowed origins via CORS.

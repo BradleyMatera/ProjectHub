@@ -29,6 +29,7 @@ function corsHeaders(origin) {
 function normalizeQuestion(question) {
   return String(question || '')
     .toLowerCase()
+    .replace(/\bbrads\b|\bbrad\b/g, 'bradley')
     .replace(/bradly|bradely|bradlee/g, 'bradley')
     .replace(/materra|matara/g, 'matera')
     .replace(/recuriter|recruter|recuiter/g, 'recruiter')
@@ -155,6 +156,69 @@ function isContextDependent(message) {
   return /\b(it|that|this|those|they|them|same|more|again|previous|above|follow up|followup)\b/i.test(message);
 }
 
+function isStrongestRolePressure(message, memory = []) {
+  const question = normalizeQuestion(message);
+  const recentText = trimMemory(memory).map(item => item.content).join(' ').toLowerCase();
+  return /\b(strongest|best|most|pick one|which one|what one|had to pick|forced|choose)\b/.test(question)
+    && (/\b(role|job|position|fit|lane|one|those)\b/.test(question) || /targeting|junior software|frontend|cloud support|software support/.test(recentText));
+}
+
+function overlapScore(first, second) {
+  const stopWords = new Set(['what', 'which', 'that', 'this', 'about', 'does', 'have', 'with', 'from', 'your', 'you', 'his', 'the', 'and', 'for', 'one', 'most', 'more']);
+  const firstWords = new Set(normalizeQuestion(first).split(' ').filter(word => word.length > 2 && !stopWords.has(word)));
+  const secondWords = normalizeQuestion(second).split(' ').filter(word => word.length > 2 && !stopWords.has(word));
+  if (!firstWords.size || !secondWords.length) return 0;
+  const matches = secondWords.filter(word => firstWords.has(word)).length;
+  return matches / Math.max(firstWords.size, secondWords.length);
+}
+
+function previousSimilarAnswer(message, memory) {
+  const turns = trimMemory(memory);
+  const strongestRolePressure = isStrongestRolePressure(message, turns);
+  for (let index = turns.length - 1; index >= 0; index--) {
+    const turn = turns[index];
+    if (turn.role !== 'user') continue;
+    const score = overlapScore(message, turn.content);
+    const directRepeat = cacheKey(message) === cacheKey(turn.content);
+    const answer = turns.slice(index + 1).find(item => item.role === 'assistant' && item.content && !/^I already answered the same core question/i.test(item.content));
+    const repeatedStrongestRole = strongestRolePressure && /pick junior frontend\/web developer|strongest role|frontend\/web development is the primary/i.test(answer?.content || '');
+    if (!directRepeat && !repeatedStrongestRole && score < 0.62) continue;
+    if (answer) return { question: turn.content, answer: answer.content };
+  }
+  return null;
+}
+
+function quoteSnippet(value) {
+  const cleaned = String(value || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return cleaned.length > 210 ? `${cleaned.slice(0, 207).trim()}...` : cleaned;
+}
+
+function repeatAwareAnswer(message, memory) {
+  const previous = previousSimilarAnswer(message, memory);
+  if (!previous) return null;
+  return {
+    reply: `I already answered the same core question earlier. The useful part was: “${quoteSnippet(previous.answer)}” To add something new instead of repeating it: ask for proof, tradeoffs, risk, interview wording, or which project backs that claim.`,
+    followUps: ['Show the proof behind that answer', 'What is the strongest counterpoint?', 'Give me the interview wording'],
+    source: 'router-repeat-memory',
+    fallback: true
+  };
+}
+
+function localConversationAnswer(message, memory) {
+  const repeated = repeatAwareAnswer(message, memory);
+  if (repeated) return repeated;
+
+  const rolePressure = isStrongestRolePressure(message, memory);
+  if (!rolePressure) return null;
+
+  return {
+    reply: 'If forced to pick one strongest role, pick junior frontend/web developer. That is the cleanest first-screen fit because Bradley’s strongest proof is visible JavaScript/React/Next.js UI work, deployable portfolio projects, debugging, and documentation; cloud support and software support are good adjacent lanes, but frontend/web development is the primary one.',
+    followUps: ['Which projects prove frontend fit?', 'How does cloud support fit as a backup?', 'What concerns should a recruiter know?'],
+    source: 'router-conversation',
+    fallback: true
+  };
+}
+
 function getCached(message) {
   const key = cacheKey(message);
   const cached = responseCache.get(key);
@@ -178,6 +242,7 @@ function classify(message) {
   if (!question) return 'empty';
   if (/moon cheese|pizza engines|weather|sports|politics|recipe|movie|song/.test(question)) return 'off-topic';
   if (/contact|email|phone|reach|linkedin|github/.test(question)) return 'contact';
+  if (/\b(strongest|best|most|primary|pick one|one role|which one|which role|had to pick)\b/.test(question) && /\b(role|job|position|fit|lane|those|one)\b/.test(question)) return 'strongest-role';
   if (/projecthub|pokedex|cheesemath|shader|serverless|ciris|ethical ai|project|portfolio|codepen/.test(question)) return 'project';
   if (/aws|cloud|lambda|dynamo|s3|amplify|support|ticket|on call|production/.test(question)) return 'cloud-support';
   if (/ats|recruiter screen|jargon|red flag|downside|gap|concern|hire|candidate|fit|role|job/.test(question)) return 'recruiter-fit';
@@ -258,6 +323,20 @@ exports.handler = async function handler(event) {
   const intent = classify(message);
   const priorMemory = memoryEnabled ? await readSession(sessionId) : [];
   const mergedMemory = trimMemory([...priorMemory, ...clientContext, { role: 'user', content: message, intent, at: Date.now() }]);
+  const localPayload = localConversationAnswer(message, mergedMemory);
+  if (localPayload) {
+    const store = memoryEnabled
+      ? await writeSession(sessionId, [...mergedMemory, { role: 'assistant', content: localPayload.reply, intent, at: Date.now() }])
+      : 'disabled';
+    return json(200, {
+      ...localPayload,
+      cached: false,
+      router: 'netlify',
+      intent: 'strongest-role',
+      sessionMemory: { enabled: memoryEnabled, store, turns: memoryEnabled ? trimMemory(mergedMemory).length + 1 : 0 }
+    }, headers);
+  }
+
   const cached = isContextDependent(message) ? null : getCached(message);
   if (cached) {
     let store = 'disabled';

@@ -198,6 +198,7 @@ function shortSummaryBradleyAsWebDev(projects, codePens) {
 // Function to handle user queries
 async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData, chatSession = {}) {
   const query = userQuery.toLowerCase();
+  const normalizedQuery = query.replace(/\bbrads\b|\bbrad\b/g, "bradley");
   let reply = "I don’t know that one. Try asking about Bradley Matera's current work — projects like ProjectHub, the AWS serverless workflow, or CIRIS Ethical AI; his GitHub or LinkedIn; the roles he's targeting; or his strongest technical skills. You can also ask for a summary of Bradley as a junior software engineer.";
   let newTopic = lastQueryTopic;
 
@@ -329,6 +330,14 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   if (query.includes("linkedin")) {
     reply = "Bradley Matera's LinkedIn profile is at https://www.linkedin.com/in/bradmatera. It highlights his transition into software engineering, AWS internship, freelance frontend work, education, and target roles.";
     newTopic = "linkedin";
+    return { reply, newTopic };
+  }
+
+  const asksForSingleStrongestRole = /\b(strongest|best|most|pick one|one role|if you had to pick|had to pick|which one|which role)\b/.test(normalizedQuery)
+    && /\b(role|job|position|fit|those|one)\b/.test(normalizedQuery);
+  if (asksForSingleStrongestRole) {
+    reply = "If I had to pick one strongest role for Bradley right now, I’d pick junior frontend/web developer. That is the cleanest fit because his strongest evidence is visible JavaScript/React/Next.js UI work, deployable portfolio projects, documentation, debugging, and enough backend/cloud exposure to be useful without overselling him as a production cloud engineer yet. Cloud support or software support are good adjacent fits, but frontend/web development is the strongest primary lane.";
+    newTopic = "strongest-role";
     return { reply, newTopic };
   }
 
@@ -1256,13 +1265,20 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   }
 
   function conversationalLead(userQuery) {
-    if (!chatSettings.personalizeReplies || !visitorName) return "";
-    const leads = [
-      `${visitorName}, here’s the useful read:`,
+    if (!chatSettings.personalizeReplies) return "";
+    const namePrefix = visitorName ? `${visitorName}, ` : "";
+    const leads = visitorName ? [
+      `${namePrefix}here’s the useful read:`,
       `Good question, ${visitorName}.`,
-      `${visitorName}, the short version is:`,
+      `${namePrefix}the short version is:`,
       `For your screen, ${visitorName}:`,
-      `${visitorName}, I’d frame it this way:`
+      `${namePrefix}I’d frame it this way:`
+    ] : [
+      "Here’s the direct answer:",
+      "Good question.",
+      "The short version is:",
+      "For a recruiter screen:",
+      "I’d frame it this way:"
     ];
     const seed = [...String(userQuery), String(turnCount)].reduce((sum, char) => sum + char.charCodeAt(0), 0);
     return `<span class="conversation-lead">${escapeHtml(leads[Math.abs(seed) % leads.length])}</span>`;
@@ -1454,11 +1470,6 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
         setBusy(false);
         return;
       }
-      appendMessage("bot", "ProjectHub", "Before we dig in, what should I call you for this session? A first name is enough.");
-      chatInput.value = "";
-      resizeInput();
-      setBusy(false);
-      return;
     }
 
     const statusRow = appendTypingStatus();
@@ -1477,8 +1488,10 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       const finalReply = personalizeReply(reply, userQuery);
       const plainReply = normalizeForCompare(finalReply);
 
-      if (plainReply && plainReply === lastBotReplyText) {
-        appendMessage("bot", "ProjectHub", `${escapeHtml(visitorName)}, I’d just repeat myself there. Try a sharper angle like recruiter fit, technical depth, risk, tradeoffs, or one specific project.`);
+      const isLocalDuplicate = newTopic !== "ai" && plainReply && plainReply === lastBotReplyText;
+      if (isLocalDuplicate) {
+        const label = visitorName ? `${escapeHtml(visitorName)}, ` : "";
+        appendMessage("bot", "ProjectHub", `${label}I already covered that locally. The useful part was: “${escapeHtml(plainReply.slice(0, 220))}${plainReply.length > 220 ? "..." : ""}” Ask for proof, tradeoffs, risks, or interview wording and I’ll take a new angle.`);
         chatInput.value = "";
         resizeInput();
         return;
