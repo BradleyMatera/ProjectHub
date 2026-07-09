@@ -107,7 +107,7 @@ flowchart LR
      [Service]
      Type=simple
      User=ubuntu
-     WorkingDirectory=/home/ubuntu/projecthub-proxy
+   WorkingDirectory=/opt/recruiter-chat-api
      ExecStart=/usr/bin/node server.js
      Environment=PROJECTHUB_API_KEY=your-secret-key
      Restart=always
@@ -121,8 +121,8 @@ flowchart LR
    - Static regional IPs are free while attached to a running VM.
 
 3. **DNS Configuration**
-   - Create an A-record such as `chat.recruiterhub.yourdomain.com` pointing to the static IP.
-   - Update `logic.js` to call `https://chat.recruiterhub.yourdomain.com/api/chat`.
+   - Create an A-record such as `projecthub-chat.bradleymatera.dev` pointing to the static IP.
+   - Update `logic.js` to call `https://projecthub-chat.bradleymatera.dev/api/chat`.
 
 4. **Frontend Integration**
    - Modify the ProjectHub widget to POST to the new `/api/chat` endpoint.

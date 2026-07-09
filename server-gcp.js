@@ -134,6 +134,121 @@ function projectNames(projects, limit = 4) {
   return (projects || []).map(p => p.name).filter(Boolean).slice(0, limit);
 }
 
+function matchProject(knowledge, question) {
+  const lowerQuestion = normalizeQuestion(question);
+  return (knowledge?.projects || []).find(project => {
+    const name = normalizeQuestion(project.name);
+    const compactName = name.replace(/\s+/g, '');
+    return lowerQuestion.includes(name) || lowerQuestion.includes(compactName);
+  });
+}
+
+function matchExperience(knowledge, pattern) {
+  return (knowledge?.experience || []).find(item => pattern.test(`${item.role || ''} ${item.company || ''} ${item.summary || ''}`));
+}
+
+function answerWithFollowUps(reply, followUps) {
+  const uniqueFollowUps = [...new Set((followUps || []).filter(Boolean))].slice(0, 3);
+  return { reply, followUps: uniqueFollowUps };
+}
+
+function describeProject(project, question) {
+  const lowerQuestion = normalizeQuestion(question);
+  const tech = sentenceList(project.tech || [], 5);
+  const url = project.url ? ` Recruiters can review it here: ${project.url}.` : '';
+  const techSentence = tech ? ` It uses ${tech}.` : '';
+  const relevance = /job|role|matter|recruiter|hire|candidate|prove|show/.test(lowerQuestion)
+    ? ` For a job conversation, it matters because it shows Bradley can package a working browser experience, document it, host it publicly, and make it easy for someone else to inspect.`
+    : '';
+  return `${project.name} is a ${project.category || 'portfolio project'}: ${project.description}${techSentence}${relevance}${url}`;
+}
+
+function compareProjects(knowledge, question) {
+  const lowerQuestion = normalizeQuestion(question);
+  const matches = (knowledge?.projects || []).filter(project => lowerQuestion.includes(normalizeQuestion(project.name)));
+  if (matches.length < 2) return null;
+  const [first, second] = matches;
+  return `${first.name} shows ${first.category || 'project'} work with ${sentenceList(first.tech || [], 4) || 'a focused implementation'}, while ${second.name} shows ${second.category || 'project'} work with ${sentenceList(second.tech || [], 4) || 'a different problem space'}. Together, they give recruiters a better read on Bradley's range than either project alone: ${first.name} demonstrates ${first.description.toLowerCase()}, and ${second.name} demonstrates ${second.description.toLowerCase()}.`;
+}
+
+function answerInterviewStory(knowledge, question) {
+  const lowerQuestion = normalizeQuestion(question);
+  if (/walk.*resume|resume.*walk/.test(lowerQuestion)) {
+    return `A recruiter walkthrough should start with Bradley's B.S. in Web Development from Full Sail, then move into his AWS Cloud Support Engineer internship, where he completed support training, guided troubleshooting labs, and a serverless Lambda/DynamoDB/S3 capstone. After that, the strongest recent experience is CIRIS Ethical AI, where he worked on local setup, onboarding docs, JWT debugging, small merged updates, lint fixes, Docker Compose, and GitHub Issues, with older Army, case-management, and construction roles adding reliability, communication, and pressure-tested follow-through.`;
+  }
+  if (/tell.*about.*yourself|about.*bradley/.test(lowerQuestion)) {
+    return `Bradley is a junior software engineer based in Davis, Illinois, open to relocation. His background combines web development, AWS support engineering training, troubleshooting, documentation, and AI-assisted development, with recent work through Full Sail, an AWS internship, and CIRIS Ethical AI.`;
+  }
+  const stories = knowledge?.interviewStories || [];
+  const stopWords = new Set(['tell', 'about', 'yourself', 'through', 'with', 'what', 'when', 'where', 'like', 'recruiter', 'bradley', 'does', 'have', 'candidate']);
+  const story = stories.find(item => {
+    const prompt = normalizeQuestion(item.prompt);
+    const keywords = prompt.split(' ').filter(word => word.length > 3 && !stopWords.has(word));
+    return lowerQuestion.includes(prompt) || keywords.some(word => lowerQuestion.includes(word));
+  });
+  if (!story) return null;
+  return story.answer
+    .replace(/^I am\b/, 'Bradley is')
+    .replace(/\bI finished\b/g, 'he finished')
+    .replace(/\bI completed\b/g, 'he completed')
+    .replace(/\bI worked\b/g, 'he worked')
+    .replace(/\bI would\b/g, 'he would')
+    .replace(/\bI like\b/g, 'he likes')
+    .replace(/\bI enjoy\b/g, 'he enjoys')
+    .replace(/\bI say\b/g, 'he says')
+    .replace(/\bI do not\b/g, 'he does not')
+    .replace(/\bMy background is\b/g, 'His background is');
+}
+
+function answerExperience(knowledge, question) {
+  const lowerQuestion = normalizeQuestion(question);
+  const experience = knowledge?.experience || [];
+  let item = null;
+  if (/army|military|veteran|healthcare|combat/.test(lowerQuestion)) item = matchExperience(knowledge, /army|healthcare|combat|military/i);
+  if (/case manager|court|client|communication/.test(lowerQuestion)) item = item || matchExperience(knowledge, /case manager|mason county|court/i);
+  if (/construction|roof|labor|blue collar|work ethic/.test(lowerQuestion)) item = item || matchExperience(knowledge, /roof|construction|stoneway|ascend/i);
+  if (!item && /previous|past|experience|work history/.test(lowerQuestion)) {
+    return `Bradley's work history combines recent technical experience with older roles that built reliability and communication: ${sentenceList(experience.slice(0, 4).map(job => `${job.role} at ${job.company}`), 4)}. For recruiter conversations, the most relevant thread is that he documents carefully, communicates with users or teammates, and stays organized under pressure.`;
+  }
+  if (!item) return null;
+  return `${item.role} at ${item.company} matters because it adds context beyond code: ${item.summary} The transferable strengths are ${sentenceList(item.skills, 5)}, which fit junior engineering and support roles where communication and careful follow-through matter.`;
+}
+
+function answerGapsHonestly(knowledge, question) {
+  const rawQuestion = String(question || '').toLowerCase();
+  const lowerQuestion = normalizeQuestion(question);
+  const learning = knowledge?.skills?.learningOrAdjacent || [];
+  if (/concern|weakness|risk|gap|limitation|drawback/.test(lowerQuestion)) {
+    return `The main recruiter concern is scope: Bradley is still a junior candidate, so he should not be evaluated as someone with senior ownership or years of production leadership. The positive version of that is clear: he is honest about his level, has current web and AWS training, documents carefully, and is looking for a team where he can grow through real production work.`;
+  }
+  if (/senior|lead|architect|manager|enterprise|production ownership/.test(lowerQuestion)) {
+    return `Bradley should be evaluated as a junior candidate, not as a senior engineer, architect, or manager. His value is in current web-development fundamentals, AWS support training, careful debugging, documentation, and a willingness to learn production systems from a strong team.`;
+  }
+  if (/erp|sap|salesforce|servicenow|dotnet|\bnet\b/.test(lowerQuestion) || /\.net|c#/.test(rawQuestion)) {
+    return `Bradley does not claim direct professional ERP or C#/.NET experience. The honest adjacent fit is that he is currently learning C#/.NET fundamentals, interested in ERP and business workflows, and already has software-support instincts from debugging, documentation, and user-facing work.`;
+  }
+  if (/customer ticket|live customer|production ticket|on call/.test(lowerQuestion)) {
+    return `Bradley's AWS internship used guided support rotations and lab environments, not live customer ticket ownership. That distinction matters, but the training still gave him useful practice with cloud troubleshooting, networking concepts, documentation, and customer-experience thinking.`;
+  }
+  return null;
+}
+
+function answerProcess(knowledge, question) {
+  const lowerQuestion = normalizeQuestion(question);
+  const workStyle = knowledge?.summary?.workStyle || [];
+  const strengths = knowledge?.summary?.coreStrengths || [];
+  if (/debug|troubleshoot|bug|broken|issue|problem/.test(lowerQuestion)) {
+    return `Bradley's debugging style is methodical: read the nearby code, reproduce the issue, isolate one likely cause, make a small change, and verify it. That matches his stated work habits: ${sentenceList(workStyle, 4)}.`;
+  }
+  if (/ai|copilot|automation|prompt/.test(lowerQuestion)) {
+    return `Bradley uses AI as a development accelerator, not as an unchecked source of truth. His profile specifically emphasizes verifying AI-generated suggestions, testing behavior, and documenting what he learns so the work remains understandable.`;
+  }
+  if (/work style|team|collaborat|communicat|strength/.test(lowerQuestion)) {
+    return `Bradley's work style is practical and team-friendly: ${sentenceList(workStyle, 5)}. His core strengths include ${sentenceList(strengths, 5)}, which is especially useful in junior engineering and support-heavy roles.`;
+  }
+  return null;
+}
+
 function buildPrompt(knowledge, question) {
   const identity = knowledge?.identity || {};
   const projects = (knowledge?.projects || []).slice(0, 5);
@@ -159,7 +274,7 @@ function buildPrompt(knowledge, question) {
   return prompt;
 }
 
-function buildGroundedFallback(knowledge, question) {
+function buildGroundedFallbackPayload(knowledge, question) {
   const identity = knowledge?.identity || {};
   const summary = knowledge?.summary || {};
   const goals = knowledge?.goals || {};
@@ -178,51 +293,76 @@ function buildGroundedFallback(knowledge, question) {
   const aws = experience.find(item => /aws|amazon/i.test(`${item.company} ${item.role}`));
   const ciris = experience.find(item => /ciris/i.test(`${item.company} ${item.role}`));
 
-  if (/contact|email|phone|reach|linkedin|github/.test(lowerQuestion)) {
-    return `You can reach ${name} at ${identity.email || 'bradmatera@gmail.com'}${identity.phone ? ` or ${identity.phone}` : ''}. His portfolio is ${identity.portfolioUrl || 'https://bradleymatera.dev/'}, LinkedIn is ${identity.linkedInUrl || 'https://www.linkedin.com/in/bradmatera'}, and GitHub is ${identity.gitHubUrl || 'https://github.com/BradleyMatera'}.`;
-  }
+  const honestGapAnswer = answerGapsHonestly(knowledge, question);
+  if (honestGapAnswer) return answerWithFollowUps(honestGapAnswer, ['What roles is Bradley targeting?', 'What is Bradley learning now?', 'What is his strongest current fit?']);
 
-  if (/education|degree|school|full sail|gpa|course/.test(lowerQuestion)) {
-    return `${name} earned a ${education.degree || 'B.S. in Web Development'} from ${education.school || 'Full Sail University'}${education.gpa ? ` with a ${education.gpa} GPA` : ''}. Relevant coursework includes ${sentenceList(education.relevantCoursework, 5)}, which supports his web and application-development focus.`;
-  }
-
-  if (/cert|certificate|certification/.test(lowerQuestion)) {
-    return `${name}'s certifications include ${sentenceList(certNames(knowledge?.certifications), 4)}. The AWS credentials reinforce his cloud-support and serverless project background, while the freeCodeCamp work supports his frontend fundamentals.`;
-  }
-
-  if (/role|target|job|looking|relocation/.test(lowerQuestion)) {
-    return `${name} is targeting ${sentenceList(goals.targetRoles, 5)} roles. He is based in ${location}, and his short-term goal is to join a team where he can learn production systems, debug carefully, document well, and contribute to real software.`;
-  }
+  const processAnswer = answerProcess(knowledge, question);
+  if (processAnswer) return answerWithFollowUps(processAnswer, ['Tell me about CIRIS Ethical AI', 'What AWS experience does Bradley have?', 'What is his work style?']);
 
   if (/aws|cloud|lambda|dynamo|s3|amplify|serverless/.test(lowerQuestion)) {
-    return `${name}'s AWS background includes ${aws?.role || 'Cloud Support Engineer internship'} work focused on support training, troubleshooting labs, and a serverless metadata extraction workflow. His related stack includes ${sentenceList(cloudSkills, 5)}, backed by ${sentenceList(certs, 2)}.`;
+    return answerWithFollowUps(`${name}'s AWS background includes ${aws?.role || 'Cloud Support Engineer internship'} work focused on support training, troubleshooting labs, and a serverless metadata extraction workflow. His related stack includes ${sentenceList(cloudSkills, 5)}, backed by ${sentenceList(certs, 2)}. The honest scope is training, labs, and project work rather than live customer ticket ownership.`, ['Tell me about the AWS serverless workflow', 'What AWS certifications does he have?', 'How does this fit cloud support roles?']);
   }
 
   if (/ciris|ethical ai|freelance|frontend contributor/.test(lowerQuestion)) {
-    return `${name}'s CIRIS Ethical AI work involved running the project locally, improving onboarding documentation, adding JWT token-verification logging, and contributing small merged frontend and lint updates. That experience is useful because it shows he can enter an existing codebase carefully and leave clearer setup notes for the next contributor.`;
+    return answerWithFollowUps(`${name}'s CIRIS Ethical AI work involved running the project locally, improving onboarding documentation, adding JWT token-verification logging, and contributing small merged frontend and lint updates. That experience is useful because it shows he can enter an existing codebase carefully and leave clearer setup notes for the next contributor.`, ['What did Bradley change at CIRIS?', 'How does he debug issues?', 'What project best shows collaboration?']);
+  }
+
+  const comparisonAnswer = compareProjects(knowledge, question);
+  if (comparisonAnswer) return answerWithFollowUps(comparisonAnswer, ['Which project is most relevant to frontend roles?', 'Which project shows cloud experience?', 'List Bradley’s projects']);
+
+  const matchedProject = matchProject(knowledge, question);
+  if (matchedProject) {
+    return answerWithFollowUps(describeProject(matchedProject, question), ['How does this project relate to a job?', 'Compare it with another project', 'What tech stack did Bradley use?']);
+  }
+
+  const experienceAnswer = answerExperience(knowledge, question);
+  if (experienceAnswer) return answerWithFollowUps(experienceAnswer, ['How does that transfer to software work?', 'Tell me about his AWS internship', 'Why is he a good junior candidate?']);
+
+  if (/contact|email|phone|reach|linkedin|github/.test(lowerQuestion)) {
+    return answerWithFollowUps(`You can reach ${name} at ${identity.email || 'bradmatera@gmail.com'}${identity.phone ? ` or ${identity.phone}` : ''}. His portfolio is ${identity.portfolioUrl || 'https://bradleymatera.dev/'}, LinkedIn is ${identity.linkedInUrl || 'https://www.linkedin.com/in/bradmatera'}, and GitHub is ${identity.gitHubUrl || 'https://github.com/BradleyMatera'}.`, ['Summarize Bradley as a junior software engineer', 'What roles is Bradley targeting?', 'What is his GitHub?']);
+  }
+
+  if (/education|degree|school|full sail|gpa|course/.test(lowerQuestion)) {
+    return answerWithFollowUps(`${name} earned a ${education.degree || 'B.S. in Web Development'} from ${education.school || 'Full Sail University'}${education.gpa ? ` with a ${education.gpa} GPA` : ''}. Relevant coursework includes ${sentenceList(education.relevantCoursework, 5)}, which supports his web and application-development focus.`, ['What did he build at Full Sail?', 'What certifications does he have?', 'What roles is he targeting?']);
+  }
+
+  if (/cert|certificate|certification/.test(lowerQuestion)) {
+    return answerWithFollowUps(`${name}'s certifications include ${sentenceList(certNames(knowledge?.certifications), 4)}. The AWS credentials reinforce his cloud-support and serverless project background, while the freeCodeCamp work supports his frontend fundamentals.`, ['Does Bradley have AWS experience?', 'What is his strongest technical background?', 'Tell me about the AWS serverless workflow']);
+  }
+
+  if (/role|target|job|looking|relocation/.test(lowerQuestion)) {
+    return answerWithFollowUps(`${name} is targeting ${sentenceList(goals.targetRoles, 5)} roles. He is based in ${location}, and his short-term goal is to join a team where he can learn production systems, debug carefully, document well, and contribute to real software.`, ['Why is he a good junior candidate?', 'What technical support roles fit him?', 'How does his AWS background help?']);
   }
 
   if (/project|portfolio|built|demo|work sample/.test(lowerQuestion)) {
-    return `${name}'s portfolio gives recruiters concrete examples to inspect, including ${sentenceList(projectNames(projects, 5), 5)}. Those projects show practical work with ${sentenceList(skills, 5)}, API integration, debugging, documentation, and deployable web experiences.`;
+    return answerWithFollowUps(`${name}'s portfolio gives recruiters concrete examples to inspect, including ${sentenceList(projectNames(projects, 5), 5)}. Those projects show practical work with ${sentenceList(skills, 5)}, API integration, debugging, documentation, and deployable web experiences.`, ['Which project is best for frontend roles?', 'Which project shows AWS experience?', 'Compare ProjectHub and Interactive Pokedex']);
   }
 
   if (/why|good|fit|candidate|hire|ready/.test(lowerQuestion)) {
-    return `${name} is a strong ${title.toLowerCase()} candidate because he has a focused web-development base in ${skills.join(', ')} and current AWS training that recruiters can verify through real portfolio work. He is based in ${location} and brings practical strengths in debugging, documentation, and building clear project demos.`;
+    return answerWithFollowUps(`${name} is a strong ${title.toLowerCase()} candidate because he has a focused web-development base in ${skills.join(', ')} and current AWS training that recruiters can verify through real portfolio work. He is based in ${location} and brings practical strengths in debugging, documentation, and building clear project demos, while being honest about still growing at the junior level.`, ['Walk me through his resume', 'What are his strongest technical skills?', 'What concerns should a recruiter know?']);
   }
 
   if (/skill|stack|technical|background/.test(lowerQuestion)) {
-    return `${name}'s strongest technical background is ${sentenceList(skills, 8)}, with additional AWS project experience around ${sentenceList(cloudSkills, 4)}. He also works with ${sentenceList(tools, 4)}, which gives him a practical junior-level base for web, support, and cloud-adjacent roles.`;
+    return answerWithFollowUps(`${name}'s strongest technical background is ${sentenceList(skills, 8)}, with additional AWS project experience around ${sentenceList(cloudSkills, 4)}. He also works with ${sentenceList(tools, 4)}, which gives him a practical junior-level base for web, support, and cloud-adjacent roles.`, ['Which projects prove those skills?', 'Does he have AWS experience?', 'What is he still learning?']);
   }
 
-  return `${name} is a ${title} based in ${location}, with a practical foundation in ${sentenceList(skills, 7)}. ${summary.whoIAm || 'He combines web development, AWS training, debugging habits, documentation skills, and project work that gives recruiters concrete examples to review.'}`;
+  const interviewAnswer = answerInterviewStory(knowledge, question);
+  if (interviewAnswer) return answerWithFollowUps(interviewAnswer, ['Walk me through his resume', 'Why is he a good junior candidate?', 'How does he handle not knowing something?']);
+
+  return answerWithFollowUps(`${name} is a ${title} based in ${location}, with a practical foundation in ${sentenceList(skills, 7)}. ${summary.whoIAm || 'He combines web development, AWS training, debugging habits, documentation skills, and project work that gives recruiters concrete examples to review.'}`, ['Why is Bradley a good junior candidate?', 'What projects should I inspect?', 'How can I contact Bradley?']);
+}
+
+function buildGroundedFallback(knowledge, question) {
+  return buildGroundedFallbackPayload(knowledge, question).reply;
 }
 
 function shouldUseGroundedAnswer(question) {
-  return /\b(contact|email|phone|reach|linkedin|github|education|degree|school|full sail|gpa|cert|certificate|certification|role|target|job|looking|relocation|aws|cloud|lambda|dynamo|s3|amplify|serverless|ciris|ethical ai|freelance|frontend contributor|project|portfolio|built|demo|work sample|skill|stack|technical|background)\b/.test(normalizeQuestion(question));
+  const rawQuestion = String(question || '').toLowerCase();
+  return /\b(contact|email|phone|reach|linkedin|github|education|degree|school|full sail|gpa|cert|certificate|certification|role|target|job|looking|relocation|aws|cloud|lambda|dynamo|s3|amplify|serverless|ciris|ethical ai|freelance|frontend contributor|project|portfolio|built|demo|work sample|skill|stack|technical|background|resume|interview|work style|debug|troubleshoot|team|collaborat|communicat|army|military|veteran|construction|roof|case manager|court|erp|dotnet|net|senior|lead|architect|customer ticket|live customer|compare|concern|weakness|gap|risk)\b/.test(normalizeQuestion(question)) || /\.net|c#/.test(rawQuestion);
 }
 
 function isProbablyRelevant(question) {
-  return /\b(bradley|brad|matera|candidate|hire|recruiter|software|engineer|developer|frontend|backend|web|aws|cloud|support|skill|stack|technical|background|project|portfolio|codepen|github|linkedin|contact|email|phone|role|job|relocation|education|degree|school|cert|certificate|ciris|ethical ai|debug|documentation|experience|intern|internship|resume)\b/.test(normalizeQuestion(question));
+  return /\b(bradley|brad|matera|candidate|hire|recruiter|software|engineer|developer|frontend|backend|web|aws|cloud|support|skill|stack|technical|background|project|portfolio|codepen|github|linkedin|contact|email|phone|role|job|relocation|education|degree|school|cert|certificate|ciris|ethical ai|debug|documentation|experience|intern|internship|resume|compare|pokedex|projecthub|cheesemath|shader|serverless|army|military|concern|weakness|gap|risk)\b/.test(normalizeQuestion(question));
 }
 
 function cleanModelReply(reply, knowledge, question) {
@@ -248,7 +388,7 @@ app.post('/api/chat', async (req, res) => {
 
     const knowledge = await fetchKnowledge();
     if (!knowledge) {
-      const payload = { reply: buildGroundedFallback({}, userMessage), model: OLLAMA_MODEL, fallback: true };
+      const payload = { ...buildGroundedFallbackPayload({}, userMessage), model: OLLAMA_MODEL, fallback: true };
       setCachedReply(userMessage, payload);
       return res.json(payload);
     }
@@ -260,13 +400,13 @@ app.post('/api/chat', async (req, res) => {
     }
 
     if (shouldUseGroundedAnswer(userMessage)) {
-      const payload = { reply: buildGroundedFallback(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true };
+      const payload = { ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true };
       setCachedReply(userMessage, payload);
       return res.json(payload);
     }
 
     if (activeGenerations >= MAX_ACTIVE_GENERATIONS) {
-      const payload = { reply: buildGroundedFallback(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true, queued: false };
+      const payload = { ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true, queued: false };
       setCachedReply(userMessage, payload);
       return res.json(payload);
     }
@@ -300,7 +440,7 @@ app.post('/api/chat', async (req, res) => {
     if (!ollamaResponse.ok) {
       const text = await ollamaResponse.text();
       console.error('Ollama upstream failed:', text.slice(0, 500));
-      const payload = { reply: buildGroundedFallback(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true };
+      const payload = { ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true };
       setCachedReply(userMessage, payload);
       return res.json(payload);
     }

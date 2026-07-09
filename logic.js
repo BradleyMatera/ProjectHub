@@ -53,7 +53,12 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
         clearTimeout(timeoutId);
         if (res.ok) {
           const data = await res.json();
-          if (data.reply) return { reply: data.reply, error: null };
+          if (data.reply) {
+            const followUps = Array.isArray(data.followUps) && data.followUps.length
+              ? `<br><br><strong>Good follow-ups:</strong> ${data.followUps.slice(0, 3).map(item => item.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]))).join(" • ")}`
+              : "";
+            return { reply: `${data.reply}${followUps}`, error: null };
+          }
         } else {
           lastError = `HTTP ${res.status}`;
           console.warn(`AI fallback attempt ${attempt} failed: ${lastError}`);
@@ -234,8 +239,8 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     newTopic = "stars";
   }
 
-  // If no local intent matched, try the AI fallback with retries and a long timeout.
-  // Free backends (GCP, Heroku) can be slow; we never let the UI hang forever.
+  // If no local intent matched, try the guarded recruiter chat API.
+  // The free GCP VM can be slow; we never let the UI hang forever.
   if (reply.includes("I don’t know")) {
     const localHelp = "I’m here to help with Bradley Matera’s work as a junior software engineer. Try asking about ProjectHub, the AWS serverless workflow, CIRIS Ethical AI, his GitHub or LinkedIn, target roles, or strongest technical skills.";
     const aiResult = await askAIBackend();

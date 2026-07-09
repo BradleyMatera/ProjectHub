@@ -10,7 +10,7 @@ ProjectHub is an embeddable, AI-powered chat widget that showcases Bradley Mater
 
 - **Tech stack:** Vanilla JavaScript (ES6 modules via IIFE), HTML/CSS-in-JS, GitHub Pages
 - **Runtime:** Browser only; no frontend framework or bundler
-- **AI backend:** Local/heuristic handlers + fallback to a remote proxy endpoint (currently Heroku; migrating to zero-cost GCP Ollama)
+- **AI backend:** Local/heuristic handlers + guarded recruiter chat API on a zero-cost GCP Ollama VM
 - **Data source:** Hard-coded project/CodePen arrays (`data.js`)
 - **Current branch/focus:** `main` — ongoing work: zero-cost Ollama chat backend on GCP and AGENTS.md-driven documentation
 
@@ -101,10 +101,10 @@ const githubData = await fetchGitHubRepoData(repoUrl);
 const allData = await fetchAllGitHubData(projects);
 ```
 
-### Calling the AI fallback
+### Calling the recruiter chat API
 
 ```javascript
-const res = await fetch("https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat", {
+const res = await fetch("https://projecthub-chat.bradleymatera.dev/api/chat", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ message: userQuery })

@@ -13,9 +13,10 @@ flowchart LR
     C --> D[logic.js matches intent]
     D --> E[data.js projects/codePens]
     D --> F[utils.js GitHub API]
-    D --> G{Unrelated query?}
-    G -- yes --> H[Remote AI proxy /api/chat]
-    H --> I[Ollama on GCP e2-micro VM]
+   D --> G{Needs recruiter answer?}
+   G -- yes --> H[projecthub-chat.bradleymatera.dev /api/chat]
+   H --> I[Node API on GCP e2-micro VM]
+   I --> J[Grounded recruiter knowledge + guarded Ollama]
 ```
 
 ---
@@ -29,8 +30,8 @@ flowchart LR
 | `logic.js` | Intent detection, response generation, conversation history, AI fallback trigger. |
 | `ui.js` | Chat DOM creation, event handling, styling, loading spinner. |
 | `utils.js` | GitHub repo metadata fetcher. |
-| Remote proxy | Provides general AI responses when local intent handlers cannot answer. |
-| Ollama backend | Future zero-cost LLM backend running on GCP Compute Engine. |
+| Recruiter chat API | Provides grounded recruiter-safe answers when local intent handlers cannot answer naturally. |
+| Ollama backend | Zero-cost local model running privately on GCP Compute Engine for guarded low-risk wording. |
 
 ---
 
@@ -49,14 +50,14 @@ flowchart LR
    - project by name
    - CodePen by name
    - platform, tech, list, compare, most stars
-6. If no match and the query is unrelated, it calls the remote `/api/chat` proxy.
-7. The proxy forwards to an LLM (currently Heroku; migrating to Ollama on GCP).
+6. If the query needs a recruiter-style answer, it calls `https://projecthub-chat.bradleymatera.dev/api/chat`.
+7. The API fetches `data/recruiter-knowledge.json`, returns deterministic grounded answers for factual topics, and only uses Ollama output when it passes guardrails.
 
 ---
 
-## Backend Migration (In Progress)
+## Backend Runtime
 
-The goal is to replace the paid Heroku AI proxy with a **zero-cost** Ollama backend on Google Cloud’s Always Free tier.
+The paid Heroku proxy has been replaced with a **zero-cost** Ollama-backed API on Google Cloud’s Always Free tier.
 
 See `backend-guide.md` for the full deployment plan.
 
@@ -64,9 +65,9 @@ See `backend-guide.md` for the full deployment plan.
 
 - **VM:** `e2-micro` in `us-west1`, `us-central1`, or `us-east1`
 - **Disk:** 30 GB standard persistent disk (Always Free)
-- **Model:** small quantized open-source model (e.g., Mistral 7B Q4_K_M or smaller)
-- **Proxy:** small Node.js/Express server on port 8080 forwarding to `localhost:11434/v1/chat/completions`
-- **Security:** firewall rules, CORS to the allowed domain, API key, HTTPS via managed cert or Let’s Encrypt
+- **Model:** `smollm2:135m` for guarded low-risk generation on micro hardware
+- **Proxy:** Node.js/Express server on `127.0.0.1:3000`, reverse proxied by Caddy
+- **Security:** CORS to allowed domains, HTTPS via Caddy/Let’s Encrypt, Ollama bound to localhost
 - **Storage:** optional Firestore Native mode for chat history within free quota
 
 ---
