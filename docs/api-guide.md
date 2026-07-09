@@ -54,7 +54,12 @@ Request body:
 
 ```json
 {
-  "message": "user's raw query"
+  "message": "user's raw query",
+  "sessionId": "stable browser session id",
+  "context": [
+    { "role": "user", "content": "recent user question" },
+    { "role": "assistant", "content": "recent assistant answer" }
+  ]
 }
 ```
 
@@ -63,14 +68,23 @@ Response body:
 ```json
 {
   "reply": "Grounded recruiter-safe answer text",
+  "flavor": "Tiny generated label",
+  "flavorSource": "ollama-flavor",
   "followUps": ["Optional follow-up prompt", "Optional follow-up prompt"],
+  "sessionMemory": { "enabled": true, "store": "neon", "turns": 4 },
   "model": "smollm2:135m",
   "fallback": true,
   "cached": false
 }
 ```
 
-The browser should treat `reply` as the primary answer and render `followUps` as short suggested next questions. The current widget renders them as clickable chips that submit the selected follow-up. The backend deliberately returns grounded deterministic answers for recruiter-critical topics and only uses Ollama for low-risk conversational wording that passes guardrails.
+The browser should treat `reply` as the primary answer and render `followUps` as short suggested next questions. The current widget renders follow-ups as clickable chips and displays `flavor` as a small label before the grounded answer. The backend deliberately returns grounded deterministic answers for recruiter-critical topics and only uses Ollama for tiny 3-5 word labels or low-risk conversational wording that passes guardrails.
+
+## Session Memory
+
+The browser creates a per-tab `sessionId` and sends the last few turns as `context`. The Netlify router persists trimmed session memory when `NETLIFY_DATABASE_URL` or `DATABASE_URL` is configured for Netlify DB/Neon. If those env vars are absent or Neon is unavailable, it falls back to short-lived in-memory session storage inside the function instance.
+
+Context-dependent messages such as “tell me more,” “what about that project,” or “same for AWS” bypass the global response cache so the router can use recent session context.
 
 ## Security Requirements for New Proxy
 

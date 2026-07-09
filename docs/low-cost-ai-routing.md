@@ -18,8 +18,10 @@ ProjectHub should stay grounded-first:
 2. Netlify router classifies, caches, and proxies to the GCP API.
 3. GCP VM API returns deterministic recruiter-safe answers for factual/profile/project questions.
 4. Small local Ollama model is used only for guarded low-risk wording.
-5. Response caches avoid repeated work.
-6. Optional paid or token-limited AI should polish only selected answers, never become required for basic operation.
+5. A tiny generated `flavor` label, usually 3-5 words, can be attached to grounded answers so responses feel less identical without letting the model rewrite facts.
+6. Netlify DB/Neon can store trimmed per-session memory so recruiters can ask follow-ups without losing context.
+7. Response caches avoid repeated work, but context-dependent follow-ups bypass the global cache.
+8. Optional paid or token-limited AI should polish only selected answers, never become required for basic operation.
 
 This keeps the widget useful even if every paid or token-limited service is exhausted.
 
@@ -32,6 +34,7 @@ Netlify can help without extra spend if it is already part of the portfolio stac
 - Use `netlify/functions/chat-router.js` as a smart router/cache in front of the GCP API when the recruiter site is deployed on Netlify.
 - Use Netlify's included AI/token allowance only for rare answer-polishing paths, not for every chat message.
 - Cache polished answers by normalized question so the same recruiter questions do not burn tokens repeatedly.
+- Store session memory in Netlify DB/Neon when `NETLIFY_DATABASE_URL` or `DATABASE_URL` is configured; fall back to in-function memory when unavailable.
 - Enforce a monthly token counter in the function or API. When the allowance is near exhausted, fall back to the grounded GCP answer.
 
 Netlify Functions do not replace Ollama compute. They are useful for routing, caching, quota enforcement, and calling a hosted model API within the included allowance.

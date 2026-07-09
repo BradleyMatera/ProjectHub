@@ -14,9 +14,10 @@ flowchart LR
     D --> E[data.js projects/codePens]
     D --> F[utils.js GitHub API]
    D --> G{Needs recruiter answer?}
-   G -- yes --> H[projecthub-chat.bradleymatera.dev /api/chat]
+   G -- yes --> H[Netlify chat-router]
+   H --> M[(Optional Netlify DB / Neon session memory)]
    H --> I[Node API on GCP e2-micro VM]
-   I --> J[Grounded recruiter knowledge + guarded Ollama]
+   I --> J[Grounded recruiter knowledge + guarded Ollama flavor labels]
 ```
 
 ---
@@ -30,8 +31,9 @@ flowchart LR
 | `logic.js` | Intent detection, response generation, conversation history, AI fallback trigger. |
 | `ui.js` | Chat DOM creation, event handling, styling, loading spinner. |
 | `utils.js` | GitHub repo metadata fetcher. |
+| Netlify chat router | Classifies, caches, forwards requests, and stores session memory when Netlify DB/Neon is configured. |
 | Recruiter chat API | Provides grounded recruiter-safe answers when local intent handlers cannot answer naturally. |
-| Ollama backend | Zero-cost local model running privately on GCP Compute Engine for guarded low-risk wording. |
+| Ollama backend | Zero-cost local model running privately on GCP Compute Engine for guarded 3-5 word flavor labels and low-risk wording. |
 
 ---
 
@@ -44,14 +46,15 @@ flowchart LR
    - defines `handleQuery`
    - calls `setupChatUI(...)`
 3. User types a query.
-4. `ui.js` calls `handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData)`.
+4. `ui.js` calls `handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData, chatSession)` with a per-tab session id and recent turn context.
 5. `logic.js` tries exact/intent matches:
    - Bradley bio, GitHub, LinkedIn
    - project by name
    - CodePen by name
    - platform, tech, list, compare, most stars
-6. If the query needs a recruiter-style answer, it calls `https://projecthub-chat.bradleymatera.dev/api/chat`.
-7. The API fetches `data/recruiter-knowledge.json`, returns deterministic grounded answers for factual topics, and only uses Ollama output when it passes guardrails.
+6. If the query needs a recruiter-style answer, it calls `/.netlify/functions/chat-router` on `bradleymatera.dev`, or the GCP API directly elsewhere.
+7. The Netlify router persists trimmed session memory in Neon/Netlify DB when configured, otherwise in memory, and forwards the request to the GCP API.
+8. The API fetches `data/recruiter-knowledge.json`, returns deterministic grounded answers for factual topics, and uses Ollama only for guarded tiny flavor labels or low-risk output that passes validation.
 
 ---
 

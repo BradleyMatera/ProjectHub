@@ -196,7 +196,7 @@ function shortSummaryBradleyAsWebDev(projects, codePens) {
 }
 
 // Function to handle user queries
-async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData) {
+async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData, chatSession = {}) {
   const query = userQuery.toLowerCase();
   let reply = "I don’t know that one. Try asking about Bradley Matera's current work — projects like ProjectHub, the AWS serverless workflow, or CIRIS Ethical AI; his GitHub or LinkedIn; the roles he's targeting; or his strongest technical skills. You can also ask for a summary of Bradley as a junior software engineer.";
   let newTopic = lastQueryTopic;
@@ -221,16 +221,23 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
           method: "POST",
           signal: controller.signal,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: userQuery })
+          body: JSON.stringify({
+            message: userQuery,
+            sessionId: chatSession.sessionId,
+            context: Array.isArray(chatSession.context) ? chatSession.context.slice(-6) : []
+          })
         });
         clearTimeout(timeoutId);
         if (res.ok) {
           const data = await res.json();
           if (data.reply) {
+            const flavor = data.flavor
+              ? `<span class="ai-flavor" title="Tiny generated phrase">${escapeHtml(data.flavor)}</span><br>`
+              : "";
             const followUps = Array.isArray(data.followUps) && data.followUps.length
               ? `<div class="followup-list"><strong>Good follow-ups:</strong>${data.followUps.slice(0, 3).map(item => `<button type="button" class="followup-chip" data-followup="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("")}</div>`
               : "";
-            return { reply: `${data.reply}${followUps}`, error: null };
+            return { reply: `${flavor}${data.reply}${followUps}`, error: null, sessionMemory: data.sessionMemory || null };
           }
         } else {
           lastError = `HTTP ${res.status}`;
@@ -441,9 +448,22 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   let lastSubmittedQuery = "";
   let lastSubmittedAt = 0;
   let lastBotReplyText = "";
+  let conversationContext = [];
 
   const requestInterval = 900;
   const avatarUrl = window.__PROJECTHUB_AVATAR__ || (window.location.protocol === "file:" ? "bot-avatar.png" : "https://bradleymatera.github.io/ProjectHub/bot-avatar.png");
+  const sessionStorageKey = "projecthub-chat-session-id";
+  const sessionId = (() => {
+    try {
+      const existing = window.sessionStorage.getItem(sessionStorageKey);
+      if (existing) return existing;
+      const generated = `ph_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+      window.sessionStorage.setItem(sessionStorageKey, generated);
+      return generated;
+    } catch (error) {
+      return `ph_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    }
+  })();
 
   function escapeHtml(value) {
     return String(value).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
@@ -716,6 +736,27 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       color: #c5ecff;
       border-bottom-color: currentColor;
       outline: none;
+    }
+
+    .ai-flavor {
+      display: inline-flex;
+      width: fit-content;
+      margin: 0 0 8px;
+      padding: 4px 8px;
+      border: 1px solid rgba(112, 183, 255, 0.26);
+      border-radius: 999px;
+      color: #c5ecff;
+      background: rgba(112, 183, 255, 0.11);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+
+    .ai-flavor::before {
+      content: "AI note";
+      color: rgba(237, 247, 239, 0.56);
+      margin-right: 6px;
+      font-weight: 700;
     }
 
     .timestamp {
@@ -1014,6 +1055,11 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     chatInput.focus();
   }
 
+  function rememberTurn(role, content) {
+    conversationContext.push({ role, content: normalizeForCompare(content).slice(0, 420), at: Date.now() });
+    conversationContext = conversationContext.slice(-8);
+  }
+
   function renderSuggestions() {
     const prioritySuggestions = [
       "Why is Bradley a good junior candidate?",
@@ -1079,7 +1125,10 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     const statusRow = appendTypingStatus();
 
     try {
-      const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData);
+      const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData, {
+        sessionId,
+        context: conversationContext
+      });
       lastQueryTopic = newTopic;
       const plainReply = normalizeForCompare(reply);
 
@@ -1091,6 +1140,8 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       }
 
       appendMessage("bot", "ProjectHub", reply);
+      rememberTurn("user", userQuery);
+      rememberTurn("assistant", reply);
       lastBotReplyText = plainReply;
       chatInput.value = "";
       resizeInput();
