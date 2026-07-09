@@ -83,6 +83,8 @@ const projects = [
   { 
     name: "Animal Sounds", 
     desc: "An interactive soundboard app using HTML, CSS, and JavaScript, built as a fun project to practice front-end skills.", 
+    url: "https://bradleymatera.github.io/AnimalSounds/", 
+    platform: "GitHub Pages", 
     repo: "https://github.com/BradleyMatera/AnimalSounds", 
     tech: ["HTML", "CSS", "JavaScript", "GitHub Pages"],
     apiEndpoint: null
