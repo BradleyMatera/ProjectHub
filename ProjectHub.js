@@ -411,7 +411,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     if (aiResult.reply) {
       reply = aiResult.reply;
     } else {
-      reply = `${localHelp}<br><br><em>The AI backend is slow or unreachable right now (${aiResult.error}). I answered what I could locally — try a more specific question about Bradley's work.</em>`;
+      reply = `${localHelp}<br><br>I can still help from Bradley's verified profile details — ask about his projects, cloud work, support background, target roles, or contact links.`;
     }
     newTopic = "unrelated";
   }

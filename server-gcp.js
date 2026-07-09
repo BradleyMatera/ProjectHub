@@ -96,8 +96,8 @@ function buildPrompt(knowledge, question) {
   const skillLine = skills.join(', ');
   const certLine = Array.isArray(certs) ? certs.slice(0, 2).map(c => typeof c === 'string' ? c : c.name).join(', ') : '';
 
-  let prompt = `You are a concise recruiter assistant for ${identity.name || 'Bradley Matera'}, a ${identity.title || 'junior software engineer'}.\n`;
-  prompt += `Answer the recruiter question briefly, honestly, and professionally. Do not oversell. Keep under 3 sentences.\n\n`;
+  let prompt = `You are a concise recruiter assistant answering questions about ${identity.name || 'Bradley Matera'}, a ${identity.title || 'junior software engineer'}.\n`;
+  prompt += `Answer in third person as an assistant, never as Bradley. Be natural, specific, honest, and professional. Keep the answer to 2 short sentences.\n\n`;
   prompt += `Name: ${identity.name || 'Bradley Matera'}\n`;
   prompt += `Title: ${identity.title || 'Junior Software Engineer'}\n`;
   prompt += `Location: ${identity.location || 'Davis, Illinois'}\n`;
@@ -130,10 +130,10 @@ app.post('/api/chat', async (req, res) => {
         prompt,
         stream: false,
         options: {
-          num_predict: 80,
-          num_ctx: 256,
+          num_predict: 55,
+          num_ctx: 192,
           num_thread: 2,
-          temperature: 0.2
+          temperature: 0.35
         }
       })
     });
@@ -161,7 +161,7 @@ app.post('/api/chat', async (req, res) => {
       const identity = knowledge?.identity || {};
       const skills = (knowledge?.topSkills || knowledge?.skills?.languagesAndFrameworks || []).slice(0, 10);
       const certs = (knowledge?.certifications || []).slice(0, 2);
-      const reply = `I'm Bradley's recruiter assistant. ${identity.name || 'Bradley Matera'} is a ${identity.title || 'junior software engineer'} based in ${identity.location || 'Davis, Illinois'}. ${skills.length ? `Top skills: ${skills.join(', ')}.` : ''} ${certs.length ? `Certifications: ${certs.map(c => typeof c === 'string' ? c : c.name).join(', ')}.` : ''} Ask me about projects, skills, or how to get in touch.`;
+      const reply = `${identity.name || 'Bradley Matera'} is a ${identity.title || 'junior software engineer'} based in ${identity.location || 'Davis, Illinois'}, open to relocation, and strongest in ${skills.slice(0, 7).join(', ')}. He pairs that web development foundation with AWS training, ${certs.length ? `${certs.map(c => typeof c === 'string' ? c : c.name).join(' and ')} certifications, ` : ''}debugging habits, documentation skills, and project experience that gives recruiters concrete work to review.`;
       return res.json({ reply: reply.trim().replace(/\s+/g, ' '), model: OLLAMA_MODEL, fallback: true });
     }
     return res.status(500).json({ error: 'Server error.', detail: String(err.message || err) });
