@@ -104,6 +104,8 @@ The widget asks for the visitor's name at the start of each browser tab session 
 
 Repeated or semantically repeated questions should not return the same answer verbatim. The Netlify router checks recent session memory; if the same core question has already been answered, it politely says so, quotes the useful part of the earlier answer, and offers follow-ups for proof, tradeoffs, risk, or interview wording. Forced-choice recruiter questions such as “if you had to pick one strongest role” resolve to one answer instead of cycling through target-role lists.
 
+Profile-adjacent personal questions that are not in verified data, such as favorite food or hobbies, should go through the guarded generative fallback. The model may phrase the response naturally, but it must not invent personal facts; it should say the detail is not verified and bridge to recruiter-useful topics.
+
 ## Security Requirements for New Proxy
 
 - Accept requests only from allowed origins via CORS.

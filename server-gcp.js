@@ -408,6 +408,20 @@ function buildPrompt(knowledge, question) {
   return prompt;
 }
 
+function buildConversationalUnknownPrompt(knowledge, question) {
+  const identity = knowledge?.identity || {};
+  const name = identity.name || 'Bradley Matera';
+  const title = identity.title || 'junior software engineer';
+  return [
+    `You are Bradley Matera's recruiter assistant.`,
+    `Answer naturally and conversationally in 1-2 short sentences.`,
+    `You must not invent personal facts. If the requested fact is not in the verified profile, say you do not have that verified detail, then bridge to something useful a recruiter can ask next.`,
+    `Known profile boundary: ${name} is a ${title}; verified topics include projects, skills, AWS experience, CIRIS work, education, certifications, target roles, work style, and contact links.`,
+    `Question: ${String(question).slice(0, 500)}`,
+    `Answer:`
+  ].join('\n');
+}
+
 function buildGroundedFallbackPayload(knowledge, question) {
   const identity = knowledge?.identity || {};
   const summary = knowledge?.summary || {};
@@ -503,7 +517,11 @@ function shouldUseGroundedAnswer(question) {
 }
 
 function isProbablyRelevant(question) {
-  return /\b(bradley|brad|matera|candidate|hire|recruiter|software|engineer|developer|frontend|backend|web|aws|cloud|support|skill|stack|technical|background|project|portfolio|codepen|github|linkedin|contact|email|phone|reach|reached|reaching|role|job|relocation|education|degree|school|cert|certificate|ciris|ethical ai|debug|documentation|experience|intern|internship|resume|compare|pokedex|projecthub|cheesemath|shader|serverless|army|military|concern|weakness|gap|risk|red flag|downside|screening|ats|jargon|ticket|crud|api|sdlc|production|on call)\b/.test(normalizeQuestion(question));
+  return /\b(bradley|brad|matera|candidate|hire|recruiter|software|engineer|developer|frontend|backend|web|aws|cloud|support|skill|stack|technical|background|project|portfolio|codepen|github|linkedin|contact|email|phone|reach|reached|reaching|role|job|relocation|education|degree|school|cert|certificate|ciris|ethical ai|debug|documentation|experience|intern|internship|resume|compare|pokedex|projecthub|cheesemath|shader|serverless|army|military|concern|weakness|gap|risk|red flag|downside|screening|ats|jargon|ticket|crud|api|sdlc|production|on call|favorite|favourite|food|hobby|personal|personality|like|likes|interest|interests)\b/.test(normalizeQuestion(question));
+}
+
+function asksUnverifiedPersonalDetail(question) {
+  return /\b(favorite|favourite|food|hobby|personal|personality|like|likes|interest|interests|music|movie|game|pet|family|married|kids|children)\b/.test(normalizeQuestion(question));
 }
 
 function cleanModelReply(reply, knowledge, question) {
@@ -515,6 +533,64 @@ function cleanModelReply(reply, knowledge, question) {
     return { reply: buildGroundedFallback(knowledge, question), fallback: true };
   }
   return { reply: cleaned, fallback: false };
+}
+
+function cleanConversationalReply(reply, knowledge, question) {
+  const cleaned = String(reply || '').trim().replace(/\s+/g, ' ');
+  const forbidden = /\b(Python|C\+\+|Java\b|pizza|sushi|burger|favorite food is|loves eating|hates eating|born in|married|children)\b/i;
+  if (!cleaned || cleaned.length < 30 || forbidden.test(cleaned)) {
+    return {
+      reply: `I do not have Bradley's favorite food or that kind of personal detail in the verified profile. I can answer safely about recruiter-relevant details though, like his strongest role fit, projects, AWS background, work style, or contact links.`,
+      fallback: true
+    };
+  }
+  return { reply: cleaned, fallback: false };
+}
+
+async function generateConversationalUnknown(knowledge, userMessage, requestOptions) {
+  if (activeGenerations >= MAX_ACTIVE_GENERATIONS) {
+    return addFlavor({
+      reply: `I do not have that personal detail verified for Bradley. I can still help with recruiter-useful questions about his projects, role fit, AWS background, strengths, gaps, or contact links.`,
+      model: OLLAMA_MODEL,
+      fallback: true
+    }, userMessage, requestOptions);
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Math.min(OLLAMA_TIMEOUT_MS, 6500));
+  activeGenerations++;
+  try {
+    const ollamaResponse = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: OLLAMA_MODEL,
+        prompt: buildConversationalUnknownPrompt(knowledge, userMessage),
+        stream: false,
+        options: {
+          num_predict: 48,
+          num_ctx: 256,
+          num_thread: 2,
+          temperature: 0.35
+        }
+      })
+    });
+    if (!ollamaResponse.ok) throw new Error(`Ollama HTTP ${ollamaResponse.status}`);
+    const data = await ollamaResponse.json();
+    const result = cleanConversationalReply(data.response, knowledge, userMessage);
+    return addFlavor({ reply: result.reply, model: OLLAMA_MODEL, fallback: result.fallback, generative: true }, userMessage, requestOptions);
+  } catch (error) {
+    return addFlavor({
+      reply: `I do not have that personal detail verified for Bradley. I can still help with recruiter-useful questions about his projects, role fit, AWS background, strengths, gaps, or contact links.`,
+      model: OLLAMA_MODEL,
+      fallback: true,
+      generative: false
+    }, userMessage, requestOptions);
+  } finally {
+    clearTimeout(timeout);
+    activeGenerations = Math.max(0, activeGenerations - 1);
+  }
 }
 
 app.post('/api/chat', async (req, res) => {
@@ -536,7 +612,13 @@ app.post('/api/chat', async (req, res) => {
     }
 
     if (!isProbablyRelevant(userMessage)) {
-      const payload = { reply: `I’m best used for recruiter questions about Bradley Matera: his projects, AWS experience, CIRIS work, technical skills, target roles, education, certifications, and contact links. Try asking one of those and I’ll answer from verified profile details.`, model: OLLAMA_MODEL, fallback: true, offTopic: true };
+      const payload = await generateConversationalUnknown(knowledge, userMessage, requestOptions);
+      setCachedReply(userMessage, payload);
+      return res.json(payload);
+    }
+
+    if (asksUnverifiedPersonalDetail(userMessage)) {
+      const payload = await generateConversationalUnknown(knowledge, userMessage, requestOptions);
       setCachedReply(userMessage, payload);
       return res.json(payload);
     }
