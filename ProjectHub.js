@@ -205,6 +205,60 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   const AI_TIMEOUT_MS = 60000; // Wait up to 60s for a free Google/GCP slow backend
   const AI_RETRIES = 2;
 
+  async function askAIBackend() {
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= AI_RETRIES; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+        const res = await fetch(CHAT_API_URL, {
+          method: "POST",
+          signal: controller.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userQuery })
+        });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.reply) return { reply: data.reply, error: null };
+        } else {
+          lastError = `HTTP ${res.status}`;
+          console.warn(`AI fallback attempt ${attempt} failed: ${lastError}`);
+        }
+      } catch (error) {
+        lastError = error.name === "AbortError" ? "timeout" : error.message;
+        console.warn(`AI fallback attempt ${attempt} error: ${lastError}`);
+      }
+    }
+
+    return { reply: null, error: lastError || "no response" };
+  }
+
+  function wantsGenerativeAnswer() {
+    const utilityPatterns = [
+      /\b(github|linkedin|contact|email|phone)\b/,
+      /\b(list|all)\b.*\b(projects?|codepens?)\b/,
+      /\b(most stars|compare)\b/
+    ];
+
+    if (utilityPatterns.some(pattern => pattern.test(query))) return false;
+
+    const conversationalPatterns = [
+      /\b(why|how|what makes|would|could|should|explain|tell me|summarize|summary|background|experience|skills?|strengths?|fit|candidate|hire|good|ready|role|targeting|aws|cloud|ciris|ethical ai)\b/,
+      /\b(bradley|matera)\b/
+    ];
+
+    return conversationalPatterns.some(pattern => pattern.test(query));
+  }
+
+  if (wantsGenerativeAnswer()) {
+    const aiResult = await askAIBackend();
+    if (aiResult.reply) {
+      return { reply: aiResult.reply, newTopic: "ai" };
+    }
+  }
+
   if ((query.includes("bradley") || query.includes("who is") || query.includes("tell me about") || query.includes("about you") || query.includes("about bradley")) && (query.includes("web dev") || query.includes("developer") || query.includes("software engineer") || query.includes("engineer") || query.includes("summarize") || query.includes("summary") || query.includes("background"))) {
     if (query.includes("full") || (lastQueryTopic === "summary" && (query.includes("more") || query.includes("full")))) {
       reply = summarizeBradleyAsWebDev(projects, codePens);
@@ -352,40 +406,12 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   // Free backends (GCP, Heroku) can be slow; we never let the UI hang forever.
   if (reply.includes("I don’t know")) {
     const localHelp = "I’m here to help with Bradley Matera’s work as a junior software engineer. Try asking about ProjectHub, the AWS serverless workflow, CIRIS Ethical AI, his GitHub or LinkedIn, target roles, or strongest technical skills.";
-    let aiReply = null;
-    let lastError = null;
+    const aiResult = await askAIBackend();
 
-    for (let attempt = 1; attempt <= AI_RETRIES; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
-        const res = await fetch(CHAT_API_URL, {
-          method: "POST",
-          signal: controller.signal,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: userQuery })
-        });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.reply) {
-            aiReply = data.reply;
-            break;
-          }
-        } else {
-          lastError = `HTTP ${res.status}`;
-          console.warn(`AI fallback attempt ${attempt} failed: ${lastError}`);
-        }
-      } catch (error) {
-        lastError = error.name === "AbortError" ? "timeout" : error.message;
-        console.warn(`AI fallback attempt ${attempt} error: ${lastError}`);
-      }
-    }
-
-    if (aiReply) {
-      reply = `${localHelp}<br><br><strong>AI backend says:</strong> ${aiReply}`;
+    if (aiResult.reply) {
+      reply = aiResult.reply;
     } else {
-      reply = `${localHelp}<br><br><em>The AI backend is slow or unreachable right now (${lastError || "no response"}). I answered what I could locally — try a more specific question about Bradley's work.</em>`;
+      reply = `${localHelp}<br><br><em>The AI backend is slow or unreachable right now (${aiResult.error}). I answered what I could locally — try a more specific question about Bradley's work.</em>`;
     }
     newTopic = "unrelated";
   }
@@ -605,12 +631,3 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 
   console.log("ProjectHub loaded!");
 }
-
-// Run the chat widget once the DOM is ready
-document.addEventListener("DOMContentLoaded", () => {
-  try {
-    setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData);
-  } catch (error) {
-    console.error("Error initializing ProjectHub:", error);
-  }
-});

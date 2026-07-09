@@ -18,6 +18,8 @@ let knowledgeCache = null;
 let knowledgeCacheAt = 0;
 const KNOWLEDGE_CACHE_MS = 5 * 60 * 1000; // 5 minutes
 
+app.set('trust proxy', 1);
+
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '1mb' }));
 
@@ -34,9 +36,10 @@ app.use(cors({
 
 app.use('/api/chat', rateLimit({
   windowMs: 60 * 1000,
-  max: 10,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: { error: 'Too many chat requests. Please slow down.' }
 }));
 
@@ -116,7 +119,7 @@ app.post('/api/chat', async (req, res) => {
     const prompt = buildPrompt(knowledge, userMessage);
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120000);
+    const timeout = setTimeout(() => controller.abort(), 25000);
 
     const ollamaResponse = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
       method: 'POST',
@@ -127,9 +130,9 @@ app.post('/api/chat', async (req, res) => {
         prompt,
         stream: false,
         options: {
-          num_predict: 100,
-          num_ctx: 512,
-          num_thread: 1,
+          num_predict: 80,
+          num_ctx: 256,
+          num_thread: 2,
           temperature: 0.2
         }
       })
@@ -151,6 +154,16 @@ app.post('/api/chat', async (req, res) => {
     });
   } catch (err) {
     console.error('Chat error:', err);
+    // If Ollama timed out or failed, still return a useful local answer from the
+    // knowledge base instead of a broken error message.
+    if (err.name === 'AbortError' || String(err.message || '').includes('abort')) {
+      const knowledge = knowledgeCache || await fetchKnowledge().catch(() => ({}));
+      const identity = knowledge?.identity || {};
+      const skills = (knowledge?.topSkills || knowledge?.skills?.languagesAndFrameworks || []).slice(0, 10);
+      const certs = (knowledge?.certifications || []).slice(0, 2);
+      const reply = `I'm Bradley's recruiter assistant. ${identity.name || 'Bradley Matera'} is a ${identity.title || 'junior software engineer'} based in ${identity.location || 'Davis, Illinois'}. ${skills.length ? `Top skills: ${skills.join(', ')}.` : ''} ${certs.length ? `Certifications: ${certs.map(c => typeof c === 'string' ? c : c.name).join(', ')}.` : ''} Ask me about projects, skills, or how to get in touch.`;
+      return res.json({ reply: reply.trim().replace(/\s+/g, ' '), model: OLLAMA_MODEL, fallback: true });
+    }
     return res.status(500).json({ error: 'Server error.', detail: String(err.message || err) });
   }
 });
