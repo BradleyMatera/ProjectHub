@@ -34,8 +34,10 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   let newTopic = lastQueryTopic;
 
   const CHAT_API_URL = window.__PROJECTHUB_CHAT_API__ || "https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat";
+  const AI_TIMEOUT_MS = 60000; // Wait up to 60s for a free Google/GCP slow backend
+  const AI_RETRIES = 2;
 
-  if ((query.includes("bradley") || query.includes("who is") || query.includes("tell me about") || query.includes("about you")) && (query.includes("web dev") || query.includes("developer") || query.includes("software engineer") || query.includes("engineer") || query.includes("summarize") || query.includes("summary"))) {
+  if ((query.includes("bradley") || query.includes("who is") || query.includes("tell me about") || query.includes("about you") || query.includes("about bradley")) && (query.includes("web dev") || query.includes("developer") || query.includes("software engineer") || query.includes("engineer") || query.includes("summarize") || query.includes("summary") || query.includes("background"))) {
     if (query.includes("full") || (lastQueryTopic === "summary" && (query.includes("more") || query.includes("full")))) {
       reply = summarizeBradleyAsWebDev(projects, codePens);
     } else if (query.includes("short") || query.includes("paragraph")) {
@@ -178,27 +180,44 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     newTopic = "stars";
   }
 
-  // If no local intent matched, try the AI fallback for any unrecognized query
+  // If no local intent matched, try the AI fallback with retries and a long timeout.
+  // Free backends (GCP, Heroku) can be slow; we never let the UI hang forever.
   if (reply.includes("I don’t know")) {
-    reply = "I’m here to help with Bradley Matera’s work as a junior software engineer. Try asking about ProjectHub, the AWS serverless workflow, CIRIS Ethical AI, his GitHub or LinkedIn, target roles, or strongest technical skills. For unrelated topics, I can provide a general response when the AI backend is available.";
-    try {
-      const res = await fetch(CHAT_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userQuery })
-      });
-      if (!res.ok) {
-        reply += ` However, the AI backend returned an error (${res.status}).`;
-        console.error("AI fallback HTTP error:", res.status);
-      } else {
-        const data = await res.json();
-        if (data.reply) {
-          reply += ` Here's a general response: ${data.reply}`;
+    const localHelp = "I’m here to help with Bradley Matera’s work as a junior software engineer. Try asking about ProjectHub, the AWS serverless workflow, CIRIS Ethical AI, his GitHub or LinkedIn, target roles, or strongest technical skills.";
+    let aiReply = null;
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= AI_RETRIES; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+        const res = await fetch(CHAT_API_URL, {
+          method: "POST",
+          signal: controller.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userQuery })
+        });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.reply) {
+            aiReply = data.reply;
+            break;
+          }
+        } else {
+          lastError = `HTTP ${res.status}`;
+          console.warn(`AI fallback attempt ${attempt} failed: ${lastError}`);
         }
+      } catch (error) {
+        lastError = error.name === "AbortError" ? "timeout" : error.message;
+        console.warn(`AI fallback attempt ${attempt} error: ${lastError}`);
       }
-    } catch (error) {
-      reply += " However, the AI backend is currently unreachable (connection error). Please try again later, or ask about Bradley's work directly.";
-      console.error("AI fallback error:", error);
+    }
+
+    if (aiReply) {
+      reply = `${localHelp}<br><br><strong>AI backend says:</strong> ${aiReply}`;
+    } else {
+      reply = `${localHelp}<br><br><em>The AI backend is slow or unreachable right now (${lastError || "no response"}). I answered what I could locally — try a more specific question about Bradley's work.</em>`;
     }
     newTopic = "unrelated";
   }

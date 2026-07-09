@@ -118,33 +118,53 @@ const suggestions = [
   "List all projects",
   "List all CodePens",
   "How can I contact Bradley?"
-];// Function to fetch GitHub repo data (e.g., stars, last commit)
+];// In-memory cache for GitHub metadata so we never block on repeated or slow API calls
+const __githubCache = {};
+
+// Function to fetch GitHub repo data (e.g., stars, last commit)
 async function fetchGitHubRepoData(repoUrl) {
+  if (__githubCache[repoUrl]) {
+    return __githubCache[repoUrl];
+  }
   const repoPath = repoUrl.replace("https://github.com/", "");
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second cap
     const response = await fetch(`https://api.github.com/repos/${repoPath}`, {
+      signal: controller.signal,
       headers: {
         "Accept": "application/vnd.github.v3+json"
       }
     });
+    clearTimeout(timeoutId);
+    if (!response.ok) {
+      __githubCache[repoUrl] = { stars: 0, lastCommit: "Unknown" };
+      return __githubCache[repoUrl];
+    }
     const data = await response.json();
-    return {
+    __githubCache[repoUrl] = {
       stars: data.stargazers_count || 0,
       lastCommit: data.pushed_at ? new Date(data.pushed_at).toLocaleDateString() : "Unknown"
     };
+    return __githubCache[repoUrl];
   } catch (error) {
     console.error("GitHub fetch error:", error);
-    return { stars: 0, lastCommit: "Unknown" };
+    __githubCache[repoUrl] = { stars: 0, lastCommit: "Unknown" };
+    return __githubCache[repoUrl];
   }
 }
 
-// Function to fetch all GitHub data for projects
+// Function to fetch all GitHub data for projects (non-blocking background fill)
 async function fetchAllGitHubData(projects) {
-  const projectData = [];
-  for (const project of projects) {
-    const githubData = await fetchGitHubRepoData(project.repo);
-    projectData.push({ ...project, githubData });
-  }
+  const projectData = projects.map(p => ({ ...p, githubData: __githubCache[p.repo] || { stars: 0, lastCommit: "Unknown" } }));
+  // Kick off background refresh without blocking
+  Promise.all(projects.map(async (project) => {
+    try {
+      await fetchGitHubRepoData(project.repo);
+    } catch (e) {
+      console.error("Background GitHub refresh error:", e);
+    }
+  })).catch(() => {});
   return projectData;
 }// Function to summarize Bradley Matera as a junior software engineer
 function summarizeBradleyAsWebDev(projects, codePens) {
@@ -182,8 +202,10 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   let newTopic = lastQueryTopic;
 
   const CHAT_API_URL = window.__PROJECTHUB_CHAT_API__ || "https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat";
+  const AI_TIMEOUT_MS = 60000; // Wait up to 60s for a free Google/GCP slow backend
+  const AI_RETRIES = 2;
 
-  if ((query.includes("bradley") || query.includes("who is") || query.includes("tell me about") || query.includes("about you")) && (query.includes("web dev") || query.includes("developer") || query.includes("software engineer") || query.includes("engineer") || query.includes("summarize") || query.includes("summary"))) {
+  if ((query.includes("bradley") || query.includes("who is") || query.includes("tell me about") || query.includes("about you") || query.includes("about bradley")) && (query.includes("web dev") || query.includes("developer") || query.includes("software engineer") || query.includes("engineer") || query.includes("summarize") || query.includes("summary") || query.includes("background"))) {
     if (query.includes("full") || (lastQueryTopic === "summary" && (query.includes("more") || query.includes("full")))) {
       reply = summarizeBradleyAsWebDev(projects, codePens);
     } else if (query.includes("short") || query.includes("paragraph")) {
@@ -326,27 +348,44 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     newTopic = "stars";
   }
 
-  // If no local intent matched, try the AI fallback for any unrecognized query
+  // If no local intent matched, try the AI fallback with retries and a long timeout.
+  // Free backends (GCP, Heroku) can be slow; we never let the UI hang forever.
   if (reply.includes("I don’t know")) {
-    reply = "I’m here to help with Bradley Matera’s work as a junior software engineer. Try asking about ProjectHub, the AWS serverless workflow, CIRIS Ethical AI, his GitHub or LinkedIn, target roles, or strongest technical skills. For unrelated topics, I can provide a general response when the AI backend is available.";
-    try {
-      const res = await fetch(CHAT_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userQuery })
-      });
-      if (!res.ok) {
-        reply += ` However, the AI backend returned an error (${res.status}).`;
-        console.error("AI fallback HTTP error:", res.status);
-      } else {
-        const data = await res.json();
-        if (data.reply) {
-          reply += ` Here's a general response: ${data.reply}`;
+    const localHelp = "I’m here to help with Bradley Matera’s work as a junior software engineer. Try asking about ProjectHub, the AWS serverless workflow, CIRIS Ethical AI, his GitHub or LinkedIn, target roles, or strongest technical skills.";
+    let aiReply = null;
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= AI_RETRIES; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+        const res = await fetch(CHAT_API_URL, {
+          method: "POST",
+          signal: controller.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userQuery })
+        });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.reply) {
+            aiReply = data.reply;
+            break;
+          }
+        } else {
+          lastError = `HTTP ${res.status}`;
+          console.warn(`AI fallback attempt ${attempt} failed: ${lastError}`);
         }
+      } catch (error) {
+        lastError = error.name === "AbortError" ? "timeout" : error.message;
+        console.warn(`AI fallback attempt ${attempt} error: ${lastError}`);
       }
-    } catch (error) {
-      reply += " However, the AI backend is currently unreachable (connection error). Please try again later, or ask about Bradley's work directly.";
-      console.error("AI fallback error:", error);
+    }
+
+    if (aiReply) {
+      reply = `${localHelp}<br><br><strong>AI backend says:</strong> ${aiReply}`;
+    } else {
+      reply = `${localHelp}<br><br><em>The AI backend is slow or unreachable right now (${lastError || "no response"}). I answered what I could locally — try a more specific question about Bradley's work.</em>`;
     }
     newTopic = "unrelated";
   }
@@ -520,9 +559,28 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     chatOutput.innerHTML += `<div class="message user-message"><strong>You:</strong> ${userQuery}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
 
     loadingIcon.style.display = "block";
+    const statusDiv = document.createElement("div");
+    statusDiv.id = "thinking-status";
+    statusDiv.className = "message bot-message";
+    statusDiv.style.opacity = "0.8";
+    statusDiv.innerHTML = `<strong>Bot:</strong> Thinking...<div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
+    chatOutput.appendChild(statusDiv);
     chatOutput.scrollTop = chatOutput.scrollHeight;
 
+    let thinkingDots = 0;
+    const thinkingInterval = setInterval(() => {
+      thinkingDots = (thinkingDots + 1) % 4;
+      const dots = ".".repeat(thinkingDots);
+      const messages = ["Checking local knowledge", "Waiting for AI backend", "Almost there"];
+      const message = messages[(thinkingDots) % messages.length];
+      statusDiv.innerHTML = `<strong>Bot:</strong> ${message}${dots}<div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
+      chatOutput.scrollTop = chatOutput.scrollHeight;
+    }, 800);
+
     const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData);
+
+    clearInterval(thinkingInterval);
+    statusDiv.remove();
     lastQueryTopic = newTopic;
 
     loadingIcon.style.display = "none";
