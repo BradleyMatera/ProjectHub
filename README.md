@@ -23,8 +23,8 @@ Users can interact with the bot to explore projects, learn about my background, 
 
 ## ✨ Features
 
-- 🤖 **AI-Powered Chat** → Handles recruiter-focused queries with grounded profile data, guarded AI fallback, and typo/jargon normalization.  
-- 🧠 **Smart Routing** → Uses the Netlify Function router on `bradleymatera.dev` and falls back to the GCP recruiter chat API elsewhere.  
+- 🤖 **AI-Powered Chat** → Handles recruiter-focused queries with grounded profile data, Gemini Flash backend, and anti-slop validation.  
+- 🧠 **Smart Routing** → Uses the Netlify Function `recruiter-chat` on `bradleymatera.dev` with session memory in Neon DB.  
 - 🖼️ **Project Showcase** → Ask about projects (e.g., *"Tell me about Interactive Pokedex"*) or CodePens for details, stacks, and links.  
 - 👤 **Bio & Skills** → Provides summaries of my education, skills, and background as a Web Development student at Full Sail University.  
 - 🎨 **Natural Tone** → Responses feel conversational and approachable.  
@@ -38,16 +38,12 @@ Users can interact with the bot to explore projects, learn about my background, 
 When hosted on `bradleymatera.dev`, the widget calls:
 
 ```text
-/.netlify/functions/chat-router
+/.netlify/functions/recruiter-chat
 ```
 
-The Netlify router classifies the question, caches repeated answers, and proxies to the grounded GCP API at:
+This Netlify Function uses Gemini Flash with a grounded knowledge base, conversation context, and anti-slop validation. Session memory is persisted in Neon PostgreSQL.
 
-```text
-https://projecthub-chat.bradleymatera.dev/api/chat
-```
-
-On GitHub Pages or local files, the widget calls the GCP API directly.
+On GitHub Pages or local files, the widget falls back to the legacy GCP API at `https://projecthub-chat.bradleymatera.dev/api/chat`.
 
 ---
 
