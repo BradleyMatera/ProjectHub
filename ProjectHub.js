@@ -631,3 +631,12 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 
   console.log("ProjectHub loaded!");
 }
+
+// Run the chat widget once the DOM is ready
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData);
+  } catch (error) {
+    console.error("Error initializing ProjectHub:", error);
+  }
+});
