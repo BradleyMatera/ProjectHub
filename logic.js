@@ -1,35 +1,30 @@
-// Function to summarize Bradley Matera as a web developer based on projects
+// Function to summarize Bradley Matera as a junior software engineer
 function summarizeBradleyAsWebDev(projects, codePens) {
-  const allTech = [...new Set(projects.flatMap(p => p.tech))];
-  const platforms = [...new Set(projects.map(p => p.platform))];
+  const allTech = [...new Set(projects.flatMap(p => p.tech).filter(Boolean))];
   const projectCount = projects.length;
   const codePenCount = codePens.length;
-  const frontEndTech = allTech.filter(tech => ["HTML", "CSS", "JavaScript", "React", "React Native", "Tailwind CSS", "PixiJS", "WebGPU"].includes(tech));
-  const backEndTech = allTech.filter(tech => ["Node.js", "Express", "MongoDB"].includes(tech));
-  const otherTech = allTech.filter(tech => ["Docker", "Jest", "GitHub", "Netlify", "Vercel", "GitHub Pages"].includes(tech));
+  const frontEndTech = ["JavaScript", "TypeScript", "React", "Next.js", "HTML", "CSS"].filter(t => allTech.includes(t));
+  const cloudTech = ["AWS Lambda", "Amazon DynamoDB", "Amazon S3", "AWS Amplify", "AWS usage metrics"].filter(t => allTech.includes(t));
 
-  let summary = "Bradley Matera is a versatile and growth-oriented developer with a strong foundation in front-end development and a growing expertise in full-stack technologies. ";
-  summary += `He has worked on ${projectCount} projects and ${codePenCount} CodePen projects, showcasing a diverse skill set across multiple platforms: ${platforms.join(", ")}.<br><br>`;
+  let summary = "Bradley Matera is a junior software engineer based in Davis, Illinois, open to relocation. He graduated with a B.S. in Web Development from Full Sail University (GPA 3.64) and is certified as an AWS Solutions Architect - Associate and AWS Certified AI Practitioner.<br><br>";
+  summary += `He has worked on ${projectCount} portfolio projects and ${codePenCount} CodePen demos, with a focus on JavaScript, React/Next.js, Node.js, SQL, and AWS serverless services.<br><br>`;
 
   if (frontEndTech.length > 0) {
-    summary += `<strong>Front-End Development:</strong><br>- Uses technologies like ${frontEndTech.join(", ")} to create engaging, user-friendly interfaces.<br>- For example, his Interactive Pokedex integrates Pokémon APIs for a dynamic experience, and WebGPU Shapes Renderer experiments with cutting-edge WebGPU for high-performance graphics.<br><br>`;
+    summary += `<strong>Frontend work:</strong> ${frontEndTech.join(", ")} — building accessible UIs, interactive demos, and clear documentation.<br><br>`;
   }
 
-  if (backEndTech.length > 0) {
-    summary += `<strong>Back-End Development:</strong><br>- Has explored back-end development with ${backEndTech.join(", ")}.<br>- Projects like React Native Anime CRUD App use Node.js and MongoDB, and RESTful Routes Using ExpressJS is a RESTful API.<br><br>`;
+  if (cloudTech.length > 0) {
+    summary += `<strong>Cloud and support engineering:</strong> ${cloudTech.join(", ")} — including an AWS Cloud Support Engineer internship with guided troubleshooting labs, a serverless metadata extraction capstone, and an infrastructure cost-analysis model.<br><br>`;
   }
 
-  if (otherTech.length > 0) {
-    summary += `<strong>Modern Tools and Practices:</strong><br>- Leverages tools like ${otherTech.join(", ")}.<br>- Shows a focus on testing (Jest in CheeseMath Jest Tests), containerization (Docker in Docker Multilang Project), and deployment across various platforms.<br><br>`;
-  }
-
-  summary += `<strong>Learning and Experimentation:</strong><br>- His CodePens, like React Calculator and Markdown Previewer, highlight a hands-on learning approach, covering React, JavaScript fundamentals, and practical applications.<br>- Overall, Bradley is a developer who balances creativity, technical skill, and user-focused design, with potential to deepen his back-end expertise.`;
+  summary += `<strong>Recent experience:</strong> Freelance junior frontend contributor at CIRIS Ethical AI (setup docs, JWT debugging, small merged updates, GitHub Issues) and prior roles in case management, construction, and the U.S. Army.<br><br>`;
+  summary += `<strong>What he is looking for:</strong> Junior software engineering, frontend/backend/web development, cloud support, software support, application support, and technical support roles where he can learn production systems, debug carefully, document clearly, and grow into a well-rounded engineer.`;
   return summary;
 }
 
-// Function to provide a short summary of Bradley Matera as a web developer
+// Function to provide a short summary of Bradley Matera
 function shortSummaryBradleyAsWebDev(projects, codePens) {
-  return "Bradley Matera is a versatile web developer with a strong focus on front-end technologies like HTML, CSS, JavaScript, and React, as well as a growing expertise in full-stack development. He has worked on diverse projects and CodePens, showcasing creativity and technical skill across platforms like GitHub Pages, Netlify, and Vercel.";
+  return "Bradley Matera is a junior software engineer in Davis, Illinois, open to relocation. He holds a B.S. in Web Development from Full Sail University, AWS Solutions Architect - Associate and AWS Certified AI Practitioner certifications, and has experience with JavaScript, TypeScript, React, Node.js, AWS serverless services, debugging, documentation, and AI-assisted development workflows.";
 }
 
 // Function to handle user queries
@@ -53,14 +48,38 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   }
 
   if (query.includes("github")) {
-    reply = "Bradley Matera's GitHub profile is at https://github.com/BradleyMatera. You can explore his repositories there, including projects like Interactive Pokedex, WebGPU Shapes Renderer, and more.";
+    reply = "Bradley Matera's GitHub profile is at https://github.com/BradleyMatera. You can explore his repositories there, including ProjectHub, Interactive Pokedex, CheeseMath, the Triangle Shader Lab, and more.";
     newTopic = "github";
     return { reply, newTopic };
   }
 
   if (query.includes("linkedin")) {
-    reply = "Bradley Matera's LinkedIn profile is at https://www.linkedin.com/in/bradmatera. It highlights his education, projects, and skills in web development.";
+    reply = "Bradley Matera's LinkedIn profile is at https://www.linkedin.com/in/bradmatera. It highlights his transition into software engineering, AWS internship, freelance frontend work, education, and target roles.";
     newTopic = "linkedin";
+    return { reply, newTopic };
+  }
+
+  if (query.includes("role") || query.includes("targeting") || query.includes("looking for") || query.includes("job")) {
+    reply = "Bradley is targeting junior software engineering, junior web/frontend/backend development, cloud support engineering, software support, application support, and technical support roles. He is based in Davis, Illinois and open to relocation.";
+    newTopic = "roles";
+    return { reply, newTopic };
+  }
+
+  if (query.includes("strongest") || query.includes("technical background") || query.includes("skills") || query.includes("tech stack")) {
+    reply = "Bradley's strongest technical background is in JavaScript, TypeScript, React, Next.js, Node.js, HTML, CSS, and SQL, plus AWS support training and project work with Lambda, DynamoDB, S3, and Amplify. He is also comfortable with debugging, documentation, GitHub, Docker, API integration, and AI-assisted development workflows.";
+    newTopic = "skills";
+    return { reply, newTopic };
+  }
+
+  if (query.includes("aws")) {
+    reply = "Bradley completed an AWS Cloud Support Engineer internship and holds AWS Certified Solutions Architect - Associate and AWS Certified AI Practitioner certifications. The internship focused on guided support training, troubleshooting labs, networking concepts, and a serverless capstone project using Lambda, DynamoDB, S3, and Amplify. It did not involve live customer ticket work.";
+    newTopic = "aws";
+    return { reply, newTopic };
+  }
+
+  if (query.includes("ciris") || query.includes("ethical ai")) {
+    reply = "Bradley worked as a freelance junior frontend contributor at CIRIS Ethical AI from October 2024 to June 2025. He improved onboarding and setup documentation, added JWT token-verification logging, contributed small merged code updates and lint fixes, created Docker Compose config for local development, and documented larger improvements as GitHub Issues.";
+    newTopic = "ciris";
     return { reply, newTopic };
   }
 

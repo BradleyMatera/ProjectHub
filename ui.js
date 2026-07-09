@@ -44,7 +44,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   chatOutput.style.maxHeight = "400px";
   chatOutput.style.overflowY = "auto";
   chatOutput.style.marginBottom = "10px";
-  chatOutput.innerHTML = `<div class="message bot-message"><strong>Bot:</strong> Welcome! I’m here to help you explore Bradley Matera’s web development work. Ask about his projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), live data (e.g., 'What project has the most stars?'), or about Bradley as a web developer (e.g., 'Summarize Bradley as a web dev'). What would you like to know?<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+  chatOutput.innerHTML = `<div class="message bot-message"><strong>Bot:</strong> Hi! I'm Bradley Matera's ProjectHub assistant. Ask about his work as a junior software engineer — projects like ProjectHub, the AWS serverless workflow, or CIRIS Ethical AI; his GitHub or LinkedIn; the roles he's targeting; or his strongest technical skills. What would you like to know?<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
   chatDiv.appendChild(chatOutput);
 
   // Dropdown for suggestions
