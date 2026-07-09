@@ -1,0 +1,477 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-07-08",
+  "identity": {
+    "name": "Bradley Matera",
+    "preferredName": "Brad",
+    "title": "Junior Software Engineer",
+    "location": "Davis, Illinois (open to relocation)",
+    "email": "bradmatera@gmail.com",
+    "phone": "(360) 970-0581",
+    "portfolioUrl": "https://bradleymatera.dev/",
+    "linkedInUrl": "https://www.linkedin.com/in/bradmatera",
+    "gitHubUrl": "https://github.com/BradleyMatera",
+    "shortPitch": "I am a junior software engineer based in Davis, Illinois, open to relocation. My background is in web development, AWS support engineering training, troubleshooting, documentation, and AI-assisted development. I learn quickly, work carefully in existing codebases, and like building useful software that can be explained and maintained."
+  },
+  "summary": {
+    "whoIAm": "Junior software engineer focused on JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation. I am early in my career, but I learn quickly, work carefully in existing codebases, and like building useful software that can be explained and maintained.",
+    "whatIDo": "Build and support web applications, write documentation, debug issues, integrate APIs, and work with cloud services in training and project environments.",
+    "whatIAmLookingFor": "Junior software engineering, frontend, backend, cloud support, software support, and technical support roles where I can learn, document, troubleshoot, and contribute to real systems.",
+    "coreStrengths": [
+      "Learning quickly in unfamiliar codebases",
+      "Writing clear documentation and onboarding guides",
+      "Debugging carefully and isolating issues",
+      "Communicating with technical and non-technical users",
+      "Staying calm and organized under pressure"
+    ],
+    "workStyle": [
+      "Read nearby code and follow existing patterns before changing things",
+      "Run the project locally before making changes",
+      "Make small, reviewable changes first",
+      "Verify AI-generated suggestions instead of trusting them blindly",
+      "Document what I learn so the next person has an easier time"
+    ]
+  },
+  "goals": {
+    "shortTerm": "Land a junior software engineering or technical support role where I can learn production systems, improve my debugging skills, and contribute to a team.",
+    "longTerm": "Grow into a well-rounded engineer who can own features, support systems, mentor others, and keep software understandable and maintainable.",
+    "targetRoles": [
+      "Junior Software Engineer",
+      "Junior Web Developer",
+      "Junior Frontend Developer",
+      "Cloud Support Engineer",
+      "Software Support Specialist",
+      "Application Support Engineer",
+      "Technical Support Engineer",
+      "Backend Developer",
+      "Frontend/UI Developer"
+    ],
+    "relocation": "Open to relocation."
+  },
+  "education": {
+    "degree": "Bachelor of Science in Web Development (B.S.)",
+    "school": "Full Sail University",
+    "location": "Winter Park, Florida",
+    "graduationDate": "October 30, 2025",
+    "gpa": "3.64",
+    "relevantCoursework": [
+      "Interfaces and Usability",
+      "Database Systems",
+      "Server-Side Languages",
+      "Advanced Server-Side Languages",
+      "Programming for Web Applications",
+      "Deployment of Web Applications",
+      "Cloud Application Development",
+      "Web Application Integration",
+      "Application Integration and Security",
+      "Interface Programming",
+      "Application Development",
+      "Discrete Mathematics"
+    ],
+    "activities": [
+      {
+        "name": "Tech Talk Club",
+        "description": "Weekly Agile-style standups with classmates to track progress, solve issues, and support each other's projects."
+      },
+      {
+        "name": "Fallen Knight: Requiem of Honor",
+        "description": "KAJAM game jam project, December 2023. Built with classmates and ranked #9 in Artstyle.",
+        "url": "https://itch.io/jam/kajam/rate/3114394"
+      }
+    ]
+  },
+  "certifications": [
+    {
+      "name": "AWS Certified Solutions Architect - Associate",
+      "code": "SAA-C03",
+      "issued": "July 2025",
+      "expires": "July 2028"
+    },
+    {
+      "name": "AWS Certified AI Practitioner",
+      "code": "AIF-C01",
+      "issued": "August 2025",
+      "expires": "August 2028"
+    },
+    {
+      "name": "freeCodeCamp JavaScript Algorithms and Data Structures",
+      "issued": null,
+      "expires": null
+    },
+    {
+      "name": "freeCodeCamp Responsive Web Design",
+      "issued": null,
+      "expires": null
+    }
+  ],
+  "skills": {
+    "languagesAndFrameworks": [
+      "JavaScript",
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js",
+      "HTML",
+      "CSS",
+      "SQL"
+    ],
+    "cloudAndInfrastructure": [
+      "AWS Lambda",
+      "Amazon DynamoDB",
+      "Amazon S3",
+      "AWS Amplify",
+      "Amazon CloudFront",
+      "Cloud troubleshooting",
+      "Networking fundamentals",
+      "Infrastructure analysis"
+    ],
+    "toolsAndWorkflows": [
+      "GitHub",
+      "VS Code",
+      "Docker",
+      "Trello",
+      "API integration",
+      "Debugging",
+      "Issue tracking",
+      "Documentation"
+    ],
+    "aiAndAutomation": [
+      "AI-assisted development workflows",
+      "Prompt engineering",
+      "AI evaluation and testing workflows",
+      "Automation tooling"
+    ],
+    "learningOrAdjacent": [
+      "Currently learning and refreshing C#/.NET fundamentals",
+      "ERP concepts and business workflows (interested, not experienced)",
+      "Software support and user support fundamentals"
+    ]
+  },
+  "experience": [
+    {
+      "role": "Cloud Support Engineer Intern",
+      "company": "Amazon Web Services (AWS)",
+      "type": "Internship",
+      "location": "Seattle, Washington (on-site)",
+      "dates": "May 2025 - August 2025",
+      "summary": "Completed an intensive AWS Support Engineering internship focused on cloud architecture, AI/ML services, troubleshooting, networking concepts, and customer experience skills.",
+      "responsibilities": [
+        "Completed guided support rotations in training environments with no customer data.",
+        "Completed guided Juniper/Junos troubleshooting labs delivered in Jupyter Notebooks.",
+        "Built a serverless metadata extraction workflow using AWS Lambda, DynamoDB, S3, and an accessible frontend deployed on AWS Amplify.",
+        "Created a transparent infrastructure cost-analysis model using measurable inputs such as request counts, GB-month, compute time/GB-seconds, read/write units, and transfer out."
+      ],
+      "skills": [
+        "AWS Lambda",
+        "DynamoDB",
+        "S3",
+        "Amplify",
+        "CloudFront",
+        "Cloud troubleshooting",
+        "Networking concepts",
+        "Documentation",
+        "Customer support",
+        "AI/ML services",
+        "Cloud architecture"
+      ]
+    },
+    {
+      "role": "Junior Frontend Developer / Freelance Contributor",
+      "company": "CIRIS Ethical AI",
+      "type": "Freelance",
+      "location": "Remote",
+      "dates": "October 2024 - June 2025",
+      "summary": "Worked on CIRIS AI by running the project locally, improving onboarding and setup documentation, and contributing small code updates.",
+      "responsibilities": [
+        "Improved onboarding and setup documentation, including environment notes and JWT guidance.",
+        "Added logging around token verification for better debugging.",
+        "Contributed small merged code updates, including lint fixes and improved error messages.",
+        "Created Docker Compose configuration for local development.",
+        "Documented larger ideas and improvements as GitHub Issues."
+      ],
+      "skills": [
+        "JavaScript",
+        "GitHub",
+        "JWT",
+        "Documentation",
+        "Frontend development",
+        "Debugging",
+        "Contributor onboarding",
+        "Open-source collaboration",
+        "Docker Compose",
+        "API integrations",
+        "Deployment troubleshooting"
+      ]
+    },
+    {
+      "role": "Case Manager",
+      "company": "Mason County, WA",
+      "type": "Full-time",
+      "location": "Mason County, Washington",
+      "dates": "September 2022 - January 2023",
+      "summary": "Worked directly with clients going through Veterans Court, Drug Court, and Mental Health Court.",
+      "responsibilities": [
+        "Guided clients through the legal process and court-mandated requirements.",
+        "Maintained clear and accurate documentation.",
+        "Used crisis intervention and strong communication to keep clients engaged and supported.",
+        "Stayed organized across multiple cases and court systems."
+      ],
+      "skills": [
+        "Crisis intervention",
+        "Customer service",
+        "Documentation",
+        "Case management",
+        "Communication",
+        "Organization",
+        "Project management"
+      ]
+    },
+    {
+      "role": "Animal Care Associate",
+      "company": "Mason County Kitten Rescue",
+      "type": "Part-time",
+      "location": "Mason County, Washington",
+      "dates": "June 2020 - September 2022",
+      "summary": "Cared for abandoned and at-risk kittens alongside a small team of volunteers and staff.",
+      "responsibilities": [
+        "Handled daily feeding, cleaning, and basic healthcare tasks.",
+        "Maintained clean kennels and monitored behavior to identify early signs of illness or distress.",
+        "Helped train new volunteers and supported intake, fostering, and adoption efforts."
+      ],
+      "skills": [
+        "Project management",
+        "Compassion",
+        "Communication",
+        "Organization",
+        "Animal care",
+        "Teamwork",
+        "Training"
+      ]
+    },
+    {
+      "role": "Roof Loader",
+      "company": "Stoneway Roofing Supply",
+      "type": "Not provided",
+      "location": "On-site",
+      "dates": "January 2018 - January 2020",
+      "summary": "Loaded and delivered roofing materials to job sites.",
+      "responsibilities": [
+        "Lifted heavy bundles onto rooftops using conveyors or by hand.",
+        "Worked in all weather conditions and tight schedules.",
+        "Stayed focused on safety and clear communication with the crew."
+      ],
+      "skills": [
+        "Interpersonal skills",
+        "Problem solving",
+        "Safety",
+        "Time management",
+        "Physical endurance",
+        "Job site coordination",
+        "Communication"
+      ]
+    },
+    {
+      "role": "General Contracting / Construction",
+      "company": "Ascend Roofing Company LLC",
+      "type": "Full-time",
+      "location": "On-site",
+      "dates": "2017 - August 2018",
+      "summary": "Worked on residential and commercial roofing projects.",
+      "responsibilities": [
+        "Handled demolition, tear-off, shingle installation, cleanup, and site prep.",
+        "Assisted experienced roofers with materials, repairs, and safety setups.",
+        "Improved communication by working directly with crews and homeowners."
+      ],
+      "skills": [
+        "Customer service",
+        "Interpersonal skills",
+        "Problem solving",
+        "Construction",
+        "Safety",
+        "Communication",
+        "Work ethic",
+        "Reliability"
+      ]
+    },
+    {
+      "role": "Healthcare Specialist",
+      "company": "US Army",
+      "type": "Full-time",
+      "location": "Fort Bragg, North Carolina",
+      "dates": "June 2011 - April 2014",
+      "summary": "Provided direct medical support in training environments and combat zones as a U.S. Army combat veteran.",
+      "responsibilities": [
+        "Supported soldiers with physical exams, medication administration, and emergency response.",
+        "Assisted in procedures, managed supplies, and maintained field medical readiness.",
+        "Gained experience in triage, trauma care, and crisis management."
+      ],
+      "skills": [
+        "Crisis intervention",
+        "Critical thinking",
+        "Emergency response",
+        "Triage",
+        "Trauma care",
+        "Medical readiness",
+        "Leadership",
+        "Discipline",
+        "Adaptability",
+        "Attention to detail"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Interactive Pokedex",
+      "url": "https://bradleymatera.github.io/Interactive-Pokedex/",
+      "description": "Static Gen 1 Pokedex UI with all 151 entries, client-side search/filtering, data display, and theme controls.",
+      "tech": ["JavaScript", "HTML", "CSS"],
+      "category": "Frontend demo"
+    },
+    {
+      "name": "CheeseMath",
+      "url": "https://bradleymatera.github.io/CheeseMath-Jest-Tests/",
+      "description": "Calculator and testing demo with arithmetic, string operations, regex analysis, input handling, and Jest validation.",
+      "tech": ["JavaScript", "Jest"],
+      "category": "Frontend / testing demo"
+    },
+    {
+      "name": "Secrets & Environment Variables Demo",
+      "url": "https://bradleymatera.github.io/EthicsFrontEndDemo/",
+      "description": "Educational frontend demo showing why secrets should not be hardcoded and how environment-variable concepts apply to application configuration.",
+      "tech": ["JavaScript", "HTML", "CSS"],
+      "category": "Frontend / security education"
+    },
+    {
+      "name": "Animal Sounds",
+      "url": "https://bradleymatera.github.io/AnimalSounds/",
+      "description": "Interactive animal soundboard UI with audio playback and responsive frontend styling.",
+      "tech": ["JavaScript", "HTML", "CSS"],
+      "category": "Frontend demo"
+    },
+    {
+      "name": "Triangle Shader Lab",
+      "url": "https://bradleymatera.github.io/TriangleDemo/",
+      "description": "WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout.",
+      "tech": ["WebGPU", "JavaScript", "HTML"],
+      "category": "Frontend / graphics demo"
+    },
+    {
+      "name": "AWS Serverless Metadata Extraction Workflow",
+      "url": null,
+      "description": "AWS internship capstone project that extracts metadata using a serverless pipeline with Lambda, DynamoDB, S3, and an accessible frontend on Amplify.",
+      "tech": ["AWS Lambda", "DynamoDB", "S3", "AWS Amplify"],
+      "category": "Cloud / internship project"
+    },
+    {
+      "name": "AWS Infrastructure Cost-Analysis Model",
+      "url": null,
+      "description": "Transparent cost model using measurable cloud usage inputs such as request counts, GB-month, compute time/GB-seconds, read/write units, and transfer out.",
+      "tech": ["AWS usage metrics", "Data analysis", "Modeling"],
+      "category": "Cloud / internship project"
+    },
+    {
+      "name": "CIRIS Ethical AI",
+      "url": null,
+      "description": "Freelance contributor work on a real project: local setup, onboarding docs, small code updates, debugging, and GitHub issue tracking.",
+      "tech": ["JavaScript", "Docker Compose", "GitHub", "JWT"],
+      "category": "Open-source / freelance contributor"
+    },
+    {
+      "name": "ProjectHub",
+      "url": "https://bradleymatera.github.io/ProjectHub/",
+      "description": "Embeddable AI-powered chat widget that showcases Bradley's web development projects and CodePens. Served from GitHub Pages as a single script.",
+      "tech": ["JavaScript", "GitHub Pages"],
+      "category": "Portfolio / chat widget"
+    },
+    {
+      "name": "Fallen Knight: Requiem of Honor",
+      "url": "https://itch.io/jam/kajam/rate/3114394",
+      "description": "KAJAM game jam project built with classmates, ranked #9 in Artstyle.",
+      "tech": [],
+      "category": "Game jam / school project"
+    }
+  ],
+  "interviewStories": [
+    {
+      "prompt": "Tell me about yourself",
+      "answer": "I am a junior software engineer based in Davis, Illinois, open to relocation. My background is web development, AWS support engineering training, troubleshooting, documentation, and AI-assisted development. I finished a B.S. in Web Development at Full Sail, completed an AWS internship focused on cloud support and guided troubleshooting labs, and worked on CIRIS Ethical AI as a freelance junior frontend developer. Before tech, I worked in roles that required communication, pressure, documentation, and reliability, including case management, construction, and the Army."
+    },
+    {
+      "prompt": "Walk me through your resume",
+      "answer": "I would start with Full Sail, where I built my web development foundation and worked with JavaScript, React, Node.js, SQL, and project-based development. Then I would talk about the AWS internship, where I completed support engineering training, guided cloud troubleshooting labs, Juniper/Junos labs in Jupyter Notebooks, and an AWS capstone using Lambda, DynamoDB, S3, and Amplify. After that I would cover CIRIS Ethical AI, where I worked on local setup, onboarding docs, JWT guidance, small merged code updates, token-verification logging, lint fixes, error messages, and GitHub Issues. I would also mention Mason County, construction/roofing, and the Army as the older work history that built my communication, discipline, pressure, and reliability."
+    },
+    {
+      "prompt": "Why software engineering",
+      "answer": "I like building things and I like figuring out why things break. Software engineering fits both sides of that. I enjoy writing code, debugging, reading docs, testing ideas, and turning unclear problems into something that works."
+    },
+    {
+      "prompt": "How do you handle not knowing something",
+      "answer": "I say what I know, what I do not know yet, and how I would find out. I do not think guessing helps anyone. I would check documentation, logs, examples, internal notes, or ask someone with the right context after I have done enough work to ask a useful question."
+    },
+    {
+      "prompt": "Why are you a good junior candidate",
+      "answer": "I am not trying to sell myself as senior. I am a good junior candidate because I learn quickly, troubleshoot carefully, document what I learn, and can work through unclear problems without getting defensive. I bring AWS training, current web development skills, AI-assisted workflow experience, customer communication experience, and reliability from my Army and construction background."
+    }
+  ],
+  "rules": {
+    "do": [
+      "Answer honestly and directly.",
+      "Keep responses simple, clear, and real.",
+      "Use concrete examples over big claims.",
+      "Say what I did, what I learned, and why I am interested.",
+      "If experience is adjacent, say it is adjacent.",
+      "If something is from a project, call it a project.",
+      "If something is from school or an internship, call it school or internship experience.",
+      "It is okay to say I am learning or do not have direct experience in something if true."
+    ],
+    "doNot": [
+      "Do not oversell me or make me sound like a corporate executive.",
+      "Do not claim senior engineer, architect, lead engineer, manager, or expert-level experience.",
+      "Do not claim production ownership, enterprise-scale work, or live customer ticket work from the AWS internship.",
+      "Do not claim 3+ years of ERP experience or direct ERP employment unless proven.",
+      "Do not claim professional C#/.NET experience beyond currently learning and refreshing fundamentals.",
+      "Do not replace removed work history with fake experience.",
+      "Do not use em dashes in written responses.",
+      "Do not include private reference contact info, VA/disability details, transcripts, or ID information.",
+      "Do not mention the removed archive-only employer unless explicitly asked."
+    ]
+  },
+  "faq": [
+    {
+      "question": "What is Bradley Matera's strongest technical background?",
+      "answer": "JavaScript, TypeScript, React, Node.js, HTML, CSS, and SQL, plus AWS support training and project work with Lambda, DynamoDB, S3, and Amplify."
+    },
+    {
+      "question": "Does Bradley have AWS experience?",
+      "answer": "Yes. He completed an AWS Cloud Support Engineer internship and holds AWS Certified Solutions Architect - Associate and AWS Certified AI Practitioner certifications. The internship involved guided training environments, not live customer ticket work."
+    },
+    {
+      "question": "What kind of roles is Bradley targeting?",
+      "answer": "Junior software engineering, junior web/frontend/backend development, cloud support, software support, application support, and technical support roles."
+    },
+    {
+      "question": "Is Bradley open to relocation?",
+      "answer": "Yes. He is based in Davis, Illinois and open to relocation."
+    },
+    {
+      "question": "What is Bradley's work style?",
+      "answer": "He learns quickly, documents what he learns, debugs carefully, makes small reviewable changes, and verifies AI-generated suggestions instead of trusting them blindly."
+    },
+    {
+      "question": "How can I contact Bradley?",
+      "answer": "Email bradmatera@gmail.com, phone (360) 970-0581, LinkedIn www.linkedin.com/in/bradmatera, or portfolio https://bradleymatera.dev/."
+    }
+  ],
+  "sitesAndProperties": {
+    "portfolio": "https://bradleymatera.dev/",
+    "projectHub": "https://bradleymatera.github.io/ProjectHub/",
+    "recruiterHub": "https://recruiter.bradleymatera.dev/",
+    "blog": "https://blog.bradleymatera.dev/",
+    "notes": "Extend this section later with summaries of blog posts, interactive demos, and additional site-specific Q&A."
+  },
+  "metadata": {
+    "sourceOfTruth": "~/Desktop/resumes/00_CURRENT and 99_AI_Context/",
+    "intendedUse": "Publicly readable knowledge file for the ProjectHub chatbot API. No secrets or personal documents included.",
+    "updateInstructions": "Edit this file, commit, and push to GitHub. The GCP API will fetch the updated raw URL automatically."
+  }
+}
