@@ -14,11 +14,12 @@ Keep recurring spend at or below the services already approved by Bradley. If ad
 
 ProjectHub should stay grounded-first:
 
-1. Browser widget calls `https://projecthub-chat.bradleymatera.dev/api/chat`.
-2. GCP VM API returns deterministic recruiter-safe answers for factual/profile/project questions.
-3. Small local Ollama model is used only for guarded low-risk wording.
-4. Response cache avoids repeated work.
-5. Optional paid or token-limited AI should polish only selected answers, never become required for basic operation.
+1. Browser widget calls `/.netlify/functions/chat-router` when hosted on `bradleymatera.dev`, otherwise it calls `https://projecthub-chat.bradleymatera.dev/api/chat` directly.
+2. Netlify router classifies, caches, and proxies to the GCP API.
+3. GCP VM API returns deterministic recruiter-safe answers for factual/profile/project questions.
+4. Small local Ollama model is used only for guarded low-risk wording.
+5. Response caches avoid repeated work.
+6. Optional paid or token-limited AI should polish only selected answers, never become required for basic operation.
 
 This keeps the widget useful even if every paid or token-limited service is exhausted.
 
@@ -28,7 +29,7 @@ This keeps the widget useful even if every paid or token-limited service is exha
 
 Netlify can help without extra spend if it is already part of the portfolio stack:
 
-- Use a Netlify Function as a smart router/cache in front of the GCP API only if the recruiter site is already deployed on Netlify.
+- Use `netlify/functions/chat-router.js` as a smart router/cache in front of the GCP API when the recruiter site is deployed on Netlify.
 - Use Netlify's included AI/token allowance only for rare answer-polishing paths, not for every chat message.
 - Cache polished answers by normalized question so the same recruiter questions do not burn tokens repeatedly.
 - Enforce a monthly token counter in the function or API. When the allowance is near exhausted, fall back to the grounded GCP answer.

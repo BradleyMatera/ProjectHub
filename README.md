@@ -23,13 +23,31 @@ Users can interact with the bot to explore projects, learn about my background, 
 
 ## ✨ Features
 
-- 🤖 **AI-Powered Chat** → Handles a wide range of queries naturally, while prioritizing predefined project responses.  
-- 🧠 **Conversation Memory** → Remembers context for more coherent, continuous interactions.  
+- 🤖 **AI-Powered Chat** → Handles recruiter-focused queries with grounded profile data, guarded AI fallback, and typo/jargon normalization.  
+- 🧠 **Smart Routing** → Uses the Netlify Function router on `bradleymatera.dev` and falls back to the GCP recruiter chat API elsewhere.  
 - 🖼️ **Project Showcase** → Ask about projects (e.g., *"Tell me about Interactive Pokedex"*) or CodePens for details, stacks, and links.  
 - 👤 **Bio & Skills** → Provides summaries of my education, skills, and background as a Web Development student at Full Sail University.  
 - 🎨 **Natural Tone** → Responses feel conversational and approachable.  
 - 🛠️ **Custom Queries** → Can handle general questions, then steer back toward portfolio content.  
 - 🔗 **Direct Links** → Easily fetch my GitHub or LinkedIn profiles.  
+
+---
+
+## 🧭 Chat Routing
+
+When hosted on `bradleymatera.dev`, the widget calls:
+
+```text
+/.netlify/functions/chat-router
+```
+
+The Netlify router classifies the question, caches repeated answers, and proxies to the grounded GCP API at:
+
+```text
+https://projecthub-chat.bradleymatera.dev/api/chat
+```
+
+On GitHub Pages or local files, the widget calls the GCP API directly.
 
 ---
 
