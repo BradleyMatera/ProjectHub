@@ -579,6 +579,12 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       grid-template-rows: auto;
     }
 
+    /* When both compact and minimized are active, minimize must win */
+    #bradley-chat.projecthub-compact.projecthub-minimized {
+      width: min(340px, calc(100vw - 28px));
+      height: 84px;
+    }
+
     #bradley-chat.projecthub-minimized .projecthub-body,
     #bradley-chat.projecthub-minimized .projecthub-composer,
     #bradley-chat.projecthub-minimized .projecthub-settings-panel {
@@ -1149,6 +1155,12 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
         height: 64px;
         border-radius: 32px;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      }
+
+      /* Compact + minimized must still collapse to pill on mobile */
+      #bradley-chat.projecthub-compact.projecthub-minimized {
+        width: min(320px, calc(100vw - 28px));
+        height: 64px;
       }
 
       .projecthub-title {
