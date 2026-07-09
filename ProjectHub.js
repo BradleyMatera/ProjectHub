@@ -1140,8 +1140,15 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
         border-radius: 16px;
       }
 
+      /* On mobile when minimized, show as a small floating pill instead of a full-width ghost panel */
       #bradley-chat.projecthub-minimized {
-        width: auto;
+        left: auto;
+        right: 14px;
+        bottom: 14px;
+        width: min(320px, calc(100vw - 28px));
+        height: 64px;
+        border-radius: 32px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
       }
 
       .projecthub-title {
