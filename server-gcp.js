@@ -517,12 +517,12 @@ function shouldUseGroundedAnswer(question) {
 }
 
 function isProbablyRelevant(question) {
-  return /\b(bradley|brad|matera|candidate|hire|recruiter|software|engineer|developer|frontend|backend|web|aws|cloud|support|skill|stack|technical|background|project|portfolio|codepen|github|linkedin|contact|email|phone|reach|reached|reaching|role|job|relocation|education|degree|school|cert|certificate|ciris|ethical ai|debug|documentation|experience|intern|internship|resume|compare|pokedex|projecthub|cheesemath|shader|serverless|army|military|concern|weakness|gap|risk|red flag|downside|screening|ats|jargon|ticket|crud|api|sdlc|production|on call|favorite|favourite|food|hobby|personal|personality|interest|interests)\b/.test(normalizeQuestion(question));
+  return /\b(bradley|brad|matera|candidate|hire|recruiter|software|engineer|developer|frontend|backend|web|aws|cloud|support|skill|stack|technical|background|project|projects|portfolio|codepen|github|linkedin|contact|email|phone|reach|reached|reaching|role|job|relocation|education|degree|school|cert|certificate|ciris|ethical ai|debug|documentation|experience|intern|internship|resume|compare|pokedex|projecthub|cheesemath|shader|serverless|army|military|concern|weakness|gap|risk|red flag|downside|screening|ats|jargon|ticket|crud|api|sdlc|production|on call|favorite|favourite|food|hobby|hobbies|personal|personality|interest|interests)\b/.test(normalizeQuestion(question));
 }
 
 function asksUnverifiedPersonalDetail(question) {
   const q = normalizeQuestion(question);
-  const hasPersonalKeyword = /\b(favorite|favourite|food|hobby|personal|personality|interest|interests|music|movie|game|pet|family|married|kids|children|birthday|age|height|weight|hometown|born)\b/.test(q);
+  const hasPersonalKeyword = /\b(favorite|favourite|food|hobby|hobbies|personal|personality|interest|interests|music|movie|game|pet|family|married|kids|children|birthday|age|height|weight|hometown|born)\b/.test(q);
   const hasBradContext = /\b(bradley|brad|matera|he|his|him)\b/.test(q);
   return hasPersonalKeyword && hasBradContext;
 }
