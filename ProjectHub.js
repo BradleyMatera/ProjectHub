@@ -106,13 +106,18 @@ const suggestions = [
   "Summarize Bradley as a junior software engineer",
   "What’s Bradley’s GitHub?",
   "What’s Bradley’s LinkedIn?",
-  "Tell me about ProjectHub",
+  "What roles is Bradley targeting?",
+  "What is Bradley’s strongest technical background?",
+  "Does Bradley have AWS experience?",
   "Tell me about the AWS serverless workflow",
   "Tell me about CIRIS Ethical AI",
+  "Tell me about ProjectHub",
+  "Tell me about the Interactive Pokedex",
+  "Tell me about CheeseMath",
+  "Tell me about the Triangle Shader Lab",
   "List all projects",
   "List all CodePens",
-  "What roles is Bradley targeting?",
-  "What is Bradley’s strongest technical background?"
+  "How can I contact Bradley?"
 ];// Function to fetch GitHub repo data (e.g., stars, last commit)
 async function fetchGitHubRepoData(repoUrl) {
   const repoPath = repoUrl.replace("https://github.com/", "");
@@ -173,7 +178,7 @@ function shortSummaryBradleyAsWebDev(projects, codePens) {
 // Function to handle user queries
 async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData) {
   const query = userQuery.toLowerCase();
-  let reply = "I don’t know that one. Try asking about Bradley Matera's projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), live data (e.g., 'What project has the most stars?'), or about Bradley as a web developer (e.g., 'Summarize Bradley as a web dev').";
+  let reply = "I don’t know that one. Try asking about Bradley Matera's current work — projects like ProjectHub, the AWS serverless workflow, or CIRIS Ethical AI; his GitHub or LinkedIn; the roles he's targeting; or his strongest technical skills. You can also ask for a summary of Bradley as a junior software engineer.";
   let newTopic = lastQueryTopic;
 
   const CHAT_API_URL = window.__PROJECTHUB_CHAT_API__ || "https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat";
@@ -298,7 +303,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   }
 
   if (reply.includes("I don’t know") && !query.includes("bradley")) {
-    reply = "I’m here to help with Bradley Matera’s projects and CodePens—try asking about Pokedex, React Calculator, or something related to his work! For unrelated topics, I can provide general info.";
+    reply = "I’m here to help with Bradley Matera’s work as a junior software engineer. Try asking about ProjectHub, the AWS serverless workflow, CIRIS Ethical AI, his GitHub or LinkedIn, target roles, or strongest technical skills. For unrelated topics, I can provide a general response when the AI backend is available.";
     try {
       const res = await fetch(CHAT_API_URL, {
         method: "POST",
@@ -382,7 +387,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   // Chat input
   const chatInput = document.createElement("textarea");
   chatInput.id = "chat-input";
-  chatInput.placeholder = "Ask about Bradley's projects!";
+  chatInput.placeholder = "Ask about Bradley's work, projects, skills, or roles...";
   chatInput.style.width = "100%";
   chatInput.style.padding = "8px";
   chatInput.style.borderRadius = "5px";
