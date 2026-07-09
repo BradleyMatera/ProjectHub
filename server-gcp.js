@@ -221,6 +221,10 @@ function shouldUseGroundedAnswer(question) {
   return /\b(contact|email|phone|reach|linkedin|github|education|degree|school|full sail|gpa|cert|certificate|certification|role|target|job|looking|relocation|aws|cloud|lambda|dynamo|s3|amplify|serverless|ciris|ethical ai|freelance|frontend contributor|project|portfolio|built|demo|work sample|skill|stack|technical|background)\b/.test(normalizeQuestion(question));
 }
 
+function isProbablyRelevant(question) {
+  return /\b(bradley|brad|matera|candidate|hire|recruiter|software|engineer|developer|frontend|backend|web|aws|cloud|support|skill|stack|technical|background|project|portfolio|codepen|github|linkedin|contact|email|phone|role|job|relocation|education|degree|school|cert|certificate|ciris|ethical ai|debug|documentation|experience|intern|internship|resume)\b/.test(normalizeQuestion(question));
+}
+
 function cleanModelReply(reply, knowledge, question) {
   const cleaned = String(reply || '').trim().replace(/\s+/g, ' ');
   const forbidden = /\b(Python|C\+\+|Java\b|under pressure|various programming languages|business applications|employers|following skills|highly valued|open source project|comprehensive set of guidelines|ethics, security, privacy|aims to create)\b/i;
@@ -245,6 +249,12 @@ app.post('/api/chat', async (req, res) => {
     const knowledge = await fetchKnowledge();
     if (!knowledge) {
       const payload = { reply: buildGroundedFallback({}, userMessage), model: OLLAMA_MODEL, fallback: true };
+      setCachedReply(userMessage, payload);
+      return res.json(payload);
+    }
+
+    if (!isProbablyRelevant(userMessage)) {
+      const payload = { reply: `I’m best used for recruiter questions about Bradley Matera: his projects, AWS experience, CIRIS work, technical skills, target roles, education, certifications, and contact links. Try asking one of those and I’ll answer from verified profile details.`, model: OLLAMA_MODEL, fallback: true, offTopic: true };
       setCachedReply(userMessage, payload);
       return res.json(payload);
     }
