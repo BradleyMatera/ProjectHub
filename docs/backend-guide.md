@@ -147,27 +147,64 @@ sudo systemctl enable --now projecthub-proxy
 - Block direct access to port 11434 from the internet.
 - Do not expose the Ollama port publicly.
 
-### 7. HTTPS
+### 7. HTTPS (free, no domain required)
 
-Options:
+The easiest zero-cost path is a **Cloudflare Tunnel** from `https://projecthub-chat.pages.dev` (or any free Cloudflare Pages domain). This gives a valid HTTPS endpoint and handles CORS automatically, without buying a domain or opening 443 on the VM.
 
-- **Google Cloud managed certificate** with HTTPS Load Balancer (free tier includes first 5 forwarding rules; keep an eye on costs).
-- **Self-hosted Let’s Encrypt** using `certbot` on the VM.
+1. Install `cloudflared` on the VM:
+   ```bash
+   curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+   sudo dpkg -i cloudflared.deb
+   ```
+2. Authenticate and create a tunnel:
+   ```bash
+   cloudflared tunnel login
+   cloudflared tunnel create projecthub-chat
+   ```
+3. Create `/etc/cloudflared/config.yml`:
+   ```yaml
+   tunnel: <tunnel-id>
+   credentials-file: /home/ubuntu/.cloudflared/<tunnel-id>.json
+   ingress:
+     - hostname: projecthub-chat.pages.dev
+       service: http://localhost:3000
+     - service: http_status:404
+   ```
+4. Route traffic and run:
+   ```bash
+   cloudflared tunnel route dns projecthub-chat projecthub-chat.pages.dev
+   sudo cloudflared service install
+   sudo systemctl enable --now cloudflared
+   ```
 
-For zero cost, Let’s Encrypt on the VM is simplest:
+> Cloudflare Tunnel is free, encrypted end-to-end, and works even though the VM only listens on HTTP port 3000.
 
-```bash
-sudo apt install certbot
-sudo certbot certonly --standalone -d chat.recruiterhub.yourdomain.com
+### 8. CORS Configuration
+
+The proxy already sets CORS. With Cloudflare Tunnel the browser sees a valid HTTPS origin, so preflight succeeds. If you later restrict origins, keep `https://bradleymatera.github.io` and `https://bradleymatera.dev` in `ALLOWED_ORIGINS`.
+
+### 9. Static IP and DNS
+
+- The VM no longer needs an external static IP if you use Cloudflare Tunnel; you can keep the ephemeral IP for SSH only.
+- If using a custom domain instead, reserve a regional static external IP (free while attached to a running VM), create an A record, and use Cloudflare DNS in proxy mode.
+- Update the widget fallback URL in `logic.js` to `https://projecthub-chat.pages.dev/api/chat`.
+
+### 10. Frontend Integration
+
+In `logic.js`, replace the fallback URL:
+
+```javascript
+const res = await fetch("https://projecthub-chat.pages.dev/api/chat", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-api-key": "your-public-or-client-key"
+  },
+  body: JSON.stringify({ message: userQuery })
+});
 ```
 
-Update the Node proxy to use the generated certificate and listen on 443.
-
-### 8. Static IP and DNS
-
-- Reserve a regional static external IP and attach it to the VM (free while attached to a running VM).
-- Create an A record `chat.recruiterhub.yourdomain.com` pointing to the static IP.
-- Update the widget fallback URL in `logic.js` to `https://chat.recruiterhub.yourdomain.com/api/chat`.
+> Note: embedding an API key in client-side JS is not fully secure. Combine it with origin/CORS restrictions and rotate it regularly.
 
 ### 9. Optional: Firestore Chat History
 
