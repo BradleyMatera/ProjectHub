@@ -97,7 +97,8 @@ function buildPrompt(knowledge, question) {
   const certLine = Array.isArray(certs) ? certs.slice(0, 2).map(c => typeof c === 'string' ? c : c.name).join(', ') : '';
 
   let prompt = `You are a concise recruiter assistant answering questions about ${identity.name || 'Bradley Matera'}, a ${identity.title || 'junior software engineer'}.\n`;
-  prompt += `Answer in third person as an assistant, never as Bradley. Be natural, specific, honest, and professional. Keep the answer to 2 short sentences.\n\n`;
+  prompt += `Use only the facts below. Answer in third person as an assistant, never as Bradley. Be natural, specific, honest, and professional. Keep the answer to 2 complete short sentences.\n`;
+  prompt += `Do not mention Python, Java, C++, pressure, or traits not listed in the facts.\n\n`;
   prompt += `Name: ${identity.name || 'Bradley Matera'}\n`;
   prompt += `Title: ${identity.title || 'Junior Software Engineer'}\n`;
   prompt += `Location: ${identity.location || 'Davis, Illinois'}\n`;
@@ -109,9 +110,41 @@ function buildPrompt(knowledge, question) {
   return prompt;
 }
 
+function buildGroundedFallback(knowledge, question) {
+  const identity = knowledge?.identity || {};
+  const name = identity.name || 'Bradley Matera';
+  const title = identity.title || 'Junior Software Engineer';
+  const location = identity.location || 'Davis, Illinois';
+  const skills = (knowledge?.topSkills || knowledge?.skills?.languagesAndFrameworks || []).slice(0, 8);
+  const certs = (knowledge?.certifications || []).slice(0, 2).map(c => typeof c === 'string' ? c : c.name).filter(Boolean);
+  const lowerQuestion = question.toLowerCase();
+
+  if (/why|good|fit|candidate|hire|ready/.test(lowerQuestion)) {
+    return `${name} is a strong ${title.toLowerCase()} candidate because he has a focused web-development base in ${skills.join(', ')} and current AWS training that recruiters can verify through real portfolio work. He is based in ${location} and brings practical strengths in debugging, documentation, and building clear project demos.`;
+  }
+
+  if (/skill|stack|technical|background/.test(lowerQuestion)) {
+    return `${name}'s strongest technical background is ${skills.join(', ')}, with additional AWS project experience around serverless services and support workflows. ${certs.length ? `His certifications include ${certs.join(' and ')}, which backs up that cloud foundation.` : 'That gives him a practical junior-level foundation for web, support, and cloud-adjacent roles.'}`;
+  }
+
+  return `${name} is a ${title} based in ${location}, open to relocation, with a practical foundation in ${skills.join(', ')}. He combines that with AWS training, debugging habits, documentation skills, and project work that gives recruiters concrete examples to review.`;
+}
+
+function cleanModelReply(reply, knowledge, question) {
+  const cleaned = String(reply || '').trim().replace(/\s+/g, ' ');
+  const forbidden = /\b(Python|C\+\+|Java\b|under pressure|various programming languages|business applications|employers|following skills|highly valued)\b/i;
+  const badFormat = /\*\*|\b\d+\.|\n|:/.test(cleaned);
+  const looksIncomplete = /[,;:]$|\b(and|or|including|Additionally|because|with|to|able to|he can)$/i.test(cleaned);
+  if (!cleaned || cleaned.length < 40 || forbidden.test(cleaned) || badFormat || looksIncomplete) {
+    return { reply: buildGroundedFallback(knowledge, question), fallback: true };
+  }
+  return { reply: cleaned, fallback: false };
+}
+
 app.post('/api/chat', async (req, res) => {
+  let userMessage = '';
   try {
-    const userMessage = String(req.body.message || '').trim();
+    userMessage = String(req.body.message || '').trim();
     if (!userMessage) return res.status(400).json({ error: 'Missing message.' });
     if (userMessage.length > 1000) return res.status(400).json({ error: 'Message is too long.' });
 
@@ -130,10 +163,10 @@ app.post('/api/chat', async (req, res) => {
         prompt,
         stream: false,
         options: {
-          num_predict: 55,
+          num_predict: 38,
           num_ctx: 192,
           num_thread: 2,
-          temperature: 0.35
+          temperature: 0.05
         }
       })
     });
@@ -146,11 +179,12 @@ app.post('/api/chat', async (req, res) => {
     }
 
     const data = await ollamaResponse.json();
-    const reply = String(data.response || '').trim();
+    const result = cleanModelReply(data.response, knowledge, userMessage);
 
     return res.json({
-      reply: reply || 'I did not get a usable response from the local model.',
-      model: OLLAMA_MODEL
+      reply: result.reply,
+      model: OLLAMA_MODEL,
+      fallback: result.fallback
     });
   } catch (err) {
     console.error('Chat error:', err);
@@ -158,11 +192,7 @@ app.post('/api/chat', async (req, res) => {
     // knowledge base instead of a broken error message.
     if (err.name === 'AbortError' || String(err.message || '').includes('abort')) {
       const knowledge = knowledgeCache || await fetchKnowledge().catch(() => ({}));
-      const identity = knowledge?.identity || {};
-      const skills = (knowledge?.topSkills || knowledge?.skills?.languagesAndFrameworks || []).slice(0, 10);
-      const certs = (knowledge?.certifications || []).slice(0, 2);
-      const reply = `${identity.name || 'Bradley Matera'} is a ${identity.title || 'junior software engineer'} based in ${identity.location || 'Davis, Illinois'}, open to relocation, and strongest in ${skills.slice(0, 7).join(', ')}. He pairs that web development foundation with AWS training, ${certs.length ? `${certs.map(c => typeof c === 'string' ? c : c.name).join(' and ')} certifications, ` : ''}debugging habits, documentation skills, and project experience that gives recruiters concrete work to review.`;
-      return res.json({ reply: reply.trim().replace(/\s+/g, ' '), model: OLLAMA_MODEL, fallback: true });
+      return res.json({ reply: buildGroundedFallback(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true });
     }
     return res.status(500).json({ error: 'Server error.', detail: String(err.message || err) });
   }
