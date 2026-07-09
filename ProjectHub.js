@@ -224,7 +224,8 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
           body: JSON.stringify({
             message: userQuery,
             sessionId: chatSession.sessionId,
-            context: Array.isArray(chatSession.context) ? chatSession.context.slice(-6) : []
+            context: Array.isArray(chatSession.context) ? chatSession.context.slice(-6) : [],
+            options: chatSession.options || {}
           })
         });
         clearTimeout(timeoutId);
@@ -449,21 +450,57 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   let lastSubmittedAt = 0;
   let lastBotReplyText = "";
   let conversationContext = [];
+  let turnCount = 0;
 
   const requestInterval = 900;
   const avatarUrl = window.__PROJECTHUB_AVATAR__ || (window.location.protocol === "file:" ? "bot-avatar.png" : "https://bradleymatera.github.io/ProjectHub/bot-avatar.png");
   const sessionStorageKey = "projecthub-chat-session-id";
-  const sessionId = (() => {
+  const nameStorageKey = "projecthub-chat-user-name";
+  const settingsStorageKey = "projecthub-chat-settings";
+  const defaultSettings = {
+    memoryEnabled: true,
+    flavorEnabled: true,
+    enterToSend: true,
+    compactMode: false,
+    personalizeReplies: true
+  };
+
+  function createSessionId() {
+    return `ph_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  let sessionId = (() => {
     try {
       const existing = window.sessionStorage.getItem(sessionStorageKey);
       if (existing) return existing;
-      const generated = `ph_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+      const generated = createSessionId();
       window.sessionStorage.setItem(sessionStorageKey, generated);
       return generated;
     } catch (error) {
-      return `ph_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+      return createSessionId();
     }
   })();
+
+  let visitorName = (() => {
+    try {
+      return window.sessionStorage.getItem(nameStorageKey) || "";
+    } catch (error) {
+      return "";
+    }
+  })();
+
+  let chatSettings = (() => {
+    try {
+      return { ...defaultSettings, ...JSON.parse(window.localStorage.getItem(settingsStorageKey) || "{}") };
+    } catch (error) {
+      return { ...defaultSettings };
+    }
+  })();
+
+  function chatApiUrl() {
+    return window.__PROJECTHUB_CHAT_API__
+      || (/(^|\.)bradleymatera\.dev$/.test(window.location.hostname) ? "/.netlify/functions/chat-router" : "https://projecthub-chat.bradleymatera.dev/api/chat");
+  }
 
   function escapeHtml(value) {
     return String(value).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
@@ -534,8 +571,23 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     }
 
     #bradley-chat.projecthub-minimized .projecthub-body,
-    #bradley-chat.projecthub-minimized .projecthub-composer {
+    #bradley-chat.projecthub-minimized .projecthub-composer,
+    #bradley-chat.projecthub-minimized .projecthub-settings-panel {
       display: none;
+    }
+
+    #bradley-chat.projecthub-compact {
+      width: min(390px, calc(100vw - 28px));
+      height: min(560px, calc(100vh - 34px));
+      font-size: 14px;
+    }
+
+    #bradley-chat.projecthub-compact .projecthub-header {
+      padding: 11px;
+    }
+
+    #bradley-chat.projecthub-compact #chat-output {
+      padding: 13px 11px 9px;
     }
 
     .projecthub-header {
@@ -626,6 +678,139 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       background: rgba(255,255,255,0.1);
       border-color: rgba(255,255,255,0.28);
       outline: none;
+    }
+
+    .projecthub-actions {
+      display: flex;
+      gap: 7px;
+      flex: 0 0 auto;
+    }
+
+    .projecthub-settings-panel {
+      position: absolute;
+      top: 74px;
+      right: 12px;
+      left: 12px;
+      z-index: 4;
+      display: none;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 14px;
+      background: rgba(13, 20, 18, 0.97);
+      box-shadow: 0 18px 48px rgba(0,0,0,0.32);
+      backdrop-filter: blur(14px);
+      animation: message-in 180ms ease both;
+    }
+
+    #bradley-chat.projecthub-settings-open .projecthub-settings-panel {
+      display: block;
+    }
+
+    .settings-head,
+    .settings-actions {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .settings-title {
+      color: #fff;
+      font-weight: 850;
+      font-size: 14px;
+    }
+
+    .settings-subtitle {
+      color: var(--ph-muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .settings-grid {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 9px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .setting-row strong {
+      display: block;
+      color: var(--ph-text);
+      font-size: 13px;
+      line-height: 1.2;
+    }
+
+    .setting-row span span {
+      display: block;
+      color: var(--ph-muted);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .setting-toggle {
+      appearance: none;
+      width: 42px;
+      height: 24px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.16);
+      border: 1px solid rgba(255,255,255,0.18);
+      cursor: pointer;
+      position: relative;
+      flex: 0 0 auto;
+      transition: background 160ms ease, border-color 160ms ease;
+    }
+
+    .setting-toggle::after {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 2px;
+      top: 2px;
+      border-radius: 999px;
+      background: #fff;
+      transition: transform 160ms ease;
+    }
+
+    .setting-toggle:checked {
+      background: rgba(57, 217, 138, 0.45);
+      border-color: rgba(57, 217, 138, 0.65);
+    }
+
+    .setting-toggle:checked::after {
+      transform: translateX(18px);
+    }
+
+    .settings-actions {
+      margin-top: 10px;
+      justify-content: flex-start;
+    }
+
+    .settings-action-button {
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 11px;
+      color: var(--ph-text);
+      background: rgba(255,255,255,0.08);
+      padding: 8px 10px;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .settings-action-button.danger {
+      color: #ffe7e7;
+      border-color: rgba(255, 130, 130, 0.28);
+      background: rgba(255, 130, 130, 0.11);
     }
 
     .projecthub-body {
@@ -757,6 +942,13 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       color: rgba(237, 247, 239, 0.56);
       margin-right: 6px;
       font-weight: 700;
+    }
+
+    .conversation-lead {
+      display: block;
+      color: #d9f7e6;
+      font-weight: 800;
+      margin-bottom: 7px;
     }
 
     .timestamp {
@@ -982,8 +1174,31 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
         <div class="projecthub-title">Bradley Matera ProjectHub</div>
         <div class="projecthub-subtitle">Projects, skills, AWS, fit, and contact links</div>
       </div>
-      <button class="projecthub-icon-button" type="button" aria-label="Minimize chat" title="Minimize chat">−</button>
+      <div class="projecthub-actions">
+        <button class="projecthub-icon-button projecthub-settings-button" type="button" aria-label="Open chat settings" title="Chat settings">⚙</button>
+        <button class="projecthub-icon-button projecthub-minimize-button" type="button" aria-label="Minimize chat" title="Minimize chat">−</button>
+      </div>
     </header>
+    <div class="projecthub-settings-panel" role="dialog" aria-label="ProjectHub chat settings">
+      <div class="settings-head">
+        <div>
+          <div class="settings-title">Chat Settings</div>
+          <div class="settings-subtitle">Tune memory, personalization, and input behavior.</div>
+        </div>
+        <button class="projecthub-icon-button projecthub-settings-close" type="button" aria-label="Close settings" title="Close settings">×</button>
+      </div>
+      <div class="settings-grid">
+        <label class="setting-row"><span><strong>Session memory</strong><span>Use recent turns for coherent follow-ups.</span></span><input class="setting-toggle" type="checkbox" data-setting="memoryEnabled"></label>
+        <label class="setting-row"><span><strong>AI flavor labels</strong><span>Add guarded 3-5 word generated notes.</span></span><input class="setting-toggle" type="checkbox" data-setting="flavorEnabled"></label>
+        <label class="setting-row"><span><strong>Personal replies</strong><span>Use your name and varied response openings.</span></span><input class="setting-toggle" type="checkbox" data-setting="personalizeReplies"></label>
+        <label class="setting-row"><span><strong>Enter to send</strong><span>Shift+Enter still adds a new line.</span></span><input class="setting-toggle" type="checkbox" data-setting="enterToSend"></label>
+        <label class="setting-row"><span><strong>Compact mode</strong><span>Fits tighter screens and repeated use.</span></span><input class="setting-toggle" type="checkbox" data-setting="compactMode"></label>
+      </div>
+      <div class="settings-actions">
+        <button class="settings-action-button danger clear-memory-button" type="button">Clear memory</button>
+        <button class="settings-action-button rename-button" type="button">Change name</button>
+      </div>
+    </div>
     <div class="projecthub-body">
       <div id="chat-output" aria-live="polite"></div>
       <div class="projecthub-suggestions" aria-label="Suggested questions"></div>
@@ -1007,8 +1222,84 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   const suggestionBar = chatDiv.querySelector(".projecthub-suggestions");
   const chatInput = chatDiv.querySelector("#chat-input");
   const sendButton = chatDiv.querySelector(".send-button");
-  const minimizeBtn = chatDiv.querySelector(".projecthub-icon-button");
+  const settingsBtn = chatDiv.querySelector(".projecthub-settings-button");
+  const settingsCloseBtn = chatDiv.querySelector(".projecthub-settings-close");
+  const minimizeBtn = chatDiv.querySelector(".projecthub-minimize-button");
+  const clearMemoryBtn = chatDiv.querySelector(".clear-memory-button");
+  const renameBtn = chatDiv.querySelector(".rename-button");
   const composer = chatDiv.querySelector(".projecthub-composer");
+
+  function saveSettings() {
+    try {
+      window.localStorage.setItem(settingsStorageKey, JSON.stringify(chatSettings));
+    } catch (error) {}
+    chatDiv.classList.toggle("projecthub-compact", chatSettings.compactMode);
+    chatDiv.querySelectorAll(".setting-toggle").forEach(toggle => {
+      toggle.checked = Boolean(chatSettings[toggle.dataset.setting]);
+    });
+  }
+
+  function saveVisitorName(name) {
+    visitorName = name;
+    try {
+      if (name) window.sessionStorage.setItem(nameStorageKey, name);
+      else window.sessionStorage.removeItem(nameStorageKey);
+    } catch (error) {}
+  }
+
+  function extractVisitorName(value) {
+    const cleaned = String(value || "").trim();
+    const match = cleaned.match(/(?:my name is|i am|i'm|im|this is|call me)\s+([a-z][a-z .'-]{1,32})/i);
+    const rawName = (match ? match[1] : cleaned).split(/[,.!?]/)[0].trim();
+    if (!rawName || rawName.length > 32 || /\b(what|why|how|tell|about|project|bradley|aws|contact|github|linkedin)\b/i.test(rawName)) return "";
+    return rawName.split(/\s+/).slice(0, 2).map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join(" ");
+  }
+
+  function conversationalLead(userQuery) {
+    if (!chatSettings.personalizeReplies || !visitorName) return "";
+    const leads = [
+      `${visitorName}, here’s the useful read:`,
+      `Good question, ${visitorName}.`,
+      `${visitorName}, the short version is:`,
+      `For your screen, ${visitorName}:`,
+      `${visitorName}, I’d frame it this way:`
+    ];
+    const seed = [...String(userQuery), String(turnCount)].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return `<span class="conversation-lead">${escapeHtml(leads[Math.abs(seed) % leads.length])}</span>`;
+  }
+
+  function personalizeReply(reply, userQuery) {
+    const lead = conversationalLead(userQuery);
+    return lead ? `${lead}${reply}` : reply;
+  }
+
+  async function clearRemoteMemory() {
+    try {
+      await fetch(chatApiUrl(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clearMemory", sessionId })
+      });
+    } catch (error) {
+      console.warn("ProjectHub remote memory clear skipped:", error.message);
+    }
+  }
+
+  async function resetChatMemory() {
+    await clearRemoteMemory();
+    conversationContext = [];
+    saveVisitorName("");
+    lastBotReplyText = "";
+    lastSubmittedQuery = "";
+    lastSubmittedAt = 0;
+    turnCount = 0;
+    sessionId = createSessionId();
+    try {
+      window.sessionStorage.setItem(sessionStorageKey, sessionId);
+    } catch (error) {}
+    chatOutput.innerHTML = "";
+    appendMessage("bot", "ProjectHub", "Memory cleared. What should I call you for this new session?");
+  }
 
   function appendMessage(type, label, html, options = {}) {
     const row = document.createElement("div");
@@ -1079,6 +1370,33 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     minimizeBtn.title = isMinimized ? "Open chat" : "Minimize chat";
   });
 
+  settingsBtn.addEventListener("click", () => {
+    chatDiv.classList.toggle("projecthub-settings-open");
+  });
+
+  settingsCloseBtn.addEventListener("click", () => {
+    chatDiv.classList.remove("projecthub-settings-open");
+  });
+
+  chatDiv.querySelectorAll(".setting-toggle").forEach(toggle => {
+    toggle.addEventListener("change", () => {
+      chatSettings = { ...chatSettings, [toggle.dataset.setting]: toggle.checked };
+      saveSettings();
+    });
+  });
+
+  clearMemoryBtn.addEventListener("click", () => {
+    resetChatMemory();
+    chatDiv.classList.remove("projecthub-settings-open");
+  });
+
+  renameBtn.addEventListener("click", () => {
+    saveVisitorName("");
+    appendMessage("bot", "ProjectHub", "No problem. What should I call you for this session?");
+    chatDiv.classList.remove("projecthub-settings-open");
+    chatInput.focus();
+  });
+
   chatInput.addEventListener("input", resizeInput);
 
   suggestionBar.addEventListener("click", event => {
@@ -1122,27 +1440,55 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     setBusy(true);
 
     appendMessage("user", "You", escapeHtml(userQuery));
+
+    if (!visitorName) {
+      const possibleName = extractVisitorName(userQuery);
+      if (possibleName) {
+        saveVisitorName(possibleName);
+        appendMessage("bot", "ProjectHub", `Nice to meet you, ${escapeHtml(visitorName)}. I’ll keep this session personal and coherent. Ask me about Bradley’s projects, AWS background, role fit, gaps, or contact details.`);
+        rememberTurn("user", userQuery);
+        rememberTurn("assistant", `Visitor name captured as ${visitorName}`);
+        turnCount += 1;
+        chatInput.value = "";
+        resizeInput();
+        setBusy(false);
+        return;
+      }
+      appendMessage("bot", "ProjectHub", "Before we dig in, what should I call you for this session? A first name is enough.");
+      chatInput.value = "";
+      resizeInput();
+      setBusy(false);
+      return;
+    }
+
     const statusRow = appendTypingStatus();
 
     try {
       const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData, {
         sessionId,
-        context: conversationContext
+        context: chatSettings.memoryEnabled ? conversationContext : [],
+        options: {
+          memoryEnabled: chatSettings.memoryEnabled,
+          flavorEnabled: chatSettings.flavorEnabled,
+          visitorName
+        }
       });
       lastQueryTopic = newTopic;
-      const plainReply = normalizeForCompare(reply);
+      const finalReply = personalizeReply(reply, userQuery);
+      const plainReply = normalizeForCompare(finalReply);
 
       if (plainReply && plainReply === lastBotReplyText) {
-        appendMessage("bot", "ProjectHub", "That answer would be the same as the one above. Try one of the other follow-ups or ask for a different angle, like recruiter fit, technical depth, or project tradeoffs.");
+        appendMessage("bot", "ProjectHub", `${escapeHtml(visitorName)}, I’d just repeat myself there. Try a sharper angle like recruiter fit, technical depth, risk, tradeoffs, or one specific project.`);
         chatInput.value = "";
         resizeInput();
         return;
       }
 
-      appendMessage("bot", "ProjectHub", reply);
+      appendMessage("bot", "ProjectHub", finalReply);
       rememberTurn("user", userQuery);
-      rememberTurn("assistant", reply);
+      rememberTurn("assistant", finalReply);
       lastBotReplyText = plainReply;
+      turnCount += 1;
       chatInput.value = "";
       resizeInput();
     } catch (error) {
@@ -1162,14 +1508,17 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   });
 
   chatInput.addEventListener("keydown", event => {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (chatSettings.enterToSend && event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       submitChat();
     }
   });
 
+  saveSettings();
   renderSuggestions();
-  appendMessage("bot", "ProjectHub", "Hi, I’m Bradley Matera’s recruiter assistant. Ask about his projects, AWS experience, CIRIS Ethical AI work, technical strengths, target roles, or contact links. I’ll keep answers grounded and give you useful follow-ups.");
+  appendMessage("bot", "ProjectHub", visitorName
+    ? `Welcome back, ${escapeHtml(visitorName)}. Ask about Bradley’s projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.`
+    : "Hi, I’m Bradley Matera’s recruiter assistant. What should I call you for this session? A first name is enough, and then I’ll keep the conversation personal and coherent.");
 
   console.log("ProjectHub loaded!");
 }

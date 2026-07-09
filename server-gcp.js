@@ -253,8 +253,8 @@ async function generateFlavor(question) {
   }
 }
 
-async function addFlavor(payload, question) {
-  if (!payload || payload.offTopic) return payload;
+async function addFlavor(payload, question, options = {}) {
+  if (!payload || payload.offTopic || options.flavorEnabled === false) return payload;
   const flavor = await generateFlavor(question);
   return { ...payload, flavor: flavor.flavor, flavorSource: flavor.source };
 }
@@ -503,15 +503,16 @@ app.post('/api/chat', async (req, res) => {
   let userMessage = '';
   try {
     userMessage = String(req.body.message || '').trim();
+    const requestOptions = req.body.options && typeof req.body.options === 'object' ? req.body.options : {};
     if (!userMessage) return res.status(400).json({ error: 'Missing message.' });
     if (userMessage.length > 600) return res.status(400).json({ error: 'Message is too long.' });
 
     const cached = getCachedReply(userMessage);
-    if (cached) return res.json({ ...cached, ...(await generateFlavor(userMessage)), cached: true });
+    if (cached) return res.json({ ...cached, ...(requestOptions.flavorEnabled === false ? {} : await generateFlavor(userMessage)), cached: true });
 
     const knowledge = await fetchKnowledge();
     if (!knowledge) {
-      const payload = await addFlavor({ ...buildGroundedFallbackPayload({}, userMessage), model: OLLAMA_MODEL, fallback: true }, userMessage);
+      const payload = await addFlavor({ ...buildGroundedFallbackPayload({}, userMessage), model: OLLAMA_MODEL, fallback: true }, userMessage, requestOptions);
       setCachedReply(userMessage, payload);
       return res.json(payload);
     }
@@ -523,13 +524,13 @@ app.post('/api/chat', async (req, res) => {
     }
 
     if (shouldUseGroundedAnswer(userMessage)) {
-      const payload = await addFlavor({ ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true }, userMessage);
+      const payload = await addFlavor({ ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true }, userMessage, requestOptions);
       setCachedReply(userMessage, payload);
       return res.json(payload);
     }
 
     if (activeGenerations >= MAX_ACTIVE_GENERATIONS) {
-      const payload = await addFlavor({ ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true, queued: false }, userMessage);
+      const payload = await addFlavor({ ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true, queued: false }, userMessage, requestOptions);
       setCachedReply(userMessage, payload);
       return res.json(payload);
     }
@@ -563,7 +564,7 @@ app.post('/api/chat', async (req, res) => {
     if (!ollamaResponse.ok) {
       const text = await ollamaResponse.text();
       console.error('Ollama upstream failed:', text.slice(0, 500));
-      const payload = await addFlavor({ ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true }, userMessage);
+      const payload = await addFlavor({ ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true }, userMessage, requestOptions);
       setCachedReply(userMessage, payload);
       return res.json(payload);
     }
@@ -574,7 +575,7 @@ app.post('/api/chat', async (req, res) => {
       reply: result.reply,
       model: OLLAMA_MODEL,
       fallback: result.fallback
-    }, userMessage);
+    }, userMessage, requestOptions);
     setCachedReply(userMessage, payload);
 
     return res.json(payload);

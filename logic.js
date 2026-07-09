@@ -56,7 +56,8 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
           body: JSON.stringify({
             message: userQuery,
             sessionId: chatSession.sessionId,
-            context: Array.isArray(chatSession.context) ? chatSession.context.slice(-6) : []
+            context: Array.isArray(chatSession.context) ? chatSession.context.slice(-6) : [],
+            options: chatSession.options || {}
           })
         });
         clearTimeout(timeoutId);

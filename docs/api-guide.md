@@ -56,10 +56,24 @@ Request body:
 {
   "message": "user's raw query",
   "sessionId": "stable browser session id",
+  "options": {
+    "memoryEnabled": true,
+    "flavorEnabled": true,
+    "visitorName": "Jordan"
+  },
   "context": [
     { "role": "user", "content": "recent user question" },
     { "role": "assistant", "content": "recent assistant answer" }
   ]
+}
+```
+
+To clear session memory, the widget sends:
+
+```json
+{
+  "action": "clearMemory",
+  "sessionId": "stable browser session id"
 }
 ```
 
@@ -85,6 +99,8 @@ The browser should treat `reply` as the primary answer and render `followUps` as
 The browser creates a per-tab `sessionId` and sends the last few turns as `context`. The Netlify router persists trimmed session memory when `NETLIFY_DATABASE_URL` or `DATABASE_URL` is configured for Netlify DB/Neon. If those env vars are absent or Neon is unavailable, it falls back to short-lived in-memory session storage inside the function instance.
 
 Context-dependent messages such as “tell me more,” “what about that project,” or “same for AWS” bypass the global response cache so the router can use recent session context.
+
+The widget asks for the visitor's name at the start of each browser tab session and stores it in `sessionStorage`. Personalization can be turned off in widget settings. Clear Memory resets the local transcript, session id, captured name, recent browser context, and router-persisted session memory.
 
 ## Security Requirements for New Proxy
 
