@@ -96,6 +96,7 @@ async function fetchKnowledge() {
 function normalizeQuestion(question) {
   return String(question || '')
     .toLowerCase()
+    .replace(/\bbrads\b|\bbrad\b/g, 'bradley')
     .replace(/bradly|bradely|bradlee/g, 'bradley')
     .replace(/materra|matara|matera/g, 'matera')
     .replace(/recuriter|recruter|recuiter/g, 'recruiter')
@@ -368,6 +369,20 @@ function answerProcess(knowledge, question) {
   return null;
 }
 
+function answerStrongestRole(knowledge, question) {
+  const lowerQuestion = normalizeQuestion(question);
+  const asksForSingleRole = /\b(strongest|best|most|primary|pick one|one role|which one|which role|had to pick|if you had to pick)\b/.test(lowerQuestion)
+    && /\b(role|job|position|fit|lane|those|one)\b/.test(lowerQuestion);
+  if (!asksForSingleRole) return null;
+
+  const identity = knowledge?.identity || {};
+  const name = identity.name || 'Bradley Matera';
+  return answerWithFollowUps(
+    `If a recruiter forced one strongest role, pick junior frontend/web developer for ${name}. That is the cleanest primary lane because his strongest evidence is visible JavaScript, React/Next.js, UI implementation, deployable portfolio work, debugging, and documentation; cloud support and software support are good adjacent fits, but frontend/web development is the strongest first screen.`,
+    ['Which projects prove frontend fit?', 'How does cloud support fit as a backup?', 'What concerns should a recruiter know?']
+  );
+}
+
 function buildPrompt(knowledge, question) {
   const identity = knowledge?.identity || {};
   const projects = (knowledge?.projects || []).slice(0, 5);
@@ -411,6 +426,9 @@ function buildGroundedFallbackPayload(knowledge, question) {
   const lowerQuestion = normalizeQuestion(question);
   const aws = experience.find(item => /aws|amazon/i.test(`${item.company} ${item.role}`));
   const ciris = experience.find(item => /ciris/i.test(`${item.company} ${item.role}`));
+
+  const strongestRoleAnswer = answerStrongestRole(knowledge, question);
+  if (strongestRoleAnswer) return strongestRoleAnswer;
 
   const honestGapAnswer = answerGapsHonestly(knowledge, question);
   if (honestGapAnswer) return answerWithFollowUps(honestGapAnswer, ['What roles is Bradley targeting?', 'What is Bradley learning now?', 'What is his strongest current fit?']);

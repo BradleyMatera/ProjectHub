@@ -812,13 +812,20 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   }
 
   function conversationalLead(userQuery) {
-    if (!chatSettings.personalizeReplies || !visitorName) return "";
-    const leads = [
-      `${visitorName}, here’s the useful read:`,
+    if (!chatSettings.personalizeReplies) return "";
+    const namePrefix = visitorName ? `${visitorName}, ` : "";
+    const leads = visitorName ? [
+      `${namePrefix}here’s the useful read:`,
       `Good question, ${visitorName}.`,
-      `${visitorName}, the short version is:`,
+      `${namePrefix}the short version is:`,
       `For your screen, ${visitorName}:`,
-      `${visitorName}, I’d frame it this way:`
+      `${namePrefix}I’d frame it this way:`
+    ] : [
+      "Here’s the direct answer:",
+      "Good question.",
+      "The short version is:",
+      "For a recruiter screen:",
+      "I’d frame it this way:"
     ];
     const seed = [...String(userQuery), String(turnCount)].reduce((sum, char) => sum + char.charCodeAt(0), 0);
     return `<span class="conversation-lead">${escapeHtml(leads[Math.abs(seed) % leads.length])}</span>`;
@@ -1010,11 +1017,6 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
         setBusy(false);
         return;
       }
-      appendMessage("bot", "ProjectHub", "Before we dig in, what should I call you for this session? A first name is enough.");
-      chatInput.value = "";
-      resizeInput();
-      setBusy(false);
-      return;
     }
 
     const statusRow = appendTypingStatus();
@@ -1033,8 +1035,10 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       const finalReply = personalizeReply(reply, userQuery);
       const plainReply = normalizeForCompare(finalReply);
 
-      if (plainReply && plainReply === lastBotReplyText) {
-        appendMessage("bot", "ProjectHub", `${escapeHtml(visitorName)}, I’d just repeat myself there. Try a sharper angle like recruiter fit, technical depth, risk, tradeoffs, or one specific project.`);
+      const isLocalDuplicate = newTopic !== "ai" && plainReply && plainReply === lastBotReplyText;
+      if (isLocalDuplicate) {
+        const label = visitorName ? `${escapeHtml(visitorName)}, ` : "";
+        appendMessage("bot", "ProjectHub", `${label}I already covered that locally. The useful part was: “${escapeHtml(plainReply.slice(0, 220))}${plainReply.length > 220 ? "..." : ""}” Ask for proof, tradeoffs, risks, or interview wording and I’ll take a new angle.`);
         chatInput.value = "";
         resizeInput();
         return;
