@@ -55,7 +55,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
   function chatApiUrl() {
     return window.__PROJECTHUB_CHAT_API__
-      || (/(^|\.)bradleymatera\.dev$/.test(window.location.hostname) ? "/.netlify/functions/chat-router" : "https://projecthub-chat.bradleymatera.dev/api/chat");
+      || (/(^|\.)bradleymatera\.dev$/.test(window.location.hostname) ? "/.netlify/functions/recruiter-chat" : "https://projecthub-chat.bradleymatera.dev/api/chat");
   }
 
   function escapeHtml(value) {
@@ -860,7 +860,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       await fetch(chatApiUrl(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "clearMemory", sessionId })
+        body: JSON.stringify({ action: "clear", sessionId })
       });
     } catch (error) {
       console.warn("ProjectHub remote memory clear skipped:", error.message);
