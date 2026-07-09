@@ -34,8 +34,8 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   let newTopic = lastQueryTopic;
 
   const CHAT_API_URL = window.__PROJECTHUB_CHAT_API__ || "https://projecthub-chat.bradleymatera.dev/api/chat";
-  const AI_TIMEOUT_MS = 60000; // Wait up to 60s for a free Google/GCP slow backend
-  const AI_RETRIES = 2;
+  const AI_TIMEOUT_MS = 16000;
+  const AI_RETRIES = 1;
 
   async function askAIBackend() {
     let lastError = null;
