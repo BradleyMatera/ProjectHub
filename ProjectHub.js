@@ -208,6 +208,10 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   async function askAIBackend() {
     let lastError = null;
 
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
+    }
+
     for (let attempt = 1; attempt <= AI_RETRIES; attempt++) {
       try {
         const controller = new AbortController();
@@ -223,7 +227,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
           const data = await res.json();
           if (data.reply) {
             const followUps = Array.isArray(data.followUps) && data.followUps.length
-              ? `<br><br><strong>Good follow-ups:</strong> ${data.followUps.slice(0, 3).map(item => item.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]))).join(" • ")}`
+              ? `<div class="followup-list"><strong>Good follow-ups:</strong>${data.followUps.slice(0, 3).map(item => `<button type="button" class="followup-chip" data-followup="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("")}</div>`
               : "";
             return { reply: `${data.reply}${followUps}`, error: null };
           }
@@ -244,13 +248,20 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     const utilityPatterns = [
       /\b(github|linkedin|contact|email|phone)\b/,
       /\b(list|all)\b.*\b(projects?|codepens?)\b/,
-      /\b(most stars|compare)\b/
+      /\b(most stars)\b/
     ];
 
     if (utilityPatterns.some(pattern => pattern.test(query))) return false;
 
+    const projectMention = projects.some(project => {
+      const projectName = project.name.toLowerCase();
+      return query.includes(projectName) || query.includes(projectName.replace(/\s+/g, ""));
+    });
+    const richProjectQuestion = /\b(tech stack|stack|built with|use|uses|tradeoff|improve|compare|job|role|recruiter|hire|candidate|matter|prove|show)\b/.test(query);
+    if (projectMention && richProjectQuestion) return true;
+
     const conversationalPatterns = [
-      /\b(why|how|what makes|would|could|should|explain|tell me|summarize|summary|background|experience|skills?|strengths?|fit|candidate|hire|good|ready|role|targeting|aws|cloud|ciris|ethical ai)\b/,
+      /\b(why|how|what makes|would|could|should|explain|tell me|summarize|summary|background|experience|skills?|strengths?|fit|candidate|hire|good|ready|role|targeting|aws|cloud|ciris|ethical ai|ats|screen|screening|ramp|onboard|sdlc|api|crud|ticket|support|red flags?|downside|jargon)\b/,
       /\b(bradley|matera)\b/
     ];
 
@@ -548,6 +559,34 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       color: #aaa;
       margin-top: 5px;
     }
+    .followup-list {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .followup-list strong {
+      width: 100%;
+      margin-bottom: 2px;
+    }
+    .followup-chip {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 999px;
+      background: #2f6f9f;
+      color: #fff;
+      padding: 6px 9px;
+      font: inherit;
+      font-size: 13px;
+      line-height: 1.2;
+      cursor: pointer;
+      text-align: left;
+    }
+    .followup-chip:hover,
+    .followup-chip:focus {
+      background: #3f87bd;
+      outline: none;
+    }
   `;
   document.head.appendChild(style);
 
@@ -558,11 +597,20 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   let isRequestInFlight = false;
   let lastSubmittedQuery = "";
   let lastSubmittedAt = 0;
+  let lastBotReplyText = "";
+
+  function linkifyHtml(html) {
+    return html.replace(/(^|[\s>])(https?:\/\/[^\s<]+)/g, (match, prefix, url) => {
+      const trailing = /[.),!?]$/.test(url) ? url.slice(-1) : "";
+      const cleanUrl = trailing ? url.slice(0, -1) : url;
+      return `${prefix}<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer">${cleanUrl}</a>${trailing}`;
+    });
+  }
 
   function appendMessage(type, label, html) {
     const messageDiv = document.createElement("div");
     messageDiv.className = `message ${type}-message`;
-    messageDiv.innerHTML = `<strong>${label}:</strong> ${html}<div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
+    messageDiv.innerHTML = `<strong>${label}:</strong> ${linkifyHtml(html)}<div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
     chatOutput.appendChild(messageDiv);
     chatOutput.scrollTop = chatOutput.scrollHeight;
     return messageDiv;
@@ -584,8 +632,18 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     if (dropdown.value) {
       chatInput.value = dropdown.value;
       dropdown.value = "";
+      chatInput.focus();
     }
   };
+
+  chatOutput.addEventListener("click", (event) => {
+    const followupButton = event.target.closest(".followup-chip");
+    if (!followupButton || isRequestInFlight) return;
+    chatInput.value = followupButton.dataset.followup || followupButton.textContent || "";
+    chatInput.style.height = "40px";
+    chatInput.style.height = `${chatInput.scrollHeight}px`;
+    submitChat();
+  });
 
   // Event handler for Send button and Enter key
   const submitChat = async () => {
@@ -640,7 +698,15 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     try {
       const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData);
       lastQueryTopic = newTopic;
+      const plainReply = reply.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      if (plainReply && plainReply === lastBotReplyText) {
+        appendMessage("bot", "Bot", "That answer would be the same as the one above. Try one of the other follow-ups or ask for a different angle, like recruiter fit, technical depth, or project tradeoffs.");
+        chatInput.value = "";
+        chatInput.style.height = "40px";
+        return;
+      }
       appendMessage("bot", "Bot", reply);
+      lastBotReplyText = plainReply;
       chatInput.value = "";
       chatInput.style.height = "40px";
     } catch (error) {

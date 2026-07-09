@@ -70,7 +70,7 @@ Response body:
 }
 ```
 
-The browser should treat `reply` as the primary answer and may render `followUps` as short suggested next questions. The backend deliberately returns grounded deterministic answers for recruiter-critical topics and only uses Ollama for low-risk conversational wording that passes guardrails.
+The browser should treat `reply` as the primary answer and render `followUps` as short suggested next questions. The current widget renders them as clickable chips that submit the selected follow-up. The backend deliberately returns grounded deterministic answers for recruiter-critical topics and only uses Ollama for low-risk conversational wording that passes guardrails.
 
 ## Security Requirements for New Proxy
 

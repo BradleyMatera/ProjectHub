@@ -40,6 +40,10 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   async function askAIBackend() {
     let lastError = null;
 
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
+    }
+
     for (let attempt = 1; attempt <= AI_RETRIES; attempt++) {
       try {
         const controller = new AbortController();
@@ -55,7 +59,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
           const data = await res.json();
           if (data.reply) {
             const followUps = Array.isArray(data.followUps) && data.followUps.length
-              ? `<br><br><strong>Good follow-ups:</strong> ${data.followUps.slice(0, 3).map(item => item.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]))).join(" • ")}`
+              ? `<div class="followup-list"><strong>Good follow-ups:</strong>${data.followUps.slice(0, 3).map(item => `<button type="button" class="followup-chip" data-followup="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("")}</div>`
               : "";
             return { reply: `${data.reply}${followUps}`, error: null };
           }
@@ -76,13 +80,20 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     const utilityPatterns = [
       /\b(github|linkedin|contact|email|phone)\b/,
       /\b(list|all)\b.*\b(projects?|codepens?)\b/,
-      /\b(most stars|compare)\b/
+      /\b(most stars)\b/
     ];
 
     if (utilityPatterns.some(pattern => pattern.test(query))) return false;
 
+    const projectMention = projects.some(project => {
+      const projectName = project.name.toLowerCase();
+      return query.includes(projectName) || query.includes(projectName.replace(/\s+/g, ""));
+    });
+    const richProjectQuestion = /\b(tech stack|stack|built with|use|uses|tradeoff|improve|compare|job|role|recruiter|hire|candidate|matter|prove|show)\b/.test(query);
+    if (projectMention && richProjectQuestion) return true;
+
     const conversationalPatterns = [
-      /\b(why|how|what makes|would|could|should|explain|tell me|summarize|summary|background|experience|skills?|strengths?|fit|candidate|hire|good|ready|role|targeting|aws|cloud|ciris|ethical ai)\b/,
+      /\b(why|how|what makes|would|could|should|explain|tell me|summarize|summary|background|experience|skills?|strengths?|fit|candidate|hire|good|ready|role|targeting|aws|cloud|ciris|ethical ai|ats|screen|screening|ramp|onboard|sdlc|api|crud|ticket|support|red flags?|downside|jargon)\b/,
       /\b(bradley|matera)\b/
     ];
 
