@@ -643,6 +643,9 @@ app.post('/api/chat', async (req, res) => {
       return res.json(payload);
     }
 
+    // REMOVED: shouldUseGroundedAnswer bypass. Now ALL relevant recruiter questions
+    // go through the AI-first path. Templates are only used as a fallback.
+
     // === AI-FIRST PATH ===
     // Attempt Ollama generation for ALL relevant questions before falling back to templates.
     let aiReply = null;
