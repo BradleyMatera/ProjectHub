@@ -35,7 +35,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 
   const CHAT_API_URL = window.__PROJECTHUB_CHAT_API__ || "https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat";
 
-  if (query.includes("bradley") && (query.includes("web dev") || query.includes("developer") || query.includes("summarize"))) {
+  if ((query.includes("bradley") || query.includes("who is") || query.includes("tell me about") || query.includes("about you")) && (query.includes("web dev") || query.includes("developer") || query.includes("software engineer") || query.includes("engineer") || query.includes("summarize") || query.includes("summary"))) {
     if (query.includes("full") || (lastQueryTopic === "summary" && (query.includes("more") || query.includes("full")))) {
       reply = summarizeBradleyAsWebDev(projects, codePens);
     } else if (query.includes("short") || query.includes("paragraph")) {
@@ -44,6 +44,30 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       reply = shortSummaryBradleyAsWebDev(projects, codePens) + " Would you like a more detailed summary? Just ask for the 'full summary'!";
     }
     newTopic = "summary";
+    return { reply, newTopic };
+  }
+
+  if (query.includes("contact") || query.includes("email") || query.includes("phone") || query.includes("reach")) {
+    reply = "You can reach Bradley Matera at bradmatera@gmail.com or (360) 970-0581. You can also connect on LinkedIn at https://www.linkedin.com/in/bradmatera or view his portfolio at https://bradleymatera.dev/.";
+    newTopic = "contact";
+    return { reply, newTopic };
+  }
+
+  if (query.includes("education") || query.includes("degree") || query.includes("full sail") || query.includes("school") || query.includes("gpa")) {
+    reply = "Bradley earned a B.S. in Web Development from Full Sail University in Winter Park, Florida, graduating October 30, 2025 with a 3.64 GPA. Relevant coursework included Database Systems, Server-Side Languages, Cloud Application Development, and Web Application Integration.";
+    newTopic = "education";
+    return { reply, newTopic };
+  }
+
+  if (query.includes("certification") || query.includes("aws certified") || query.includes("certificate")) {
+    reply = "Bradley holds AWS Certified Solutions Architect - Associate (SAA-C03, issued July 2025, expires July 2028) and AWS Certified AI Practitioner (AIF-C01, issued August 2025, expires August 2028). He also completed freeCodeCamp certificates in JavaScript Algorithms and Data Structures and Responsive Web Design.";
+    newTopic = "certifications";
+    return { reply, newTopic };
+  }
+
+  if (query.includes("location") || query.includes("where") || query.includes("based") || query.includes("relocation")) {
+    reply = "Bradley is based in Davis, Illinois and is open to relocation.";
+    newTopic = "location";
     return { reply, newTopic };
   }
 
@@ -154,7 +178,8 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     newTopic = "stars";
   }
 
-  if (reply.includes("I don’t know") && !query.includes("bradley")) {
+  // If no local intent matched, try the AI fallback for any unrecognized query
+  if (reply.includes("I don’t know")) {
     reply = "I’m here to help with Bradley Matera’s work as a junior software engineer. Try asking about ProjectHub, the AWS serverless workflow, CIRIS Ethical AI, his GitHub or LinkedIn, target roles, or strongest technical skills. For unrelated topics, I can provide a general response when the AI backend is available.";
     try {
       const res = await fetch(CHAT_API_URL, {
@@ -162,12 +187,17 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userQuery })
       });
-      const data = await res.json();
-      if (data.reply) {
-        reply += ` Here's a general response: ${data.reply}`;
+      if (!res.ok) {
+        reply += ` However, the AI backend returned an error (${res.status}).`;
+        console.error("AI fallback HTTP error:", res.status);
+      } else {
+        const data = await res.json();
+        if (data.reply) {
+          reply += ` Here's a general response: ${data.reply}`;
+        }
       }
     } catch (error) {
-      reply += " However, I couldn’t fetch a general response due to a connection issue.";
+      reply += " However, the AI backend is currently unreachable (connection error). Please try again later, or ask about Bradley's work directly.";
       console.error("AI fallback error:", error);
     }
     newTopic = "unrelated";
