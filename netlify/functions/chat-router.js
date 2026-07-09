@@ -241,6 +241,7 @@ function classify(message) {
   const question = normalizeQuestion(message);
   if (!question) return 'empty';
   if (/moon cheese|pizza engines|weather|sports|politics|recipe|movie|song/.test(question)) return 'off-topic';
+  if (/favorite|favourite|food|hobby|personal|personality|like|likes|interest|interests/.test(question)) return 'profile-personal';
   if (/contact|email|phone|reach|linkedin|github/.test(question)) return 'contact';
   if (/\b(strongest|best|most|primary|pick one|one role|which one|which role|had to pick)\b/.test(question) && /\b(role|job|position|fit|lane|those|one)\b/.test(question)) return 'strongest-role';
   if (/projecthub|pokedex|cheesemath|shader|serverless|ciris|ethical ai|project|portfolio|codepen/.test(question)) return 'project';
