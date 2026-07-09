@@ -391,12 +391,16 @@ function buildPrompt(knowledge, question) {
   const experience = knowledge?.experience || [];
   const education = knowledge?.education || {};
   const summary = knowledge?.summary || {};
+  const standards = knowledge?.conversationQualityStandards || {};
+  const antiSlop = knowledge?.commonPatterns?.antiSlop || {};
   const faq = (knowledge?.faq || []).find(f => question.toLowerCase().includes(f.question.toLowerCase().slice(0, 12)));
 
   const projectLines = projects.map(p => `- ${p.name}: ${p.description}`).join('\n');
   const skillLine = skills.join(', ');
   const certLine = Array.isArray(certs) ? certs.slice(0, 3).map(c => typeof c === 'string' ? c : c.name).join(', ') : '';
   const experienceLines = experience.slice(0, 4).map(e => `- ${e.role} at ${e.company}: ${e.summary || ''}`).join('\n');
+  const avoidWords = (antiSlop.avoidWords || []).join(', ');
+  const avoidPhrases = (antiSlop.avoidPhrases || []).join(', ');
 
   let prompt = `You are Bradley Matera's recruiter assistant. You answer naturally and conversationally, as if talking to a recruiter who is evaluating Bradley for a junior software engineering role.\n`;
   prompt += `CRITICAL RULES:\n`;
@@ -404,7 +408,10 @@ function buildPrompt(knowledge, question) {
   prompt += `2. Answer in a friendly, professional tone. Write 1-3 complete sentences that sound human, not robotic.\n`;
   prompt += `3. If asked something not in the facts, say you don't have that detail and suggest a related recruiter topic you CAN answer.\n`;
   prompt += `4. Speak as an assistant ("Bradley has...", "He is..."), never as Bradley himself.\n`;
-  prompt += `5. Do not mention Python, Java, C++, or traits not in the facts.\n\n`;
+  prompt += `5. Do not mention Python, Java, C++, or traits not in the facts.\n`;
+  prompt += `6. AVOID these AI-slop words: ${avoidWords || 'passionate, robust, leverage, synergy, dynamic, extensive expertise, proven leader, deep mastery'}\n`;
+  prompt += `7. AVOID these AI-slop phrases: ${avoidPhrases || 'Certainly, Absolutely, Great question, As an AI, I would be happy to'}\n`;
+  prompt += `8. Keep answers SHORT. 1-3 sentences. Recruiters want quick facts, not essays.\n\n`;
 
   prompt += `VERIFIED PROFILE:\n`;
   prompt += `Name: ${identity.name || 'Bradley Matera'}\n`;
@@ -542,11 +549,21 @@ function asksUnverifiedPersonalDetail(question) {
 
 function cleanModelReply(reply, knowledge, question) {
   const cleaned = String(reply || '').trim().replace(/\s+/g, ' ');
-  // Only catch clear hallucinations and inventions, not formatting
-  const forbidden = /\b(Python|C\+\+|Java\b|under pressure|various programming languages|business applications|employers|following skills|highly valued|open source project|comprehensive set of guidelines|ethics, security, privacy|aims to create)\b/i;
+  const antiSlop = knowledge?.commonPatterns?.antiSlop || {};
+  
+  // Build forbidden patterns from knowledge base anti-slop rules
+  const defaultForbiddenWords = ['Python', 'C\\+\\+', 'Java\\b', 'under pressure', 'various programming languages', 'business applications', 'employers', 'following skills', 'highly valued', 'open source project', 'comprehensive set of guidelines', 'ethics, security, privacy', 'aims to create'];
+  const forbiddenWords = (antiSlop.avoidWords || []).concat(defaultForbiddenWords);
+  const forbiddenPhrases = antiSlop.avoidPhrases || ['Certainly,', 'Absolutely,', 'Great question,', 'As an AI,', 'I would be happy to'];
+  
+  const forbiddenRegex = new RegExp('\\b(' + forbiddenWords.join('|') + ')\\b', 'i');
+  const forbiddenPhrasesRegex = new RegExp('(' + forbiddenPhrases.join('|') + ')', 'i');
+  
   const inventedPersonal = /\b(pizza|sushi|burger|spaghetti|tacos|favorite food is|loves eating|hates eating|married|children|wife|husband|girlfriend|boyfriend|born in [0-9]{4}|age [0-9]{1,2})\b/i;
   const looksIncomplete = /[,;:]$/i.test(cleaned);
-  if (!cleaned || cleaned.length < 20 || forbidden.test(cleaned) || inventedPersonal.test(cleaned) || looksIncomplete) {
+  const tooBloated = cleaned.length > 300 && !question.toLowerCase().includes('detail') && !question.toLowerCase().includes('more');
+  
+  if (!cleaned || cleaned.length < 20 || forbiddenRegex.test(cleaned) || forbiddenPhrasesRegex.test(cleaned) || inventedPersonal.test(cleaned) || looksIncomplete || tooBloated) {
     return { reply: buildGroundedFallback(knowledge, question), fallback: true };
   }
   return { reply: cleaned, fallback: false };
