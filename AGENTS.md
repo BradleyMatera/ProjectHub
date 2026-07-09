@@ -10,7 +10,9 @@ ProjectHub is an embeddable, AI-powered chat widget that showcases Bradley Mater
 
 - **Tech stack:** Vanilla JavaScript (ES6 modules via IIFE), HTML/CSS-in-JS, GitHub Pages
 - **Runtime:** Browser only; no frontend framework or bundler
-- **AI backend:** Local/heuristic handlers + guarded recruiter chat API on a zero-cost GCP Ollama VM
+- **AI backend:** Local/heuristic handlers + Netlify router + guarded recruiter chat API on a zero-cost GCP Ollama VM
+- **Session memory:** Browser sends a per-tab session id and recent turns; Netlify router persists trimmed memory in Netlify DB/Neon when configured, otherwise short-lived function memory
+- **Generative usage:** Grounded answers stay factual; Ollama may add a guarded 3-5 word `flavor` label so repeated recruiter answers feel less static without rewriting verified facts
 - **Data source:** Hard-coded project/CodePen arrays (`data.js`)
 - **Current branch/focus:** `main` — ongoing work: zero-cost Ollama chat backend on GCP and AGENTS.md-driven documentation
 
@@ -107,7 +109,7 @@ const allData = await fetchAllGitHubData(projects);
 const res = await fetch("https://projecthub-chat.bradleymatera.dev/api/chat", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ message: userQuery })
+  body: JSON.stringify({ message: userQuery, sessionId, context })
 });
 ```
 

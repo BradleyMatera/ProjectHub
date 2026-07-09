@@ -5,9 +5,22 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   let lastSubmittedQuery = "";
   let lastSubmittedAt = 0;
   let lastBotReplyText = "";
+  let conversationContext = [];
 
   const requestInterval = 900;
   const avatarUrl = window.__PROJECTHUB_AVATAR__ || (window.location.protocol === "file:" ? "bot-avatar.png" : "https://bradleymatera.github.io/ProjectHub/bot-avatar.png");
+  const sessionStorageKey = "projecthub-chat-session-id";
+  const sessionId = (() => {
+    try {
+      const existing = window.sessionStorage.getItem(sessionStorageKey);
+      if (existing) return existing;
+      const generated = `ph_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+      window.sessionStorage.setItem(sessionStorageKey, generated);
+      return generated;
+    } catch (error) {
+      return `ph_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    }
+  })();
 
   function escapeHtml(value) {
     return String(value).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
@@ -280,6 +293,27 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       color: #c5ecff;
       border-bottom-color: currentColor;
       outline: none;
+    }
+
+    .ai-flavor {
+      display: inline-flex;
+      width: fit-content;
+      margin: 0 0 8px;
+      padding: 4px 8px;
+      border: 1px solid rgba(112, 183, 255, 0.26);
+      border-radius: 999px;
+      color: #c5ecff;
+      background: rgba(112, 183, 255, 0.11);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+
+    .ai-flavor::before {
+      content: "AI note";
+      color: rgba(237, 247, 239, 0.56);
+      margin-right: 6px;
+      font-weight: 700;
     }
 
     .timestamp {
@@ -578,6 +612,11 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     chatInput.focus();
   }
 
+  function rememberTurn(role, content) {
+    conversationContext.push({ role, content: normalizeForCompare(content).slice(0, 420), at: Date.now() });
+    conversationContext = conversationContext.slice(-8);
+  }
+
   function renderSuggestions() {
     const prioritySuggestions = [
       "Why is Bradley a good junior candidate?",
@@ -643,7 +682,10 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     const statusRow = appendTypingStatus();
 
     try {
-      const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData);
+      const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData, {
+        sessionId,
+        context: conversationContext
+      });
       lastQueryTopic = newTopic;
       const plainReply = normalizeForCompare(reply);
 
@@ -655,6 +697,8 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       }
 
       appendMessage("bot", "ProjectHub", reply);
+      rememberTurn("user", userQuery);
+      rememberTurn("assistant", reply);
       lastBotReplyText = plainReply;
       chatInput.value = "";
       resizeInput();

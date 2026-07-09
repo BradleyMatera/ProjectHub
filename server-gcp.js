@@ -20,6 +20,7 @@ const KNOWLEDGE_CACHE_MS = 5 * 60 * 1000; // 5 minutes
 const RESPONSE_CACHE_MS = 10 * 60 * 1000;
 const RESPONSE_CACHE_LIMIT = 120;
 const OLLAMA_TIMEOUT_MS = 9000;
+const FLAVOR_TIMEOUT_MS = 2400;
 const MAX_ACTIVE_GENERATIONS = 1;
 const responseCache = new Map();
 let activeGenerations = 0;
@@ -185,6 +186,77 @@ function matchExperience(knowledge, pattern) {
 function answerWithFollowUps(reply, followUps) {
   const uniqueFollowUps = [...new Set((followUps || []).filter(Boolean))].slice(0, 3);
   return { reply, followUps: uniqueFollowUps };
+}
+
+function hashText(value) {
+  let hash = 0;
+  for (const char of String(value || '')) hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0;
+  return Math.abs(hash);
+}
+
+function fallbackFlavor(question) {
+  const phrases = [
+    'Practical recruiter signal',
+    'Grounded quick read',
+    'Useful hiring context',
+    'Worth a closer look',
+    'Concrete project evidence',
+    'Clear junior signal',
+    'Verified profile note'
+  ];
+  return phrases[hashText(`${question}:${Date.now()}`) % phrases.length];
+}
+
+function cleanFlavor(value) {
+  const cleaned = String(value || '')
+    .replace(/["'`*_#<>]/g, '')
+    .replace(/[^a-zA-Z0-9 .-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[.!-]+$/g, '');
+  const words = cleaned.split(' ').filter(Boolean);
+  const forbidden = /python|java\b|c\+\+|senior|guaranteed|perfect|hire him|best ever/i;
+  if (words.length < 3 || words.length > 5 || forbidden.test(cleaned)) return null;
+  return words.map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+}
+
+async function generateFlavor(question) {
+  if (activeGenerations >= MAX_ACTIVE_GENERATIONS) return { flavor: fallbackFlavor(question), source: 'fallback-flavor' };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FLAVOR_TIMEOUT_MS);
+  activeGenerations++;
+  try {
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: OLLAMA_MODEL,
+        prompt: `Write exactly 3 to 5 professional words as a tiny label for this recruiter chat answer. No punctuation. No facts. Question: ${String(question).slice(0, 180)}\nLabel:`,
+        stream: false,
+        options: {
+          num_predict: 8,
+          num_ctx: 96,
+          num_thread: 2,
+          temperature: 0.45
+        }
+      })
+    });
+    if (!response.ok) return { flavor: fallbackFlavor(question), source: 'fallback-flavor' };
+    const data = await response.json();
+    return { flavor: cleanFlavor(data.response) || fallbackFlavor(question), source: cleanFlavor(data.response) ? 'ollama-flavor' : 'fallback-flavor' };
+  } catch (error) {
+    return { flavor: fallbackFlavor(question), source: 'fallback-flavor' };
+  } finally {
+    clearTimeout(timeout);
+    activeGenerations = Math.max(0, activeGenerations - 1);
+  }
+}
+
+async function addFlavor(payload, question) {
+  if (!payload || payload.offTopic) return payload;
+  const flavor = await generateFlavor(question);
+  return { ...payload, flavor: flavor.flavor, flavorSource: flavor.source };
 }
 
 function describeProject(project, question) {
@@ -435,11 +507,11 @@ app.post('/api/chat', async (req, res) => {
     if (userMessage.length > 600) return res.status(400).json({ error: 'Message is too long.' });
 
     const cached = getCachedReply(userMessage);
-    if (cached) return res.json({ ...cached, cached: true });
+    if (cached) return res.json({ ...cached, ...(await generateFlavor(userMessage)), cached: true });
 
     const knowledge = await fetchKnowledge();
     if (!knowledge) {
-      const payload = { ...buildGroundedFallbackPayload({}, userMessage), model: OLLAMA_MODEL, fallback: true };
+      const payload = await addFlavor({ ...buildGroundedFallbackPayload({}, userMessage), model: OLLAMA_MODEL, fallback: true }, userMessage);
       setCachedReply(userMessage, payload);
       return res.json(payload);
     }
@@ -451,13 +523,13 @@ app.post('/api/chat', async (req, res) => {
     }
 
     if (shouldUseGroundedAnswer(userMessage)) {
-      const payload = { ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true };
+      const payload = await addFlavor({ ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true }, userMessage);
       setCachedReply(userMessage, payload);
       return res.json(payload);
     }
 
     if (activeGenerations >= MAX_ACTIVE_GENERATIONS) {
-      const payload = { ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true, queued: false };
+      const payload = await addFlavor({ ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true, queued: false }, userMessage);
       setCachedReply(userMessage, payload);
       return res.json(payload);
     }
@@ -491,18 +563,18 @@ app.post('/api/chat', async (req, res) => {
     if (!ollamaResponse.ok) {
       const text = await ollamaResponse.text();
       console.error('Ollama upstream failed:', text.slice(0, 500));
-      const payload = { ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true };
+      const payload = await addFlavor({ ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true }, userMessage);
       setCachedReply(userMessage, payload);
       return res.json(payload);
     }
 
     const data = await ollamaResponse.json();
     const result = cleanModelReply(data.response, knowledge, userMessage);
-    const payload = {
+    const payload = await addFlavor({
       reply: result.reply,
       model: OLLAMA_MODEL,
       fallback: result.fallback
-    };
+    }, userMessage);
     setCachedReply(userMessage, payload);
 
     return res.json(payload);

@@ -28,7 +28,7 @@ function shortSummaryBradleyAsWebDev(projects, codePens) {
 }
 
 // Function to handle user queries
-async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData) {
+async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData, chatSession = {}) {
   const query = userQuery.toLowerCase();
   let reply = "I don’t know that one. Try asking about Bradley Matera's current work — projects like ProjectHub, the AWS serverless workflow, or CIRIS Ethical AI; his GitHub or LinkedIn; the roles he's targeting; or his strongest technical skills. You can also ask for a summary of Bradley as a junior software engineer.";
   let newTopic = lastQueryTopic;
@@ -53,16 +53,23 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
           method: "POST",
           signal: controller.signal,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: userQuery })
+          body: JSON.stringify({
+            message: userQuery,
+            sessionId: chatSession.sessionId,
+            context: Array.isArray(chatSession.context) ? chatSession.context.slice(-6) : []
+          })
         });
         clearTimeout(timeoutId);
         if (res.ok) {
           const data = await res.json();
           if (data.reply) {
+            const flavor = data.flavor
+              ? `<span class="ai-flavor" title="Tiny generated phrase">${escapeHtml(data.flavor)}</span><br>`
+              : "";
             const followUps = Array.isArray(data.followUps) && data.followUps.length
               ? `<div class="followup-list"><strong>Good follow-ups:</strong>${data.followUps.slice(0, 3).map(item => `<button type="button" class="followup-chip" data-followup="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("")}</div>`
               : "";
-            return { reply: `${data.reply}${followUps}`, error: null };
+            return { reply: `${flavor}${data.reply}${followUps}`, error: null, sessionMemory: data.sessionMemory || null };
           }
         } else {
           lastError = `HTTP ${res.status}`;

@@ -2,12 +2,16 @@ const DEFAULT_GCP_API_URL = 'https://projecthub-chat.bradleymatera.dev/api/chat'
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const CACHE_LIMIT = 180;
 const GCP_TIMEOUT_MS = 8500;
+const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14;
+const SESSION_MEMORY_LIMIT = 240;
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://bradleymatera.dev,https://www.bradleymatera.dev,https://bradleymatera.github.io')
   .split(',')
   .map(origin => origin.trim())
   .filter(Boolean);
 
 const responseCache = new Map();
+const sessionMemory = new Map();
+let neonSqlPromise = null;
 
 function corsHeaders(origin) {
   const allowedOrigin = !origin || ALLOWED_ORIGINS.includes(origin) || /^https:\/\/[^/]+\.codepen\.io$/.test(origin)
@@ -43,6 +47,99 @@ function normalizeQuestion(question) {
 
 function cacheKey(message) {
   return normalizeQuestion(message).slice(0, 220);
+}
+
+function safeSessionId(value) {
+  const cleaned = String(value || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
+  return cleaned || `anon-${Date.now().toString(36)}`;
+}
+
+async function getNeonSql() {
+  const connectionString = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL;
+  if (!connectionString) return null;
+  if (!neonSqlPromise) {
+    neonSqlPromise = import('@neondatabase/serverless')
+      .then(({ neon }) => neon(connectionString))
+      .catch(error => {
+        console.warn('Neon session memory disabled:', error.message);
+        return null;
+      });
+  }
+  return neonSqlPromise;
+}
+
+async function ensureSessionTable(sql) {
+  if (!sql) return;
+  await sql`
+    CREATE TABLE IF NOT EXISTS projecthub_chat_sessions (
+      session_id text PRIMARY KEY,
+      memory jsonb NOT NULL DEFAULT '[]'::jsonb,
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `;
+}
+
+function trimMemory(memory) {
+  return (Array.isArray(memory) ? memory : [])
+    .filter(item => item && typeof item === 'object')
+    .slice(-10)
+    .map(item => ({
+      role: String(item.role || '').slice(0, 16),
+      content: String(item.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 420),
+      intent: item.intent ? String(item.intent).slice(0, 40) : undefined,
+      at: Number(item.at) || Date.now()
+    }));
+}
+
+async function readSession(sessionId) {
+  const sql = await getNeonSql();
+  if (sql) {
+    try {
+      await ensureSessionTable(sql);
+      const rows = await sql`SELECT memory FROM projecthub_chat_sessions WHERE session_id = ${sessionId}`;
+      return trimMemory(rows[0]?.memory || []);
+    } catch (error) {
+      console.warn('Neon read failed:', error.message);
+    }
+  }
+
+  const cached = sessionMemory.get(sessionId);
+  if (!cached || Date.now() - cached.at > SESSION_TTL_MS) return [];
+  return trimMemory(cached.memory);
+}
+
+async function writeSession(sessionId, memory) {
+  const trimmed = trimMemory(memory);
+  const sql = await getNeonSql();
+  if (sql) {
+    try {
+      await ensureSessionTable(sql);
+      await sql`
+        INSERT INTO projecthub_chat_sessions (session_id, memory, updated_at)
+        VALUES (${sessionId}, ${JSON.stringify(trimmed)}::jsonb, now())
+        ON CONFLICT (session_id)
+        DO UPDATE SET memory = EXCLUDED.memory, updated_at = now()
+      `;
+      return 'neon';
+    } catch (error) {
+      console.warn('Neon write failed:', error.message);
+    }
+  }
+
+  sessionMemory.set(sessionId, { at: Date.now(), memory: trimmed });
+  while (sessionMemory.size > SESSION_MEMORY_LIMIT) {
+    sessionMemory.delete(sessionMemory.keys().next().value);
+  }
+  return 'memory';
+}
+
+function sessionHint(memory) {
+  const recentUserTurns = trimMemory(memory).filter(item => item.role === 'user').slice(-2).map(item => item.content);
+  return recentUserTurns.length ? `Recent session context: ${recentUserTurns.join(' | ')}` : '';
+}
+
+function isContextDependent(message) {
+  return /\b(it|that|this|those|they|them|same|more|again|previous|above|follow up|followup)\b/i.test(message);
 }
 
 function getCached(message) {
@@ -84,7 +181,9 @@ function json(statusCode, body, headers) {
   };
 }
 
-async function callGcp(message, origin) {
+async function callGcp(message, origin, memory) {
+  const hint = sessionHint(memory);
+  const augmentedMessage = hint ? `${message}\n\n${hint}` : message;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), GCP_TIMEOUT_MS);
   try {
@@ -95,7 +194,7 @@ async function callGcp(message, origin) {
         'Content-Type': 'application/json',
         'Origin': origin || 'https://bradleymatera.dev'
       },
-      body: JSON.stringify({ message })
+      body: JSON.stringify({ message: augmentedMessage })
     });
     const text = await response.text();
     let payload = null;
@@ -131,32 +230,40 @@ exports.handler = async function handler(event) {
   }
 
   const message = String(body.message || '').trim();
+  const sessionId = safeSessionId(body.sessionId || event.headers['x-nf-client-connection-ip'] || 'anonymous');
+  const clientContext = trimMemory(body.context || []);
   if (!message) return json(400, { error: 'Missing message.' }, headers);
   if (message.length > 600) return json(400, { error: 'Message is too long.' }, headers);
 
   const intent = classify(message);
-  const cached = getCached(message);
+  const priorMemory = await readSession(sessionId);
+  const mergedMemory = trimMemory([...priorMemory, ...clientContext, { role: 'user', content: message, intent, at: Date.now() }]);
+  const cached = isContextDependent(message) ? null : getCached(message);
   if (cached) {
+    await writeSession(sessionId, [...mergedMemory, { role: 'assistant', content: cached.reply, intent, at: Date.now() }]);
     return json(200, {
       ...cached,
       cached: true,
       router: 'netlify',
       intent,
-      source: cached.source || 'gcp-cache'
+      source: cached.source || 'gcp-cache',
+      sessionMemory: { enabled: true, store: process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL ? 'neon' : 'memory', turns: trimMemory(mergedMemory).length }
     }, headers);
   }
 
   try {
-    const gcpPayload = await callGcp(message, origin);
+    const gcpPayload = await callGcp(message, origin, mergedMemory);
+    const store = await writeSession(sessionId, [...mergedMemory, { role: 'assistant', content: gcpPayload.reply, intent, at: Date.now() }]);
     const payload = {
       ...gcpPayload,
       cached: false,
       router: 'netlify',
       intent,
       source: 'gcp-grounded',
+      sessionMemory: { enabled: true, store, turns: trimMemory(mergedMemory).length + 1 },
       budget: {
         netlifyTokensUsed: 0,
-        policy: 'grounded-first; paid polish disabled unless explicitly configured'
+        policy: 'grounded-first; tiny GCP flavor labels enabled; Neon session memory optional'
       }
     };
     setCached(message, payload);
