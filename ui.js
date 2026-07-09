@@ -63,7 +63,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   // Chat input
   const chatInput = document.createElement("textarea");
   chatInput.id = "chat-input";
-  chatInput.placeholder = "Ask about Bradley's projects!";
+  chatInput.placeholder = "Ask about Bradley's work, projects, skills, or roles...";
   chatInput.style.width = "100%";
   chatInput.style.padding = "8px";
   chatInput.style.borderRadius = "5px";

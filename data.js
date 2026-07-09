@@ -106,11 +106,16 @@ const suggestions = [
   "Summarize Bradley as a junior software engineer",
   "What’s Bradley’s GitHub?",
   "What’s Bradley’s LinkedIn?",
-  "Tell me about ProjectHub",
+  "What roles is Bradley targeting?",
+  "What is Bradley’s strongest technical background?",
+  "Does Bradley have AWS experience?",
   "Tell me about the AWS serverless workflow",
   "Tell me about CIRIS Ethical AI",
+  "Tell me about ProjectHub",
+  "Tell me about the Interactive Pokedex",
+  "Tell me about CheeseMath",
+  "Tell me about the Triangle Shader Lab",
   "List all projects",
   "List all CodePens",
-  "What roles is Bradley targeting?",
-  "What is Bradley’s strongest technical background?"
+  "How can I contact Bradley?"
 ];
