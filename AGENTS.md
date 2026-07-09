@@ -13,6 +13,7 @@ ProjectHub is an embeddable, AI-powered chat widget that showcases Bradley Mater
 - **AI backend:** Local/heuristic handlers + Netlify router + guarded recruiter chat API on a zero-cost GCP Ollama VM
 - **Session memory:** Browser sends a per-tab session id and recent turns; Netlify router persists trimmed memory in Netlify DB/Neon when configured, otherwise short-lived function memory
 - **Generative usage:** Grounded answers stay factual; Ollama may add a guarded 3-5 word `flavor` label so repeated recruiter answers feel less static without rewriting verified facts
+- **Widget UX:** Each browser-tab session starts by asking for the visitor's name. Settings allow memory, AI flavor labels, personalization, Enter-to-send, compact mode, name changes, and full memory clearing.
 - **Data source:** Hard-coded project/CodePen arrays (`data.js`)
 - **Current branch/focus:** `main` — ongoing work: zero-cost Ollama chat backend on GCP and AGENTS.md-driven documentation
 

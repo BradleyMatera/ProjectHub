@@ -133,6 +133,19 @@ async function writeSession(sessionId, memory) {
   return 'memory';
 }
 
+async function clearSession(sessionId) {
+  const sql = await getNeonSql();
+  if (sql) {
+    try {
+      await ensureSessionTable(sql);
+      await sql`DELETE FROM projecthub_chat_sessions WHERE session_id = ${sessionId}`;
+    } catch (error) {
+      console.warn('Neon clear failed:', error.message);
+    }
+  }
+  sessionMemory.delete(sessionId);
+}
+
 function sessionHint(memory) {
   const recentUserTurns = trimMemory(memory).filter(item => item.role === 'user').slice(-2).map(item => item.content);
   return recentUserTurns.length ? `Recent session context: ${recentUserTurns.join(' | ')}` : '';
@@ -181,7 +194,7 @@ function json(statusCode, body, headers) {
   };
 }
 
-async function callGcp(message, origin, memory) {
+async function callGcp(message, origin, memory, options) {
   const hint = sessionHint(memory);
   const augmentedMessage = hint ? `${message}\n\n${hint}` : message;
   const controller = new AbortController();
@@ -194,7 +207,7 @@ async function callGcp(message, origin, memory) {
         'Content-Type': 'application/json',
         'Origin': origin || 'https://bradleymatera.dev'
       },
-      body: JSON.stringify({ message: augmentedMessage })
+      body: JSON.stringify({ message: augmentedMessage, options })
     });
     const text = await response.text();
     let payload = null;
@@ -229,38 +242,50 @@ exports.handler = async function handler(event) {
     return json(400, { error: 'Invalid JSON.' }, headers);
   }
 
-  const message = String(body.message || '').trim();
   const sessionId = safeSessionId(body.sessionId || event.headers['x-nf-client-connection-ip'] || 'anonymous');
-  const clientContext = trimMemory(body.context || []);
+  if (body.action === 'clearMemory') {
+    await clearSession(sessionId);
+    return json(200, { ok: true, cleared: true, router: 'netlify', sessionId }, headers);
+  }
+
+  const message = String(body.message || '').trim();
+  const options = body.options && typeof body.options === 'object' ? body.options : {};
+  const memoryEnabled = options.memoryEnabled !== false;
+  const clientContext = memoryEnabled ? trimMemory(body.context || []) : [];
   if (!message) return json(400, { error: 'Missing message.' }, headers);
   if (message.length > 600) return json(400, { error: 'Message is too long.' }, headers);
 
   const intent = classify(message);
-  const priorMemory = await readSession(sessionId);
+  const priorMemory = memoryEnabled ? await readSession(sessionId) : [];
   const mergedMemory = trimMemory([...priorMemory, ...clientContext, { role: 'user', content: message, intent, at: Date.now() }]);
   const cached = isContextDependent(message) ? null : getCached(message);
   if (cached) {
-    await writeSession(sessionId, [...mergedMemory, { role: 'assistant', content: cached.reply, intent, at: Date.now() }]);
+    let store = 'disabled';
+    if (memoryEnabled) {
+      store = await writeSession(sessionId, [...mergedMemory, { role: 'assistant', content: cached.reply, intent, at: Date.now() }]);
+    }
     return json(200, {
       ...cached,
       cached: true,
       router: 'netlify',
       intent,
       source: cached.source || 'gcp-cache',
-      sessionMemory: { enabled: true, store: process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL ? 'neon' : 'memory', turns: trimMemory(mergedMemory).length }
+      sessionMemory: { enabled: memoryEnabled, store, turns: memoryEnabled ? trimMemory(mergedMemory).length : 0 }
     }, headers);
   }
 
   try {
-    const gcpPayload = await callGcp(message, origin, mergedMemory);
-    const store = await writeSession(sessionId, [...mergedMemory, { role: 'assistant', content: gcpPayload.reply, intent, at: Date.now() }]);
+    const gcpPayload = await callGcp(message, origin, memoryEnabled ? mergedMemory : [], options);
+    const store = memoryEnabled
+      ? await writeSession(sessionId, [...mergedMemory, { role: 'assistant', content: gcpPayload.reply, intent, at: Date.now() }])
+      : 'disabled';
     const payload = {
       ...gcpPayload,
       cached: false,
       router: 'netlify',
       intent,
       source: 'gcp-grounded',
-      sessionMemory: { enabled: true, store, turns: trimMemory(mergedMemory).length + 1 },
+      sessionMemory: { enabled: memoryEnabled, store, turns: memoryEnabled ? trimMemory(mergedMemory).length + 1 : 0 },
       budget: {
         netlifyTokensUsed: 0,
         policy: 'grounded-first; tiny GCP flavor labels enabled; Neon session memory optional'
