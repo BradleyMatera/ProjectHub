@@ -202,8 +202,8 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   let newTopic = lastQueryTopic;
 
   const CHAT_API_URL = window.__PROJECTHUB_CHAT_API__ || "https://projecthub-chat.bradleymatera.dev/api/chat";
-  const AI_TIMEOUT_MS = 60000; // Wait up to 60s for a free Google/GCP slow backend
-  const AI_RETRIES = 2;
+  const AI_TIMEOUT_MS = 16000;
+  const AI_RETRIES = 1;
 
   async function askAIBackend() {
     let lastError = null;
@@ -550,6 +550,18 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 
   let lastRequestTime = 0;
   const requestInterval = 1000;
+  let isRequestInFlight = false;
+  let lastSubmittedQuery = "";
+  let lastSubmittedAt = 0;
+
+  function appendMessage(type, label, html) {
+    const messageDiv = document.createElement("div");
+    messageDiv.className = `message ${type}-message`;
+    messageDiv.innerHTML = `<strong>${label}:</strong> ${html}<div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
+    chatOutput.appendChild(messageDiv);
+    chatOutput.scrollTop = chatOutput.scrollHeight;
+    return messageDiv;
+  }
 
   minimizeBtn.onclick = () => {
     chatOutput.style.display = chatOutput.style.display === "none" ? "block" : "none";
@@ -574,15 +586,32 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   const submitChat = async () => {
     const now = Date.now();
     if (now - lastRequestTime < requestInterval) {
-      chatOutput.innerHTML += `<div class="message bot-message"><strong>Bot:</strong> Please wait a moment before sending another message.<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
-      chatOutput.scrollTop = chatOutput.scrollHeight;
+      chatInput.placeholder = "One moment...";
       return;
     }
-    lastRequestTime = now;
     const userQuery = chatInput.value.trim();
     if (!userQuery) return;
 
-    chatOutput.innerHTML += `<div class="message user-message"><strong>You:</strong> ${userQuery}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+    const normalizedQuery = userQuery.toLowerCase().replace(/\s+/g, " ");
+    if (isRequestInFlight) {
+      chatInput.placeholder = "Still working on that answer...";
+      return;
+    }
+
+    if (normalizedQuery === lastSubmittedQuery && now - lastSubmittedAt < 20000) {
+      chatInput.placeholder = "Try a follow-up detail or rephrase the question...";
+      return;
+    }
+
+    lastRequestTime = now;
+    lastSubmittedQuery = normalizedQuery;
+    lastSubmittedAt = now;
+    isRequestInFlight = true;
+    sendButton.disabled = true;
+    sendButton.style.opacity = "0.65";
+    chatInput.disabled = true;
+
+    appendMessage("user", "You", userQuery.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c])));
 
     loadingIcon.style.display = "block";
     const statusDiv = document.createElement("div");
@@ -597,27 +626,32 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     const thinkingInterval = setInterval(() => {
       thinkingDots = (thinkingDots + 1) % 4;
       const dots = ".".repeat(thinkingDots);
-      const messages = ["Checking local knowledge", "Waiting for AI backend", "Almost there"];
+      const messages = ["Checking Bradley’s profile", "Drafting a recruiter-ready answer", "Verifying details"];
       const message = messages[(thinkingDots) % messages.length];
       statusDiv.innerHTML = `<strong>Bot:</strong> ${message}${dots}<div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
       chatOutput.scrollTop = chatOutput.scrollHeight;
     }, 800);
 
-    const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData);
-
-    clearInterval(thinkingInterval);
-    statusDiv.remove();
-    lastQueryTopic = newTopic;
-
-    loadingIcon.style.display = "none";
-    // Create a new message div and set its innerHTML to render the HTML formatting
-    const messageDiv = document.createElement("div");
-    messageDiv.className = "message bot-message";
-    messageDiv.innerHTML = `<strong>Bot:</strong> ${reply}<div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
-    chatOutput.appendChild(messageDiv);
-    chatOutput.scrollTop = chatOutput.scrollHeight;
-    chatInput.value = "";
-    chatInput.style.height = "40px";
+    try {
+      const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData);
+      lastQueryTopic = newTopic;
+      appendMessage("bot", "Bot", reply);
+      chatInput.value = "";
+      chatInput.style.height = "40px";
+    } catch (error) {
+      console.error("ProjectHub chat error:", error);
+      appendMessage("bot", "Bot", "I can still help from Bradley’s verified profile details. Try asking about projects, AWS experience, CIRIS, target roles, skills, or contact links.");
+    } finally {
+      clearInterval(thinkingInterval);
+      statusDiv.remove();
+      loadingIcon.style.display = "none";
+      isRequestInFlight = false;
+      sendButton.disabled = false;
+      sendButton.style.opacity = "1";
+      chatInput.disabled = false;
+      chatInput.placeholder = "Ask about Bradley's work, projects, skills, or roles...";
+      chatInput.focus();
+    }
   };
 
   sendButton.onclick = submitChat;
