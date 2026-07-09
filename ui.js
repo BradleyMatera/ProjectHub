@@ -166,9 +166,28 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     chatOutput.innerHTML += `<div class="message user-message"><strong>You:</strong> ${userQuery}<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
 
     loadingIcon.style.display = "block";
+    const statusDiv = document.createElement("div");
+    statusDiv.id = "thinking-status";
+    statusDiv.className = "message bot-message";
+    statusDiv.style.opacity = "0.8";
+    statusDiv.innerHTML = `<strong>Bot:</strong> Thinking...<div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
+    chatOutput.appendChild(statusDiv);
     chatOutput.scrollTop = chatOutput.scrollHeight;
 
+    let thinkingDots = 0;
+    const thinkingInterval = setInterval(() => {
+      thinkingDots = (thinkingDots + 1) % 4;
+      const dots = ".".repeat(thinkingDots);
+      const messages = ["Checking local knowledge", "Waiting for AI backend", "Almost there"];
+      const message = messages[(thinkingDots) % messages.length];
+      statusDiv.innerHTML = `<strong>Bot:</strong> ${message}${dots}<div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
+      chatOutput.scrollTop = chatOutput.scrollHeight;
+    }, 800);
+
     const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData);
+
+    clearInterval(thinkingInterval);
+    statusDiv.remove();
     lastQueryTopic = newTopic;
 
     loadingIcon.style.display = "none";
