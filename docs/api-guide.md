@@ -41,12 +41,12 @@ Returns:
 - No authentication currently used.
 - Used for: `stargazers_count`, `pushed_at`.
 
-## Fallback Proxy Contract
+## Recruiter Chat API Contract
 
-Current production fallback URL:
+Current production URL:
 
 ```text
-POST https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat
+POST https://projecthub-chat.bradleymatera.dev/api/chat
 Content-Type: application/json
 ```
 
@@ -62,25 +62,18 @@ Response body:
 
 ```json
 {
-  "reply": "AI-generated text"
+  "reply": "Grounded recruiter-safe answer text",
+  "followUps": ["Optional follow-up prompt", "Optional follow-up prompt"],
+  "model": "smollm2:135m",
+  "fallback": true,
+  "cached": false
 }
 ```
 
-### Planned endpoint (GCP Ollama)
-
-```text
-POST https://chat.recruiterhub.yourdomain.com/api/chat
-```
-
-Same JSON contract. The proxy will forward to Ollama’s OpenAI-compatible endpoint:
-
-```text
-http://localhost:11434/v1/chat/completions
-```
+The browser should treat `reply` as the primary answer and may render `followUps` as short suggested next questions. The backend deliberately returns grounded deterministic answers for recruiter-critical topics and only uses Ollama for low-risk conversational wording that passes guardrails.
 
 ## Security Requirements for New Proxy
 
 - Accept requests only from allowed origins via CORS.
-- Require a valid API key in headers.
 - Run HTTPS.
 - Do **not** expose `localhost:11434` to the internet.

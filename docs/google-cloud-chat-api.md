@@ -156,16 +156,16 @@ Next step is to set `OLLAMA_BASE_URL` to the Tailscale IP of the home/lab Ollama
 
 ## Suggested Client-Side Integration
 
-In ProjectHub `logic.js`, replace the Heroku fallback with a call to the GCP API:
+In ProjectHub `logic.js`, call the production GCP API:
 
 ```javascript
-const res = await fetch("https://chat.bradleymatera.dev/api/chat", {
+const res = await fetch("https://projecthub-chat.bradleymatera.dev/api/chat", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ message: userQuery })
 });
 const data = await res.json();
-reply = data.reply || "I couldn't get a response from the AI backend.";
+reply = data.reply || "I can still help from Bradley's verified profile details.";
 ```
 
 For local testing, the public IP and `/api/chat` path also work as long as the firewall rule allows the request.
