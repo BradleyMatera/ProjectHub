@@ -1,6 +1,6 @@
 # architecture-overview.md
 
-**Read when:** You need to understand how ProjectHub is structured, how data flows, or how the backend migration to Ollama on GCP works.
+**Read when:** You need to understand how ProjectHub is structured, how data flows, or how the backend AI integration works.
 
 ---
 
@@ -13,11 +13,11 @@ flowchart LR
     C --> D[logic.js matches intent]
     D --> E[data.js projects/codePens]
     D --> F[utils.js GitHub API]
-   D --> G{Needs recruiter answer?}
-   G -- yes --> H[Netlify chat-router]
-   H --> M[(Optional Netlify DB / Neon session memory)]
-   H --> I[Node API on GCP e2-micro VM]
-   I --> J[Grounded recruiter knowledge + guarded Ollama flavor labels]
+    D --> G{Needs recruiter answer?}
+    G -- yes --> H[Netlify recruiter-chat function]
+    H --> M[(Neon DB session memory)]
+    H --> J[Gemini Flash API]
+    J --> K[Grounded recruiter knowledge + anti-slop validation]
 ```
 
 ---
@@ -31,9 +31,9 @@ flowchart LR
 | `logic.js` | Intent detection, response generation, conversation history, AI fallback trigger. |
 | `ui.js` | Chat DOM creation, event handling, styling, loading spinner. |
 | `utils.js` | GitHub repo metadata fetcher. |
-| Netlify chat router | Classifies, caches, forwards requests, and stores session memory when Netlify DB/Neon is configured. |
-| Recruiter chat API | Provides grounded recruiter-safe answers when local intent handlers cannot answer naturally. |
-| Ollama backend | Zero-cost local model running privately on GCP Compute Engine for guarded 3-5 word flavor labels and low-risk wording. |
+| Netlify recruiter-chat | Gemini Flash-powered function. Fetches knowledge base, builds grounded prompts, validates anti-slop, stores session memory in Neon DB. |
+| Session memory | Per-tab conversation history persisted in Neon PostgreSQL with fallback to function memory. |
+| Recruiter knowledge | `data/recruiter-knowledge.json` hosted on GitHub — cached 5 minutes by the function. |
 
 ---
 
@@ -52,26 +52,21 @@ flowchart LR
    - project by name
    - CodePen by name
    - platform, tech, list, compare, most stars
-6. If the query needs a recruiter-style answer, it calls `/.netlify/functions/chat-router` on `bradleymatera.dev`, or the GCP API directly elsewhere.
-7. The Netlify router persists trimmed session memory in Neon/Netlify DB when configured, otherwise in memory, and forwards the request to the GCP API.
-8. The API fetches `data/recruiter-knowledge.json`, returns deterministic grounded answers for factual topics, and uses Ollama only for guarded tiny flavor labels or low-risk output that passes validation.
+6. If the query needs a recruiter-style answer, it calls `/.netlify/functions/recruiter-chat` on `bradleymatera.dev`.
+7. The Netlify function fetches `data/recruiter-knowledge.json` from GitHub (cached 5 minutes), reads session memory from Neon DB, builds a grounded prompt including conversation history, calls Gemini Flash, validates the reply against anti-slop rules, stores the updated memory, and returns the answer.
 
 ---
 
 ## Backend Runtime
 
-The paid Heroku proxy has been replaced with a **zero-cost** Ollama-backed API on Google Cloud’s Always Free tier.
+The backend lives in the **gatsbyblog** repo (portfolio site), not in this ProjectHub repo.
 
-See `backend-guide.md` for the full deployment plan.
+- **Function:** `netlify/functions/recruiter-chat.js` — calls Gemini Flash with grounded prompts
+- **Knowledge base:** `data/recruiter-knowledge.json` in this repo, fetched raw from GitHub
+- **Session memory:** Neon PostgreSQL via `@neondatabase/serverless`, table `projecthub_chat_sessions`
+- **Cost:** Gemini Flash free tier (1,500 requests/day) + Netlify Pro (already paid)
 
-### Key decisions
-
-- **VM:** `e2-micro` in `us-west1`, `us-central1`, or `us-east1`
-- **Disk:** 30 GB standard persistent disk (Always Free)
-- **Model:** `smollm2:135m` for guarded low-risk generation on micro hardware
-- **Proxy:** Node.js/Express server on `127.0.0.1:3000`, reverse proxied by Caddy
-- **Security:** CORS to allowed domains, HTTPS via Caddy/Let’s Encrypt, Ollama bound to localhost
-- **Storage:** optional Firestore Native mode for chat history within free quota
+See the gatsbyblog repo for deployment code and Netlify configuration.
 
 ---
 
