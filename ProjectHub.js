@@ -1,92 +1,92 @@
 const projects = [
-  { 
-    name: "WebGPU Shapes Renderer", 
-    desc: "A demo of a WebGPU-based renderer displaying selectable 2D shapes (triangle, square, pentagon, diamond, hexagon) on a canvas, forked and enhanced from an original project as part of coursework (only works on Chrome).", 
-    url: "https://bradleymatera.github.io/leaf-js/", 
-    platform: "GitHub Pages", 
-    repo: "https://github.com/BradleyMatera/leaf-js", 
-    tech: ["WebGPU", "JavaScript", "GitHub Pages"],
+  {
+    name: "AWS Serverless Metadata Extraction Workflow",
+    desc: "AWS internship capstone that extracts metadata with Lambda, DynamoDB, S3, and an accessible frontend on AWS Amplify.",
+    url: null,
+    platform: "AWS",
+    repo: "https://github.com/BradleyMatera",
+    tech: ["AWS Lambda", "Amazon DynamoDB", "Amazon S3", "AWS Amplify"],
     apiEndpoint: null
   },
-  { 
-    name: "Gatsby Starter Minimal Blog", 
-    desc: "A React-based blog fetching data from an Express API, deployed on Netlify as a learning project.", 
-    url: "https://bradleysgatsbyblog.netlify.app/", 
-    platform: "Netlify", 
-    repo: "https://github.com/BradleyMatera/gatsby-starter-minimal-blog", 
-    tech: ["React", "Express", "Netlify", "Gatsby"],
-    apiEndpoint: "https://bradleysgatsbyblog.netlify.app/.netlify/functions/api"
-  },
-  { 
-    name: "Interactive Pokedex", 
-    desc: "A Pokedex app built with HTML, Tailwind CSS, and JavaScript, integrating Pokémon APIs, created to practice API integration.", 
-    url: "https://bradleymatera.github.io/Interactive-Pokedex/", 
-    platform: "GitHub Pages", 
-    repo: "https://github.com/BradleyMatera/Interactive-Pokedex", 
-    tech: ["HTML", "Tailwind CSS", "JavaScript", "GitHub Pages"],
+  {
+    name: "AWS Infrastructure Cost-Analysis Model",
+    desc: "Transparent cost model using measurable cloud inputs such as request counts, GB-month, compute time, read/write units, and transfer out.",
+    url: null,
+    platform: "AWS",
+    repo: "https://github.com/BradleyMatera",
+    tech: ["AWS usage metrics", "Data analysis", "Modeling"],
     apiEndpoint: null
   },
-  { 
-    name: "Mom's Business Website", 
-    desc: "A responsive website for my mom’s fitness business using HTML, CSS, and JavaScript, with a photo gallery and contact form, built to practice front-end skills.", 
-    url: "https://bradleymatera.github.io/Moms-website/", 
-    platform: "GitHub Pages", 
-    repo: "https://github.com/BradleyMatera/Moms-website", 
-    tech: ["HTML", "CSS", "JavaScript", "GitHub Pages"],
+  {
+    name: "CIRIS Ethical AI",
+    desc: "Freelance contributor work on a real open-source project: local setup, onboarding docs, small code updates, JWT guidance, debugging, and GitHub issue tracking.",
+    url: null,
+    platform: "GitHub",
+    repo: "https://github.com/BradleyMatera",
+    tech: ["JavaScript", "Docker Compose", "GitHub", "JWT"],
     apiEndpoint: null
   },
-  { 
-    name: "React Native Anime CRUD App", 
-    desc: "A mobile CRUD app built with React Native, Node.js, and MongoDB, deployed on Vercel, created to learn mobile development and back-end integration.", 
-    url: "https://cruddemo-one.vercel.app/", 
-    platform: "Vercel", 
-    repo: "https://github.com/BradleyMatera", 
-    tech: ["React Native", "Node.js", "MongoDB", "Vercel"],
-    apiEndpoint: "https://cruddemo-one.vercel.app/api/anime"
-  },
-  { 
-    name: "Docker Multilang Project", 
-    desc: "A Dockerized multi-language app (Python/Node.js) for server tooling, built to experiment with Docker.", 
-    url: "https://github.com/BradleyMatera/docker_multilang_project", 
-    platform: "GitHub", 
-    repo: "https://github.com/BradleyMatera/docker_multilang_project", 
-    tech: ["Docker", "Python", "Node.js", "GitHub"],
+  {
+    name: "ProjectHub",
+    desc: "Embeddable AI-powered chat widget that showcases Bradley's web development projects and CodePens. Served from GitHub Pages as a single script.",
+    url: "https://bradleymatera.github.io/ProjectHub/",
+    platform: "GitHub Pages",
+    repo: "https://github.com/BradleyMatera/ProjectHub",
+    tech: ["JavaScript", "GitHub Pages"],
     apiEndpoint: null
   },
-  { 
-    name: "RESTful Routes Using ExpressJS", 
-    desc: "A RESTful API built with Express.js and Node.js, connected to MongoDB, created to practice back-end development.", 
-    url: "https://github.com/BradleyMatera/RESTfulRoutesUsingExpressJS", 
-    platform: "GitHub", 
-    repo: "https://github.com/BradleyMatera/RESTfulRoutesUsingExpressJS", 
-    tech: ["Express", "Node.js", "MongoDB", "GitHub"],
+  {
+    name: "Interactive Pokedex",
+    desc: "Static Gen 1 Pokedex UI with all 151 entries, client-side search/filtering, data display, and theme controls.",
+    url: "https://bradleymatera.github.io/Interactive-Pokedex/",
+    platform: "GitHub Pages",
+    repo: "https://github.com/BradleyMatera/Interactive-Pokedex",
+    tech: ["JavaScript", "HTML", "CSS"],
     apiEndpoint: null
   },
-  { 
-    name: "Pong_Deluxe", 
-    desc: "A Pong game using PixiJS for real-time graphics, deployed on Netlify, built to explore game development with JavaScript.", 
-    url: "https://pongdeluxe.netlify.app/", 
-    platform: "Netlify", 
-    repo: "https://github.com/BradleyMatera/Pong-Deluxe", 
-    tech: ["PixiJS", "JavaScript", "Netlify"],
+  {
+    name: "CheeseMath",
+    desc: "Calculator and testing demo with arithmetic, string operations, regex analysis, input handling, and Jest validation.",
+    url: "https://bradleymatera.github.io/CheeseMath-Jest-Tests/",
+    platform: "GitHub Pages",
+    repo: "https://github.com/BradleyMatera/CheeseMath-Jest-Tests",
+    tech: ["JavaScript", "Jest"],
     apiEndpoint: null
   },
-  { 
-    name: "CheeseMath Jest Tests", 
-    desc: "Math utilities with Jest unit tests, deployed on Vercel, created to learn testing and debugging in JavaScript.", 
-    url: "https://cheese-math.vercel.app/", 
-    platform: "Vercel", 
-    repo: "https://github.com/BradleyMatera/CheeseMath-Jest-Tests", 
-    tech: ["JavaScript", "Jest", "Vercel"],
+  {
+    name: "Secrets & Environment Variables Demo",
+    desc: "Educational frontend demo showing why secrets should not be hardcoded and how environment-variable concepts apply to application configuration.",
+    url: "https://bradleymatera.github.io/EthicsFrontEndDemo/",
+    platform: "GitHub Pages",
+    repo: "https://github.com/BradleyMatera/EthicsFrontEndDemo",
+    tech: ["JavaScript", "HTML", "CSS"],
     apiEndpoint: null
   },
-  { 
-    name: "Animal Sounds", 
-    desc: "An interactive soundboard app using HTML, CSS, and JavaScript, built as a fun project to practice front-end skills.", 
-    url: "https://bradleymatera.github.io/AnimalSounds/", 
-    platform: "GitHub Pages", 
-    repo: "https://github.com/BradleyMatera/AnimalSounds", 
-    tech: ["HTML", "CSS", "JavaScript", "GitHub Pages"],
+  {
+    name: "Animal Sounds",
+    desc: "Interactive animal soundboard UI with audio playback and responsive frontend styling.",
+    url: "https://bradleymatera.github.io/AnimalSounds/",
+    platform: "GitHub Pages",
+    repo: "https://github.com/BradleyMatera/AnimalSounds",
+    tech: ["JavaScript", "HTML", "CSS"],
+    apiEndpoint: null
+  },
+  {
+    name: "Triangle Shader Lab",
+    desc: "WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout.",
+    url: "https://bradleymatera.github.io/TriangleDemo/",
+    platform: "GitHub Pages",
+    repo: "https://github.com/BradleyMatera/TriangleDemo",
+    tech: ["WebGPU", "JavaScript", "HTML"],
+    apiEndpoint: null
+  },
+  {
+    name: "Fallen Knight: Requiem of Honor",
+    desc: "KAJAM game jam project built with classmates, ranked #9 in Artstyle.",
+    url: "https://itch.io/jam/kajam/rate/3114394",
+    platform: "itch.io",
+    repo: "https://github.com/BradleyMatera",
+    tech: [],
     apiEndpoint: null
   }
 ];
@@ -103,16 +103,16 @@ const codePens = [
 
 // Dropdown suggestions
 const suggestions = [
-  "What project has the most stars?",
-  "Summarize Bradley as a web dev",
+  "Summarize Bradley as a junior software engineer",
   "What’s Bradley’s GitHub?",
   "What’s Bradley’s LinkedIn?",
-  "Tell me about Interactive Pokedex",
-  "Tell me about React Calculator",
+  "Tell me about ProjectHub",
+  "Tell me about the AWS serverless workflow",
+  "Tell me about CIRIS Ethical AI",
   "List all projects",
   "List all CodePens",
-  "Compare Pokedex and Pong_Deluxe",
-  "What projects use React?"
+  "What roles is Bradley targeting?",
+  "What is Bradley’s strongest technical background?"
 ];// Function to fetch GitHub repo data (e.g., stars, last commit)
 async function fetchGitHubRepoData(repoUrl) {
   const repoPath = repoUrl.replace("https://github.com/", "");
@@ -141,38 +141,33 @@ async function fetchAllGitHubData(projects) {
     projectData.push({ ...project, githubData });
   }
   return projectData;
-}// Function to summarize Bradley Matera as a web developer based on projects
+}// Function to summarize Bradley Matera as a junior software engineer
 function summarizeBradleyAsWebDev(projects, codePens) {
-  const allTech = [...new Set(projects.flatMap(p => p.tech))];
-  const platforms = [...new Set(projects.map(p => p.platform))];
+  const allTech = [...new Set(projects.flatMap(p => p.tech).filter(Boolean))];
   const projectCount = projects.length;
   const codePenCount = codePens.length;
-  const frontEndTech = allTech.filter(tech => ["HTML", "CSS", "JavaScript", "React", "React Native", "Tailwind CSS", "PixiJS", "WebGPU"].includes(tech));
-  const backEndTech = allTech.filter(tech => ["Node.js", "Express", "MongoDB"].includes(tech));
-  const otherTech = allTech.filter(tech => ["Docker", "Jest", "GitHub", "Netlify", "Vercel", "GitHub Pages"].includes(tech));
+  const frontEndTech = ["JavaScript", "TypeScript", "React", "Next.js", "HTML", "CSS"].filter(t => allTech.includes(t));
+  const cloudTech = ["AWS Lambda", "Amazon DynamoDB", "Amazon S3", "AWS Amplify", "AWS usage metrics"].filter(t => allTech.includes(t));
 
-  let summary = "Bradley Matera is a versatile and growth-oriented developer with a strong foundation in front-end development and a growing expertise in full-stack technologies. ";
-  summary += `He has worked on ${projectCount} projects and ${codePenCount} CodePen projects, showcasing a diverse skill set across multiple platforms: ${platforms.join(", ")}.<br><br>`;
+  let summary = "Bradley Matera is a junior software engineer based in Davis, Illinois, open to relocation. He graduated with a B.S. in Web Development from Full Sail University (GPA 3.64) and is certified as an AWS Solutions Architect - Associate and AWS Certified AI Practitioner.<br><br>";
+  summary += `He has worked on ${projectCount} portfolio projects and ${codePenCount} CodePen demos, with a focus on JavaScript, React/Next.js, Node.js, SQL, and AWS serverless services.<br><br>`;
 
   if (frontEndTech.length > 0) {
-    summary += `<strong>Front-End Development:</strong><br>- Uses technologies like ${frontEndTech.join(", ")} to create engaging, user-friendly interfaces.<br>- For example, his Interactive Pokedex integrates Pokémon APIs for a dynamic experience, and WebGPU Shapes Renderer experiments with cutting-edge WebGPU for high-performance graphics.<br><br>`;
+    summary += `<strong>Frontend work:</strong> ${frontEndTech.join(", ")} — building accessible UIs, interactive demos, and clear documentation.<br><br>`;
   }
 
-  if (backEndTech.length > 0) {
-    summary += `<strong>Back-End Development:</strong><br>- Has explored back-end development with ${backEndTech.join(", ")}.<br>- Projects like React Native Anime CRUD App use Node.js and MongoDB, and RESTful Routes Using ExpressJS is a RESTful API.<br><br>`;
+  if (cloudTech.length > 0) {
+    summary += `<strong>Cloud and support engineering:</strong> ${cloudTech.join(", ")} — including an AWS Cloud Support Engineer internship with guided troubleshooting labs, a serverless metadata extraction capstone, and an infrastructure cost-analysis model.<br><br>`;
   }
 
-  if (otherTech.length > 0) {
-    summary += `<strong>Modern Tools and Practices:</strong><br>- Leverages tools like ${otherTech.join(", ")}.<br>- Shows a focus on testing (Jest in CheeseMath Jest Tests), containerization (Docker in Docker Multilang Project), and deployment across various platforms.<br><br>`;
-  }
-
-  summary += `<strong>Learning and Experimentation:</strong><br>- His CodePens, like React Calculator and Markdown Previewer, highlight a hands-on learning approach, covering React, JavaScript fundamentals, and practical applications.<br>- Overall, Bradley is a developer who balances creativity, technical skill, and user-focused design, with potential to deepen his back-end expertise.`;
+  summary += `<strong>Recent experience:</strong> Freelance junior frontend contributor at CIRIS Ethical AI (setup docs, JWT debugging, small merged updates, GitHub Issues) and prior roles in case management, construction, and the U.S. Army.<br><br>`;
+  summary += `<strong>What he is looking for:</strong> Junior software engineering, frontend/backend/web development, cloud support, software support, application support, and technical support roles where he can learn production systems, debug carefully, document clearly, and grow into a well-rounded engineer.`;
   return summary;
 }
 
-// Function to provide a short summary of Bradley Matera as a web developer
+// Function to provide a short summary of Bradley Matera
 function shortSummaryBradleyAsWebDev(projects, codePens) {
-  return "Bradley Matera is a versatile web developer with a strong focus on front-end technologies like HTML, CSS, JavaScript, and React, as well as a growing expertise in full-stack development. He has worked on diverse projects and CodePens, showcasing creativity and technical skill across platforms like GitHub Pages, Netlify, and Vercel.";
+  return "Bradley Matera is a junior software engineer in Davis, Illinois, open to relocation. He holds a B.S. in Web Development from Full Sail University, AWS Solutions Architect - Associate and AWS Certified AI Practitioner certifications, and has experience with JavaScript, TypeScript, React, Node.js, AWS serverless services, debugging, documentation, and AI-assisted development workflows.";
 }
 
 // Function to handle user queries
@@ -196,14 +191,38 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   }
 
   if (query.includes("github")) {
-    reply = "Bradley Matera's GitHub profile is at https://github.com/BradleyMatera. You can explore his repositories there, including projects like Interactive Pokedex, WebGPU Shapes Renderer, and more.";
+    reply = "Bradley Matera's GitHub profile is at https://github.com/BradleyMatera. You can explore his repositories there, including ProjectHub, Interactive Pokedex, CheeseMath, the Triangle Shader Lab, and more.";
     newTopic = "github";
     return { reply, newTopic };
   }
 
   if (query.includes("linkedin")) {
-    reply = "Bradley Matera's LinkedIn profile is at https://www.linkedin.com/in/bradmatera. It highlights his education, projects, and skills in web development.";
+    reply = "Bradley Matera's LinkedIn profile is at https://www.linkedin.com/in/bradmatera. It highlights his transition into software engineering, AWS internship, freelance frontend work, education, and target roles.";
     newTopic = "linkedin";
+    return { reply, newTopic };
+  }
+
+  if (query.includes("role") || query.includes("targeting") || query.includes("looking for") || query.includes("job")) {
+    reply = "Bradley is targeting junior software engineering, junior web/frontend/backend development, cloud support engineering, software support, application support, and technical support roles. He is based in Davis, Illinois and open to relocation.";
+    newTopic = "roles";
+    return { reply, newTopic };
+  }
+
+  if (query.includes("strongest") || query.includes("technical background") || query.includes("skills") || query.includes("tech stack")) {
+    reply = "Bradley's strongest technical background is in JavaScript, TypeScript, React, Next.js, Node.js, HTML, CSS, and SQL, plus AWS support training and project work with Lambda, DynamoDB, S3, and Amplify. He is also comfortable with debugging, documentation, GitHub, Docker, API integration, and AI-assisted development workflows.";
+    newTopic = "skills";
+    return { reply, newTopic };
+  }
+
+  if (query.includes("aws")) {
+    reply = "Bradley completed an AWS Cloud Support Engineer internship and holds AWS Certified Solutions Architect - Associate and AWS Certified AI Practitioner certifications. The internship focused on guided support training, troubleshooting labs, networking concepts, and a serverless capstone project using Lambda, DynamoDB, S3, and Amplify. It did not involve live customer ticket work.";
+    newTopic = "aws";
+    return { reply, newTopic };
+  }
+
+  if (query.includes("ciris") || query.includes("ethical ai")) {
+    reply = "Bradley worked as a freelance junior frontend contributor at CIRIS Ethical AI from October 2024 to June 2025. He improved onboarding and setup documentation, added JWT token-verification logging, contributed small merged code updates and lint fixes, created Docker Compose config for local development, and documented larger improvements as GitHub Issues.";
+    newTopic = "ciris";
     return { reply, newTopic };
   }
 
@@ -344,7 +363,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   chatOutput.style.maxHeight = "400px";
   chatOutput.style.overflowY = "auto";
   chatOutput.style.marginBottom = "10px";
-  chatOutput.innerHTML = `<div class="message bot-message"><strong>Bot:</strong> Welcome! I’m here to help you explore Bradley Matera’s web development work. Ask about his projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), live data (e.g., 'What project has the most stars?'), or about Bradley as a web developer (e.g., 'Summarize Bradley as a web dev'). What would you like to know?<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
+  chatOutput.innerHTML = `<div class="message bot-message"><strong>Bot:</strong> Hi! I'm Bradley Matera's ProjectHub assistant. Ask about his work as a junior software engineer — projects like ProjectHub, the AWS serverless workflow, or CIRIS Ethical AI; his GitHub or LinkedIn; the roles he's targeting; or his strongest technical skills. What would you like to know?<div class="timestamp">${new Date().toLocaleTimeString()}</div></div>`;
   chatDiv.appendChild(chatOutput);
 
   // Dropdown for suggestions
