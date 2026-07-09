@@ -21,12 +21,17 @@ ProjectHub is an embeddable, AI-powered chat widget that showcases Bradley Mater
 No install step is required to run the widget in a browser. Use these commands for repo-level work:
 
 ```bash
-# Clone / open
-open index.html          # local manual test (file:// is fine for static UI)
-npm test                 # placeholder; no real tests yet
+# Local test of the split modules (uses local ProjectHub.js build)
+open index.html
+
+# Local test of the live GitHub Pages script with cache-busting
+open live-test.html
+
+# Rebuild the single-file CDN entry point after editing data.js / utils.js / logic.js / ui.js
+cat data.js utils.js logic.js ui.js > ProjectHub.js
 
 # Publish changes to GitHub Pages
-# 1. Commit and push to main
+# 1. Commit and push to master
 # 2. GitHub Pages rebuilds automatically from the default branch
 ```
 
@@ -35,6 +40,8 @@ Live widget URL for embedding:
 ```html
 <script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js"></script>
 ```
+
+> If a consumer (like CodePen) caches the script aggressively, append a cache-busting query string, e.g. `?v=2`.
 
 ---
 
@@ -48,6 +55,8 @@ Live widget URL for embedding:
 | `ui.js` | DOM creation, event handling, rendering of the floating chat widget |
 | `utils.js` | Shared helpers (GitHub API fetching) |
 | `package.json` | Dependency metadata only (`openai`); no build scripts yet |
+| `index.html` | Local manual test page for the widget (uses local `ProjectHub.js`) |
+| `live-test.html` | Cache-busting test of the live GitHub Pages `ProjectHub.js` |
 | `docs/` | Detailed on-demand guides |
 | `.github/copilot-instructions.md` | Redirect to this file |
 | `CLAUDE.md` | Redirect to this file |
