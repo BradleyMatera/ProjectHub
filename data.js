@@ -1,7 +1,7 @@
 const projects = [
   { 
     name: "WebGPU Shapes Renderer", 
-    desc: "Demo of a WebGPU-based renderer displaying selectable 2D shapes (triangle, square, pentagon, diamond, hexagon) on a canvas, forked and enhanced from an original project (only works on Chrome).", 
+    desc: "A demo of a WebGPU-based renderer displaying selectable 2D shapes (triangle, square, pentagon, diamond, hexagon) on a canvas, forked and enhanced from an original project as part of coursework (only works on Chrome).", 
     url: "https://bradleymatera.github.io/leaf-js/", 
     platform: "GitHub Pages", 
     repo: "https://github.com/BradleyMatera/leaf-js", 
@@ -10,16 +10,16 @@ const projects = [
   },
   { 
     name: "Gatsby Starter Minimal Blog", 
-    desc: "React-based blog fetching data from an Express API, deployed on Netlify.", 
+    desc: "A React-based blog fetching data from an Express API, deployed on Netlify as a learning project.", 
     url: "https://bradleysgatsbyblog.netlify.app/", 
     platform: "Netlify", 
     repo: "https://github.com/BradleyMatera/gatsby-starter-minimal-blog", 
-    tech: ["React", "Express", "Netlify"],
+    tech: ["React", "Express", "Netlify", "Gatsby"],
     apiEndpoint: "https://bradleysgatsbyblog.netlify.app/.netlify/functions/api"
   },
   { 
     name: "Interactive Pokedex", 
-    desc: "An engaging Pokedex application built with HTML, Tailwind CSS, and JavaScript, integrating Pokémon APIs.", 
+    desc: "A Pokedex app built with HTML, Tailwind CSS, and JavaScript, integrating Pokémon APIs, created to practice API integration.", 
     url: "https://bradleymatera.github.io/Interactive-Pokedex/", 
     platform: "GitHub Pages", 
     repo: "https://github.com/BradleyMatera/Interactive-Pokedex", 
@@ -28,7 +28,7 @@ const projects = [
   },
   { 
     name: "Mom's Business Website", 
-    desc: "A responsive website for my mom’s fitness business using HTML, CSS, and JavaScript, with a photo gallery and contact form.", 
+    desc: "A responsive website for my mom’s fitness business using HTML, CSS, and JavaScript, with a photo gallery and contact form, built to practice front-end skills.", 
     url: "https://bradleymatera.github.io/Moms-website/", 
     platform: "GitHub Pages", 
     repo: "https://github.com/BradleyMatera/Moms-website", 
@@ -37,16 +37,16 @@ const projects = [
   },
   { 
     name: "React Native Anime CRUD App", 
-    desc: "Mobile CRUD app with React Native, Node.js, MongoDB, deployed on Vercel.", 
+    desc: "A mobile CRUD app built with React Native, Node.js, and MongoDB, deployed on Vercel, created to learn mobile development and back-end integration.", 
     url: "https://cruddemo-one.vercel.app/", 
     platform: "Vercel", 
-    repo: "https://github.com/BradleyMatera",
+    repo: "https://github.com/BradleyMatera", 
     tech: ["React Native", "Node.js", "MongoDB", "Vercel"],
     apiEndpoint: "https://cruddemo-one.vercel.app/api/anime"
   },
   { 
     name: "Docker Multilang Project", 
-    desc: "Dockerized multi-language app (Python/Node.js) for server tooling.", 
+    desc: "A Dockerized multi-language app (Python/Node.js) for server tooling, built to experiment with Docker.", 
     url: "https://github.com/BradleyMatera/docker_multilang_project", 
     platform: "GitHub", 
     repo: "https://github.com/BradleyMatera/docker_multilang_project", 
@@ -55,16 +55,16 @@ const projects = [
   },
   { 
     name: "RESTful Routes Using ExpressJS", 
-    desc: "RESTful API built with Express.js.", 
+    desc: "A RESTful API built with Express.js and Node.js, connected to MongoDB, created to practice back-end development.", 
     url: "https://github.com/BradleyMatera/RESTfulRoutesUsingExpressJS", 
     platform: "GitHub", 
     repo: "https://github.com/BradleyMatera/RESTfulRoutesUsingExpressJS", 
-    tech: ["Express", "Node.js", "GitHub"],
+    tech: ["Express", "Node.js", "MongoDB", "GitHub"],
     apiEndpoint: null
   },
   { 
     name: "Pong_Deluxe", 
-    desc: "Pong game using PixiJS for real-time graphics, deployed on Netlify.", 
+    desc: "A Pong game using PixiJS for real-time graphics, deployed on Netlify, built to explore game development with JavaScript.", 
     url: "https://pongdeluxe.netlify.app/", 
     platform: "Netlify", 
     repo: "https://github.com/BradleyMatera/Pong-Deluxe", 
@@ -73,7 +73,7 @@ const projects = [
   },
   { 
     name: "CheeseMath Jest Tests", 
-    desc: "Math utilities with Jest unit tests, deployed on Vercel.", 
+    desc: "Math utilities with Jest unit tests, deployed on Vercel, created to learn testing and debugging in JavaScript.", 
     url: "https://cheese-math.vercel.app/", 
     platform: "Vercel", 
     repo: "https://github.com/BradleyMatera/CheeseMath-Jest-Tests", 
@@ -82,9 +82,7 @@ const projects = [
   },
   { 
     name: "Animal Sounds", 
-    desc: "Animal Sounds app.", 
-    url: "https://bradleymatera.github.io/AnimalSounds/", 
-    platform: "GitHub Pages", 
+    desc: "An interactive soundboard app using HTML, CSS, and JavaScript, built as a fun project to practice front-end skills.", 
     repo: "https://github.com/BradleyMatera/AnimalSounds", 
     tech: ["HTML", "CSS", "JavaScript", "GitHub Pages"],
     apiEndpoint: null
