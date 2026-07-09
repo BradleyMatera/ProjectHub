@@ -385,26 +385,39 @@ function answerStrongestRole(knowledge, question) {
 
 function buildPrompt(knowledge, question) {
   const identity = knowledge?.identity || {};
-  const projects = (knowledge?.projects || []).slice(0, 5);
-  const skills = (knowledge?.topSkills || knowledge?.skills?.languagesAndFrameworks || []).slice(0, 12);
+  const projects = (knowledge?.projects || []).slice(0, 6);
+  const skills = (knowledge?.topSkills || knowledge?.skills?.languagesAndFrameworks || []).slice(0, 14);
   const certs = knowledge?.certifications || [];
+  const experience = knowledge?.experience || [];
+  const education = knowledge?.education || {};
+  const summary = knowledge?.summary || {};
   const faq = (knowledge?.faq || []).find(f => question.toLowerCase().includes(f.question.toLowerCase().slice(0, 12)));
 
   const projectLines = projects.map(p => `- ${p.name}: ${p.description}`).join('\n');
   const skillLine = skills.join(', ');
-  const certLine = Array.isArray(certs) ? certs.slice(0, 2).map(c => typeof c === 'string' ? c : c.name).join(', ') : '';
+  const certLine = Array.isArray(certs) ? certs.slice(0, 3).map(c => typeof c === 'string' ? c : c.name).join(', ') : '';
+  const experienceLines = experience.slice(0, 4).map(e => `- ${e.role} at ${e.company}: ${e.summary || ''}`).join('\n');
 
-  let prompt = `You are a concise recruiter assistant answering questions about ${identity.name || 'Bradley Matera'}, a ${identity.title || 'junior software engineer'}.\n`;
-  prompt += `Use only the facts below. Answer in third person as an assistant, never as Bradley. Be natural, specific, honest, and professional. Keep the answer to 2 complete short sentences.\n`;
-  prompt += `Do not mention Python, Java, C++, pressure, or traits not listed in the facts.\n\n`;
+  let prompt = `You are Bradley Matera's recruiter assistant. You answer naturally and conversationally, as if talking to a recruiter who is evaluating Bradley for a junior software engineering role.\n`;
+  prompt += `CRITICAL RULES:\n`;
+  prompt += `1. Use ONLY the verified facts below. Do NOT invent personal details, hobbies, food preferences, or facts not listed.\n`;
+  prompt += `2. Answer in a friendly, professional tone. Write 1-3 complete sentences that sound human, not robotic.\n`;
+  prompt += `3. If asked something not in the facts, say you don't have that detail and suggest a related recruiter topic you CAN answer.\n`;
+  prompt += `4. Speak as an assistant ("Bradley has...", "He is..."), never as Bradley himself.\n`;
+  prompt += `5. Do not mention Python, Java, C++, or traits not in the facts.\n\n`;
+
+  prompt += `VERIFIED PROFILE:\n`;
   prompt += `Name: ${identity.name || 'Bradley Matera'}\n`;
   prompt += `Title: ${identity.title || 'Junior Software Engineer'}\n`;
-  prompt += `Location: ${identity.location || 'Davis, Illinois'}\n`;
-  if (skillLine) prompt += `Top skills: ${skillLine}\n`;
+  prompt += `Location: ${identity.location || 'Davis, Illinois'} (open to relocation)\n`;
+  if (education.degree) prompt += `Education: ${education.degree} from ${education.school || 'Full Sail University'}${education.gpa ? `, GPA ${education.gpa}` : ''}\n`;
+  if (skillLine) prompt += `Skills: ${skillLine}\n`;
   if (certLine) prompt += `Certifications: ${certLine}\n`;
-  if (projectLines) prompt += `Recent projects:\n${projectLines}\n`;
+  if (summary.whoIAm) prompt += `Summary: ${summary.whoIAm}\n`;
+  if (experienceLines) prompt += `Experience:\n${experienceLines}\n`;
+  if (projectLines) prompt += `Projects:\n${projectLines}\n`;
   if (faq) prompt += `Quick fact: ${faq.answer}\n`;
-  prompt += `\nQuestion: ${question}\nAnswer:`;
+  prompt += `\nRecruiter asks: "${question}"\nYour answer:`;
   return prompt;
 }
 
@@ -529,10 +542,11 @@ function asksUnverifiedPersonalDetail(question) {
 
 function cleanModelReply(reply, knowledge, question) {
   const cleaned = String(reply || '').trim().replace(/\s+/g, ' ');
+  // Only catch clear hallucinations and inventions, not formatting
   const forbidden = /\b(Python|C\+\+|Java\b|under pressure|various programming languages|business applications|employers|following skills|highly valued|open source project|comprehensive set of guidelines|ethics, security, privacy|aims to create)\b/i;
-  const badFormat = /\*\*|\b\d+\.|\n|:/.test(cleaned);
-  const looksIncomplete = /[,;:]$|\b(and|or|including|Additionally|because|with|to|able to|he can)$/i.test(cleaned);
-  if (!cleaned || cleaned.length < 40 || forbidden.test(cleaned) || badFormat || looksIncomplete) {
+  const inventedPersonal = /\b(pizza|sushi|burger|spaghetti|tacos|favorite food is|loves eating|hates eating|married|children|wife|husband|girlfriend|boyfriend|born in [0-9]{4}|age [0-9]{1,2})\b/i;
+  const looksIncomplete = /[,;:]$/i.test(cleaned);
+  if (!cleaned || cleaned.length < 20 || forbidden.test(cleaned) || inventedPersonal.test(cleaned) || looksIncomplete) {
     return { reply: buildGroundedFallback(knowledge, question), fallback: true };
   }
   return { reply: cleaned, fallback: false };
@@ -614,6 +628,9 @@ app.post('/api/chat', async (req, res) => {
       return res.json(payload);
     }
 
+    // NEW PRIORITY: Try AI generation FIRST for all relevant questions.
+    // Grounded templates are used only as a fallback if AI fails or produces weak output.
+
     if (!isProbablyRelevant(userMessage)) {
       const payload = await generateConversationalUnknown(knowledge, userMessage, requestOptions);
       setCachedReply(userMessage, payload);
@@ -626,62 +643,80 @@ app.post('/api/chat', async (req, res) => {
       return res.json(payload);
     }
 
-    if (shouldUseGroundedAnswer(userMessage)) {
-      const payload = await addFlavor({ ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true }, userMessage, requestOptions);
-      setCachedReply(userMessage, payload);
-      return res.json(payload);
-    }
+    // === AI-FIRST PATH ===
+    // Attempt Ollama generation for ALL relevant questions before falling back to templates.
+    let aiReply = null;
+    let aiFailed = false;
 
-    if (activeGenerations >= MAX_ACTIVE_GENERATIONS) {
-      const payload = await addFlavor({ ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true, queued: false }, userMessage, requestOptions);
-      setCachedReply(userMessage, payload);
-      return res.json(payload);
-    }
+    if (activeGenerations < MAX_ACTIVE_GENERATIONS) {
+      const prompt = buildPrompt(knowledge, userMessage);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT_MS);
+      activeGenerations++;
 
-    const prompt = buildPrompt(knowledge, userMessage);
+      try {
+        const ollamaResponse = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: OLLAMA_MODEL,
+            prompt,
+            stream: false,
+            options: {
+              num_predict: 42,
+              num_ctx: 256,
+              num_thread: 2,
+              temperature: 0.35
+            }
+          })
+        });
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT_MS);
-    activeGenerations++;
+        clearTimeout(timeout);
 
-    const ollamaResponse = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: OLLAMA_MODEL,
-        prompt,
-        stream: false,
-        options: {
-          num_predict: 38,
-          num_ctx: 192,
-          num_thread: 2,
-          temperature: 0.05
+        if (ollamaResponse.ok) {
+          const data = await ollamaResponse.json();
+          const result = cleanModelReply(data.response, knowledge, userMessage);
+          if (!result.fallback && result.reply && result.reply.length > 20) {
+            aiReply = result.reply;
+          } else {
+            aiFailed = true; // Model returned weak/generic output
+          }
+        } else {
+          aiFailed = true;
+          console.error('Ollama upstream failed:', (await ollamaResponse.text()).slice(0, 500));
         }
-      })
-    });
+      } catch (err) {
+        aiFailed = true;
+        console.error('Ollama generation error:', err.message);
+      } finally {
+        activeGenerations = Math.max(0, activeGenerations - 1);
+      }
+    } else {
+      aiFailed = true;
+    }
 
-    clearTimeout(timeout);
-    activeGenerations = Math.max(0, activeGenerations - 1);
-
-    if (!ollamaResponse.ok) {
-      const text = await ollamaResponse.text();
-      console.error('Ollama upstream failed:', text.slice(0, 500));
-      const payload = await addFlavor({ ...buildGroundedFallbackPayload(knowledge, userMessage), model: OLLAMA_MODEL, fallback: true }, userMessage, requestOptions);
+    // If AI produced a good reply, use it
+    if (aiReply) {
+      const payload = await addFlavor({
+        reply: aiReply,
+        model: OLLAMA_MODEL,
+        fallback: false,
+        generative: true
+      }, userMessage, requestOptions);
       setCachedReply(userMessage, payload);
       return res.json(payload);
     }
 
-    const data = await ollamaResponse.json();
-    const result = cleanModelReply(data.response, knowledge, userMessage);
-    const payload = await addFlavor({
-      reply: result.reply,
+    // === FALLBACK: Grounded templates only when AI fails ===
+    const fallbackPayload = await addFlavor({
+      ...buildGroundedFallbackPayload(knowledge, userMessage),
       model: OLLAMA_MODEL,
-      fallback: result.fallback
+      fallback: true,
+      aiFailed
     }, userMessage, requestOptions);
-    setCachedReply(userMessage, payload);
-
-    return res.json(payload);
+    setCachedReply(userMessage, fallbackPayload);
+    return res.json(fallbackPayload);
   } catch (err) {
     activeGenerations = Math.max(0, activeGenerations - 1);
     console.error('Chat error:', err);
