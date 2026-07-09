@@ -33,7 +33,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   let reply = "I don’t know that one. Try asking about Bradley Matera's current work — projects like ProjectHub, the AWS serverless workflow, or CIRIS Ethical AI; his GitHub or LinkedIn; the roles he's targeting; or his strongest technical skills. You can also ask for a summary of Bradley as a junior software engineer.";
   let newTopic = lastQueryTopic;
 
-  const CHAT_API_URL = window.__PROJECTHUB_CHAT_API__ || "http://35.208.20.1/api/chat";
+  const CHAT_API_URL = window.__PROJECTHUB_CHAT_API__ || "https://projecthub-chat.bradleymatera.dev/api/chat";
   const AI_TIMEOUT_MS = 60000; // Wait up to 60s for a free Google/GCP slow backend
   const AI_RETRIES = 2;
 
