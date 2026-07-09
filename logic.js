@@ -38,6 +38,8 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   let reply = "I don’t know that one. Try asking about Bradley Matera's projects (e.g., Pokedex, Pong_Deluxe), CodePens (e.g., React Calculator, Data Visualization), platforms (e.g., GitHub, Netlify), tech (e.g., React, Docker), live data (e.g., 'What project has the most stars?'), or about Bradley as a web developer (e.g., 'Summarize Bradley as a web dev').";
   let newTopic = lastQueryTopic;
 
+  const CHAT_API_URL = window.__PROJECTHUB_CHAT_API__ || "https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat";
+
   if (query.includes("bradley") && (query.includes("web dev") || query.includes("developer") || query.includes("summarize"))) {
     if (query.includes("full") || (lastQueryTopic === "summary" && (query.includes("more") || query.includes("full")))) {
       reply = summarizeBradleyAsWebDev(projects, codePens);
@@ -47,16 +49,19 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       reply = shortSummaryBradleyAsWebDev(projects, codePens) + " Would you like a more detailed summary? Just ask for the 'full summary'!";
     }
     newTopic = "summary";
+    return { reply, newTopic };
   }
 
-  if (query.includes("github") && (query.includes("bradley") || query.includes("profile"))) {
-    reply = "Bradley Matera's GitHub profile is at https://github.com/BradleyMatera. He describes himself as a Web Development student at Full Sail University, focusing on front-end technologies and proficient in HTML, CSS, and JavaScript. You can explore his repositories there, including projects like Interactive Pokedex, WebGPU Shapes Renderer, and more.";
+  if (query.includes("github")) {
+    reply = "Bradley Matera's GitHub profile is at https://github.com/BradleyMatera. You can explore his repositories there, including projects like Interactive Pokedex, WebGPU Shapes Renderer, and more.";
     newTopic = "github";
+    return { reply, newTopic };
   }
 
-  if (query.includes("linkedin") && (query.includes("bradley") || query.includes("profile"))) {
-    reply = "I don’t have direct access to Bradley Matera’s LinkedIn profile, but you can likely find him by searching for 'Bradley Matera' on LinkedIn. Based on his GitHub, he’s a Web Development student at Full Sail University with a focus on front-end technologies, so his LinkedIn might highlight his education, projects, and skills in HTML, CSS, JavaScript, and more.";
+  if (query.includes("linkedin")) {
+    reply = "Bradley Matera's LinkedIn profile is at https://www.linkedin.com/in/bradmatera. It highlights his education, projects, and skills in web development.";
     newTopic = "linkedin";
+    return { reply, newTopic };
   }
 
   for (const p of projects) {
@@ -133,7 +138,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   if (reply.includes("I don’t know") && !query.includes("bradley")) {
     reply = "I’m here to help with Bradley Matera’s projects and CodePens—try asking about Pokedex, React Calculator, or something related to his work! For unrelated topics, I can provide general info.";
     try {
-      const res = await fetch("https://projecthub-proxy-fcecbe65b068.herokuapp.com/api/chat", {
+      const res = await fetch(CHAT_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userQuery })
@@ -144,6 +149,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       }
     } catch (error) {
       reply += " However, I couldn’t fetch a general response due to a connection issue.";
+      console.error("AI fallback error:", error);
     }
     newTopic = "unrelated";
   }
