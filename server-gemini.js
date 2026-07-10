@@ -1092,6 +1092,21 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${matchedProject.name}: ${desc}${tech ? ` Tech: ${tech}.` : ''} See it at ${link}.` };
   }
 
+  // Dynamic AWS/cloud from knowledge base (checked before generic project branch so "worked at Amazon" is handled as employment)
+  if (/aws|cloud|lambda|dynamo|s3|amplify|amazon/.test(lowerQuestion)) {
+    const cloudSkills = skills?.cloudAndInfrastructure || [];
+    if (cloudSkills.length > 0) {
+      let reply = `${name} has AWS experience with ${sentenceList(cloudSkills, 5)}.`;
+      const awsExp = experience?.find(e => e.role?.toLowerCase().includes('aws') || e.company?.toLowerCase().includes('aws') || e.company?.toLowerCase().includes('amazon'));
+      if (awsExp) {
+        const article = /^[aeiou]/i.test(awsExp.role) ? 'an' : 'a';
+        reply += ` He completed ${article} ${awsExp.role} at ${awsExp.company}, built around structured labs and a capstone rather than live production ownership.`;
+      }
+      return { reply: reply };
+    }
+    return { reply: `${name}'s AWS experience is detailed in his profile.` };
+  }
+
   // Dynamic projects from knowledge base
   if (/project|portfolio|work|real projects|best project|shipped/.test(lowerQuestion)) {
     const projectList = projects?.slice(0, 5) || [];
@@ -1101,22 +1116,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     }
     return { reply: `${name}'s projects are showcased in his portfolio.` };
   }
-  
-  // Dynamic AWS/cloud from knowledge base
-  if (/aws|cloud|lambda|dynamo|s3|amplify|amazon/.test(lowerQuestion)) {
-    const cloudSkills = skills?.cloudAndInfrastructure || [];
-    if (cloudSkills.length > 0) {
-      let reply = `${name} has AWS experience with ${sentenceList(cloudSkills, 5)}.`;
-      const awsExp = experience?.find(e => e.role?.toLowerCase().includes('aws') || e.company?.toLowerCase().includes('aws'));
-      if (awsExp) {
-        const article = /^[aeiou]/i.test(awsExp.role) ? 'an' : 'a';
-        reply += ` He completed ${article} ${awsExp.role} at ${awsExp.company}, built around structured labs and a capstone rather than live production ownership.`;
-      }
-      return { reply: reply };
-    }
-    return { reply: `${name}'s AWS experience is detailed in his profile.` };
-  }
-  
+
   // Dynamic experience from knowledge base
   if (/experience|intern|work history|background/.test(lowerQuestion)) {
     const expList = experience?.slice(0, 3) || [];
