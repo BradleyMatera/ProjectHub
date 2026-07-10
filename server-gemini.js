@@ -706,6 +706,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   const title = identity?.title || 'junior software engineer';
   const location = identity?.location || 'Davis, Illinois';
   
+  const agentName = knowledge?.agent?.name || 'Scout';
   const lowerQuestion = String(question || '').toLowerCase();
   const normalized = normalizeQuestion(question);
   const repair = detectRepair(question);
@@ -728,16 +729,16 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   
   // Smoke tests / greetings
   if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b/.test(lowerQuestion.trim()) || /are you online|say hello/.test(lowerQuestion)) {
-    return { reply: `Hey, I can answer questions about ${name}'s projects, AWS internship, skills, role fit, and contact info. What do you want to know?` };
+    return { reply: `${agentName} here — I answer questions about ${name}'s projects, AWS internship, skills, role fit, and contact info. What do you want to know?` };
   }
   if (/what can (you|this bot) (help|answer|do)/.test(lowerQuestion)) {
-    return { reply: `I cover ${name}'s projects, skills, AWS background, education, certifications, role fit, honest limitations, and how to contact him.` };
+    return { reply: `${agentName} covers ${name}'s projects, skills, AWS background, education, certifications, role fit, honest limitations, and how to contact him.` };
   }
   if (/what model|what is this chatbot using|does this use ollama|is this ai local|is my chat private|what data do you use/.test(lowerQuestion)) {
-    return { reply: `This site uses a small assistant grounded in ${name}'s public recruiter data file. Nothing private is stored beyond short session context.` };
+    return { reply: `${agentName} is grounded in ${name}'s public recruiter data file. Nothing private is stored beyond short session context.` };
   }
   if (/who made this|is this bradley'?s site/.test(lowerQuestion)) {
-    return { reply: `Yes, this is ${name}'s portfolio. He built the site and this assistant himself.` };
+    return { reply: `Yes, this is ${name}'s portfolio. He built the site and ${agentName} himself.` };
   }
   
   // Repair: shorter / more honest / tone changes using previous answer
@@ -745,10 +746,11 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: truncateWords(firstSentence(lastAssistant.replace(/<[^>]+>/g, ' ')), 20) };
   }
   if (repair.moreHonest && lastAssistant) {
-    return { reply: `${firstSentence(lastAssistant.replace(/<[^>]+>/g, ' '))} Honest caveats: he's junior, his AWS work was labs and a capstone rather than live production, and depth should be verified on a call.` };
+    return { reply: `${firstSentence(lastAssistant.replace(/<[^>]+>/g, ' '))} Honest caveats: he's junior, and his AWS work was labs and a capstone rather than live production.` };
   }
   if (repair.hrFriendly && lastAssistant) {
-    return { reply: `${name} is an entry-level software developer with a bachelor's degree, AWS certifications, and hands-on portfolio projects. He's best suited for junior developer or technical support openings, and interviews would confirm his practical depth.` };
+    const targetRoles = (goals?.targetRoles || ['junior developer', 'cloud support', 'technical support']).slice(0, 3);
+    return { reply: `${name} is an entry-level software developer with a bachelor's degree, AWS certifications, and hands-on portfolio projects. He's best suited for ${sentenceList(targetRoles, 3)} roles.` };
   }
   if (repair.moreTechnical && lastAssistant) {
     const stack = skills?.languagesAndFrameworks?.slice(0, 6).join(', ') || 'JavaScript, TypeScript, React, Node.js';
