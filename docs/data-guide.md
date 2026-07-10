@@ -59,7 +59,7 @@ Plain strings shown in the chat dropdown:
 
 1. Edit `data.js`.
 2. If `ProjectHub.js` still contains the inlined data module, mirror the change there.
-3. Open the widget locally and verify the new data appears in dropdowns and responses.
+3. Open `local-test.html` locally and verify the new data appears in dropdowns and responses.
 4. Commit and push to `main`.
 5. Confirm on GitHub Pages after the build finishes.
 

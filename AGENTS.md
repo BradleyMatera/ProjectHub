@@ -26,7 +26,7 @@ No install step is required to run the widget in a browser. Use these commands f
 
 ```bash
 # Local test of the split modules (uses local ProjectHub.js build)
-open index.html
+open local-test.html
 
 # Local test of the live GitHub Pages script with cache-busting
 open live-test.html
@@ -59,7 +59,8 @@ Live widget URL for embedding:
 | `ui.js` | DOM creation, event handling, rendering of the floating chat widget |
 | `utils.js` | Shared helpers (GitHub API fetching) |
 | `package.json` | Dependency metadata only (`openai`); no build scripts yet |
-| `index.html` | Local manual test page for the widget (uses local `ProjectHub.js`) |
+| `index.html` | Public GitHub Pages landing site for ProjectHub / Scout |
+| `local-test.html` | Local manual test page for the widget (uses local `ProjectHub.js`) |
 | `live-test.html` | Cache-busting test of the live GitHub Pages `ProjectHub.js` |
 | `docs/` | Detailed on-demand guides |
 | `.github/copilot-instructions.md` | Redirect to this file |

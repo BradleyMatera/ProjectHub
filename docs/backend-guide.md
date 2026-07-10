@@ -1,12 +1,12 @@
 # backend-guide.md
 
-**Read when:** You need to deploy, migrate, or secure the Gemini API chat backend on Google Cloud.
+**Read when:** You need to deploy, migrate, or secure the free multi-provider chat backend on Google Cloud.
 
 ---
 
 ## Goal
 
-Host a Gemini API-backed chat API that serves the ProjectHub widget from a free Google Cloud micro VM, replacing the current Heroku proxy.
+Host a **zero-cost** chat API that serves the ProjectHub widget from a Google Cloud free-tier VM. The backend routes open-ended recruiter questions through a priority network of free LLM providers, falling back to local Ollama, instead of relying on a single paid API.
 
 ---
 
@@ -32,12 +32,16 @@ flowchart LR
   A[ProjectHub widget] -- HTTPS POST /api/chat --> B[projecthub-chat.bradleymatera.dev]
   B -- Netlify DNS A record --> C[GCP VM 35.208.20.1]
   C -- Caddy HTTPS reverse proxy --> D[Node API 127.0.0.1:3000]
-  D -- Gemini API REST --> E[generativelanguage.googleapis.com]
+  D -- OpenAI-compatible REST --> E1[Groq]
+  D -- Cloudflare REST --> E2[Cloudflare Workers AI]
+  D -- OpenAI-compatible REST --> E3[GitHub Models]
+  D -- Gemini REST --> E4[Google Gemini]
+  D -- local HTTP --> E5[Ollama smollm2:135m]
   D -- fetch/cache --> F[recruiter-knowledge.json on GitHub]
   D -- grounded fallback --> G[Local knowledge base]
 ```
 
-Current production path: Netlify DNS `A` record for `projecthub-chat.bradleymatera.dev` points to the GCP VM external IP `35.208.20.1`. Caddy terminates HTTPS with Let's Encrypt and proxies to the Node API on `127.0.0.1:3000`. The Node API calls Gemini's REST API for generation, with grounded fallback to local knowledge base when credits are depleted.
+Current production path: Netlify DNS `A` record for `projecthub-chat.bradleymatera.dev` points to the GCP VM external IP `35.208.20.1`. Caddy terminates HTTPS with Let's Encrypt and proxies to the Node API on `127.0.0.1:3000`. The Node API (`server-gemini.js`) always computes a grounded answer first, then routes open-ended questions through the free provider network in priority order. If no provider succeeds, it falls back to local Ollama and, ultimately, the grounded answer.
 
 ---
 
@@ -50,32 +54,51 @@ Current production path: Netlify DNS `A` record for `projecthub-chat.bradleymate
 - Boot disk: Ubuntu 22.04 LTS, 30 GB standard persistent disk
 - Allow HTTP/HTTPS traffic (we will narrow this later)
 
-### 2. Get Gemini API Key
+### 2. Get Free Provider Keys
 
-1. Go to https://aistudio.google.com/app/apikey
-2. Sign in with your Google account
-3. Click "Create API key"
-4. Copy the key (starts with `AIza...`)
-5. Add prepaid credits or enable billing for the project at https://ai.studio/projects
+The backend uses a rotating network of free LLM providers. You need keys for the providers you want to enable. None require payment to get started.
 
-**Free tier:** Gemini API has free tier access for eligible models (~15 requests/minute), but requires prepaid credits or billing for sustained usage.
+| Provider | Signup / Token source | Model used |
+|----------|----------------------|------------|
+| Groq | https://console.groq.com/keys | `llama-3.1-8b-instant` |
+| Cloudflare Workers AI | https://dash.cloudflare.com/profile/api-tokens | `@cf/meta/llama-3.2-3b-instruct` |
+| GitHub Models | GitHub Settings → Developer settings → Personal access tokens → `models:read` | `openai/gpt-4o-mini` |
+| Google Gemini | https://aistudio.google.com/app/apikey | `gemini-2.0-flash` |
+| xAI Grok | https://console.x.ai/ | `grok-4.3` (optional; free credits can be exhausted quickly) |
+| Ollama | Installed locally on the VM | `smollm2:135m` (final fallback) |
+
+You do **not** need to add billing to any provider to run Scout. The system works as long as at least one provider has remaining free quota.
 
 ### 3. Build the Node.js API
 
-The API uses Gemini's REST API with grounded fallback to local knowledge base. Key files:
+The API is in `server-gemini.js`. It is deployed to the VM as `server.js`. Key files:
 
-- `server.js` - Express server with Gemini integration
-- `.env` - API key and configuration
-- `recruiter-knowledge.json` - Hosted on GitHub, fetched by the API
+- `server-gemini.js` — Express server with the free multi-provider LLM router
+- `.env` — API keys and configuration
+- `recruiter-knowledge.json` — Hosted on GitHub, fetched by the API
 
 Example `.env`:
 
 ```env
 PORT=3000
-GEMINI_API_KEY=AIza...
-GEMINI_MODEL=gemini-2.0-flash
 KNOWLEDGE_URL=https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter-knowledge.json
 ALLOWED_ORIGINS=https://bradleymatera.dev,https://www.bradleymatera.dev,https://bradleymatera.github.io,https://*.codepen.io
+
+XAI_API_KEY=xai-...
+XAI_MODEL=grok-4.3
+GROQ_API_KEY=gsk_...
+GROQ_MODEL=llama-3.1-8b-instant
+GITHUB_MODELS_TOKEN=ghp_...
+GITHUB_MODELS_MODEL=openai/gpt-4o-mini
+CLOUDFLARE_API_TOKEN=...
+CLOUDFLARE_ACCOUNT_ID=...
+CLOUDFLARE_MODEL=@cf/meta/llama-3.2-3b-instruct
+GEMINI_API_KEY=AIza...
+GEMINI_MODEL=gemini-2.0-flash
+
+PROVIDER_ORDER=groq,cloudflare,github,gemini,grok,ollama
+GEN_MODEL=smollm2:135m
+GEN_TIMEOUT_MS=8000
 ```
 
 The server includes:
@@ -83,8 +106,10 @@ The server includes:
 - Rate limiting (20 requests/minute)
 - Knowledge caching (5 minutes)
 - Response caching (10 minutes)
-- Grounded fallback when Gemini credits are depleted
-- Timeout handling (15 seconds)
+- Grounded-first routing
+- Free multi-provider LLM network with daily quota guards and cooldown
+- Local Ollama fallback
+- Timeout handling (15 seconds total, 7 seconds per provider)
 
 ### 4. Run the API as a Service
 
@@ -166,8 +191,12 @@ const res = await fetch("https://projecthub-chat.bradleymatera.dev/api/chat", {
 ## Monitoring
 
 - Watch CPU and memory in the Google Cloud console.
-- Monitor Gemini API usage at https://ai.studio/projects
-- Check prepaid credit balance and refill when depleted
+- Call `GET https://projecthub-chat.bradleymatera.dev/health` to see provider order, enabled status, daily quota usage, and cooldown state.
+- Monitor each provider's free-tier dashboard:
+  - Groq: https://console.groq.com/
+  - Cloudflare: https://dash.cloudflare.com/
+  - GitHub Models: https://github.com/settings/tokens
+  - Google Gemini: https://aistudio.google.com/app/apikey
 - Keep traffic within the same region to avoid egress charges.
 - Rotate API keys periodically.
 
@@ -179,7 +208,7 @@ const res = await fetch("https://projecthub-chat.bradleymatera.dev/api/chat", {
 - [ ] 30 GB standard persistent disk
 - [ ] Static regional IP attached to running VM
 - [ ] Same-region traffic only
-- [ ] Firestore within daily free quotas (if used)
 - [ ] HTTPS certificate free (Let's Encrypt via Caddy)
-- [ ] Gemini API prepaid credits or billing enabled at https://ai.studio/projects
-- [ ] Monitor Gemini API usage to stay within free tier or prepaid limits
+- [ ] All LLM calls use free-tier providers or local Ollama
+- [ ] Provider quota/cooldown guards enabled (`PROVIDER_ORDER` and daily limits set)
+- [ ] No paid AI subscriptions required to keep Scout online

@@ -31,8 +31,9 @@
 
 - Do not add a bundler (Webpack, Vite, Rollup, etc.).
 - Do not add JSX/TSX.
-- `package.json` is for metadata only. The `openai` dependency is not currently used in the browser code.
+- `package.json` is for metadata only. The backend calls all providers with vanilla `fetch`; no OpenAI SDK is required in production.
 - The widget must run when loaded via `https://bradleymatera.github.io/ProjectHub/ProjectHub.js`.
+- `index.html` is the public GitHub Pages landing site; use `local-test.html` for local widget testing.
 
 ## Documentation Rule
 

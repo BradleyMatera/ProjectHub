@@ -1,13 +1,506 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ProjectHub Local Test</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ProjectHub is a free, embeddable AI recruiter assistant named Scout. It showcases Bradley Matera's projects, skills, and background through a multi-provider LLM network and grounded RAG." />
+  <title>ProjectHub · Scout Recruiter Assistant</title>
+  <style>
+    :root {
+      --bg-1: #020617;
+      --bg-2: #0f172a;
+      --bg-3: #111827;
+      --card: rgba(15, 23, 42, 0.94);
+      --card-border: rgba(148, 163, 184, 0.22);
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --soft: #94a3b8;
+      --blue: #60a5fa;
+      --blue-soft: rgba(96, 165, 250, 0.14);
+      --cyan: #67e8f9;
+      --green: #34d399;
+      --green-soft: rgba(52, 211, 153, 0.13);
+      --purple: #a78bfa;
+      --purple-soft: rgba(167, 139, 250, 0.13);
+      --warning: #fbbf24;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.46);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(96, 165, 250, 0.25), transparent 30%),
+        radial-gradient(circle at 80% 0%, rgba(103, 232, 249, 0.16), transparent 28%),
+        radial-gradient(circle at 50% 100%, rgba(167, 139, 250, 0.12), transparent 30%),
+        linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 48%, var(--bg-3) 100%);
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1.25rem;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 1080px;
+      align-self: center;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      backdrop-filter: blur(18px);
+    }
+
+    .card-header { margin-bottom: 1.65rem; }
+
+    .eyebrow-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .card-header h1 {
+      margin: 0;
+      max-width: 780px;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 1;
+      letter-spacing: -0.05em;
+    }
+
+    .subtitle {
+      max-width: 820px;
+      margin: 1rem 0 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.7;
+    }
+
+    .hero-panel {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin-top: 1.35rem;
+      padding: 1rem;
+      border: 1px solid rgba(96, 165, 250, 0.22);
+      border-radius: 20px;
+      background:
+        linear-gradient(135deg, rgba(96, 165, 250, 0.12), rgba(103, 232, 249, 0.06)),
+        rgba(2, 6, 23, 0.34);
+    }
+
+    .scout-avatar {
+      width: 54px;
+      height: 54px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      font-weight: 800;
+      font-size: 1.35rem;
+      color: #dbeafe;
+      border: 1px solid rgba(147, 197, 253, 0.5);
+      background:
+        radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.35), transparent 28%),
+        linear-gradient(135deg, #1d4ed8, #0891b2);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.28);
+    }
+
+    .hero-kicker { margin: 0 0 0.15rem; color: #bfdbfe; font-size: 0.88rem; font-weight: 700; }
+    .hero-text { margin: 0; color: var(--muted); line-height: 1.5; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .pill-primary { color: #bfdbfe; background: var(--blue-soft); border: 1px solid rgba(96, 165, 250, 0.45); }
+    .pill-live { color: #bbf7d0; background: var(--green-soft); border: 1px solid rgba(52, 211, 153, 0.45); }
+    .pill-free { color: #e9d5ff; background: var(--purple-soft); border: 1px solid rgba(167, 139, 250, 0.45); }
+
+    .card-section {
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid rgba(148, 163, 184, 0.16);
+    }
+
+    .card-section h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .card-section p { margin: 0.4rem 0; color: var(--muted); font-size: 0.98rem; line-height: 1.7; }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.85rem;
+      margin: 0.85rem 0 0.9rem;
+    }
+
+    .status-card {
+      min-height: 132px;
+      padding: 1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(2, 6, 23, 0.38);
+    }
+
+    .status-card strong { display: block; margin-top: 0.3rem; color: var(--text); font-size: 1rem; }
+    .status-card p { margin: 0.45rem 0 0; color: var(--soft); font-size: 0.9rem; line-height: 1.55; }
+
+    .status-label {
+      display: inline-flex;
+      color: var(--cyan);
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .feature-list,
+    .links-list { list-style: none; padding-left: 0; margin: 0.6rem 0 0; }
+
+    .feature-list li {
+      position: relative;
+      margin-bottom: 0.55rem;
+      padding-left: 1.4rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .feature-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.62rem;
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 999px;
+      background: var(--blue);
+      box-shadow: 0 0 18px rgba(96, 165, 250, 0.8);
+    }
+
+    .feature-list strong { color: var(--text); }
+
+    .free-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin: 0.85rem 0 0;
+    }
+
+    .free-card {
+      padding: 0.85rem 1rem;
+      border-radius: 16px;
+      border: 1px solid rgba(167, 139, 250, 0.22);
+      background: rgba(2, 6, 23, 0.38);
+    }
+
+    .free-card strong { color: #e9d5ff; font-size: 0.95rem; }
+    .free-card p { margin: 0.3rem 0 0; color: var(--soft); font-size: 0.88rem; line-height: 1.55; }
+
+    .flow-box {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.55rem;
+      margin: 0.85rem 0;
+    }
+
+    .flow-step {
+      padding: 0.6rem 0.75rem;
+      border-radius: 14px;
+      color: #dbeafe;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(96, 165, 250, 0.24);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .flow-arrow { color: var(--blue); font-weight: 900; }
+
+    .code-block {
+      margin: 0.75rem 0 0;
+      padding: 0.9rem 1rem;
+      overflow-x: auto;
+      white-space: pre;
+      border-radius: 16px;
+      color: #dbeafe;
+      background: rgba(2, 6, 23, 0.75);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      font-size: 0.9rem;
+    }
+
+    code { font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace; }
+    .note { font-size: 0.9rem; color: var(--soft); }
+
+    .links-list li { margin-bottom: 0.45rem; color: var(--muted); line-height: 1.6; }
+    .links-list strong { color: var(--text); }
+
+    a { color: #93c5fd; text-decoration: none; overflow-wrap: anywhere; }
+    a:hover { color: #bfdbfe; text-decoration: underline; }
+
+    .card-footer {
+      margin-top: 1.3rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(96, 165, 250, 0.22);
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .chip {
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      color: #cbd5e1;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.26);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .footer-text { margin: 0; color: var(--soft); font-size: 0.88rem; line-height: 1.55; }
+
+    #bradley-chat { margin-top: 1.5rem; }
+
+    @media (max-width: 860px) {
+      .card { padding: 1.4rem; border-radius: 22px; }
+      .status-grid { grid-template-columns: 1fr; }
+      .free-grid { grid-template-columns: 1fr; }
+      .hero-panel { align-items: flex-start; }
+    }
+
+    @media (max-width: 540px) {
+      .page { padding: 1rem; }
+      .card { padding: 1.1rem; }
+      .hero-panel { flex-direction: column; }
+      .flow-box { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+  </style>
 </head>
+
 <body>
-  <h1>ProjectHub Local Script Test</h1>
-  <p>If the chat widget appears in the bottom-right, the script loaded successfully.</p>
-  <script src="./ProjectHub.js"></script>
+  <div class="page">
+    <main class="card" aria-labelledby="page-title">
+      <header class="card-header">
+        <div class="eyebrow-row">
+          <span class="pill pill-primary">ProjectHub</span>
+          <span class="pill pill-live">Scout is online</span>
+          <span class="pill pill-free">100% free stack</span>
+        </div>
+
+        <h1 id="page-title">Meet Scout, my AI recruiter assistant</h1>
+
+        <p class="subtitle">
+          Scout helps visitors ask questions about my projects, background, skills, blogs, resume details,
+          and career fit without digging through every page manually. It runs entirely on free tiers:
+          GitHub Pages, a GCP VM, free LLM providers, and a local Ollama fallback.
+        </p>
+
+        <div class="hero-panel" aria-label="Scout assistant summary">
+          <div class="scout-avatar" aria-hidden="true">S</div>
+          <div>
+            <p class="hero-kicker">Bradley Matera · Recruiter assistant</p>
+            <p class="hero-text">
+              Calm, concise, honest, and grounded in my real project data — with a zero-cost multi-provider LLM network behind it.
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <section class="card-section">
+        <h2>What this is</h2>
+        <p>
+          ProjectHub is a vanilla JavaScript, no-build chat widget that can be embedded on a site with one script tag.
+          It showcases my web development projects, CodePens, GitHub work, recruiter information, and
+          portfolio data through a floating assistant named Scout.
+        </p>
+        <p>
+          The goal is not a hard-coded FAQ bot. Scout retrieves from real project data, recruiter knowledge, source
+          material, and a free multi-provider LLM network so it can answer new questions honestly instead of repeating canned responses.
+        </p>
+      </section>
+
+      <section class="card-section status-section">
+        <h2>Current status</h2>
+
+        <div class="status-grid">
+          <div class="status-card">
+            <span class="status-label">Frontend</span>
+            <strong>GitHub Pages widget</strong>
+            <p>Loaded through the public ProjectHub script. No build step, no hosting cost.</p>
+          </div>
+
+          <div class="status-card">
+            <span class="status-label">Backend</span>
+            <strong>Free multi-provider LLM router</strong>
+            <p>Routes open-ended questions through Groq, Cloudflare Workers AI, GitHub Models, Gemini, and a local Ollama fallback on a GCP VM.</p>
+          </div>
+
+          <div class="status-card">
+            <span class="status-label">AI</span>
+            <strong>Grounded-first RAG</strong>
+            <p>Deterministic answers for facts; the free provider network adds natural phrasing when the data supports it.</p>
+          </div>
+        </div>
+
+        <p>
+          The current direction is a zero-cost recruiter assistant that uses the resources already available:
+          GitHub Pages, ProjectHub data files, a free GCP VM tier, free LLM providers, local Ollama models, and structured recruiter knowledge.
+        </p>
+      </section>
+
+      <section class="card-section">
+        <h2>What Scout should answer</h2>
+
+        <ul class="feature-list">
+          <li>
+            <strong>Project questions:</strong> Explain my projects, CodePens, GitHub repos, tech stack, and what each project proves.
+          </li>
+          <li>
+            <strong>Recruiter questions:</strong> Summarize my skills, background, certifications, AWS internship, education, and job fit.
+          </li>
+          <li>
+            <strong>Career-fit questions:</strong> Compare my real experience against roles like web developer, IT support, cloud support,
+            DevOps, technical writing, QA, or data-focused work.
+          </li>
+          <li>
+            <strong>Grounded answers:</strong> Use real data from ProjectHub, recruiter knowledge, source material, blogs, pages, and resume guardrails.
+          </li>
+          <li>
+            <strong>Honest limits:</strong> If the data does not support an answer, Scout says that instead of inventing experience.
+          </li>
+        </ul>
+      </section>
+
+      <section class="card-section">
+        <h2>Architecture</h2>
+
+        <div class="flow-box">
+          <div class="flow-step">Recruiter Hub page</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">ProjectHub widget</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">Free LLM router</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">ProjectHub data + RAG</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">Scout response</div>
+        </div>
+
+        <p>
+          Scout first checks whether a question can be answered deterministically from the knowledge JSON.
+          For open-ended questions, it sends the verified context through a priority network of free providers
+          (Groq, Cloudflare Workers AI, GitHub Models, Gemini) and falls back to a local Ollama model if none succeed.
+          Every generative reply is validated against the source facts before it is returned.
+        </p>
+      </section>
+
+      <section class="card-section">
+        <h2>Free stack breakdown</h2>
+        <div class="free-grid">
+          <div class="free-card">
+            <strong>GitHub Pages</strong>
+            <p>Hosts the widget, landing page, and knowledge JSON for free.</p>
+          </div>
+          <div class="free-card">
+            <strong>GCP VM (free tier)</strong>
+            <p>Runs the Node.js chat API and local Ollama fallback without a monthly bill.</p>
+          </div>
+          <div class="free-card">
+            <strong>Free LLM providers</strong>
+            <p>Groq, Cloudflare Workers AI, GitHub Models, and Gemini free tiers rotate automatically.</p>
+          </div>
+          <div class="free-card">
+            <strong>Local Ollama</strong>
+            <p>Final fallback using small open-weight models (smollm2:135m) so the assistant is never hard-down.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card-section">
+        <h2>How to embed ProjectHub</h2>
+        <p>
+          This is the script tag used to load the floating ProjectHub chat widget:
+        </p>
+
+        <pre class="code-block"><code>&lt;script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=7"&gt;&lt;/script&gt;</code></pre>
+
+        <p class="note">
+          If the script is cached aggressively, bump the version query like <code>?v=8</code>.
+        </p>
+      </section>
+
+      <section class="card-section">
+        <h2>Important links</h2>
+
+        <ul class="links-list">
+          <li>
+            <strong>GitHub repo:</strong>
+            <a href="https://github.com/BradleyMatera/ProjectHub" target="_blank" rel="noopener noreferrer">
+              github.com/BradleyMatera/ProjectHub
+            </a>
+          </li>
+
+          <li>
+            <strong>Live demo:</strong>
+            <a href="https://bradleymatera.github.io/ProjectHub" target="_blank" rel="noopener noreferrer">
+              bradleymatera.github.io/ProjectHub
+            </a>
+          </li>
+
+          <li>
+            <strong>Recruiter Hub:</strong>
+            <a href="https://bradleymatera.dev/recruiter/" target="_blank" rel="noopener noreferrer">
+              bradleymatera.dev/recruiter
+            </a>
+          </li>
+
+          <li>
+            <strong>CodePen:</strong>
+            <a href="https://codepen.io/student-account-bradley-matera/full/yyLmYKR"
+               target="_blank" rel="noopener noreferrer">
+              codepen.io/student-account-bradley-matera/full/yyLmYKR
+            </a>
+          </li>
+        </ul>
+      </section>
+
+      <footer class="card-footer">
+        <div class="chip-row">
+          <span class="chip">Vanilla JavaScript</span>
+          <span class="chip">No build step</span>
+          <span class="chip">GitHub Pages</span>
+          <span class="chip">GCP</span>
+          <span class="chip">Free LLM Network</span>
+          <span class="chip">Ollama Fallback</span>
+          <span class="chip">Scout</span>
+        </div>
+
+        <p class="footer-text">
+          Scout should stay helpful, calm, concise, honest, and grounded in Bradley Matera’s real data.
+        </p>
+      </footer>
+    </main>
+  </div>
+
+  <!-- ProjectHub chat widget -->
+  <script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=7"></script>
 </body>
 </html>

@@ -1,45 +1,18 @@
 # api-guide.md
 
-**Read when:** You need to understand or change the chat API contract, GitHub API usage, or AI fallback behavior.
+**Read when:** You need to understand or change the chat API contract, the free multi-provider LLM router, or AI fallback behavior.
 
 ---
 
-## Local Handlers (`logic.js`)
+## Backend overview
 
-`handleQuery` receives:
+The production backend is `server-gemini.js`, a Node.js/Express app running on a GCP VM free tier. It serves:
 
-```javascript
-handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData)
-```
+- `GET /` — service status.
+- `GET /health` — provider order, per-provider quota/cooldown status, and configuration.
+- `POST /api/chat` — the main recruiter chat endpoint.
 
-Returns:
-
-```javascript
-{ reply: "HTML string", newTopic: "topic-name" }
-```
-
-## Intents
-
-| Intent | Trigger keywords | Data source |
-|--------|------------------|-------------|
-| `summary` | bradley + web dev / developer / summarize / full summary | `projects`, `codePens` |
-| `github` | github + bradley / profile | static URL |
-| `linkedin` | linkedin + bradley / profile | static URL |
-| `project` | project name substring | `projects` + GitHub API |
-| `codepen` | CodePen name substring | `codePens` |
-| `platform` | platform name (github, netlify, vercel, etc.) | `projects` |
-| `tech` | technology name (react, docker, etc.) | `projects` |
-| `projects` / `codepen` | list / all | `projects`, `codePens` |
-| `compare` | compare + two project names | `projects` |
-| `stars` | most stars | GitHub API |
-| `unrelated` | no match and not about Bradley | fallback proxy |
-
-## GitHub API
-
-- Endpoint: `https://api.github.com/repos/{owner}/{repo}`
-- Headers: `Accept: application/vnd.github.v3+json`
-- No authentication currently used.
-- Used for: `stargazers_count`, `pushed_at`.
+The frontend widget (`ProjectHub.js`) is vanilla JavaScript and loads the backend endpoint from the published GitHub Pages URL. No build step or framework is required on either side.
 
 ## Recruiter Chat API Contract
 
@@ -81,33 +54,63 @@ Response body:
 
 ```json
 {
-  "reply": "Grounded recruiter-safe answer text",
-  "flavor": "Tiny generated label",
-  "flavorSource": "ollama-flavor",
-  "followUps": ["Optional follow-up prompt", "Optional follow-up prompt"],
-  "sessionMemory": { "enabled": true, "store": "neon", "turns": 4 },
-  "model": "smollm2:135m",
-  "fallback": true,
+  "reply": "Recruiter-safe answer text",
+  "provider": "groq",
+  "model": "llama-3.1-8b-instant",
+  "fallback": false,
   "cached": false
 }
 ```
 
-The browser should treat `reply` as the primary answer and render `followUps` as short suggested next questions. The current widget renders follow-ups as clickable chips and displays `flavor` as a small label before the grounded answer. The backend deliberately returns grounded deterministic answers for recruiter-critical topics and only uses Ollama for tiny 3-5 word labels or low-risk conversational wording that passes guardrails.
+When the question is routed to the deterministic fallback, `provider` is `grounded` and `model` is `knowledge-json`. When the multi-provider network succeeds, `provider` and `model` reflect the winning provider. If every provider fails, the response falls back to the grounded answer and `fallback` is `true`.
+
+The browser should treat `reply` as the primary answer. The current widget renders it directly in the chat transcript.
+
+## Multi-Provider LLM Network
+
+Open-ended questions are routed through a priority network of free providers:
+
+1. **Groq** (`llama-3.1-8b-instant`)
+2. **Cloudflare Workers AI** (`@cf/meta/llama-3.2-3b-instruct`)
+3. **GitHub Models** (`openai/gpt-4o-mini`)
+4. **Google Gemini** (`gemini-2.0-flash`)
+5. **Local Ollama** (`smollm2:135m`) final fallback
+
+The order is controlled by `PROVIDER_ORDER` in the VM `.env`. Each provider has a daily request limit and is paused for 60 seconds on rate-limit errors or for 24 hours on credit-exhaustion errors. The `/health` endpoint exposes current quota usage and cooldown status.
+
+For every provider call, the backend sends a RAG prompt built from `recruiter-knowledge.json` and recent session context. The returned text is validated against the source facts to block slop, false claims, overclaiming, and invented numbers. If no provider produces a valid reply, the deterministic grounded answer is returned.
+
+## Environment Variables
+
+Key variables on the GCP VM (`.env`):
+
+| Variable | Purpose |
+|----------|---------|
+| `GROQ_API_KEY` | Groq API key |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare Workers AI token |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
+| `GITHUB_MODELS_TOKEN` | GitHub personal access token with `models:read` |
+| `GEMINI_API_KEY` | Google Gemini API key |
+| `XAI_API_KEY` | xAI Grok API key |
+| `PROVIDER_ORDER` | Comma-separated provider slugs, e.g. `groq,cloudflare,github,gemini,grok,ollama` |
+| `GEN_MODEL` | Local Ollama fallback model, default `smollm2:135m` |
+| `GEN_TIMEOUT_MS` | Per-provider timeout in ms, default `8000` |
 
 ## Session Memory
 
-The browser creates a per-tab `sessionId` and sends the last few turns as `context`. The Netlify router persists trimmed session memory when `NETLIFY_DATABASE_URL` or `DATABASE_URL` is configured for Netlify DB/Neon. If those env vars are absent or Neon is unavailable, it falls back to short-lived in-memory session storage inside the function instance.
+The browser creates a per-tab `sessionId` and sends the last few turns as `context`. The GCP backend keeps only the last three turns per session in memory; there is no external database dependency.
 
 Context-dependent messages such as “tell me more,” “what about that project,” or “same for AWS” bypass the global response cache so the router can use recent session context.
 
-The widget asks for the visitor's name at the start of each browser tab session and stores it in `sessionStorage`. Personalization can be turned off in widget settings. Clear Memory resets the local transcript, session id, captured name, recent browser context, and router-persisted session memory.
+The widget asks for the visitor's name at the start of each browser tab session and stores it in `sessionStorage`. Clear Memory resets the local transcript, session id, captured name, and recent browser context.
 
-Repeated or semantically repeated questions should not return the same answer verbatim. The Netlify router checks recent session memory; if the same core question has already been answered, it politely says so, quotes the useful part of the earlier answer, and offers follow-ups for proof, tradeoffs, risk, or interview wording. Forced-choice recruiter questions such as “if you had to pick one strongest role” resolve to one answer instead of cycling through target-role lists.
+Repeated or semantically repeated questions should not return the same answer verbatim. The backend checks recent session memory; if the same core question has already been answered, it politely says so, quotes the useful part of the earlier answer, and offers follow-ups. Forced-choice recruiter questions such as “if you had to pick one strongest role” resolve to one answer instead of cycling through target-role lists.
 
-Profile-adjacent personal questions that are not in verified data, such as favorite food or hobbies, should go through the guarded generative fallback. The model may phrase the response naturally, but it must not invent personal facts; it should say the detail is not verified and bridge to recruiter-useful topics.
+Profile-adjacent personal questions that are not in verified data, such as favorite food or hobbies, go through the guarded generative fallback. The model may phrase the response naturally, but it must not invent personal facts; it should say the detail is not verified and bridge to recruiter-useful topics.
 
-## Security Requirements for New Proxy
+## Security Requirements
 
 - Accept requests only from allowed origins via CORS.
 - Run HTTPS.
 - Do **not** expose `localhost:11434` to the internet.
+- Keep all API keys in the VM `.env` file; never commit them to the repo.

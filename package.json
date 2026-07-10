@@ -1,7 +1,7 @@
 {
   "name": "projecthub",
   "version": "1.0.0",
-  "description": "CDN-like script with AI chat for my projects",
+  "description": "Free embeddable AI recruiter assistant widget using a multi-provider LLM network and grounded RAG",
   "main": "ProjectHub.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -12,13 +12,10 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/BradleyMatera/ProjectHub/issues"
   },
-  "homepage": "https://github.com/BradleyMatera/ProjectHub#readme",
-  "dependencies": {
-    "@neondatabase/serverless": "^1.1.0",
-    "openai": "^4.93.0"
-  }
+  "homepage": "https://bradleymatera.github.io/ProjectHub/",
+  "dependencies": {}
 }
