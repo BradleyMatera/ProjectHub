@@ -637,7 +637,8 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     }
 
     .projecthub-header {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
       gap: 12px;
       padding: 14px;
@@ -647,7 +648,6 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 
     .projecthub-avatar-wrap {
       position: relative;
-      flex: 0 0 auto;
     }
 
     .projecthub-avatar {
@@ -675,7 +675,6 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 
     .projecthub-title-block {
       min-width: 0;
-      flex: 1;
       overflow: hidden;
     }
 
@@ -745,7 +744,6 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     .projecthub-actions {
       display: flex;
       gap: 7px;
-      flex: 0 0 auto;
     }
 
     .projecthub-settings-panel {

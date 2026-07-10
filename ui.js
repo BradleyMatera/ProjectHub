@@ -154,7 +154,8 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     }
 
     .projecthub-header {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
       gap: 12px;
       padding: 14px;
@@ -164,7 +165,6 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
     .projecthub-avatar-wrap {
       position: relative;
-      flex: 0 0 auto;
     }
 
     .projecthub-avatar {
@@ -192,7 +192,6 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
     .projecthub-title-block {
       min-width: 0;
-      flex: 1;
       overflow: hidden;
     }
 
@@ -262,7 +261,6 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     .projecthub-actions {
       display: flex;
       gap: 7px;
-      flex: 0 0 auto;
     }
 
     .projecthub-settings-panel {
