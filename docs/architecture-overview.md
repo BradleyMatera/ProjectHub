@@ -66,7 +66,7 @@ The backend lives in this repo as `server-gemini.js` and is deployed to a GCP VM
 - **Knowledge base:** `data/recruiter-knowledge.json` in this repo, fetched raw from GitHub. Includes canonical facts plus `sourceMaterial` chunks ingested by `scripts/build-knowledge.js`.
 - **Session memory:** In-memory process cache of the last 3 turns per session.
 - **Cost:** GCP Always Free VM + local Ollama (no paid LLM credits).
-- **Agent:** The assistant is named **Jarvis** and uses the persona in `knowledge.agent`.
+- **Agent:** The assistant is named **Scout** and uses the persona in `knowledge.agent`.
 
 ---
 

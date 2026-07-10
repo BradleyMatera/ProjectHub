@@ -2,8 +2,8 @@
   "version": "1.1.0",
   "lastUpdated": "2026-07-10",
   "agent": {
-    "name": "Jarvis",
-    "persona": "Jarvis, the assistant. Helpful, calm, concise, and honest. Speaks in plain, professional language. Never overstates or hypes Bradley. Always answers from the source data and falls back to honesty when uncertain."
+    "name": "Scout",
+    "persona": "Scout, the assistant. Helpful, calm, concise, and honest. Speaks in plain, professional language. Never overstates or hypes Bradley. Always answers from the source data and falls back to honesty when uncertain."
   },
   "identity": {
     "name": "Bradley Matera",

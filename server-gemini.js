@@ -1149,7 +1149,7 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
   // Stream the generation and abort as soon as a forbidden pattern appears.
   // This is the "edit while generating" constraint: we stop the model before it
   // wastes time completing a bad answer.
-  const agentName = knowledge?.agent?.name || 'Jarvis';
+  const agentName = knowledge?.agent?.name || 'Scout';
   const agentPersona = knowledge?.agent?.persona || 'the helpful, honest site assistant';
   const system = `A recruiter is asking about a job candidate named Bradley Matera. You are ${agentName}, ${agentPersona}. You are not Bradley. Answer the recruiter using ONLY this info: ${truncateWords(source, 80)}\nRules: third person only (he/his), 1-3 short sentences, plain honest language, no greetings, no buzzwords, never add facts or employers not listed above.`;
   const user = truncateWords(question, 40);
@@ -1211,37 +1211,6 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
   } finally {
     clearTimeout(timeout);
   }
-}
-
-// Conversational composer: adds natural variation to grounded answers so the
-// bot "talks" like a person even when generation is rejected. Deterministic
-// facts, randomized framing.
-function composeConversational(reply, question, knowledge) {
-  const q = String(question || '').toLowerCase();
-  const plain = reply.replace(/<[^>]+>/g, ' ').trim();
-  // Don't wrap refusals, contact info, or already-shaped output
-  if (/can'?t|don'?t see|not in the public data/i.test(plain)) return reply;
-  if (Object.keys(detectShape(question)).length > 0) return reply;
-
-  const openers = [
-    '',
-    'Honest picture: ',
-    "Here's the short version: ",
-    'Straight answer: ',
-    'The real story: '
-  ];
-  const closers = [
-    '',
-    ' Want the honest gaps too? Just ask.',
-    ' Ask me about role fit or his projects if you want specifics.',
-    ' If you want proof, his GitHub and portfolio are public.',
-    ' Happy to break down any part of that.'
-  ];
-  const opener = openers[Math.floor(Math.random() * openers.length)];
-  const closer = closers[Math.floor(Math.random() * closers.length)];
-  let body = reply;
-  if (opener) body = body.charAt(0).toLowerCase() === body.charAt(0) ? body : body;
-  return `${opener}${body}${closer}`.trim();
 }
 
 // Queries that must stay deterministic for correctness/safety
@@ -1327,11 +1296,6 @@ app.post('/api/chat', async (req, res) => {
         }
       } catch (err) {
         console.error('Gen failed/timed out:', err.message.slice(0, 120));
-      }
-      // When generation is rejected, still respond conversationally with verified facts
-      if (!generated) {
-        reply = composeConversational(reply, userMessage, knowledge);
-        provider = 'grounded-conversational';
       }
     }
 

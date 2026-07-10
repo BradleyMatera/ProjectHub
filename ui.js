@@ -20,7 +20,6 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
   const FLAVOR_ENABLED = true;
   const MEMORY_ENABLED = true;
-  const PERSONALIZE_REPLIES = true;
 
   function createSessionId() {
     return `ph_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
@@ -521,13 +520,6 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       font-weight: 700;
     }
 
-    .conversation-lead {
-      display: block;
-      color: #d9f7e6;
-      font-weight: 800;
-      margin-bottom: 7px;
-    }
-
     .timestamp {
       color: var(--ph-muted);
       font-size: 11px;
@@ -775,17 +767,17 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
   const chatDiv = document.createElement("section");
   chatDiv.id = "bradley-chat";
-  chatDiv.setAttribute("aria-label", "Jarvis chat");
+  chatDiv.setAttribute("aria-label", "Scout chat");
 
   chatDiv.innerHTML = `
     <header class="projecthub-header">
       <div class="projecthub-avatar-wrap">
-        <img class="projecthub-avatar" src="${avatarUrl}" alt="Jarvis avatar">
+        <img class="projecthub-avatar" src="${avatarUrl}" alt="Scout avatar">
         <span class="projecthub-status-dot" aria-hidden="true"></span>
       </div>
       <div class="projecthub-title-block">
         <div class="projecthub-kicker">Bradley Matera · Recruiter assistant</div>
-        <div class="projecthub-title">Jarvis</div>
+        <div class="projecthub-title">Scout</div>
         <div class="projecthub-subtitle">Ask me about Bradley's projects, skills, fit, or contact info</div>
       </div>
       <div class="projecthub-actions">
@@ -815,7 +807,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     </div>
     <form class="projecthub-composer">
       <div class="composer-shell">
-        <textarea id="chat-input" rows="1" placeholder="Ask Jarvis about Bradley's work, projects, skills, or roles..."></textarea>
+        <textarea id="chat-input" rows="1" placeholder="Ask Scout about Bradley's work, projects, skills, or roles..."></textarea>
         <button class="send-button" type="submit" aria-label="Send message" title="Send message">
           <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
             <path d="m22 2-7 20-4-9-9-4Z"></path>
@@ -866,31 +858,6 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     return rawName.split(/\s+/).slice(0, 2).map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join(" ");
   }
 
-  function conversationalLead(userQuery) {
-    if (!PERSONALIZE_REPLIES) return "";
-    const namePrefix = visitorName ? `${visitorName}, ` : "";
-    const leads = visitorName ? [
-      `${namePrefix}here’s the useful read:`,
-      `Good question, ${visitorName}.`,
-      `${namePrefix}the short version is:`,
-      `For your screen, ${visitorName}:`,
-      `${namePrefix}I’d frame it this way:`
-    ] : [
-      "Here’s the direct answer:",
-      "Good question.",
-      "The short version is:",
-      "For a recruiter screen:",
-      "I’d frame it this way:"
-    ];
-    const seed = [...String(userQuery), String(turnCount)].reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    return `<span class="conversation-lead">${escapeHtml(leads[Math.abs(seed) % leads.length])}</span>`;
-  }
-
-  function personalizeReply(reply, userQuery) {
-    const lead = conversationalLead(userQuery);
-    return lead ? `${lead}${reply}` : reply;
-  }
-
   async function clearRemoteMemory() {
     try {
       await fetch(chatApiUrl(), {
@@ -916,7 +883,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       window.sessionStorage.setItem(sessionStorageKey, sessionId);
     } catch (error) {}
     chatOutput.innerHTML = "";
-    appendMessage("bot", "Jarvis", "Memory cleared. What should I call you for this new session?");
+    appendMessage("bot", "Scout", "Memory cleared. What should I call you for this new session?");
   }
 
   function appendMessage(type, label, html, options = {}) {
@@ -943,7 +910,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   }
 
   function appendTypingStatus() {
-    const row = appendMessage("bot", "Jarvis", `<span class="typing-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span><span class="thinking-tip"></span>`, { statusId: "thinking-status" });
+    const row = appendMessage("bot", "Scout", `<span class="typing-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span><span class="thinking-tip"></span>`, { statusId: "thinking-status" });
     const tips = [
       "Reading Bradley's project data…",
       "Checking his AWS background…",
@@ -1027,7 +994,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
   renameBtn.addEventListener("click", () => {
     saveVisitorName("");
-    appendMessage("bot", "Jarvis", "No problem. What should I call you for this session?");
+    appendMessage("bot", "Scout", "No problem. What should I call you for this session?");
     chatDiv.classList.remove("projecthub-settings-open");
     chatInput.focus();
   });
@@ -1080,7 +1047,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       const possibleName = extractVisitorName(userQuery);
       if (possibleName) {
         saveVisitorName(possibleName);
-        appendMessage("bot", "Jarvis", `Nice to meet you, ${escapeHtml(visitorName)}. I’m Jarvis, Bradley’s assistant. Ask me about his projects, AWS background, role fit, honest gaps, or contact details.`);
+        appendMessage("bot", "Scout", `Nice to meet you, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask me about his projects, AWS background, role fit, honest gaps, or contact details.`);
         rememberTurn("user", userQuery);
         rememberTurn("assistant", `Visitor name captured as ${visitorName}`);
         turnCount += 1;
@@ -1104,19 +1071,19 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
         }
       });
       lastQueryTopic = newTopic;
-      const finalReply = personalizeReply(reply, userQuery);
-      const plainReply = normalizeForCompare(finalReply);
+      const finalReply = reply;
+      const plainReply = normalizeForCompare(reply);
 
       const isLocalDuplicate = newTopic !== "ai" && plainReply && plainReply === lastBotReplyText;
       if (isLocalDuplicate) {
         const label = visitorName ? `${escapeHtml(visitorName)}, ` : "";
-        appendMessage("bot", "Jarvis", `${label}I already covered that locally. The useful part was: “${escapeHtml(plainReply.slice(0, 220))}${plainReply.length > 220 ? "..." : ""}” Ask for proof, tradeoffs, risks, or interview wording and I’ll take a new angle.`);
+        appendMessage("bot", "Scout", `${label}I already covered that locally. The useful part was: “${escapeHtml(plainReply.slice(0, 220))}${plainReply.length > 220 ? "..." : ""}” Ask for proof, tradeoffs, risks, or interview wording and I’ll take a new angle.`);
         chatInput.value = "";
         resizeInput();
         return;
       }
 
-      appendMessage("bot", "Jarvis", finalReply);
+      appendMessage("bot", "Scout", finalReply);
       rememberTurn("user", userQuery);
       rememberTurn("assistant", finalReply);
       lastBotReplyText = plainReply;
@@ -1125,11 +1092,11 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       resizeInput();
     } catch (error) {
       console.error("ProjectHub chat error:", error);
-      appendMessage("bot", "Jarvis", "I can still help from Bradley’s verified profile details. Try asking about projects, AWS experience, CIRIS, target roles, skills, or contact links.");
+      appendMessage("bot", "Scout", "I can still help from Bradley’s verified profile details. Try asking about projects, AWS experience, CIRIS, target roles, skills, or contact links.");
     } finally {
       statusRow.remove();
       setBusy(false);
-      chatInput.placeholder = "Ask Jarvis about Bradley's work, projects, skills, or roles...";
+      chatInput.placeholder = "Ask Scout about Bradley's work, projects, skills, or roles...";
       chatInput.focus();
     }
   };
@@ -1151,9 +1118,9 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     chatDiv.classList.toggle("projecthub-compact", e.matches || Boolean(chatSettings.compactMode));
   });
   renderSuggestions();
-  appendMessage("bot", "Jarvis", visitorName
-    ? `Welcome back, ${escapeHtml(visitorName)}. I’m Jarvis, Bradley’s assistant. Ask about his projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.`
-    : "Hi, I’m Jarvis, Bradley’s recruiter assistant. What should I call you for this session? A first name is enough, and then I’ll keep the conversation personal and coherent.");
+  appendMessage("bot", "Scout", visitorName
+    ? `Welcome back, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask about his projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.`
+    : "Hi, I’m Scout, Bradley’s recruiter assistant. What should I call you for this session? A first name is enough, and then I’ll keep the conversation personal and coherent.");
 
   console.log("ProjectHub loaded!");
 }
