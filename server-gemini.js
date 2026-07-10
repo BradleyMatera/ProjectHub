@@ -908,7 +908,10 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   if (/who made this|is this bradley'?s site/.test(lowerQuestion)) {
     return { reply: `Yes, this is ${name}'s portfolio. He built the site and ${agentName} himself.` };
   }
-  
+  if (/how is this chat free|how do you stay free|what powers you|what is your stack|free tier|free providers/.test(lowerQuestion)) {
+    return { reply: `${agentName} runs entirely on free tiers: GitHub Pages hosts the widget, a GCP free-tier VM runs the Node API, open-ended questions route through free LLM providers (Groq, Cloudflare Workers AI, GitHub Models, Gemini), and local Ollama is the final fallback. No paid AI subscriptions are needed.` };
+  }
+
   // Repair: shorter / more honest / tone changes using previous answer
   if (repair.shorter && lastAssistant) {
     return { reply: truncateWords(firstSentence(lastAssistant.replace(/<[^>]+>/g, ' ')), 20) };
@@ -1454,7 +1457,7 @@ function mustStayGrounded(question, history) {
   if (/(ignore|inject|system prompt|\.env|api key|password|address|salary|make up|pretend|fortune|claim|bypass|open port|port 11434)/.test(q)) return true;
   if (/\b(contact|email|phone|reach|github)\b|portfolio url|resume\?|links\?|\blinkedin\b(?!.*\b(style|summary|profile)\b)/.test(q)) return true;
   // Smoke tests / greetings have deterministic answers and should not burn provider quota/latency
-  if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b|are you online|say hello|health status|what can you (help|do) with|what can this bot (help|do)|what model|what is this chatbot|does this use ollama|is this ai local|is my chat private|what data do you use|who made this|is this bradley'?s site/.test(q)) return true;
+  if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b|are you online|say hello|health status|what can you (help|do) with|what can this bot (help|do)|what model|what is this chatbot|does this use ollama|is this ai local|is my chat private|what data do you use|who made this|is this bradley'?s site|how is this chat free|how do you stay free|what powers you|what is your stack/.test(q)) return true;
   // Interview questions and explicit tone-word bans get the deterministic reply so they are accurate
   if (/interview question|what.*ask him|what.*verify/.test(q)) return true;
   if (detectBannedWords(question).length > 0) return true;

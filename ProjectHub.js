@@ -698,6 +698,13 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       text-overflow: ellipsis;
     }
 
+    .projecthub-subtitle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
     .projecthub-subtitle {
       color: var(--ph-muted);
       font-size: 12px;
@@ -706,8 +713,40 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       text-overflow: ellipsis;
     }
 
-    .projecthub-minimized .projecthub-subtitle {
+    .projecthub-minimized .projecthub-subtitle-row {
       display: none;
+    }
+
+    .projecthub-free-badge {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: #07100c;
+      background: linear-gradient(135deg, var(--ph-accent), #a8f0c7);
+      box-shadow: 0 0 0 3px rgba(57, 217, 138, 0.14);
+      cursor: help;
+      animation: free-pulse 2.6s ease-in-out infinite;
+    }
+
+    .projecthub-free-badge::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #059669;
+      box-shadow: 0 0 8px rgba(5, 150, 105, 0.8);
+    }
+
+    @keyframes free-pulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(57, 217, 138, 0.14); transform: scale(1); }
+      50% { box-shadow: 0 0 0 6px rgba(57, 217, 138, 0.08); transform: scale(1.03); }
     }
 
     .projecthub-minimized .projecthub-title {
@@ -1261,7 +1300,10 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       <div class="projecthub-title-block">
         <div class="projecthub-kicker">Bradley Matera · Recruiter assistant</div>
         <div class="projecthub-title">Scout</div>
-        <div class="projecthub-subtitle">Ask me about Bradley's projects, skills, fit, or contact info</div>
+        <div class="projecthub-subtitle-row">
+          <span class="projecthub-subtitle">Ask me about Bradley's projects, skills, fit, or contact info</span>
+          <span class="projecthub-free-badge" title="Scout runs on free GitHub Pages, a GCP free-tier VM, free LLM providers, and a local Ollama fallback — no paid AI required.">100% free</span>
+        </div>
       </div>
       <div class="projecthub-actions">
         <button class="projecthub-icon-button projecthub-settings-button" type="button" aria-label="Open chat settings" title="Chat settings">⚙</button>
@@ -1442,7 +1484,8 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       "Tell me about ProjectHub",
       "What AWS experience does Bradley have?",
       "What concerns should a recruiter know?",
-      "How can I contact Bradley?"
+      "How can I contact Bradley?",
+      "How is this chat free?"
     ];
     const allSuggestions = [...prioritySuggestions, ...suggestions.filter(item => !prioritySuggestions.includes(item))].slice(0, 12);
     suggestionBar.innerHTML = allSuggestions.map(item => `<button class="suggestion-chip" type="button" data-suggestion="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("");
@@ -1601,9 +1644,10 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     chatDiv.classList.toggle("projecthub-compact", e.matches || Boolean(chatSettings.compactMode));
   });
   renderSuggestions();
+  const freeNote = `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(57,217,138,0.12);border:1px solid rgba(57,217,138,0.28);color:#b8f5d3;font-size:12px;">🟢 I run entirely on free tiers — GitHub Pages, a GCP free-tier VM, free LLM providers, and local Ollama.</span>`;
   appendMessage("bot", "Scout", visitorName
-    ? `Welcome back, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask about his projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.`
-    : "Hi, I’m Scout, Bradley’s recruiter assistant. What should I call you for this session? A first name is enough, and then I’ll keep the conversation personal and coherent.");
+    ? `Welcome back, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask about his projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.${freeNote}`
+    : `Hi, I’m Scout, Bradley’s recruiter assistant. What should I call you for this session? A first name is enough, and then I’ll keep the conversation personal and coherent.${freeNote}`);
 
   console.log("ProjectHub loaded!");
 }
