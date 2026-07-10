@@ -193,6 +193,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     .projecthub-title-block {
       min-width: 0;
       flex: 1;
+      overflow: hidden;
     }
 
     .projecthub-kicker {
@@ -202,6 +203,9 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       letter-spacing: .08em;
       text-transform: uppercase;
       margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .projecthub-title {
@@ -219,6 +223,18 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .projecthub-minimized .projecthub-subtitle {
+      display: none;
+    }
+
+    .projecthub-minimized .projecthub-title {
+      font-size: 15px;
+    }
+
+    .projecthub-minimized .projecthub-actions {
+      gap: 5px;
     }
 
     .projecthub-icon-button {

@@ -676,6 +676,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     .projecthub-title-block {
       min-width: 0;
       flex: 1;
+      overflow: hidden;
     }
 
     .projecthub-kicker {
@@ -685,6 +686,9 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       letter-spacing: .08em;
       text-transform: uppercase;
       margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .projecthub-title {
@@ -702,6 +706,18 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .projecthub-minimized .projecthub-subtitle {
+      display: none;
+    }
+
+    .projecthub-minimized .projecthub-title {
+      font-size: 15px;
+    }
+
+    .projecthub-minimized .projecthub-actions {
+      gap: 5px;
     }
 
     .projecthub-icon-button {
