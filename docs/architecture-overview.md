@@ -14,10 +14,10 @@ flowchart LR
     D --> E[data.js projects/codePens]
     D --> F[utils.js GitHub API]
     D --> G{Needs recruiter answer?}
-    G -- yes --> H[Netlify recruiter-chat function]
-    H --> M[(Neon DB session memory)]
-    H --> J[Gemini Flash API]
-    J --> K[Grounded recruiter knowledge + anti-slop validation]
+    G -- yes --> H[GCP recruiter chat API]
+    H --> M[(In-memory session cache)]
+    H --> J[Local Ollama gemma3:1b / smollm2:135m]
+    J --> K[Grounded knowledge + streaming RAG + anti-slop validation]
 ```
 
 ---
@@ -31,9 +31,9 @@ flowchart LR
 | `logic.js` | Intent detection, response generation, conversation history, AI fallback trigger. |
 | `ui.js` | Chat DOM creation, event handling, styling, loading spinner. |
 | `utils.js` | GitHub repo metadata fetcher. |
-| Netlify recruiter-chat | Gemini Flash-powered function. Fetches knowledge base, builds grounded prompts, validates anti-slop, stores session memory in Neon DB. |
-| Session memory | Per-tab conversation history persisted in Neon PostgreSQL with fallback to function memory. |
-| Recruiter knowledge | `data/recruiter-knowledge.json` hosted on GitHub — cached 5 minutes by the function. |
+| GCP recruiter chat API | `server-gemini.js` running on a GCP VM. Uses local Ollama (`gemma3:1b` fallback + `smollm2:135m` generative RAG), fetches knowledge base, validates anti-slop, and caches session memory in process. |
+| Session memory | Per-tab session id with last 3 turns cached in process. |
+| Recruiter knowledge | `data/recruiter-knowledge.json` hosted raw on GitHub — includes canonical facts plus `sourceMaterial` chunks. |
 
 ---
 
@@ -52,21 +52,21 @@ flowchart LR
    - project by name
    - CodePen by name
    - platform, tech, list, compare, most stars
-6. If the query needs a recruiter-style answer, it calls `/.netlify/functions/recruiter-chat` on `bradleymatera.dev`.
-7. The Netlify function fetches `data/recruiter-knowledge.json` from GitHub (cached 5 minutes), reads session memory from Neon DB, builds a grounded prompt including conversation history, calls Gemini Flash, validates the reply against anti-slop rules, stores the updated memory, and returns the answer.
+6. If the query needs a recruiter-style answer, it calls `https://projecthub-chat.bradleymatera.dev/api/chat`.
+7. The API fetches `data/recruiter-knowledge.json` from GitHub (cached in memory), builds a grounded fallback first, retrieves relevant `sourceMaterial` chunks for RAG, streams a rewrite through local Ollama (`smollm2:135m`), aborts on forbidden patterns, validates the generated reply against anti-slop rules, and falls back to the grounded answer if anything fails. It keeps the last 3 turns per session.
 
 ---
 
 ## Backend Runtime
 
-The backend lives in the **gatsbyblog** repo (portfolio site), not in this ProjectHub repo.
+The backend lives in this repo as `server-gemini.js` and is deployed to a GCP VM.
 
-- **Function:** `netlify/functions/recruiter-chat.js` — calls Gemini Flash with grounded prompts
-- **Knowledge base:** `data/recruiter-knowledge.json` in this repo, fetched raw from GitHub
-- **Session memory:** Neon PostgreSQL via `@neondatabase/serverless`, table `projecthub_chat_sessions`
-- **Cost:** Gemini Flash free tier (1,500 requests/day) + Netlify Pro (already paid)
-
-See the gatsbyblog repo for deployment code and Netlify configuration.
+- **Server:** `server-gemini.js` — Express API that calls local Ollama with grounded prompts and RAG
+- **Model:** `gemma3:1b` for fallback chat, `smollm2:135m` for streaming generative RAG
+- **Knowledge base:** `data/recruiter-knowledge.json` in this repo, fetched raw from GitHub. Includes canonical facts plus `sourceMaterial` chunks ingested by `scripts/build-knowledge.js`.
+- **Session memory:** In-memory process cache of the last 3 turns per session.
+- **Cost:** GCP Always Free VM + local Ollama (no paid LLM credits).
+- **Agent:** The assistant is named **Jarvis** and uses the persona in `knowledge.agent`.
 
 ---
 

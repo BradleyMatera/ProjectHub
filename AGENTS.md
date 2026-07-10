@@ -10,12 +10,13 @@ ProjectHub is an embeddable, AI-powered chat widget that showcases Bradley Mater
 
 - **Tech stack:** Vanilla JavaScript (ES6 modules via IIFE), HTML/CSS-in-JS, GitHub Pages
 - **Runtime:** Browser only; no frontend framework or bundler
-- **AI backend:** Local/heuristic handlers + recruiter chat API at `/.netlify/functions/recruiter-chat` (Gemini Flash via gatsbyblog repo)
-- **Session memory:** Browser sends a per-tab session id and recent turns; backend persists trimmed memory in Netlify DB/Neon when configured
-- **Generative usage:** Grounded answers stay factual; Gemini handles open-ended recruiter questions with anti-slop validation
-- **Widget UX:** Each browser-tab session starts by asking for the visitor's name. Settings allow memory, AI flavor labels, personalization, Enter-to-send, compact mode, name changes, and full memory clearing.
-- **Data source:** Hard-coded project/CodePen arrays (`data.js`)
-- **Current branch/focus:** `main` — ongoing work: zero-cost Ollama chat backend on GCP and AGENTS.md-driven documentation
+- **AI backend:** Recruiter chat API at `https://projecthub-chat.bradleymatera.dev/api/chat` on a GCP VM. Runs local Ollama (`gemma3:1b` fallback + `smollm2:135m` generative RAG). Gemini is no longer used.
+- **Session memory:** Browser sends a per-tab session id and recent turns; backend caches a trimmed knowledge JSON and the last 3 turns of each session.
+- **Generative usage:** Grounded-first deterministic engine answers factual queries. Open-ended questions are sent to the local RAG layer with streaming, real-time abort on forbidden patterns, and grounded fallback. 15s total latency budget.
+- **Agent name & persona:** The assistant is named **Jarvis**: helpful, calm, concise, honest, and never over-hype.
+- **Widget UX:** Header shows "Jarvis" as the assistant title and "Bradley Matera · Recruiter assistant". Placeholder and welcome messages are from Jarvis. Each session starts by asking the visitor's name.
+- **Data sources:** `data.js` (projects/CodePens), `data/recruiter-knowledge.json` (canonical facts), and `sourceMaterial` (ingested blog posts, pages, and resume guardrails from `scripts/build-knowledge.js`).
+- **Current branch/focus:** `main` — zero-cost Ollama chat backend on GCP, streaming RAG, and AGENTS.md-driven documentation
 
 ---
 
