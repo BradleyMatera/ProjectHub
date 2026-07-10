@@ -383,12 +383,12 @@ function shapeReply(text, question, knowledge) {
 function detectRepair(question) {
   const q = String(question || '').toLowerCase().trim();
   return {
-    shorter: /^no,? shorter|^shorter$|cut it in half|too long|^again$|faster please/.test(q),
+    shorter: /^no,? shorter|^shorter[.!?]?$|cut it in half|too long|^again[.!?]?$|faster please/.test(q),
     moreHonest: /more honest|honest version|rough edges|less salesy|less pitchy|sounds fake|sounds like ai|make it (more )?normal|less formal|make it sound less ai|try again/.test(q),
     moreTechnical: /more technical|like a technical|technical interviewer/.test(q),
     hrFriendly: /like i am hr|hr friendly|like hr|non.?technical/.test(q),
     blunt: /be blunt|no bs|no bullshit|tell me straight|dont give me marketing|do not waste my time/.test(q),
-    isBareFollowup: /^(why|how|like what|prove it|examples?\??|what else|so what|and\??|meaning\??|which one|what project|what cert|how long|where|what role|what stack|what risk|what strength)\??$/.test(q)
+    isBareFollowup: /^(why|how|like what|prove it|examples?\??|what else|so what|and\??|meaning\??|which one|what project|what cert|how long|where|what role|what stack|what risk|what strength)[.!?]?$/.test(q)
   };
 }
 
@@ -1459,7 +1459,7 @@ function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
   const repair = detectRepair(question);
   if (repair.shorter || repair.isBareFollowup || repair.blunt) return true;
-  if (/(ignore|inject|system prompt|\.env|api key|password|address|salary|make up|pretend|fortune|claim|bypass|open port|port 11434|active security clearance|team of \d+|10\s*years|fortune 500)/.test(q)) return true;
+  if (/(ignore|inject|system prompt|\.env|api key|password|address|salary|make up|pretend|fortune|claim|bypass|open port|port 11434|active security clearance|team of \d+|10\s*years|fortune 500|seasoned|full.?stack expert|10x|ninja|rockstar|wizard|guru|veteran|well.?versed|proven track record)/.test(q)) return true;
   if (/(pretend|make up|claim|say|tell|write)\b.*\b(google|senior|cto|10\s*years|masters?|kubernetes|led a team|production engineer|production experience|outages|clearance|payment systems|terraform|machine learning engineer)\b/.test(q)) return true;
   if (/\b(contact|email|phone|reach|github)\b|portfolio url|resume\?|links\?|\blinkedin\b(?!.*\b(style|summary|profile)\b)/.test(q)) return true;
   // Smoke tests / greetings have deterministic answers and should not burn provider quota/latency
