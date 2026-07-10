@@ -1109,7 +1109,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
   
   // Dynamic summary from knowledge base
-  if (/summary|who is|about|tell me about|who is brad|who is bradley|in 30 seconds|30 seconds|simple version|honest version/.test(lowerQuestion)) {
+  if (/summary|who is|about|tell me about|who is brad|who is bradley|in (20|30) seconds|20 seconds|30 seconds|simple version|honest version/.test(lowerQuestion)) {
     if (summary?.whoIAm) {
       return { reply: `${name} is a ${title} based in ${location}. ${toThirdPerson(summary.whoIAm)}` };
     }
@@ -1450,14 +1450,16 @@ async function generateWithNetwork(knowledge, question, history, groundedReply) 
 function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
   const repair = detectRepair(question);
-  if (repair.shorter || repair.isBareFollowup) return true;
+  if (repair.shorter || repair.isBareFollowup || repair.blunt) return true;
   if (/(ignore|inject|system prompt|\.env|api key|password|address|salary|make up|pretend|fortune|claim)/.test(q)) return true;
   if (/\b(contact|email|phone|reach|github)\b|portfolio url|resume\?|links\?|\blinkedin\b(?!.*\b(style|summary|profile)\b)/.test(q)) return true;
   // Smoke tests / greetings have deterministic answers and should not burn provider quota/latency
-  if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b|are you online|say hello|what can you (help|do) with|what can this bot (help|do)|what model|what is this chatbot|does this use ollama|is this ai local|is my chat private|what data do you use|who made this|is this bradley'?s site/.test(q)) return true;
+  if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b|are you online|say hello|health status|what can you (help|do) with|what can this bot (help|do)|what model|what is this chatbot|does this use ollama|is this ai local|is my chat private|what data do you use|who made this|is this bradley'?s site/.test(q)) return true;
   // Interview questions and explicit tone-word bans get the deterministic reply so they are accurate
   if (/interview question|what.*ask him|what.*verify/.test(q)) return true;
   if (detectBannedWords(question).length > 0) return true;
+  // Purely factual / sensitive lookups have direct grounded answers
+  if (/\b(gpa|salary|address|phone number|current address|home address|education|degree|school|full sail|army|military|veteran|production outage history|security clearance|private family|medical history|references|manager name|customer list|exact availability|preferred pay)\b/.test(q)) return true;
   const shape = detectShape(question);
   if (shape.json || shape.bullets || shape.table || shape.maxWords) return true;
   return false;
