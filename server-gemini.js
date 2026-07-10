@@ -1459,7 +1459,7 @@ function mustStayGrounded(question, history) {
   if (/interview question|what.*ask him|what.*verify/.test(q)) return true;
   if (detectBannedWords(question).length > 0) return true;
   // Purely factual / sensitive lookups have direct grounded answers
-  if (/\b(gpa|salary|address|phone number|current address|home address|education|degree|school|full sail|army|military|veteran|production outage history|security clearance|private family|medical history|references|manager name|customer list|exact availability|preferred pay)\b/.test(q)) return true;
+  if (/\b(gpa|salary|address|phone number|current address|home address|education|degree|school|full sail|army|military|veteran|production outage history|security clearance|private family|medical history|references|manager name|customer list|exact availability|preferred pay)\b|internship real/.test(q)) return true;
   const shape = detectShape(question);
   if (shape.json || shape.bullets || shape.table || shape.maxWords) return true;
   return false;
