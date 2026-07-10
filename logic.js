@@ -43,7 +43,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     || (/^(^|\.)bradleymatera\.dev$/.test(window.location.hostname)
       ? "/.netlify/functions/recruiter-chat"
       : "https://projecthub-chat.bradleymatera.dev/api/chat");
-  const AI_TIMEOUT_MS = 16000;
+  const AI_TIMEOUT_MS = 18000;
   const AI_RETRIES = 1;
 
   async function askAIBackend() {

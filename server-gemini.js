@@ -68,8 +68,10 @@ app.get('/health', async (req, res) => {
     provider,
     providerConfigured: providerReady,
     model,
+    genModel: process.env.GEN_MODEL || 'smollm2:135m',
+    genTimeoutMs: parseInt(process.env.GEN_TIMEOUT_MS || '13000', 10),
     knowledgeUrl: KNOWLEDGE_URL,
-    mode: provider + '-generate'
+    mode: 'rag-generative-with-grounded-fallback'
   });
 });
 
@@ -838,7 +840,8 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
       let reply = `${name} has AWS experience with ${sentenceList(cloudSkills, 5)}.`;
       const awsExp = experience?.find(e => e.role?.toLowerCase().includes('aws') || e.company?.toLowerCase().includes('aws'));
       if (awsExp) {
-        reply += ` He completed an ${awsExp.role} at ${awsExp.company}.`;
+        const article = /^[aeiou]/i.test(awsExp.role) ? 'an' : 'a';
+        reply += ` He completed ${article} ${awsExp.role} at ${awsExp.company}, built around structured labs and a capstone rather than live production ownership.`;
       }
       return { reply: reply };
     }
@@ -858,7 +861,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   // Dynamic summary from knowledge base
   if (/summary|who is|about|tell me about|who is brad|who is bradley|in 30 seconds|30 seconds|simple version|honest version/.test(lowerQuestion)) {
     if (summary?.whoIAm) {
-      return { reply: `${name} is a ${title} based in ${location}. ${summary.whoIAm}` };
+      return { reply: `${name} is a ${title} based in ${location}. ${toThirdPerson(summary.whoIAm)}` };
     }
     return { reply: `${name} is a ${title} based in ${location}.` };
   }
@@ -899,7 +902,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
   
   // Default to basic info
-  return { reply: `${name} is a ${title} based in ${location}. ${summary?.whoIAm || 'See his portfolio for more details.'}` };
+  return { reply: `${name} is a ${title} based in ${location}. ${toThirdPerson(summary?.whoIAm || 'See his portfolio for more details.')}` };
 }
 
 function buildGroundedFallback(knowledge, question) {
@@ -925,6 +928,252 @@ function cleanModelReply(reply, knowledge, question) {
     return { reply: buildGroundedFallback(knowledge, question), fallback: true };
   }
   return { reply: cleaned, fallback: false };
+}
+
+// ============ RAG GENERATIVE LAYER ============
+// Retrieval over the full knowledge JSON + constrained generation on the local
+// tiny model (smollm2:135m), hard-capped at GEN_TIMEOUT_MS so answers stay
+// inside the 15-second budget. Grounded answer is the guaranteed fallback.
+const GEN_MODEL = process.env.GEN_MODEL || 'smollm2:135m';
+const GEN_TIMEOUT_MS = parseInt(process.env.GEN_TIMEOUT_MS || '13000', 10);
+const GEN_ENABLED = process.env.GEN_ENABLED !== 'false';
+
+// Flatten the entire knowledge file into retrievable fact chunks
+function buildRagChunks(knowledge) {
+  const { identity, summary, goals, education, certifications, skills, experience, projects, faq, interviewStories, rules, sourceMaterial } = knowledge || {};
+  const chunks = [];
+  const add = (tag, text) => { if (text) chunks.push({ tag, text: String(text) }); };
+
+  add('identity', `${identity?.name || 'Bradley Matera'} is a ${identity?.title || 'junior software engineer'} based in ${identity?.location || 'Davis, Illinois'}.`);
+  add('pitch', identity?.shortPitch);
+  add('summary', summary?.whoIAm);
+  add('what-he-does', summary?.whatIDo);
+  add('looking-for', summary?.whatIAmLookingFor);
+  add('target-roles', goals?.targetRoles?.length ? `Target roles: ${goals.targetRoles.join(', ')}.` : null);
+  add('relocation', goals?.relocation);
+  if (education?.degree) add('education', `Education: ${education.degree} from ${education.school}${education.gpa ? ` (GPA ${education.gpa})` : ''}.`);
+  (certifications || []).forEach(c => add('certification', `Certification: ${c.name || c}${c.issued ? `, issued ${c.issued}` : ''}.`));
+  if (skills?.languagesAndFrameworks?.length) add('skills-web', `Web skills: ${skills.languagesAndFrameworks.join(', ')}.`);
+  if (skills?.cloudAndInfrastructure?.length) add('skills-cloud', `Cloud skills: ${skills.cloudAndInfrastructure.join(', ')}.`);
+  if (skills?.toolsAndWorkflows?.length) add('skills-tools', `Tools: ${skills.toolsAndWorkflows.join(', ')}.`);
+  if (skills?.aiAndAutomation?.length) add('skills-ai', `AI workflow: ${skills.aiAndAutomation.join(', ')}.`);
+  (experience || []).forEach(e => add('experience', `${e.role}${e.company ? ` at ${e.company}` : ''}${e.dates ? ` (${e.dates})` : ''}: ${e.summary || ''}`));
+  (projects || []).forEach(p => add('project', `Project ${p.name}: ${p.description || ''}${p.tech?.length ? ` Tech: ${p.tech.join(', ')}.` : ''}`));
+  (faq || []).forEach(f => add('faq', `Q: ${f.question} A: ${f.answer}`));
+  (interviewStories || []).forEach(s => add('story', `${s.title || s.topic || ''}: ${s.story || s.summary || ''}`));
+  if (rules?.doNot?.length) add('boundaries', `Never claim: ${rules.doNot.slice(0, 4).join('; ')}.`);
+  (sourceMaterial || []).forEach((m, i) => { if (m?.content) add('source', `[${m.title || 'source'}-${i}] ${m.content}`); });
+  return chunks;
+}
+
+const STOPWORDS = new Set(['the', 'a', 'an', 'is', 'are', 'was', 'were', 'his', 'her', 'he', 'she', 'it', 'and', 'or', 'of', 'to', 'in', 'for', 'with', 'about', 'what', 'who', 'how', 'does', 'do', 'did', 'can', 'me', 'tell', 'you', 'your', 'this', 'that', 'on', 'at', 'i']);
+
+function retrieveChunks(question, chunks, k = 5) {
+  const qWords = normalizeQuestion(question).split(/\s+/).filter(w => w.length > 2 && !STOPWORDS.has(w));
+  const scored = chunks.map(c => {
+    const text = c.text.toLowerCase();
+    let score = 0;
+    qWords.forEach(w => { if (text.includes(w)) score += w.length > 5 ? 2 : 1; });
+    // Boost identity/summary lightly so open questions always get who-he-is context
+    if (c.tag === 'identity' || c.tag === 'summary') score += 0.5;
+    return { ...c, score };
+  });
+  return scored.sort((a, b) => b.score - a.score).slice(0, k).filter(c => c.score > 0.4);
+}
+
+const GEN_FALSE_CLAIMS = /\b(senior engineer|senior developer|10\+? years|worked at (google|amazon|meta|microsoft|apple)|fortune 500|production owner|led a team of|cto|principal engineer|master'?s degree|phd|security clearance)\b/i;
+const GEN_SLOP = /\b(great question|as an ai|i'?m glad you asked|numerous candidates|excellent opportunity|showcase their|enthusiasm for the field|passion(ate)?|robust|synergy|leverage|dynamic individual|world-class|game.?changer)\b/i;
+const GEN_OVERCLAIM = /\b(long history|years of experience|many years|several years|seasoned|expert(ise)? |well.?versed|veteran of|deep experience|extensive|highly experienced|accomplished|proven track record|at the company|this year|last year|currently employed|notable projects across|strong background|exceptional|scalable software solutions|highly skilled|mastery|advanced knowledge)\b/i;
+
+// Common capitalized words that don't need to exist in the source facts
+const GEN_ENTITY_ALLOWLIST = new Set(['He', 'His', 'Him', 'The', 'A', 'An', 'In', 'On', 'At', 'As', 'With', 'When', 'If', 'For', 'And', 'But', 'Or', 'So', 'To', 'Of', 'By', 'From', 'This', 'That', 'These', 'Those', 'It', 'Its', 'They', 'While', 'Although', 'Because', 'Overall', 'Currently', 'Recently', 'Bradley', 'Matera', 'Brad', 'B.S', 'B', 'S', 'U']);
+
+function validateGenerative(text, groundedReply) {
+  const t = String(text || '').trim();
+  if (t.length < 25 || t.length > 600) return false;
+  if (GEN_FALSE_CLAIMS.test(t)) return false;
+  if (GEN_SLOP.test(t)) return false;
+  if (GEN_OVERCLAIM.test(t)) return false;
+  if (!/\b(bradley|brad|he|his)\b/i.test(t)) return false;
+  // Third person only: the assistant must never speak as Bradley or roleplay
+  if (/\b(I|I'm|I've|my|we|our)\b/.test(t)) return false;
+  if (/"|\*|pause|scout here|as scout|hi,|hello,/i.test(t)) return false;
+  // No invented numbers: every digit sequence must exist in the grounded source
+  const genNumbers = t.match(/\d[\d.,]*/g) || [];
+  if (genNumbers.some(n => !groundedReply.includes(n))) return false;
+  // Must retain at least one concrete entity from the grounded facts
+  const entities = (groundedReply.match(/\b(AWS|React|JavaScript|TypeScript|Node|Full Sail|Davis|Illinois|junior|intern|certif\w*|project\w*|cloud|web|support|debug\w*|document\w*)\b/gi) || []).map(e => e.toLowerCase());
+  if (entities.length > 0 && !entities.some(e => t.toLowerCase().includes(e))) return false;
+  // Whitelist check: every proper noun in the generated text must exist in the source.
+  // Catches invented employers, schools, and technologies (e.g. "Davis University", "Google Cloud").
+  const sourceLower = groundedReply.toLowerCase();
+  const capPhrases = t.match(/\b[A-Z][a-zA-Z0-9.+#']*(?:\s+[A-Z][a-zA-Z0-9.+#']*)*\b/g) || [];
+  for (const phrase of capPhrases) {
+    const words = phrase.split(/\s+/);
+    // Multi-word capitalized phrases must exist as a whole phrase in the source
+    if (words.length > 1) {
+      const filtered = words.filter(w => !GEN_ENTITY_ALLOWLIST.has(w.replace(/[.,']$/, '')));
+      if (filtered.length > 1 && !sourceLower.includes(filtered.join(' ').toLowerCase())) return false;
+      if (filtered.length === 1 && !GEN_ENTITY_ALLOWLIST.has(filtered[0].replace(/[.,']$/, '')) && !sourceLower.includes(filtered[0].toLowerCase())) return false;
+    } else {
+      const w = words[0].replace(/[.,']$/, '');
+      if (!GEN_ENTITY_ALLOWLIST.has(w) && !sourceLower.includes(w.toLowerCase())) return false;
+    }
+  }
+  // Reject prompt echoes
+  if (/^(facts:|q:|question:|answer:|rephrase|text:)/i.test(t)) return false;
+  return true;
+}
+
+// Convert first-person knowledge text to third person for grounded answers
+function toThirdPerson(text) {
+  let out = String(text || '')
+    .replace(/\bI am\b/g, 'he is')
+    .replace(/\bI'm\b/g, "he's")
+    .replace(/\bI have\b/g, 'he has')
+    .replace(/\bI've\b/g, "he's")
+    .replace(/\bI like\b/g, 'he likes')
+    .replace(/\bI learn\b/g, 'he learns')
+    .replace(/\bI work\b/g, 'he works')
+    .replace(/\bI built\b/g, 'he built')
+    .replace(/\bI \b/g, 'he ')
+    .replace(/\bmy\b/g, 'his')
+    .replace(/\bMy\b/g, 'His')
+    .replace(/\bme\b/g, 'him')
+    .replace(/\b(work|learn|like|build|debug|document)\b(?= carefully| quickly| clearly| useful)/g, m => m + 's');
+  // Fix sentence-start capitalization after replacements
+  out = out.replace(/(^|[.!?]\s+)([a-z])/g, (m, p1, p2) => p1 + p2.toUpperCase());
+  return out;
+}
+
+const GEN_ABORT_PATTERNS = [
+  /\b(I\b|I'm|I've|my\b|we\b|our\b)/i,
+  /\b(great question|as an ai|i'?m glad|excellent opportunity|showcase|enthusiasm|passionate|robust|synergy|leverage|dynamic|world-class|game.?changer)/i,
+  /\b(long history|years of experience|many years|several years|seasoned|expert in|expertise|well.?versed|veteran|deep experience|extensive|highly experienced|accomplished|proven track|at the company|this year|last year|currently employed|notable projects across|exceptional|scalable software|highly skilled|mastery|advanced knowledge)/i,
+  /\b(senior engineer|senior developer|10\+? years|worked at (google|amazon|meta|microsoft|apple)|fortune 500|production owner|led a team|cto|principal|master'?s|phd|security clearance)/i,
+  /"|\*|pause|scout here|as scout|hi,|hello,/i,
+  /\b\d{4,}\b/ // invented large numbers
+];
+
+function shouldAbortGeneration(text) {
+  return GEN_ABORT_PATTERNS.some(p => p.test(text));
+}
+
+async function callGenerativeRag(knowledge, question, groundedReply, history, timeoutMs) {
+  const chunks = buildRagChunks(knowledge);
+  const retrieved = retrieveChunks(question, chunks, 3);
+  const facts = retrieved.map(c => truncateWords(c.text, 30)).join(' ');
+  const source = toThirdPerson(`${truncateWords(groundedReply.replace(/<[^>]+>/g, ' '), 55)} ${facts}`);
+  callGenerativeRag.lastSource = source;
+
+  // Stream the generation and abort as soon as a forbidden pattern appears.
+  // This is the "edit while generating" constraint: we stop the model before it
+  // wastes time completing a bad answer.
+  const agentName = knowledge?.agent?.name || 'Jarvis';
+  const agentPersona = knowledge?.agent?.persona || 'the helpful, honest site assistant';
+  const system = `A recruiter is asking about a job candidate named Bradley Matera. You are ${agentName}, ${agentPersona}. You are not Bradley. Answer the recruiter using ONLY this info: ${truncateWords(source, 80)}\nRules: third person only (he/his), 1-3 short sentences, plain honest language, no greetings, no buzzwords, never add facts or employers not listed above.`;
+  const user = truncateWords(question, 40);
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs || GEN_TIMEOUT_MS);
+  let accumulated = '';
+  try {
+    const res = await fetch(`${OLLAMA_URL}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: GEN_MODEL,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user }
+        ],
+        stream: true,
+        keep_alive: '24h',
+        options: { temperature: 0.3, top_p: 0.85, num_predict: 70, repeat_penalty: 1.2 }
+      })
+    });
+    if (!res.ok) throw new Error(`gen HTTP ${res.status}`);
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // keep incomplete line
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        try {
+          const chunk = JSON.parse(trimmed);
+          const content = chunk.message?.content || chunk.response || '';
+          if (content) {
+            accumulated += content;
+            const clean = accumulated.replace(/\s+/g, ' ');
+            if (shouldAbortGeneration(clean)) {
+              controller.abort();
+              throw new Error('aborted: bad pattern detected');
+            }
+          }
+        } catch (e) {
+          if (e.message === 'aborted: bad pattern detected') throw e;
+          // ignore malformed JSON lines
+        }
+      }
+    }
+
+    return removeSlop(accumulated.replace(/\s+/g, ' ').trim());
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// Conversational composer: adds natural variation to grounded answers so the
+// bot "talks" like a person even when generation is rejected. Deterministic
+// facts, randomized framing.
+function composeConversational(reply, question, knowledge) {
+  const q = String(question || '').toLowerCase();
+  const plain = reply.replace(/<[^>]+>/g, ' ').trim();
+  // Don't wrap refusals, contact info, or already-shaped output
+  if (/can'?t|don'?t see|not in the public data/i.test(plain)) return reply;
+  if (Object.keys(detectShape(question)).length > 0) return reply;
+
+  const openers = [
+    '',
+    'Honest picture: ',
+    "Here's the short version: ",
+    'Straight answer: ',
+    'The real story: '
+  ];
+  const closers = [
+    '',
+    ' Want the honest gaps too? Just ask.',
+    ' Ask me about role fit or his projects if you want specifics.',
+    ' If you want proof, his GitHub and portfolio are public.',
+    ' Happy to break down any part of that.'
+  ];
+  const opener = openers[Math.floor(Math.random() * openers.length)];
+  const closer = closers[Math.floor(Math.random() * closers.length)];
+  let body = reply;
+  if (opener) body = body.charAt(0).toLowerCase() === body.charAt(0) ? body : body;
+  return `${opener}${body}${closer}`.trim();
+}
+
+// Queries that must stay deterministic for correctness/safety
+function mustStayGrounded(question, history) {
+  const q = String(question || '').toLowerCase();
+  const repair = detectRepair(question);
+  if (repair.shorter || repair.isBareFollowup) return true;
+  if (/(ignore|inject|system prompt|\.env|api key|password|address|salary|make up|pretend|fortune|claim)/.test(q)) return true;
+  if (/contact|email|phone|linkedin|github url|portfolio url/.test(q)) return true;
+  const shape = detectShape(question);
+  if (shape.json || shape.bullets || shape.table || shape.maxWords) return true;
+  return false;
 }
 
 // Track whether the configured LLM is actually usable so we don't burn latency on dead providers
@@ -959,8 +1208,9 @@ app.post('/api/chat', async (req, res) => {
     let provider = 'grounded';
     let model = 'knowledge-json';
 
-    // 2. Optionally try the configured LLM for open-ended phrasing, but only when healthy
+    // 2a. Try the big LLM first if configured and healthy (auto-upgrades when credits return)
     const retryDue = (Date.now() - llmLastFailAt) > LLM_RETRY_AFTER_MS;
+    let generated = false;
     if ((llmHealthy || retryDue) && LLM_PROVIDER !== 'ollama') {
       const llmModel = LLM_PROVIDER === 'openai' ? OPENAI_MODEL : GEMINI_MODEL;
       try {
@@ -973,11 +1223,35 @@ app.post('/api/chat', async (req, res) => {
           provider = LLM_PROVIDER;
           model = llmModel;
           llmHealthy = true;
+          generated = true;
         }
       } catch (err) {
-        console.error(`${LLM_PROVIDER} unavailable, staying grounded:`, err.message.slice(0, 200));
+        console.error(`${LLM_PROVIDER} unavailable:`, err.message.slice(0, 200));
         llmHealthy = false;
         llmLastFailAt = Date.now();
+      }
+    }
+
+    // 2b. Local generative RAG (tiny model) inside the 15s budget, validated,
+    //     grounded answer guaranteed as fallback
+    if (!generated && GEN_ENABLED && !mustStayGrounded(userMessage, history)) {
+      try {
+        const genReply = await callGenerativeRag(knowledge, userMessage, reply, history, Math.min(GEN_TIMEOUT_MS, 9000));
+        if (validateGenerative(genReply, callGenerativeRag.lastSource || reply)) {
+          reply = genReply;
+          provider = 'rag-generative';
+          model = GEN_MODEL;
+          generated = true;
+        } else {
+          console.log('Gen failed validation:', String(genReply).slice(0, 120));
+        }
+      } catch (err) {
+        console.error('Gen failed/timed out:', err.message.slice(0, 120));
+      }
+      // When generation is rejected, still respond conversationally with verified facts
+      if (!generated) {
+        reply = composeConversational(reply, userMessage, knowledge);
+        provider = 'grounded-conversational';
       }
     }
 

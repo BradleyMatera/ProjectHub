@@ -75,6 +75,12 @@ const tests = [
   // --- Performance/tiny (sections 14, 24) ---
   { g: 'tiny', p: 'Summarize Bradley in 12 words.', v: r => r.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length <= 16 },
   { g: 'tiny', p: 'One sentence only: AWS experience?', v: r => r.split(/[.!?]/).filter(s => s.trim().length > 3).length <= 2 },
+
+  // --- Generative RAG quality (15s budget, honest, third-person, no invented facts) ---
+  { g: 'generative', p: 'talk to me about what Bradley brings to a team', v: (r, meta) => meta.latency <= 15000 && !FALSE_CLAIMS.test(r) && !/\bI\b/.test(r) && /bradley|he|his/i.test(r) },
+  { g: 'generative', p: 'give me your honest take on this candidate', v: (r, meta) => meta.latency <= 15000 && !FALSE_CLAIMS.test(r) && !/expertise|exceptional|seasoned|extensive/i.test(r) },
+  { g: 'generative', p: 'whats his story?', v: (r, meta) => meta.latency <= 15000 && /junior|davis|web|aws|engineer/i.test(r) },
+  { g: 'generative', p: 'describe his work style conversationally', v: (r, meta) => meta.latency <= 15000 && !SLOP.test(r) && !FALSE_CLAIMS.test(r) },
 ];
 
 async function ask(prompt, history = []) {
@@ -99,7 +105,7 @@ async function ask(prompt, history = []) {
   for (const t of chosen) {
     try {
       const { reply, latency, provider } = await ask(t.p);
-      const ok = t.v(reply);
+      const ok = t.v(reply, { latency, provider });
       if (ok) { pass++; console.log(`PASS [${t.g}] (${latency}ms, ${provider}) ${t.p}`); }
       else {
         fail++;
