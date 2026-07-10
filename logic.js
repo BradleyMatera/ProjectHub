@@ -198,6 +198,19 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     return { reply, newTopic };
   }
 
+  if (query.includes("project") || query === "projects") {
+    const projectNames = projects.slice(0, 5).map(p => p.name).join(", ");
+    reply = `Bradley's notable projects include ${projectNames}. You can see his full portfolio at https://bradleymatera.dev/.`;
+    newTopic = "projects";
+    return { reply, newTopic };
+  }
+
+  if (query.includes("experience") || query.includes("work history") || query.includes("background")) {
+    reply = "Bradley's recent experience includes freelance junior frontend contributor at CIRIS Ethical AI and an AWS Cloud Support Engineer internship. He also has prior roles in case management, construction, and the U.S. Army.";
+    newTopic = "experience";
+    return { reply, newTopic };
+  }
+
   if (query.includes("ciris") || query.includes("ethical ai")) {
     reply = "Bradley worked as a freelance junior frontend contributor at CIRIS Ethical AI from October 2024 to June 2025. He improved onboarding and setup documentation, added JWT token-verification logging, contributed small merged code updates and lint fixes, created Docker Compose config for local development, and documented larger improvements as GitHub Issues.";
     newTopic = "ciris";

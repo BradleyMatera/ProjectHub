@@ -1,12 +1,12 @@
 # backend-guide.md
 
-**Read when:** You need to deploy, migrate, or secure the zero-cost Ollama chat backend on Google Cloud.
+**Read when:** You need to deploy, migrate, or secure the Gemini API chat backend on Google Cloud.
 
 ---
 
 ## Goal
 
-Host an Ollama-backed chat API that serves the ProjectHub widget from a free Google Cloud micro VM, replacing the current Heroku proxy.
+Host a Gemini API-backed chat API that serves the ProjectHub widget from a free Google Cloud micro VM, replacing the current Heroku proxy.
 
 ---
 
@@ -32,11 +32,12 @@ flowchart LR
   A[ProjectHub widget] -- HTTPS POST /api/chat --> B[projecthub-chat.bradleymatera.dev]
   B -- Netlify DNS A record --> C[GCP VM 35.208.20.1]
   C -- Caddy HTTPS reverse proxy --> D[Node API 127.0.0.1:3000]
-  D -- guarded local generation --> E[Ollama 127.0.0.1:11434]
+  D -- Gemini API REST --> E[generativelanguage.googleapis.com]
   D -- fetch/cache --> F[recruiter-knowledge.json on GitHub]
+  D -- grounded fallback --> G[Local knowledge base]
 ```
 
-Current production path: Netlify DNS `A` record for `projecthub-chat.bradleymatera.dev` points to the GCP VM external IP `35.208.20.1`. Caddy terminates HTTPS with Let's Encrypt and proxies to the Node API on `127.0.0.1:3000`. Ollama stays private on `127.0.0.1:11434`.
+Current production path: Netlify DNS `A` record for `projecthub-chat.bradleymatera.dev` points to the GCP VM external IP `35.208.20.1`. Caddy terminates HTTPS with Let's Encrypt and proxies to the Node API on `127.0.0.1:3000`. The Node API calls Gemini's REST API for generation, with grounded fallback to local knowledge base when credits are depleted.
 
 ---
 
@@ -49,73 +50,43 @@ Current production path: Netlify DNS `A` record for `projecthub-chat.bradleymate
 - Boot disk: Ubuntu 22.04 LTS, 30 GB standard persistent disk
 - Allow HTTP/HTTPS traffic (we will narrow this later)
 
-### 2. Install Ollama
+### 2. Get Gemini API Key
 
-SSH into the VM and run:
+1. Go to https://aistudio.google.com/app/apikey
+2. Sign in with your Google account
+3. Click "Create API key"
+4. Copy the key (starts with `AIza...`)
+5. Add prepaid credits or enable billing for the project at https://ai.studio/projects
 
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-sudo systemctl enable --now ollama
+**Free tier:** Gemini API has free tier access for eligible models (~15 requests/minute), but requires prepaid credits or billing for sustained usage.
+
+### 3. Build the Node.js API
+
+The API uses Gemini's REST API with grounded fallback to local knowledge base. Key files:
+
+- `server.js` - Express server with Gemini integration
+- `.env` - API key and configuration
+- `recruiter-knowledge.json` - Hosted on GitHub, fetched by the API
+
+Example `.env`:
+
+```env
+PORT=3000
+GEMINI_API_KEY=AIza...
+GEMINI_MODEL=gemini-2.0-flash
+KNOWLEDGE_URL=https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter-knowledge.json
+ALLOWED_ORIGINS=https://bradleymatera.dev,https://www.bradleymatera.dev,https://bradleymatera.github.io,https://*.codepen.io
 ```
 
-Ollama will listen on `localhost:11434`.
+The server includes:
+- CORS configuration for allowed origins
+- Rate limiting (20 requests/minute)
+- Knowledge caching (5 minutes)
+- Response caching (10 minutes)
+- Grounded fallback when Gemini credits are depleted
+- Timeout handling (15 seconds)
 
-### 3. Pull a Lightweight Model
-
-Choose a model that fits ~1 GiB RAM on an `e2-micro`. Examples:
-
-```bash
-ollama pull mistral:7b-instruct-q4_K_M
-ollama pull phi3:mini
-ollama pull llama3.2:1b
-```
-
-Avoid large models like `gpt-oss:20b`; they will not run on micro hardware.
-
-### 4. Build the Proxy Server
-
-A minimal Node.js/Express proxy:
-
-```javascript
-const express = require('express');
-const fetch = require('node-fetch');
-const cors = require('cors');
-const app = express();
-
-const ALLOWED_ORIGINS = ['https://bradleymatera.github.io'];
-const API_KEY = process.env.PROJECTHUB_API_KEY;
-
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
-    callback(new Error('Not allowed by CORS'));
-  }
-}));
-
-app.use(express.json());
-
-app.post('/api/chat', async (req, res) => {
-  if (req.headers['x-api-key'] !== API_KEY) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const ollamaRes = await fetch('http://localhost:11434/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'mistral:7b-instruct-q4_K_M',
-      messages: [{ role: 'user', content: req.body.message }]
-    })
-  });
-
-  const data = await ollamaRes.json();
-  res.json({ reply: data.choices?.[0]?.message?.content || 'No response' });
-});
-
-app.listen(8080, () => console.log('Proxy listening on port 8080'));
-```
-
-### 5. Run the Proxy as a Service
+### 4. Run the API as a Service
 
 Use `systemd` or `pm2` so the proxy starts on boot and restarts on failure.
 
@@ -144,13 +115,13 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now recruiter-chat-api
 ```
 
-### 6. Secure the Network
+### 5. Secure the Network
 
-- Create a firewall rule allowing inbound TCP 8080 only from your website’s IP ranges or CDN ranges (e.g., GitHub Pages IPs).
-- Block direct access to port 11434 from the internet.
-- Do not expose the Ollama port publicly.
+- Create a firewall rule allowing inbound TCP 80 and 443 only from your website’s IP ranges or CDN ranges (e.g., GitHub Pages IPs).
+- The Node API listens on `127.0.0.1:3000` and is not exposed directly to the internet.
+- Caddy handles HTTPS termination and reverse proxy.
 
-### 7. HTTPS with Caddy
+### 6. HTTPS with Caddy
 
 Install Caddy on the VM and proxy the public hostname to the private Node API:
 
@@ -162,17 +133,17 @@ projecthub-chat.bradleymatera.dev {
 
 Caddy obtains and renews the Let's Encrypt certificate automatically. Do not add CORS headers in Caddy; the Express API owns CORS so browsers do not see duplicate `Access-Control-Allow-Origin` values.
 
-### 8. CORS Configuration
+### 7. CORS Configuration
 
 The Node API sets CORS. Caddy should not add CORS headers. Keep `https://bradleymatera.github.io`, `https://bradleymatera.dev`, and `https://www.bradleymatera.dev` in `ALLOWED_ORIGINS`; include `https://*.codepen.io` only when CodePen embedding needs to call the API.
 
-### 9. Static IP and DNS
+### 8. Static IP and DNS
 
 - Keep the VM external IP attached while the service is public.
 - Netlify DNS should have an `A` record for `projecthub-chat.bradleymatera.dev` pointing to `35.208.20.1`.
 - Update the widget fallback URL in `logic.js` to `https://projecthub-chat.bradleymatera.dev/api/chat`.
 
-### 10. Frontend Integration
+### 9. Frontend Integration
 
 In `logic.js`, replace the fallback URL:
 
@@ -184,7 +155,7 @@ const res = await fetch("https://projecthub-chat.bradleymatera.dev/api/chat", {
 });
 ```
 
-### 11. Optional: Firestore Chat History
+### 10. Optional: Firestore Chat History
 
 - Enable Firestore in Native mode.
 - Use the Firebase Admin SDK in the proxy to write messages to a `messages` collection.
@@ -195,7 +166,8 @@ const res = await fetch("https://projecthub-chat.bradleymatera.dev/api/chat", {
 ## Monitoring
 
 - Watch CPU and memory in the Google Cloud console.
-- If the model is too heavy, switch to a smaller quantization (`Q3_K_M`) or a smaller model.
+- Monitor Gemini API usage at https://ai.studio/projects
+- Check prepaid credit balance and refill when depleted
 - Keep traffic within the same region to avoid egress charges.
 - Rotate API keys periodically.
 
@@ -207,5 +179,7 @@ const res = await fetch("https://projecthub-chat.bradleymatera.dev/api/chat", {
 - [ ] 30 GB standard persistent disk
 - [ ] Static regional IP attached to running VM
 - [ ] Same-region traffic only
-- [ ] Firestore within daily free quotas
-- [ ] HTTPS certificate free (Let’s Encrypt or managed cert that fits free tier)
+- [ ] Firestore within daily free quotas (if used)
+- [ ] HTTPS certificate free (Let's Encrypt via Caddy)
+- [ ] Gemini API prepaid credits or billing enabled at https://ai.studio/projects
+- [ ] Monitor Gemini API usage to stay within free tier or prepaid limits
