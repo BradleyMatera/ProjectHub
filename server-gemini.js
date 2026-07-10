@@ -16,6 +16,19 @@ const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma3:1b';
+
+// Free multi-provider network keys
+const XAI_API_KEY = process.env.XAI_API_KEY || '';
+const XAI_MODEL = process.env.XAI_MODEL || 'grok-4.3';
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
+const GITHUB_MODELS_TOKEN = process.env.GITHUB_MODELS_TOKEN || '';
+const GITHUB_MODELS_MODEL = process.env.GITHUB_MODELS_MODEL || 'openai/gpt-4o-mini';
+const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
+const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || '';
+const CLOUDFLARE_MODEL = process.env.CLOUDFLARE_MODEL || '@cf/meta/llama-3.2-3b-instruct';
+const PROVIDER_ORDER = (process.env.PROVIDER_ORDER || 'grok,groq,cloudflare,github,gemini,ollama').split(',').map(s => s.trim()).filter(Boolean);
+
 const KNOWLEDGE_URL = process.env.KNOWLEDGE_URL || 'https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter-knowledge.json';
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://bradleymatera.dev,https://www.bradleymatera.dev').split(',').map(s => s.trim()).filter(Boolean);
 
@@ -28,6 +41,119 @@ const GEMINI_TIMEOUT_MS = 15000;
 const MAX_ACTIVE_GENERATIONS = 1;
 const responseCache = new Map();
 let activeGenerations = 0;
+
+// ============ FREE MULTI-PROVIDER LLM NETWORK ============
+const PROVIDER_DEFS = {
+  grok: {
+    type: 'openai',
+    baseUrl: 'https://api.x.ai/v1',
+    apiKey: XAI_API_KEY,
+    model: XAI_MODEL,
+    dailyLimit: parseInt(process.env.XAI_DAILY_LIMIT || '1000', 10)
+  },
+  groq: {
+    type: 'openai',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    apiKey: GROQ_API_KEY,
+    model: GROQ_MODEL,
+    dailyLimit: parseInt(process.env.GROQ_DAILY_LIMIT || '1000', 10)
+  },
+  cloudflare: {
+    type: 'cloudflare',
+    accountId: CLOUDFLARE_ACCOUNT_ID,
+    apiToken: CLOUDFLARE_API_TOKEN,
+    model: CLOUDFLARE_MODEL,
+    dailyLimit: parseInt(process.env.CLOUDFLARE_DAILY_LIMIT || '300', 10)
+  },
+  github: {
+    type: 'openai',
+    baseUrl: 'https://models.github.ai/inference',
+    apiKey: GITHUB_MODELS_TOKEN,
+    model: GITHUB_MODELS_MODEL,
+    dailyLimit: parseInt(process.env.GITHUB_DAILY_LIMIT || '150', 10)
+  },
+  gemini: {
+    type: 'gemini',
+    apiKey: GEMINI_API_KEY,
+    model: GEMINI_MODEL,
+    dailyLimit: parseInt(process.env.GEMINI_DAILY_LIMIT || '1500', 10)
+  },
+  ollama: {
+    type: 'ollama',
+    model: process.env.GEN_MODEL || 'smollm2:135m',
+    dailyLimit: Infinity
+  },
+  openai: {
+    type: 'openai',
+    baseUrl: OPENAI_BASE_URL,
+    apiKey: OPENAI_API_KEY,
+    model: OPENAI_MODEL,
+    dailyLimit: parseInt(process.env.OPENAI_DAILY_LIMIT || '200', 10)
+  }
+};
+
+const providerState = new Map();
+
+function getProviderState(slug) {
+  if (!providerState.has(slug)) {
+    providerState.set(slug, { count: 0, exhaustedUntil: 0, day: new Date().getUTCDate() });
+  }
+  return providerState.get(slug);
+}
+
+function resetDailyIfNeeded(state) {
+  const today = new Date().getUTCDate();
+  if (state.day !== today) {
+    state.count = 0;
+    state.day = today;
+  }
+}
+
+function isProviderEnabled(slug) {
+  const def = PROVIDER_DEFS[slug];
+  if (!def) return false;
+  if (def.type === 'openai') return def.apiKey.length > 10;
+  if (def.type === 'cloudflare') return def.apiToken.length > 10 && def.accountId.length > 10;
+  if (def.type === 'gemini') return def.apiKey.length > 10;
+  if (def.type === 'ollama') return GEN_ENABLED;
+  return false;
+}
+
+function isProviderAvailable(slug) {
+  const state = getProviderState(slug);
+  resetDailyIfNeeded(state);
+  if (Date.now() < state.exhaustedUntil) return false;
+  const def = PROVIDER_DEFS[slug];
+  if (state.count >= def.dailyLimit) return false;
+  return true;
+}
+
+function recordProviderAttempt(slug) {
+  const state = getProviderState(slug);
+  resetDailyIfNeeded(state);
+  state.count += 1;
+}
+
+function markProviderExhausted(slug, durationMs = 60 * 1000) {
+  const state = getProviderState(slug);
+  state.exhaustedUntil = Math.max(state.exhaustedUntil, Date.now() + durationMs);
+}
+
+function providerStatus() {
+  return Object.keys(PROVIDER_DEFS).map(slug => {
+    const state = getProviderState(slug);
+    resetDailyIfNeeded(state);
+    return {
+      slug,
+      enabled: isProviderEnabled(slug),
+      available: isProviderAvailable(slug),
+      exhausted: Date.now() < state.exhaustedUntil,
+      usedToday: state.count,
+      limit: PROVIDER_DEFS[slug].dailyLimit,
+      model: PROVIDER_DEFS[slug].model
+    };
+  });
+}
 
 app.set('trust proxy', 1);
 
@@ -56,18 +182,14 @@ app.use('/api/chat', rateLimit({
 }));
 
 app.get('/', (req, res) => {
-  res.json({ ok: true, service: 'Bradley Matera Recruiter Chat API', status: 'online', backend: 'Gemini' });
+  res.json({ ok: true, service: 'Bradley Matera Recruiter Chat API', status: 'online', backend: 'free-multi-provider-llm-network' });
 });
 
 app.get('/health', async (req, res) => {
-  const provider = LLM_PROVIDER;
-  const model = provider === 'ollama' ? OLLAMA_MODEL : provider === 'openai' ? OPENAI_MODEL : GEMINI_MODEL;
-  const providerReady = provider === 'ollama' ? true : provider === 'openai' ? !!OPENAI_API_KEY && OPENAI_API_KEY.length > 10 : !!GEMINI_API_KEY && GEMINI_API_KEY.length > 10;
   res.json({
     ok: true,
-    provider,
-    providerConfigured: providerReady,
-    model,
+    providerOrder: PROVIDER_ORDER,
+    providers: providerStatus(),
     genModel: process.env.GEN_MODEL || 'smollm2:135m',
     genTimeoutMs: parseInt(process.env.GEN_TIMEOUT_MS || '13000', 10),
     knowledgeUrl: KNOWLEDGE_URL,
@@ -270,8 +392,7 @@ function detectRepair(question) {
   };
 }
 
-async function callOpenAICompatible(knowledge, question, history, model) {
-  const apiKey = OPENAI_API_KEY;
+async function callOpenAICompatibleProvider(baseUrl, apiKey, model, knowledge, question, history) {
   if (!apiKey || apiKey.length < 10) {
     throw new Error('OpenAI-compatible API key not configured');
   }
@@ -280,7 +401,6 @@ async function callOpenAICompatible(knowledge, question, history, model) {
   if (knowledge?.identity?.name) {
     messages.push({ role: 'system', content: prompt });
   }
-  // Add history if provided
   if (Array.isArray(history) && history.length > 0) {
     history.forEach(turn => {
       if (turn.user) messages.push({ role: 'user', content: turn.user });
@@ -291,7 +411,7 @@ async function callOpenAICompatible(knowledge, question, history, model) {
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
-  const res = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+  const res = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -309,10 +429,55 @@ async function callOpenAICompatible(knowledge, question, history, model) {
   clearTimeout(timeout);
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`OpenAI-compatible provider failed: ${text.slice(0, 500)}`);
+    throw new Error(`OpenAI-compatible provider failed: ${res.status} ${text.slice(0, 500)}`);
   }
   const data = await res.json();
   return data.choices?.[0]?.message?.content || '';
+}
+
+async function callOpenAICompatible(knowledge, question, history, model) {
+  return callOpenAICompatibleProvider(OPENAI_BASE_URL, OPENAI_API_KEY, model, knowledge, question, history);
+}
+
+async function callCloudflareWorkersAI(accountId, apiToken, model, knowledge, question, history) {
+  if (!accountId || accountId.length < 10 || !apiToken || apiToken.length < 10) {
+    throw new Error('Cloudflare account ID or token not configured');
+  }
+  const prompt = buildPrompt(knowledge, question, history, 'openai');
+  const messages = [];
+  if (knowledge?.identity?.name) {
+    messages.push({ role: 'system', content: prompt });
+  }
+  if (Array.isArray(history) && history.length > 0) {
+    history.forEach(turn => {
+      if (turn.user) messages.push({ role: 'user', content: turn.user });
+      if (turn.assistant) messages.push({ role: 'assistant', content: turn.assistant });
+    });
+  }
+  messages.push({ role: 'user', content: question });
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+  const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiToken}`
+    },
+    signal: controller.signal,
+    body: JSON.stringify({ messages })
+  });
+  clearTimeout(timeout);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Cloudflare Workers AI failed: ${res.status} ${text.slice(0, 500)}`);
+  }
+  const data = await res.json();
+  if (data.errors?.length) {
+    throw new Error(`Cloudflare Workers AI error: ${JSON.stringify(data.errors).slice(0, 200)}`);
+  }
+  const result = data.result || {};
+  return result.response || result.message?.content || '';
 }
 
 async function callOllama(knowledge, question, history, model) {
@@ -355,8 +520,7 @@ async function callOllama(knowledge, question, history, model) {
   return data.message?.content || '';
 }
 
-async function callGemini(knowledge, question, history, model) {
-  const prompt = buildPrompt(knowledge, question, history, 'gemini');
+async function callGeminiWithPrompt(prompt, model) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
   activeGenerations++;
@@ -378,10 +542,14 @@ async function callGemini(knowledge, question, history, model) {
   activeGenerations = Math.max(0, activeGenerations - 1);
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Gemini failed: ${text.slice(0, 500)}`);
+    throw new Error(`Gemini failed: ${res.status} ${text.slice(0, 500)}`);
   }
   const data = await res.json();
   return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+async function callGemini(knowledge, question, history, model) {
+  return callGeminiWithPrompt(buildPrompt(knowledge, question, history, 'gemini'), model);
 }
 
 function findRoleInQuestion(question) {
@@ -1107,6 +1275,25 @@ function validateGenerative(text, groundedReply) {
   return true;
 }
 
+// Cloud provider replies are less likely to hallucinate but more likely to paraphrase
+// facts with synonyms (e.g. "Junior Frontend Developer"). This validator keeps the
+// slop/false-claim guards while skipping the strict proper-noun whitelist.
+function validateNetworkReply(text, source) {
+  const t = String(text || '').trim();
+  if (t.length < 25 || t.length > 600) return false;
+  if (GEN_FALSE_CLAIMS.test(t)) return false;
+  if (GEN_SLOP.test(t)) return false;
+  if (GEN_OVERCLAIM.test(t)) return false;
+  if (!/\b(bradley|brad|he|his)\b/i.test(t)) return false;
+  if (/\b(I|I'm|I've|my|we|our)\b/.test(t)) return false;
+  if (/"|\*|pause|scout here|as scout|hi,|hello,/i.test(t)) return false;
+  const sourceText = String(source || '').toLowerCase();
+  const genNumbers = t.match(/\d[\d.,]*/g) || [];
+  if (genNumbers.some(n => !sourceText.includes(n.toLowerCase()))) return false;
+  if (/^(facts:|q:|question:|answer:|rephrase|text:)/i.test(t)) return false;
+  return true;
+}
+
 // Convert first-person knowledge text to third person for grounded answers
 function toThirdPerson(text) {
   let out = String(text || '')
@@ -1215,6 +1402,52 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
   }
 }
 
+async function generateWithNetwork(knowledge, question, history, groundedReply) {
+  // Build a broader source for validation so cloud models can paraphrase
+  // project names, role titles, etc., as long as they stay inside the facts.
+  const chunks = buildRagChunks(knowledge);
+  const retrieved = retrieveChunks(question, chunks, 5);
+  const sourceText = toThirdPerson(`${groundedReply.replace(/<[^>]+>/g, ' ')} ${retrieved.map(c => truncateWords(c.text, 40)).join(' ')}`);
+
+  for (const slug of PROVIDER_ORDER) {
+    const def = PROVIDER_DEFS[slug];
+    if (!def) {
+      console.log(`Unknown provider in PROVIDER_ORDER: ${slug}`);
+      continue;
+    }
+    if (!isProviderEnabled(slug) || !isProviderAvailable(slug)) continue;
+
+    recordProviderAttempt(slug);
+    try {
+      let raw = '';
+      if (def.type === 'openai') {
+        raw = await callOpenAICompatibleProvider(def.baseUrl, def.apiKey, def.model, knowledge, question, history);
+      } else if (def.type === 'cloudflare') {
+        raw = await callCloudflareWorkersAI(def.accountId, def.apiToken, def.model, knowledge, question, history);
+      } else if (def.type === 'gemini') {
+        raw = await callGeminiWithPrompt(buildPrompt(knowledge, question, history, 'gemini'), def.model);
+      } else if (def.type === 'ollama') {
+        raw = await callGenerativeRag(knowledge, question, groundedReply, history, Math.min(GEN_TIMEOUT_MS, 8000));
+      }
+
+      const cleaned = removeSlop(String(raw || '').trim().replace(/\s+/g, ' '));
+      if (cleaned && cleaned.length >= 15 && validateNetworkReply(cleaned, sourceText)) {
+        return { reply: cleaned, provider: slug, model: def.model || GEN_MODEL };
+      }
+      console.log(`Provider ${slug} output rejected (length ${cleaned?.length || 0}): ${cleaned.slice(0, 120)}`);
+    } catch (err) {
+      const msg = String(err.message || '').toLowerCase();
+      console.error(`Provider ${slug} failed: ${err.message.slice(0, 200)}`);
+      if (/credits|depleted|spending limit|permission-denied|402|403/.test(msg)) {
+        markProviderExhausted(slug, 24 * 60 * 60 * 1000);
+      } else if (/429|rate limit|exceeded|quota|too many/.test(msg)) {
+        markProviderExhausted(slug, 60 * 1000);
+      }
+    }
+  }
+  return null;
+}
+
 // Queries that must stay deterministic for correctness/safety
 function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
@@ -1259,45 +1492,17 @@ app.post('/api/chat', async (req, res) => {
     let provider = 'grounded';
     let model = 'knowledge-json';
 
-    // 2a. Try the big LLM first if configured and healthy (auto-upgrades when credits return)
-    const retryDue = (Date.now() - llmLastFailAt) > LLM_RETRY_AFTER_MS;
+    // 2. Try the free multi-provider network if the question isn't forced to stay grounded.
+    //    The network walks xAI -> Groq -> Cloudflare -> GitHub -> Gemini -> local Ollama,
+    //    validating each reply and falling back to the grounded answer if none succeed.
     let generated = false;
-    if ((llmHealthy || retryDue) && LLM_PROVIDER !== 'ollama') {
-      const llmModel = LLM_PROVIDER === 'openai' ? OPENAI_MODEL : GEMINI_MODEL;
-      try {
-        const llmReply = LLM_PROVIDER === 'openai'
-          ? await callOpenAICompatible(knowledge, userMessage, history, llmModel)
-          : await callGemini(knowledge, userMessage, history, llmModel);
-        const cleaned = removeSlop(String(llmReply || '').trim().replace(/\s+/g, ' '));
-        if (cleaned && cleaned.length >= 15) {
-          reply = cleaned;
-          provider = LLM_PROVIDER;
-          model = llmModel;
-          llmHealthy = true;
-          generated = true;
-        }
-      } catch (err) {
-        console.error(`${LLM_PROVIDER} unavailable:`, err.message.slice(0, 200));
-        llmHealthy = false;
-        llmLastFailAt = Date.now();
-      }
-    }
-
-    // 2b. Local generative RAG (tiny model) inside the 15s budget, validated,
-    //     grounded answer guaranteed as fallback
-    if (!generated && GEN_ENABLED && !mustStayGrounded(userMessage, history)) {
-      try {
-        const genReply = await callGenerativeRag(knowledge, userMessage, reply, history, Math.min(GEN_TIMEOUT_MS, 9000));
-        if (validateGenerative(genReply, callGenerativeRag.lastSource || reply)) {
-          reply = genReply;
-          provider = 'rag-generative';
-          model = GEN_MODEL;
-          generated = true;
-        } else {
-          console.log('Gen failed validation:', String(genReply).slice(0, 120));
-        }
-      } catch (err) {
-        console.error('Gen failed/timed out:', err.message.slice(0, 120));
+    if (!mustStayGrounded(userMessage, history)) {
+      const networkResult = await generateWithNetwork(knowledge, userMessage, history, grounded.reply);
+      if (networkResult) {
+        reply = networkResult.reply;
+        provider = networkResult.provider;
+        model = networkResult.model;
+        generated = true;
       }
     }
 
