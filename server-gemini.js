@@ -27,7 +27,7 @@ const GITHUB_MODELS_MODEL = process.env.GITHUB_MODELS_MODEL || 'openai/gpt-4o-mi
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || '';
 const CLOUDFLARE_MODEL = process.env.CLOUDFLARE_MODEL || '@cf/meta/llama-3.2-3b-instruct';
-const PROVIDER_ORDER = (process.env.PROVIDER_ORDER || 'grok,groq,cloudflare,github,gemini,ollama').split(',').map(s => s.trim()).filter(Boolean);
+const PROVIDER_ORDER = (process.env.PROVIDER_ORDER || 'groq,cloudflare,github,gemini,grok,ollama').split(',').map(s => s.trim()).filter(Boolean);
 
 const KNOWLEDGE_URL = process.env.KNOWLEDGE_URL || 'https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter-knowledge.json';
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://bradleymatera.dev,https://www.bradleymatera.dev').split(',').map(s => s.trim()).filter(Boolean);
@@ -37,7 +37,7 @@ let knowledgeCacheAt = 0;
 const KNOWLEDGE_CACHE_MS = 5 * 60 * 1000;
 const RESPONSE_CACHE_MS = 10 * 60 * 1000;
 const RESPONSE_CACHE_LIMIT = 120;
-const GEMINI_TIMEOUT_MS = 15000;
+const GEMINI_TIMEOUT_MS = 7000;
 const MAX_ACTIVE_GENERATIONS = 1;
 const responseCache = new Map();
 let activeGenerations = 0;
@@ -1009,7 +1009,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
   
   // Dynamic contact info from knowledge base
-  if (/contact|email|phone|reach|linkedin|github|resume\?|links\?/.test(lowerQuestion)) {
+  if (/\b(contact|email|phone|reach|github)\b|portfolio url|resume\?|links\?|\blinkedin\b(?!.*\b(style|summary|profile)\b)/.test(lowerQuestion)) {
     const contact = [];
     if (identity?.email) contact.push(`email at ${identity.email}`);
     if (identity?.phone) contact.push(`phone ${identity.phone}`);
@@ -1233,7 +1233,7 @@ function retrieveChunks(question, chunks, k = 5) {
 
 const GEN_FALSE_CLAIMS = /\b(senior engineer|senior developer|10\+? years|worked at (google|amazon|meta|microsoft|apple)|fortune 500|production owner|led a team of|cto|principal engineer|master'?s degree|phd|security clearance)\b/i;
 const GEN_SLOP = /\b(great question|as an ai|i'?m glad you asked|numerous candidates|excellent opportunity|showcase their|enthusiasm for the field|passion(ate)?|robust|synergy|leverage|dynamic individual|world-class|game.?changer)\b/i;
-const GEN_OVERCLAIM = /\b(long history|years of experience|many years|several years|seasoned|expert(ise)? |well.?versed|veteran of|deep experience|extensive|highly experienced|accomplished|proven track record|at the company|this year|last year|currently employed|notable projects across|strong background|exceptional|scalable software solutions|highly skilled|mastery|advanced knowledge)\b/i;
+const GEN_OVERCLAIM = /\b(long history|years of experience|many years|several years|seasoned|expert(ise)? |well.?versed|veteran of|deep experience|extensive|highly experienced|accomplished|proven track record|at the company|this year|last year|currently employed|notable projects across|exceptional|scalable software solutions|highly skilled|mastery|advanced knowledge)\b/i;
 
 // Common capitalized words that don't need to exist in the source facts
 const GEN_ENTITY_ALLOWLIST = new Set(['He', 'His', 'Him', 'The', 'A', 'An', 'In', 'On', 'At', 'As', 'With', 'When', 'If', 'For', 'And', 'But', 'Or', 'So', 'To', 'Of', 'By', 'From', 'This', 'That', 'These', 'Those', 'It', 'Its', 'They', 'While', 'Although', 'Because', 'Overall', 'Currently', 'Recently', 'Bradley', 'Matera', 'Brad', 'B.S', 'B', 'S', 'U']);
@@ -1403,11 +1403,9 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
 }
 
 async function generateWithNetwork(knowledge, question, history, groundedReply) {
-  // Build a broader source for validation so cloud models can paraphrase
-  // project names, role titles, etc., as long as they stay inside the facts.
-  const chunks = buildRagChunks(knowledge);
-  const retrieved = retrieveChunks(question, chunks, 5);
-  const sourceText = toThirdPerson(`${groundedReply.replace(/<[^>]+>/g, ' ')} ${retrieved.map(c => truncateWords(c.text, 40)).join(' ')}`);
+  // Use the full RAG prompt as the validation source so cloud models can cite
+  // any fact from the verified context without being rejected for paraphrasing.
+  const sourceText = buildPrompt(knowledge, question, history, 'openai').replace(/\s+/g, ' ').toLowerCase();
 
   for (const slug of PROVIDER_ORDER) {
     const def = PROVIDER_DEFS[slug];
@@ -1454,7 +1452,12 @@ function mustStayGrounded(question, history) {
   const repair = detectRepair(question);
   if (repair.shorter || repair.isBareFollowup) return true;
   if (/(ignore|inject|system prompt|\.env|api key|password|address|salary|make up|pretend|fortune|claim)/.test(q)) return true;
-  if (/contact|email|phone|linkedin|github url|portfolio url/.test(q)) return true;
+  if (/\b(contact|email|phone|reach|github)\b|portfolio url|resume\?|links\?|\blinkedin\b(?!.*\b(style|summary|profile)\b)/.test(q)) return true;
+  // Smoke tests / greetings have deterministic answers and should not burn provider quota/latency
+  if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b|are you online|say hello|what can you (help|do) with|what can this bot (help|do)|what model|what is this chatbot|does this use ollama|is this ai local|is my chat private|what data do you use|who made this|is this bradley'?s site/.test(q)) return true;
+  // Interview questions and explicit tone-word bans get the deterministic reply so they are accurate
+  if (/interview question|what.*ask him|what.*verify/.test(q)) return true;
+  if (detectBannedWords(question).length > 0) return true;
   const shape = detectShape(question);
   if (shape.json || shape.bullets || shape.table || shape.maxWords) return true;
   return false;
