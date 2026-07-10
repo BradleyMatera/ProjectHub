@@ -619,7 +619,7 @@ function handleRoleFit(knowledge, question, role) {
     if (roleAnalysis.matchedSkills.length > 0) {
       return { reply: `${name} is ${fitStatement} for ${role}. Pitch him as a ${title} with ${skillsPhrase}.${gapsPhrase ? ' Be honest about gaps: ' + gapsPhrase + '.' : ''}` };
     }
-    return { reply: `${name} is not a strong fit for ${role}. He is a ${title} with web, AWS, and support skills. If the role is junior, check whether training is provided.` };
+    return { reply: `${name} is not a strong fit for ${role}. The data shows a ${title} with web, AWS, and support skills, not the core skills typically expected for ${role}.` };
   }
 
   if (isVerify) {
@@ -633,16 +633,16 @@ function handleRoleFit(knowledge, question, role) {
     if (roleAnalysis.gaps.length > 0) {
       return { reply: `For ${role}, he would be missing ${gapsPhrase}.` };
     }
-    return { reply: `He does not have major listed gaps for ${role}, but he is still junior. Verify depth on a call.` };
+    return { reply: `He does not have major listed gaps for ${role} in the data.` };
   }
 
   // Default is-fit / "what makes him a good candidate" question
   if (roleAnalysis.fit === 'good') {
-    return { reply: `${name} is ${fitStatement} for ${role} based on ${skillsPhrase}. He is still junior, so verify depth on a call.` };
+    return { reply: `${name} is ${fitStatement} for ${role} based on ${skillsPhrase}.` };
   }
 
   if (roleAnalysis.fit === 'partial') {
-    return { reply: `${name} is ${fitStatement} for ${role}. He has ${skillsPhrase}, but the data does not show ${gapsPhrase}. He is best suited for junior roles with mentorship.` };
+    return { reply: `${name} is ${fitStatement} for ${role}. He has ${skillsPhrase}, but the data does not show ${gapsPhrase}.` };
   }
 
   // poor fit
