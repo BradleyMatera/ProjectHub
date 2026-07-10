@@ -433,10 +433,11 @@ function findRoleInQuestion(question) {
 }
 
 function analyzeRoleFit(role, knowledge) {
-  const { skills, projects, experience, goals, summary } = knowledge || {};
-  const roleLower = role.toLowerCase();
-  
-  // Extract all skill keywords
+  const { skills, projects, experience, goals, sourceMaterial } = knowledge || {};
+  const roleLower = String(role || '').toLowerCase();
+  if (!roleLower) return { fit: 'poor', matchedSkills: [], gaps: ['no role specified'] };
+
+  // Flatten all listed skills and build a searchable source-text corpus
   const allSkills = [
     ...(skills?.languagesAndFrameworks || []),
     ...(skills?.cloudAndInfrastructure || []),
@@ -444,88 +445,149 @@ function analyzeRoleFit(role, knowledge) {
     ...(skills?.aiAndAutomation || []),
     ...(skills?.learningOrAdjacent || [])
   ].map(s => s.toLowerCase());
-  
+
+  const sourceText = ((sourceMaterial || []).map(m => m?.content || '').join(' ') + ' ' + allSkills.join(' ')).toLowerCase();
+  const hasSkill = term => allSkills.includes(term) || sourceText.includes(term);
+
   const projectNames = (projects || []).map(p => p.name.toLowerCase());
   const projectTech = (projects || []).flatMap(p => (p.tech || []).map(t => t.toLowerCase()));
   const targetRoles = (goals?.targetRoles || []).map(r => r.toLowerCase());
-  
-  // Determine role fit
-  const isSenior = /senior|lead|principal|staff|architect|manager|director|head of|vp|chief/.test(roleLower);
-  const isCloud = /cloud|aws|devops|sre|site reliability|infrastructure|platform/.test(roleLower);
-  const isFrontend = /frontend|web|react|javascript|typescript|ui|ux|html|css/.test(roleLower);
-  const isBackend = /backend|node|python|java|c#|\.net|php|ruby|go|rust|sql|database/.test(roleLower);
-  const isSupport = /support|help desk|helpdesk|technical support|it support|customer support|service desk/.test(roleLower);
-  const isQA = /qa|test|quality assurance|automation/.test(roleLower);
-  const isMobile = /mobile|ios|android|react native|swift|kotlin|flutter/.test(roleLower);
-  const isData = /data|analytics|machine learning|ml|ai engineer|data engineer|data scientist|bi|etl/.test(roleLower);
-  const isSecurity = /security|cyber|infosec|penetration|soc/.test(roleLower);
-  
+
+  // Role-specific keyword profiles. The model is the search strategy; the data is real.
+  const roleProfiles = [
+    {
+      test: /data|analytics|machine learning|ml|data engineer|data scientist|data science|bi|etl|business intelligence/,
+      name: 'data science / analytics',
+      required: ['python', 'statistics', 'machine learning', 'data analysis', 'pandas'],
+      related: ['sql', 'numpy', 'scikit', 'tensorflow', 'pytorch', 'data visualization', 'aws ai practitioner', 'ai'],
+      projectHint: /data|model|prediction|pandas|numpy|jupyter|analytics/
+    },
+    {
+      test: /devops|sre|site reliability|infrastructure engineer|platform engineer|release engineer|build engineer/,
+      name: 'devops / sre',
+      required: ['docker', 'ci/cd', 'aws', 'serverless', 'github actions'],
+      related: ['aws lambda', 'amazon dynamodb', 'amazon s3', 'terraform', 'cloud troubleshooting', 'networking', 'kubernetes', 'monitoring'],
+      projectHint: /docker|ci.?cd|github actions|terraform|serverless|infrastructure|aws|pipeline/
+    },
+    {
+      test: /cloud|aws|cloud support|cloud engineer|infrastructure|platform/,
+      name: 'cloud / aws',
+      required: ['aws lambda', 'amazon dynamodb', 'amazon s3', 'aws'],
+      related: ['docker', 'ci/cd', 'github actions', 'terraform', 'cloud troubleshooting', 'networking', 'serverless', 'monitoring'],
+      projectHint: /aws|lambda|dynamodb|s3|cloud|serverless|infrastructure/
+    },
+    {
+      test: /frontend|web|react|javascript|typescript|ui|ux|html|css/,
+      name: 'frontend',
+      required: ['javascript', 'html', 'css'],
+      related: ['typescript', 'react', 'next.js', 'ui', 'ux', 'responsive design', 'tailwind', 'webpack'],
+      projectHint: /react|frontend|web|ui|html|css|javascript/
+    },
+    {
+      test: /backend|node|python|java|c#|\.net|php|ruby|go|rust|sql|database|api|server/,
+      name: 'backend',
+      required: ['node.js', 'sql', 'javascript'],
+      related: ['typescript', 'python', 'java', 'c#', 'rest api', 'database', 'express', 'mongodb', 'postgres'],
+      projectHint: /api|server|backend|node|database|sql|express/
+    },
+    {
+      test: /support|help desk|helpdesk|technical support|it support|customer support|service desk/,
+      name: 'support / help desk',
+      required: ['support', 'troubleshooting', 'debugging'],
+      related: ['help desk', 'customer support', 'networking', 'aws', 'documentation', 'communication'],
+      projectHint: /support|troubleshoot|help desk|debug|customer/
+    },
+    {
+      test: /qa|test|quality assurance|automation/,
+      name: 'qa / testing',
+      required: ['debugging', 'documentation'],
+      related: ['qa', 'testing', 'automation', 'jest', 'cypress', 'unit testing', 'selenium'],
+      projectHint: /test|qa|automation|jest|cypress|bug/
+    },
+    {
+      test: /mobile|ios|android|react native|swift|kotlin|flutter/,
+      name: 'mobile',
+      required: ['mobile', 'ios', 'android', 'react native', 'swift', 'kotlin', 'flutter'],
+      related: ['mobile', 'react native', 'swift', 'kotlin', 'flutter', 'ios', 'android'],
+      projectHint: /mobile|ios|android|react native|swift|flutter/
+    },
+    {
+      test: /security|cyber|infosec|penetration|soc/,
+      name: 'security',
+      required: ['security', 'cyber', 'infosec', 'penetration', 'soc', 'certified ethical hacker'],
+      related: ['security', 'network security', 'firewall', 'encryption', 'compliance'],
+      projectHint: /security|cyber|infosec|penetration|soc/
+    },
+    {
+      test: /technical writer|technical writing|documentation|content/,
+      name: 'technical writing',
+      required: ['documentation', 'writing'],
+      related: ['technical writing', 'blogging', 'markdown', 'api docs', 'content', 'communication'],
+      projectHint: /documentation|writing|blog|content|readme|docs/
+    },
+    {
+      test: /project manager|product manager|scrum master|program manager|manager/,
+      name: 'project / product management',
+      required: ['project management', 'scrum', 'agile', 'leadership'],
+      related: ['communication', 'planning', 'stakeholder', 'jira', 'collaboration', 'documentation'],
+      projectHint: /project|product|scrum|agile|team|leadership/
+    }
+  ];
+
+  // Find the best matching profile, or use the role words themselves as a generic profile
+  let profile = roleProfiles.find(p => p.test.test(roleLower));
+  if (!profile) {
+    // Generic profile: search the role words plus any skills that contain them
+    const roleTokens = roleLower.split(/[^a-z0-9+#.]+/).filter(w => w.length > 2);
+    profile = {
+      test: /./,
+      name: roleLower,
+      required: roleTokens,
+      related: roleTokens,
+      projectHint: new RegExp(roleTokens.join('|'))
+    };
+  }
+
   const matchedSkills = [];
   const gaps = [];
-  
-  if (isFrontend) {
-    const frontendSkills = ['javascript', 'typescript', 'react', 'next.js', 'html', 'css'];
-    frontendSkills.forEach(s => {
-      if (allSkills.includes(s)) matchedSkills.push(s);
-    });
-    if (projectTech.includes('react') || projectNames.some(n => n.includes('react'))) matchedSkills.push('react projects');
+
+  // Check structured skills and source material against the profile
+  for (const term of profile.required) {
+    if (hasSkill(term) && !matchedSkills.includes(term)) matchedSkills.push(term);
+    else if (!hasSkill(term) && !gaps.includes(term)) gaps.push(term);
   }
-  
-  if (isBackend) {
-    const backendSkills = ['node.js', 'sql', 'javascript', 'typescript'];
-    backendSkills.forEach(s => {
-      if (allSkills.includes(s)) matchedSkills.push(s);
-    });
+  for (const term of profile.related) {
+    if (hasSkill(term) && !matchedSkills.includes(term)) matchedSkills.push(term);
   }
-  
-  if (isCloud || isSupport) {
-    const cloudSkills = ['aws lambda', 'amazon dynamodb', 'amazon s3', 'aws amplify', 'cloud troubleshooting', 'networking fundamentals'];
-    cloudSkills.forEach(s => {
-      if (allSkills.includes(s)) matchedSkills.push(s);
-    });
-    const awsExp = experience?.find(e => e.role?.toLowerCase().includes('aws') || e.company?.toLowerCase().includes('aws'));
-    if (awsExp) matchedSkills.push('aws internship');
+
+  // Project-based evidence
+  if (projectTech.some(t => profile.projectHint.test(t))) {
+    matchedSkills.push('relevant projects');
+  } else if (projectNames.some(n => profile.projectHint.test(n))) {
+    matchedSkills.push('relevant project work');
   }
-  
-  if (isQA) {
-    if (allSkills.includes('debugging')) matchedSkills.push('debugging');
-    if (allSkills.includes('documentation')) matchedSkills.push('documentation');
-  }
-  
-  if (isData) {
-    if (allSkills.includes('sql')) matchedSkills.push('sql');
-    if (allSkills.includes('python')) matchedSkills.push('python');
-  }
-  
-  if (isMobile) {
-    gaps.push('no mobile-specific skills or projects listed');
-  }
-  
-  if (isSecurity) {
-    gaps.push('no security-specific training or certifications listed');
-  }
-  
+
+  // Senior-level roles are a mismatch for a junior candidate
+  const isSenior = /senior|lead|principal|staff|manager|director|head of|vp|chief/.test(roleLower);
   if (isSenior) {
     gaps.push('junior-level with limited production ownership');
-    // For senior roles, the gap is critical so downgrade the overall fit
-    if (matchedSkills.length > 0) {
-      return { fit: 'poor', matchedSkills, gaps };
-    }
+    return { fit: 'poor', matchedSkills, gaps };
   }
-  
-  const isTargetRole = targetRoles.some(r => r.includes(roleLower.replace(/senior|junior|lead|staff/g, '').trim()));
-  if (isTargetRole) {
-    return { fit: 'good', matchedSkills, gaps };
+
+  // If the role is explicitly in the candidate's target list, weight up
+  const isTargetRole = targetRoles.some(r => r.includes(roleLower.replace(/senior|junior|lead|staff|entry.?level|associate/g, '').trim()));
+  if (isTargetRole && matchedSkills.length > 0) {
+    return { fit: gaps.length === 0 ? 'good' : 'partial', matchedSkills, gaps };
   }
-  
+
   if (matchedSkills.length > 0 && gaps.length === 0) {
     return { fit: 'good', matchedSkills, gaps };
   }
-  
+
   if (matchedSkills.length > 0 && gaps.length > 0) {
     return { fit: 'partial', matchedSkills, gaps };
   }
-  
+
   return { fit: 'poor', matchedSkills, gaps: [...gaps, 'no direct skill overlap'] };
 }
 
@@ -535,44 +597,57 @@ function handleRoleFit(knowledge, question, role) {
   const title = identity?.title || 'junior software engineer';
   const roleAnalysis = analyzeRoleFit(role, knowledge);
   const lower = question.toLowerCase();
-  
-  const isPitch = /how should.*recruiter pitch|how do you pitch|pitch him/.test(lower);
-  const isVerify = /what should.*verify|verify on a call|check on a call|what to verify/.test(lower);
-  const isMissing = /what would be missing|what is missing|missing for|gaps|not a fit for|bad fit/.test(lower);
-  const isFit = /is.*a fit|would.*fit|should.*fit|fit for|good fit/.test(lower);
-  
-  const fitStatement = roleAnalysis.fit === 'good' 
-    ? `likely a good fit` 
-    : roleAnalysis.fit === 'partial' 
-      ? `a partial fit` 
+
+  const isPitch = /how should.*recruiter pitch|how do you pitch|pitch him|sell him/.test(lower);
+  const isVerify = /what should.*verify|verify on a call|check on a call|what to verify|what.*confirm/.test(lower);
+  const isMissing = /what would be missing|what is missing|missing for|gaps for|not a fit for|bad fit|weakness|where.*fall short/.test(lower);
+
+  const fitStatement = roleAnalysis.fit === 'good'
+    ? `likely a good fit`
+    : roleAnalysis.fit === 'partial'
+      ? `a partial fit`
       : `not a strong fit`;
-  
+
+  const skillsPhrase = roleAnalysis.matchedSkills.length > 0
+    ? sentenceList(roleAnalysis.matchedSkills.slice(0, 3), 3)
+    : 'no direct matching skills';
+  const gapsPhrase = roleAnalysis.gaps.length > 0
+    ? sentenceList(roleAnalysis.gaps.slice(0, 2), 2)
+    : '';
+
   if (isPitch) {
     if (roleAnalysis.matchedSkills.length > 0) {
-      return { reply: `${name} is ${fitStatement} for ${role}. Pitch: ${title} with ${sentenceList(roleAnalysis.matchedSkills, 4)}. ${roleAnalysis.gaps.length > 0 ? 'Be honest about gaps: ' + sentenceList(roleAnalysis.gaps, 2) + '.' : ''}` };
+      return { reply: `${name} is ${fitStatement} for ${role}. Pitch him as a ${title} with ${skillsPhrase}.${gapsPhrase ? ' Be honest about gaps: ' + gapsPhrase + '.' : ''}` };
     }
     return { reply: `${name} is not a strong fit for ${role}. He is a ${title} with web, AWS, and support skills. If the role is junior, check whether training is provided.` };
   }
-  
+
   if (isVerify) {
     if (roleAnalysis.gaps.length > 0) {
-      return { reply: `For ${role}, verify: ${sentenceList(roleAnalysis.gaps, 3)}. Also confirm his hands-on experience with ${roleAnalysis.matchedSkills.length > 0 ? sentenceList(roleAnalysis.matchedSkills, 3) : 'his listed projects'}.` };
+      return { reply: `For ${role}, verify: ${gapsPhrase}. Also confirm his hands-on experience with ${roleAnalysis.matchedSkills.length > 0 ? skillsPhrase : 'his listed projects'}.` };
     }
-    return { reply: `For ${role}, verify his hands-on experience with ${roleAnalysis.matchedSkills.length > 0 ? sentenceList(roleAnalysis.matchedSkills, 3) : 'his listed projects'} and ask about production work.` };
+    return { reply: `For ${role}, verify his hands-on experience with ${roleAnalysis.matchedSkills.length > 0 ? skillsPhrase : 'his listed projects'} and ask about production work.` };
   }
-  
+
   if (isMissing) {
     if (roleAnalysis.gaps.length > 0) {
-      return { reply: `For ${role}, he would be missing ${sentenceList(roleAnalysis.gaps, 3)}.` };
+      return { reply: `For ${role}, he would be missing ${gapsPhrase}.` };
     }
     return { reply: `He does not have major listed gaps for ${role}, but he is still junior. Verify depth on a call.` };
   }
-  
-  // Default is-fit question
-  if (roleAnalysis.matchedSkills.length > 0) {
-    return { reply: `${name} is ${fitStatement} for ${role} based on ${sentenceList(roleAnalysis.matchedSkills, 3)}. ${roleAnalysis.gaps.length > 0 ? 'Gaps: ' + sentenceList(roleAnalysis.gaps, 2) + '.' : 'He is junior, so verify depth on a call.'}` };
+
+  // Default is-fit / "what makes him a good candidate" question
+  if (roleAnalysis.fit === 'good') {
+    return { reply: `${name} is ${fitStatement} for ${role} based on ${skillsPhrase}. He is still junior, so verify depth on a call.` };
   }
-  return { reply: `${name} is not a strong fit for ${role} based on current data. His background is ${title}-level with web, AWS, and support skills.` };
+
+  if (roleAnalysis.fit === 'partial') {
+    return { reply: `${name} is ${fitStatement} for ${role}. He has ${skillsPhrase}, but the data does not show ${gapsPhrase}. He is best suited for junior roles with mentorship.` };
+  }
+
+  // poor fit
+  const targetRoles = (knowledge?.goals?.targetRoles || ['junior software engineering', 'cloud support', 'IT support']).slice(0, 3);
+  return { reply: `${name} is ${fitStatement} for ${role}. The data shows ${skillsPhrase === 'no direct matching skills' ? 'no direct matching skills' : skillsPhrase + ' but not the core skills typically expected'}. He is a better match for ${sentenceList(targetRoles, 3)} roles.` };
 }
 
 function buildPrompt(knowledge, question, history, provider) {
@@ -757,9 +832,9 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     if (faqHit) return { reply: faqHit.answer };
   }
   
-  // Role-fit questions
+  // Role-fit / career-fit questions (broadened to catch natural recruiter phrasing)
   const role = findRoleInQuestion(question);
-  if (role && /(fit|missing|gaps|pitch|verify|should.*consider|bad fit|good fit|role for|job for|would he fit|would bradley fit)/.test(lowerQuestion)) {
+  if (role && /(fit|candidate|what makes|suitable|right for|good for|apply for|what kind of|how about|role for|job for|would.*fit|should.*fit|bad fit|good fit|strong fit|is he a|is bradley a|good match|strong match|a match for|perfect for|missing for|gaps for|missing to be|should he apply|jobs should|work as a|work as an)/.test(lowerQuestion)) {
     return handleRoleFit(knowledge, question, role);
   }
   
@@ -794,11 +869,16 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name}'s certifications are listed in his full profile.` };
   }
   
-  // Dynamic roles from knowledge base
-  if (/role|target|job|looking|work.*looking/.test(lowerQuestion)) {
+  // Dynamic roles / job-suggestions from knowledge base
+  if (/role|target|job|looking|work.*looking|what kind of job|what jobs|should.*apply|where.*fit/.test(lowerQuestion)) {
     const roles = goals?.targetRoles || [];
     if (roles.length > 0) {
+      const skillsList = [
+        ...(skills?.languagesAndFrameworks || []).slice(0, 4),
+        ...(skills?.cloudAndInfrastructure || []).slice(0, 3)
+      ].join(', ');
       let reply = `${name} is targeting ${sentenceList(roles.slice(0, 4), 4)} roles`;
+      if (skillsList) reply += `, which lines up with ${skillsList}`;
       if (goals?.relocation) reply += `, and he is ${goals.relocation.toLowerCase().replace(/\.$/, '')}`;
       return { reply: reply + '.' };
     }
