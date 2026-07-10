@@ -125,53 +125,117 @@ function buildPrompt(knowledge, question) {
 }
 
 function buildGroundedFallbackPayload(knowledge, question) {
-  const { identity, summary, goals, skills, projects, experience } = knowledge || {};
+  const { identity, summary, goals, skills, projects, experience, education, certifications } = knowledge || {};
   const name = identity?.name || 'Bradley Matera';
   const title = identity?.title || 'junior software engineer';
   const location = identity?.location || 'Davis, Illinois';
   
   const lowerQuestion = String(question || '').toLowerCase();
   
+  // Dynamic contact info from knowledge base
   if (/contact|email|phone|reach|linkedin|github/.test(lowerQuestion)) {
-    return { reply: `You can reach ${name} at bradmatera@gmail.com or (360) 970-0581. His portfolio is https://bradleymatera.dev/, LinkedIn is https://www.linkedin.com/in/bradmatera, and GitHub is https://github.com/BradleyMatera.` };
+    const contact = [];
+    if (identity?.email) contact.push(`email at ${identity.email}`);
+    if (identity?.phone) contact.push(`phone ${identity.phone}`);
+    if (identity?.portfolioUrl) contact.push(`portfolio at ${identity.portfolioUrl}`);
+    if (identity?.linkedInUrl) contact.push(`LinkedIn at ${identity.linkedInUrl}`);
+    if (identity?.gitHubUrl) contact.push(`GitHub at ${identity.gitHubUrl}`);
+    return { reply: `You can reach ${name} by ${contact.join(', ')}.` };
   }
   
+  // Dynamic education from knowledge base
   if (/education|degree|school|full sail|gpa/.test(lowerQuestion)) {
-    const edu = knowledge?.education;
-    return { reply: `${name} holds a B.S. in Web Development from Full Sail University (GPA 3.64).` };
+    if (education?.degree && education?.school) {
+      let edu = `${name} holds a ${education.degree} from ${education.school}`;
+      if (education?.gpa) edu += ` (GPA ${education.gpa})`;
+      if (education?.graduated) edu += `, graduated ${education.graduated}`;
+      return { reply: edu + '.' };
+    }
+    return { reply: `${name}'s education details are available in his full profile.` };
   }
   
+  // Dynamic certifications from knowledge base
   if (/cert|certificate|certification/.test(lowerQuestion)) {
-    const certs = knowledge?.certifications?.list || [];
-    return { reply: `${name} is certified as an AWS Solutions Architect - Associate and AWS Certified AI Practitioner.` };
+    const certs = Array.isArray(certifications) ? certifications : [];
+    if (certs.length > 0) {
+      return { reply: `${name} holds ${sentenceList(certs.map(c => c.name || c), 3)}.` };
+    }
+    return { reply: `${name}'s certifications are listed in his full profile.` };
   }
   
+  // Dynamic roles from knowledge base
   if (/role|target|job|looking/.test(lowerQuestion)) {
-    const roles = goals?.targetRoles || ['junior software engineer', 'frontend developer', 'cloud support engineer'];
-    return { reply: `${name} is targeting ${roles.slice(0, 3).join(', ')} roles, open to relocation.` };
+    const roles = goals?.targetRoles || [];
+    if (roles.length > 0) {
+      const reply = `${name} is targeting ${sentenceList(roles.slice(0, 4), 4)} roles`;
+      if (goals?.relocation) reply += `, ${goals.relocation.toLowerCase()}`;
+      return { reply: reply + '.' };
+    }
+    return { reply: `${name} is looking for junior software engineering roles.` };
   }
   
+  // Dynamic skills from knowledge base
   if (/skill|stack|technical|background/.test(lowerQuestion)) {
-    const techSkills = skills?.languagesAndFrameworks || [];
-    return { reply: `${name}'s strongest technical background is ${sentenceList(techSkills, 6)}.` };
+    const skillGroups = [];
+    if (skills?.languagesAndFrameworks?.length) {
+      skillGroups.push(`${skills.languagesAndFrameworks.slice(0, 6).join(', ')}`);
+    }
+    if (skills?.cloudAndInfrastructure?.length) {
+      skillGroups.push(`cloud: ${skills.cloudAndInfrastructure.slice(0, 4).join(', ')}`);
+    }
+    if (skills?.toolsAndWorkflows?.length) {
+      skillGroups.push(`tools: ${skills.toolsAndWorkflows.slice(0, 4).join(', ')}`);
+    }
+    if (skillGroups.length > 0) {
+      return { reply: `${name}'s technical background includes ${skillGroups.join('; ')}.` };
+    }
+    return { reply: `${name}'s skills are detailed in his full profile.` };
   }
   
+  // Dynamic projects from knowledge base
   if (/project|portfolio|work/.test(lowerQuestion)) {
-    const projectList = projects?.slice(0, 4).map(p => p.name) || ['ProjectHub', 'AWS serverless workflow', 'CIRIS Ethical AI contributions'];
-    return { reply: `${name}'s notable projects include ${sentenceList(projectList, 4)}. You can see his full portfolio at https://bradleymatera.dev/.` };
+    const projectList = projects?.slice(0, 5) || [];
+    if (projectList.length > 0) {
+      const projectNames = projectList.map(p => p.name).join(', ');
+      return { reply: `${name}'s notable projects include ${projectNames}. You can see his full portfolio at ${identity?.portfolioUrl || 'https://bradleymatera.dev/'}.` };
+    }
+    return { reply: `${name}'s projects are showcased in his portfolio.` };
   }
   
+  // Dynamic AWS/cloud from knowledge base
   if (/aws|cloud|lambda|dynamo|s3|amplify/.test(lowerQuestion)) {
-    const cloudSkills = skills?.cloudAndInfrastructure || ['AWS Lambda', 'Amazon DynamoDB', 'Amazon S3', 'AWS Amplify'];
-    return { reply: `${name} has AWS training and project experience with ${sentenceList(cloudSkills, 4)}. He completed an AWS Cloud Support Engineer internship with guided troubleshooting labs.` };
+    const cloudSkills = skills?.cloudAndInfrastructure || [];
+    if (cloudSkills.length > 0) {
+      let reply = `${name} has AWS experience with ${sentenceList(cloudSkills, 5)}.`;
+      const awsExp = experience?.find(e => e.role?.toLowerCase().includes('aws') || e.company?.toLowerCase().includes('aws'));
+      if (awsExp) {
+        reply += ` He completed an ${awsExp.role} at ${awsExp.company}.`;
+      }
+      return { reply: reply };
+    }
+    return { reply: `${name}'s AWS experience is detailed in his profile.` };
   }
   
+  // Dynamic experience from knowledge base
   if (/experience|intern|work history|background/.test(lowerQuestion)) {
-    const exp = experience?.slice(0, 2).map(e => e.role) || ['Freelance junior frontend contributor at CIRIS Ethical AI', 'AWS Cloud Support Engineer internship'];
-    return { reply: `${name}'s recent experience includes ${sentenceList(exp, 2)}. He also has prior roles in case management, construction, and the U.S. Army.` };
+    const expList = experience?.slice(0, 3) || [];
+    if (expList.length > 0) {
+      const roles = expList.map(e => `${e.role}${e.company ? ` at ${e.company}` : ''}`).join(', ');
+      return { reply: `${name}'s recent experience includes ${roles}.` };
+    }
+    return { reply: `${name}'s work history is available in his full profile.` };
   }
   
-  return { reply: `${name} is a ${title} based in ${location}. ${summary?.whoIAm || 'He combines web development, AWS training, and practical project work.'}` };
+  // Dynamic summary from knowledge base
+  if (/summary|who is|about|tell me about/.test(lowerQuestion)) {
+    if (summary?.whoIAm) {
+      return { reply: `${name} is a ${title} based in ${location}. ${summary.whoIAm}` };
+    }
+    return { reply: `${name} is a ${title} based in ${location}.` };
+  }
+  
+  // Default to basic info
+  return { reply: `${name} is a ${title} based in ${location}. ${summary?.whoIAm || 'See his portfolio for more details.'}` };
 }
 
 function buildGroundedFallback(knowledge, question) {
