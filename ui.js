@@ -14,12 +14,13 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   const nameStorageKey = "projecthub-chat-user-name";
   const settingsStorageKey = "projecthub-chat-settings";
   const defaultSettings = {
-    memoryEnabled: true,
-    flavorEnabled: true,
     enterToSend: true,
-    compactMode: false,
-    personalizeReplies: true
+    compactMode: false
   };
+  const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+  const FLAVOR_ENABLED = true;
+  const MEMORY_ENABLED = true;
+  const PERSONALIZE_REPLIES = true;
 
   function createSessionId() {
     return `ph_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
@@ -527,12 +528,29 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       padding: 0 14px 12px;
       display: flex;
       gap: 7px;
-      overflow-x: auto;
-      scrollbar-width: none;
+      flex-wrap: wrap;
     }
 
-    .projecthub-suggestions::-webkit-scrollbar {
-      display: none;
+    @media (max-width: 640px) {
+      .suggestion-chip {
+        white-space: normal;
+        text-align: left;
+      }
+    }
+
+    @media (min-width: 641px) {
+      .projecthub-suggestions {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: thin;
+      }
+      .projecthub-suggestions::-webkit-scrollbar {
+        height: 6px;
+      }
+      .projecthub-suggestions::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.2);
+        border-radius: 3px;
+      }
     }
 
     .suggestion-chip,
@@ -758,16 +776,12 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       <div class="settings-head">
         <div>
           <div class="settings-title">Chat Settings</div>
-          <div class="settings-subtitle">Tune memory, personalization, and input behavior.</div>
+          <div class="settings-subtitle">Input behavior and session controls.</div>
         </div>
         <button class="projecthub-icon-button projecthub-settings-close" type="button" aria-label="Close settings" title="Close settings">×</button>
       </div>
       <div class="settings-grid">
-        <label class="setting-row"><span><strong>Session memory</strong><span>Use recent turns for coherent follow-ups.</span></span><input class="setting-toggle" type="checkbox" data-setting="memoryEnabled"></label>
-        <label class="setting-row"><span><strong>AI flavor labels</strong><span>Add guarded 3-5 word generated notes.</span></span><input class="setting-toggle" type="checkbox" data-setting="flavorEnabled"></label>
-        <label class="setting-row"><span><strong>Personal replies</strong><span>Use your name and varied response openings.</span></span><input class="setting-toggle" type="checkbox" data-setting="personalizeReplies"></label>
         <label class="setting-row"><span><strong>Enter to send</strong><span>Shift+Enter still adds a new line.</span></span><input class="setting-toggle" type="checkbox" data-setting="enterToSend"></label>
-        <label class="setting-row"><span><strong>Compact mode</strong><span>Fits tighter screens and repeated use.</span></span><input class="setting-toggle" type="checkbox" data-setting="compactMode"></label>
       </div>
       <div class="settings-actions">
         <button class="settings-action-button danger clear-memory-button" type="button">Clear memory</button>
@@ -808,7 +822,8 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     try {
       window.localStorage.setItem(settingsStorageKey, JSON.stringify(chatSettings));
     } catch (error) {}
-    chatDiv.classList.toggle("projecthub-compact", chatSettings.compactMode);
+    const compact = Boolean(chatSettings.compactMode) || isMobile;
+    chatDiv.classList.toggle("projecthub-compact", compact);
     chatDiv.querySelectorAll(".setting-toggle").forEach(toggle => {
       toggle.checked = Boolean(chatSettings[toggle.dataset.setting]);
     });
@@ -831,7 +846,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   }
 
   function conversationalLead(userQuery) {
-    if (!chatSettings.personalizeReplies) return "";
+    if (!PERSONALIZE_REPLIES) return "";
     const namePrefix = visitorName ? `${visitorName}, ` : "";
     const leads = visitorName ? [
       `${namePrefix}here’s the useful read:`,
@@ -1043,10 +1058,10 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     try {
       const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData, {
         sessionId,
-        context: chatSettings.memoryEnabled ? conversationContext : [],
+        context: MEMORY_ENABLED ? conversationContext : [],
         options: {
-          memoryEnabled: chatSettings.memoryEnabled,
-          flavorEnabled: chatSettings.flavorEnabled,
+          memoryEnabled: MEMORY_ENABLED,
+          flavorEnabled: FLAVOR_ENABLED,
           visitorName
         }
       });
@@ -1094,6 +1109,9 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   });
 
   saveSettings();
+  window.matchMedia('(max-width: 640px)').addEventListener('change', e => {
+    chatDiv.classList.toggle("projecthub-compact", e.matches || Boolean(chatSettings.compactMode));
+  });
   renderSuggestions();
   appendMessage("bot", "ProjectHub", visitorName
     ? `Welcome back, ${escapeHtml(visitorName)}. Ask about Bradley’s projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.`
