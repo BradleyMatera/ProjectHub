@@ -384,7 +384,7 @@ function detectRepair(question) {
   const q = String(question || '').toLowerCase().trim();
   return {
     shorter: /^no,? shorter|^shorter[.!?]?$|cut it in half|too long|^again[.!?]?$|faster please/.test(q),
-    moreHonest: /more honest|honest version|rough edges|less salesy|less pitchy|sounds fake|sounds like ai|make it (more )?normal|less formal|make it sound less ai|try again/.test(q),
+    moreHonest: /more honest|honest version|rough edges|less salesy|less pitchy|sounds fake|sounds like ai|make it (more )?normal|less formal|make it sound less ai|like a normal person|normal person|try again/.test(q),
     moreTechnical: /more technical|like a technical|technical interviewer/.test(q),
     hrFriendly: /like i am hr|hr friendly|like hr|non.?technical/.test(q),
     blunt: /be blunt|no bs|no bullshit|tell me straight|dont give me marketing|do not waste my time/.test(q),
@@ -1079,6 +1079,19 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name}'s skills are detailed in his full profile.` };
   }
   
+  // Specific project lookup by name
+  const lowerQuestionWords = lowerQuestion.split(/\s+/).filter(Boolean);
+  const matchedProject = (projects || []).find(p => {
+    const pName = p.name.toLowerCase();
+    return lowerQuestion.includes(pName) || pName.split(/\s+/).every(w => lowerQuestionWords.includes(w));
+  });
+  if (matchedProject) {
+    const tech = matchedProject.tech?.slice(0, 5).join(', ') || '';
+    const desc = matchedProject.description || matchedProject.desc || '';
+    const link = matchedProject.url || matchedProject.repo || identity?.portfolioUrl || 'https://bradleymatera.dev/';
+    return { reply: `${matchedProject.name}: ${desc}${tech ? ` Tech: ${tech}.` : ''} See it at ${link}.` };
+  }
+
   // Dynamic projects from knowledge base
   if (/project|portfolio|work|real projects|best project|shipped/.test(lowerQuestion)) {
     const projectList = projects?.slice(0, 5) || [];
@@ -1462,13 +1475,14 @@ function mustStayGrounded(question, history) {
   if (/(ignore|inject|system prompt|\.env|api key|password|address|salary|make up|pretend|fortune|claim|bypass|open port|port 11434|active security clearance|team of \d+|10\s*years|fortune 500|seasoned|full.?stack expert|10x|ninja|rockstar|wizard|guru|veteran|well.?versed|proven track record)/.test(q)) return true;
   if (/(pretend|make up|claim|say|tell|write)\b.*\b(google|senior|cto|10\s*years|masters?|kubernetes|led a team|production engineer|production experience|outages|clearance|payment systems|terraform|machine learning engineer)\b/.test(q)) return true;
   if (/\b(contact|email|phone|reach|github)\b|portfolio url|resume\?|links\?|\blinkedin\b(?!.*\b(style|summary|profile)\b)/.test(q)) return true;
+  if (/\bproject|portfolio\b|which project|what project|most relevant project|what is projecthub/.test(q)) return true;
   // Smoke tests / greetings have deterministic answers and should not burn provider quota/latency
   if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b|are you online|say hello|health status|what can you (help|do) with|what can this bot (help|do)|what model|what is this chatbot|does this use ollama|is this ai local|is my chat private|what data do you use|who made this|is this bradley'?s site|how is this chat free|how do you stay free|what powers you|what is your stack|daily cap|daily limit|rate limit|cooldown|how.*handle.*limit|run 24|24.?7|24x7|always available|what if.*provider|exhausted|out of quota/.test(q)) return true;
   // Interview questions and explicit tone-word bans get the deterministic reply so they are accurate
   if (/interview question|what.*ask him|what.*verify/.test(q)) return true;
   if (detectBannedWords(question).length > 0) return true;
   // Purely factual / sensitive lookups have direct grounded answers
-  if (/\b(gpa|salary|address|phone number|current address|home address|education|degree|school|full sail|army|military|veteran|production outage history|security clearance|private family|medical history|references|manager name|customer list|exact availability|preferred pay)\b|internship real/.test(q)) return true;
+  if (/\b(gpa|salary|address|phone number|current address|home address|education|degree|school|full sail|army|military|veteran|production outage history|security clearance|private family|medical history|references|manager name|customer list|exact availability|preferred pay)\b|internship real|intenship|internship\b/.test(q)) return true;
   const shape = detectShape(question);
   if (shape.json || shape.bullets || shape.table || shape.maxWords) return true;
   return false;
