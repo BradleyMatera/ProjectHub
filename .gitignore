@@ -3,3 +3,9 @@ node_modules/
 .env.*
 !.env.example
 .DS_Store
+aichat.md
+*.log
+.vscode/
+.netlify/
+build/
+dist/

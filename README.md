@@ -1,10 +1,10 @@
-# 💬 ProjectHub 🤖  
+# 💬 ProjectHub 🤖 — Jarvis  
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=000&style=for-the-badge)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)  
 [![AI Powered](https://img.shields.io/badge/AI-Powered-blueviolet?style=for-the-badge)]()  
 [![Hosted on GitHub Pages](https://img.shields.io/badge/Hosted-GitHub_Pages-181717?logo=github&logoColor=white&style=for-the-badge)](https://bradleymatera.github.io/ProjectHub/)  
 
-> **ProjectHub** is an **AI-powered chatbot widget** that can be embedded into any website.  
-> It showcases my **web development projects, CodePens, and skills** while engaging users with natural, conversational AI.  
+> **ProjectHub** is an **embeddable AI chat widget** powered by **Jarvis**, a local RAG recruiter assistant.  
+> It showcases my **projects, CodePens, skills, and background**, and answers recruiter questions from the real data it has access to.  
 
 ---
 
@@ -23,39 +23,37 @@ Users can interact with the bot to explore projects, learn about my background, 
 
 ## ✨ Features
 
-- 🤖 **AI-Powered Chat** → Handles recruiter-focused queries with grounded profile data, Gemini Flash backend, and anti-slop validation.  
-- 🧠 **Smart Routing** → Uses the Netlify Function `recruiter-chat` on `bradleymatera.dev` with session memory in Neon DB.  
+- 🤖 **Jarvis — AI Recruiter Assistant** → Answers recruiter-focused queries with real retrieval from a grounded knowledge base, then a local generative RAG layer on Ollama.  
+- 🔍 **Real RAG** → Searches across `recruiter-knowledge.json`, blog posts, resume guardrails, portfolio pages, and project data before generating a response.  
 - 🖼️ **Project Showcase** → Ask about projects (e.g., *"Tell me about Interactive Pokedex"*) or CodePens for details, stacks, and links.  
-- 👤 **Bio & Skills** → Provides summaries of my education, skills, and background as a Web Development student at Full Sail University.  
-- 🎨 **Natural Tone** → Responses feel conversational and approachable.  
-- 🛠️ **Custom Queries** → Can handle general questions, then steer back toward portfolio content.  
-- 🔗 **Direct Links** → Easily fetch my GitHub or LinkedIn profiles.  
+- 👤 **Bio & Skills** → Provides summaries of education, skills, and background from verified data.  
+- 🎨 **Natural Tone** → Calm, honest, concise, and never over-hyped.  
+- 🛠️ **Custom Queries** → Handles any recruiter, career, project, or fit question it has evidence for, and says when it does not.  
+- 🔗 **Direct Links** → Easily fetch GitHub or LinkedIn profiles.  
 
 ---
 
 ## 🧭 Chat Routing
 
-When hosted on `bradleymatera.dev`, the widget calls:
+The widget calls the recruiter chat API at:
 
 ```text
-/.netlify/functions/recruiter-chat
+https://projecthub-chat.bradleymatera.dev/api/chat
 ```
 
-This Netlify Function uses Gemini Flash with a grounded knowledge base, conversation context, and anti-slop validation. Session memory is persisted in Neon PostgreSQL.
-
-On GitHub Pages or local files, the widget falls back to the legacy GCP API at `https://projecthub-chat.bradleymatera.dev/api/chat`.
+The API runs on a GCP VM with local Ollama (`gemma3:1b` for fallback, `smollm2:135m` for generative RAG). It fetches `recruiter-knowledge.json` from GitHub, retrieves the most relevant chunks, streams a constrained rewrite, and validates it against the source data. If generation fails or the data is not available, it falls back to a grounded, deterministic answer.
 
 ---
 
 ## 💡 Example Queries
 
-Try asking the bot:
+Try asking Jarvis:
 
 - **Project Inquiry** → *"Tell me about Interactive Pokedex"*  
 - **CodePen Inquiry** → *"Tell me about React Calculator"*  
 - **Bio Request** → *"Summarize Bradley as a web dev"*  
-- **Full Summary** → *"Full summary"*  
-- **General Chat** → *"What’s the weather like?"*  
+- **Role Fit** → *"Would Bradley be a good fit for data science?"*  
+- **Career Advice** → *"What kind of jobs should he apply for?"*  
 
 ---
 
