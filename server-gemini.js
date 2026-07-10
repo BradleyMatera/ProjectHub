@@ -1454,7 +1454,8 @@ function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
   const repair = detectRepair(question);
   if (repair.shorter || repair.isBareFollowup || repair.blunt) return true;
-  if (/(ignore|inject|system prompt|\.env|api key|password|address|salary|make up|pretend|fortune|claim|bypass|open port|port 11434)/.test(q)) return true;
+  if (/(ignore|inject|system prompt|\.env|api key|password|address|salary|make up|pretend|fortune|claim|bypass|open port|port 11434|active security clearance|team of \d+|10\s*years|fortune 500)/.test(q)) return true;
+  if (/(pretend|make up|claim|say|tell|write)\b.*\b(google|senior|cto|10\s*years|masters?|kubernetes|led a team|production engineer|production experience|outages|clearance|payment systems|terraform|machine learning engineer)\b/.test(q)) return true;
   if (/\b(contact|email|phone|reach|github)\b|portfolio url|resume\?|links\?|\blinkedin\b(?!.*\b(style|summary|profile)\b)/.test(q)) return true;
   // Smoke tests / greetings have deterministic answers and should not burn provider quota/latency
   if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b|are you online|say hello|health status|what can you (help|do) with|what can this bot (help|do)|what model|what is this chatbot|does this use ollama|is this ai local|is my chat private|what data do you use|who made this|is this bradley'?s site|how is this chat free|how do you stay free|what powers you|what is your stack/.test(q)) return true;
