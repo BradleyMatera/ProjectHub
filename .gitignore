@@ -12,8 +12,6 @@ dist/
 .git.backup/
 
 # AI / agent / test artifacts
-*.pdf
-test_suite.txt
 *_test_suite*.txt
 run-tests.js
 
