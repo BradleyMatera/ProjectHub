@@ -834,7 +834,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   
   // Role-fit / career-fit questions (broadened to catch natural recruiter phrasing)
   const role = findRoleInQuestion(question);
-  if (role && /(fit|candidate|what makes|suitable|right for|good for|apply for|what kind of|how about|role for|job for|would.*fit|should.*fit|bad fit|good fit|strong fit|is he a|is bradley a|good match|strong match|a match for|perfect for|missing for|gaps for|missing to be|should he apply|jobs should|work as a|work as an)/.test(lowerQuestion)) {
+  if (role && /(fit|candidate|what makes|suitable|right for|good for|apply for|what kind of|how about|role for|job for|would.*fit|should.*fit|bad fit|good fit|strong fit|is he a|is bradley a|good match|strong match|a match for|perfect for|missing for|gaps for|missing to be|should he apply|jobs should|work as a|work as an|pitch|sell|why hire|why should.*hire)/.test(lowerQuestion)) {
     return handleRoleFit(knowledge, question, role);
   }
   
