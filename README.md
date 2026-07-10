@@ -106,6 +106,21 @@ The only optional cost is if the GCP VM somehow leaves Always Free (for example,
 
 ---
 
+## Is this really free? (Caveats)
+
+Yes, as long as each layer stays inside its free tier. Here are the honest limits:
+
+- **GitHub Pages** is free for public repos, but it has a soft bandwidth/repo-size limit (very unlikely to be hit by a chat widget).
+- **GCP Always Free** covers one `e2-micro` VM with 30 GB disk in `us-west1`, `us-central1`, or `us-east1`. If the VM is accidentally upgraded to a larger machine type, or runs in a different region, it can bill.
+- **Free LLM providers are not unlimited.** Groq, Cloudflare, GitHub Models, and Gemini all have free-tier caps, rate limits, and model availability that can change. The backend rotates through them and pauses any provider that hits a limit, but on a very busy day every provider could be exhausted.
+- **The final fallback is local Ollama** (`smollm2:135m`) on the VM. It has no API quota because it runs on the VM's CPU, but it is a small model and may be less natural than the cloud providers.
+- **The widget is designed to degrade, not break.** If all free providers are exhausted, you still get a fast, grounded answer from the knowledge base instead of a natural-language rewrite.
+- **API keys can change.** Free tiers and limits are controlled by each provider and can be reduced. The code does not depend on any single provider, so losing one just changes the fallback order.
+
+In short: there is no paid AI subscription required, and the architecture is built so that losing any one free service does not take Scout offline.
+
+---
+
 ## �💡 Example Queries
 
 Try asking Scout:

@@ -911,6 +911,9 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   if (/how is this chat free|how do you stay free|what powers you|what is your stack|free tier|free providers/.test(lowerQuestion)) {
     return { reply: `${agentName} runs entirely on free tiers: GitHub Pages hosts the widget, a GCP free-tier VM runs the Node API, open-ended questions route through free LLM providers (Groq, Cloudflare Workers AI, GitHub Models, Gemini), and local Ollama is the final fallback. No paid AI subscriptions are needed.` };
   }
+  if (/daily cap|daily limit|rate limit|cooldown|how.*handle.*limit|run 24|24.?7|24x7|always available|what if.*provider|exhausted|out of quota/.test(lowerQuestion)) {
+    return { reply: `${agentName} is designed to stay online 24/7 without paid AI. Each free provider has its own daily request cap and rate limit. When a provider hits its cap, returns a rate-limit error, or reports exhausted credits, ${agentName} pauses that provider (60 seconds for rate limits, 24 hours for credit exhaustion) and tries the next free provider in priority order. If every free provider is unavailable, the final fallback is local Ollama running directly on the GCP VM, which has no API quota. That layered fallback means the widget keeps working as long as the VM and GitHub Pages are up.` };
+  }
 
   // Repair: shorter / more honest / tone changes using previous answer
   if (repair.shorter && lastAssistant) {
@@ -1441,6 +1444,8 @@ async function generateWithNetwork(knowledge, question, history, groundedReply) 
       console.error(`Provider ${slug} failed: ${err.message.slice(0, 200)}`);
       if (/credits|depleted|spending limit|permission-denied|402|403/.test(msg)) {
         markProviderExhausted(slug, 24 * 60 * 60 * 1000);
+      } else if (/401|unauthorized|invalid.*key|invalid.*token|auth/.test(msg)) {
+        markProviderExhausted(slug, 24 * 60 * 60 * 1000);
       } else if (/429|rate limit|exceeded|quota|too many/.test(msg)) {
         markProviderExhausted(slug, 60 * 1000);
       }
@@ -1458,7 +1463,7 @@ function mustStayGrounded(question, history) {
   if (/(pretend|make up|claim|say|tell|write)\b.*\b(google|senior|cto|10\s*years|masters?|kubernetes|led a team|production engineer|production experience|outages|clearance|payment systems|terraform|machine learning engineer)\b/.test(q)) return true;
   if (/\b(contact|email|phone|reach|github)\b|portfolio url|resume\?|links\?|\blinkedin\b(?!.*\b(style|summary|profile)\b)/.test(q)) return true;
   // Smoke tests / greetings have deterministic answers and should not burn provider quota/latency
-  if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b|are you online|say hello|health status|what can you (help|do) with|what can this bot (help|do)|what model|what is this chatbot|does this use ollama|is this ai local|is my chat private|what data do you use|who made this|is this bradley'?s site|how is this chat free|how do you stay free|what powers you|what is your stack/.test(q)) return true;
+  if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b|are you online|say hello|health status|what can you (help|do) with|what can this bot (help|do)|what model|what is this chatbot|does this use ollama|is this ai local|is my chat private|what data do you use|who made this|is this bradley'?s site|how is this chat free|how do you stay free|what powers you|what is your stack|daily cap|daily limit|rate limit|cooldown|how.*handle.*limit|run 24|24.?7|24x7|always available|what if.*provider|exhausted|out of quota/.test(q)) return true;
   // Interview questions and explicit tone-word bans get the deterministic reply so they are accurate
   if (/interview question|what.*ask him|what.*verify/.test(q)) return true;
   if (detectBannedWords(question).length > 0) return true;

@@ -957,7 +957,8 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       "Reading Bradley's project data…",
       "Checking his AWS background…",
       "Writing an honest answer…",
-      "Double-checking the facts…"
+      "Double-checking the facts…",
+      "Picking the next available free provider…"
     ];
     let tipIndex = 0;
     const tipEl = row.querySelector(".thinking-tip");
@@ -1002,7 +1003,8 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       "What AWS experience does Bradley have?",
       "What concerns should a recruiter know?",
       "How can I contact Bradley?",
-      "How is this chat free?"
+      "How is this chat free?",
+      "How do daily caps and cooldowns work?"
     ];
     const allSuggestions = [...prioritySuggestions, ...suggestions.filter(item => !prioritySuggestions.includes(item))].slice(0, 12);
     suggestionBar.innerHTML = allSuggestions.map(item => `<button class="suggestion-chip" type="button" data-suggestion="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("");
@@ -1161,7 +1163,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     chatDiv.classList.toggle("projecthub-compact", e.matches || Boolean(chatSettings.compactMode));
   });
   renderSuggestions();
-  const freeNote = `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(57,217,138,0.12);border:1px solid rgba(57,217,138,0.28);color:#b8f5d3;font-size:12px;">🟢 I run entirely on free tiers — GitHub Pages, a GCP free-tier VM, free LLM providers, and local Ollama.</span>`;
+  const freeNote = `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(57,217,138,0.12);border:1px solid rgba(57,217,138,0.28);color:#b8f5d3;font-size:12px;">🟢 I run entirely on free tiers. If a provider hits its daily cap or rate limit, I automatically switch to another free provider or local Ollama on the GCP VM.</span>`;
   appendMessage("bot", "Scout", visitorName
     ? `Welcome back, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask about his projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.${freeNote}`
     : `Hi, I’m Scout, Bradley’s recruiter assistant. What should I call you for this session? A first name is enough, and then I’ll keep the conversation personal and coherent.${freeNote}`);

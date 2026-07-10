@@ -74,11 +74,26 @@ Open-ended questions are routed through a priority network of free providers:
 2. **Cloudflare Workers AI** (`@cf/meta/llama-3.2-3b-instruct`)
 3. **GitHub Models** (`openai/gpt-4o-mini`)
 4. **Google Gemini** (`gemini-2.0-flash`)
-5. **Local Ollama** (`smollm2:135m`) final fallback
+5. **xAI Grok** (`grok-4.3`) — optional, free credits can be exhausted quickly
+6. **Local Ollama** (`smollm2:135m`) final fallback
 
-The order is controlled by `PROVIDER_ORDER` in the VM `.env`. Each provider has a daily request limit and is paused for 60 seconds on rate-limit errors or for 24 hours on credit-exhaustion errors. The `/health` endpoint exposes current quota usage and cooldown status.
+The order is controlled by `PROVIDER_ORDER` in the VM `.env`.
+
+### Free-tier limit handling
+
+Each provider has its own free-tier rules, and those rules can change. The backend is designed to tolerate that:
+
+- **Daily caps** are tracked per provider in memory (`*_DAILY_LIMIT` env vars, or sensible defaults).
+- **Rate-limit errors (429 / "too many requests")** pause the provider for 60 seconds.
+- **Credit exhaustion / permission errors (402, 403, "credits", "spending limit")** pause the provider for 24 hours.
+- **Invalid keys / auth failures (401)** are treated as a long-term exhaustion so the router stops wasting time on a dead provider.
+- **Network timeouts** per provider are bounded by `GEN_TIMEOUT_MS` (default 8000 ms) so one slow provider does not blow the 15-second total budget.
+
+If provider A is paused or exhausted, the router immediately tries provider B. If every free provider is unavailable, it falls back to local Ollama, which has no API quota because it runs on the VM. If Ollama also fails, the deterministic grounded answer is returned. This layered fallback is what lets Scout stay online 24/7 without paid AI.
 
 For every provider call, the backend sends a RAG prompt built from `recruiter-knowledge.json` and recent session context. The returned text is validated against the source facts to block slop, false claims, overclaiming, and invented numbers. If no provider produces a valid reply, the deterministic grounded answer is returned.
+
+The `/health` endpoint exposes current provider order, enabled status, daily quota usage, and cooldown state.
 
 ## Environment Variables
 
