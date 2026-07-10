@@ -1320,5 +1320,5 @@ app.post('/api/chat', async (req, res) => {
 });
 
 app.listen(PORT, '127.0.0.1', () => {
-  console.log(`Recruiter chat API running on http://127.0.0.1:${PORT} with Gemini backend`);
+  console.log(`Recruiter chat API running on http://127.0.0.1:${PORT} with Ollama backend`);
 });
