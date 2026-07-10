@@ -12,6 +12,9 @@ dist/
 .git.backup/
 
 # AI / agent / test artifacts
+AGENTS.md
+CLAUDE.md
+.github/copilot-instructions.md
 *_test_suite*.txt
 run-tests.js
 
