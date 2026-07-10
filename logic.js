@@ -57,6 +57,16 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+        // Transform conversation context into backend history format
+        const history = (Array.isArray(chatSession.context) ? chatSession.context : []).reduce((acc, turn) => {
+          if (turn.role === 'user') {
+            acc.push({ user: turn.content, assistant: '' });
+          } else if (turn.role === 'bot' && acc.length > 0) {
+            acc[acc.length - 1].assistant = turn.content;
+          }
+          return acc;
+        }, []).slice(-3);
+
         const res = await fetch(CHAT_API_URL, {
           method: "POST",
           signal: controller.signal,
@@ -64,7 +74,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
           body: JSON.stringify({
             message: userQuery,
             sessionId: chatSession.sessionId,
-            context: Array.isArray(chatSession.context) ? chatSession.context.slice(-6) : [],
+            history,
             options: chatSession.options || {}
           })
         });
