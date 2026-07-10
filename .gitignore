@@ -9,3 +9,4 @@ aichat.md
 .netlify/
 build/
 dist/
+.git.backup/

@@ -27,7 +27,8 @@ const EXTRA_FILES = [
 
 const MAX_FILE_SIZE = 1024 * 1024; // 1 MB
 const IGNORE = [
-  'node_modules', '.git', 'public', 'out', 'cache', 'package-lock.json', 'package.json'
+  'node_modules', '.git', 'public', 'out', 'cache', 'package-lock.json', 'package.json',
+  'aichat.md', 'aichat', 'aichat.md', 'Screenshot', 'test_suite.txt', 'conversational_ai_test_suite_projecthub.pdf'
 ];
 
 function listFiles(dir, exts, files = []) {
