@@ -1620,7 +1620,9 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Dynamic roles / job-suggestions from knowledge base
-  if (/role|target|job|looking|work.*looking|what kind of job|what jobs|should.*apply|where.*fit/.test(lowerQuestion)) {
+  // Guard: don't treat weakness phrasing ('struggle with on the job') as a role query
+  if (!/struggle|weakness|weak at|not good at|gaps|limitations|what.*missing|red flag/.test(lowerQuestion) &&
+      /role|target|job|looking|work.*looking|what kind of job|what jobs|should.*apply|where.*fit/.test(lowerQuestion)) {
     const roles = goals?.targetRoles || [];
     if (roles.length > 0) {
       const examples = sentenceList(roles.slice(0, 6), 6);
