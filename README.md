@@ -1,154 +1,661 @@
-# 💬 ProjectHub 🤖 — Scout  
-[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=000&style=for-the-badge)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)  
-[![AI Powered](https://img.shields.io/badge/AI-Powered-blueviolet?style=for-the-badge)]()  
-[![Hosted on GitHub Pages](https://img.shields.io/badge/Hosted-GitHub_Pages-181717?logo=github&logoColor=white&style=for-the-badge)](https://bradleymatera.github.io/ProjectHub/)  
-[![Free Tier](https://img.shields.io/badge/Stack-100%25%20Free-34d399?style=for-the-badge)]()  
+# 💬 ProjectHub 🤖 — Scout
 
-> **ProjectHub** is an **embeddable AI chat widget** powered by **Scout**, a free multi-provider recruiter assistant.  
-> It showcases my **projects, CodePens, skills, and background**, and answers recruiter questions from the real data it has access to — running entirely on free tiers.  
+[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=000&style=for-the-badge)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![AI Powered](https://img.shields.io/badge/AI-Powered-blueviolet?style=for-the-badge)]()
+[![Hosted on GitHub Pages](https://img.shields.io/badge/Hosted-GitHub_Pages-181717?logo=github&logoColor=white&style=for-the-badge)](https://bradleymatera.github.io/ProjectHub/)
+[![Free Tier](https://img.shields.io/badge/Stack-100%25%20Free-34d399?style=for-the-badge)]()
+
+> **ProjectHub** is an **embeddable AI chat widget** powered by **Scout**, a free multi-provider recruiter assistant.
+> It showcases my **projects, CodePens, skills, and background**, and answers recruiter questions from verified data — running entirely on free tiers.
 
 ---
 
-## 🚀 Usage
+## Table of Contents
 
-Add the ProjectHub chat bot to your site by including this script in your HTML:
+1. [Quick Start](#-quick-start)
+2. [Architecture Overview](#-architecture-overview)
+3. [GitHub Knowledge Base Sync](#-github-knowledge-base-sync)
+4. [Learning System (Think Mode)](#-learning-system-think-mode)
+5. [Chat Pipeline (Step by Step)](#-chat-pipeline-step-by-step)
+6. [Free Multi-Provider LLM Network](#-free-multi-provider-llm-network)
+7. [Dashboard & Live Monitoring](#-dashboard--live-monitoring)
+8. [Scout Intelligence](#-scout-intelligence)
+9. [Analytics & Tracking](#-analytics--tracking)
+10. [API Reference](#-api-reference)
+11. [File Structure](#-file-structure)
+12. [How Is This Free?](#-how-is-this-free)
+13. [Deployment](#-deployment)
+14. [Example Queries](#-example-queries)
+15. [Links](#-links)
+
+---
+
+## 🚀 Quick Start
+
+Add the ProjectHub chat widget to any site with one script tag:
 
 ```html
 <script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js"></script>
 ```
 
-This automatically adds a floating **chat interface** in the bottom-right corner of your page.  
-Users can interact with the bot to explore projects, learn about my background, or even ask general questions.
+This injects a floating chat widget in the bottom-right corner. Visitors can ask about projects, skills, AWS experience, role fit, and more. Each session starts by asking the visitor's name.
+
+> If a consumer caches the script aggressively, append `?v=2` for cache-busting.
 
 ---
 
-## ✨ Features
+## 🏗 Architecture Overview
 
-- 🤖 **Scout — AI Recruiter Assistant** → Answers recruiter-focused queries with real retrieval from a grounded knowledge base, then routes open-ended questions through a free multi-provider LLM network.  
-- 🌐 **Free Multi-Provider Router** → Tries Groq, Cloudflare Workers AI, GitHub Models, and Google Gemini in priority order, with local Ollama as the final fallback.  
-- 🔍 **Real RAG** → Searches across `recruiter-knowledge.json`, blog posts, resume guardrails, portfolio pages, and project data before generating a response.  
-- 🖼️ **Project Showcase** → Ask about projects (e.g., *"Tell me about Interactive Pokedex"*) or CodePens for details, stacks, and links.  
-- 👤 **Bio & Skills** → Provides summaries of education, skills, and background from verified data.  
-- 🎨 **Natural Tone** → Calm, honest, concise, and never over-hyped.  
-- 🛠️ **Custom Queries** → Handles any recruiter, career, project, or fit question it has evidence for, and says when it does not.  
-- 🔗 **Direct Links** → Easily fetch GitHub or LinkedIn profiles.  
-- 💸 **100% Free Stack** → GitHub Pages frontend, GCP VM free tier backend, free LLM providers, and local Ollama fallback — no paid AI required.  
+ProjectHub has three layers, all running on free infrastructure:
 
----
-
-## 🧭 Chat Routing
-
-The widget calls the recruiter chat API at:
-
-```text
-https://projecthub-chat.bradleymatera.dev/api/chat
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  FRONTEND (GitHub Pages)                                        │
+│  index.html · ProjectHub.js · data.js · logic.js · ui.js       │
+│  Vanilla JS · No build step · No framework · No bundler         │
+└────────────────────────┬────────────────────────────────────────┘
+                         │ POST /api/chat
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  BACKEND (GCP e2-micro VM · Caddy HTTPS)                        │
+│  server-gemini.js · Node.js / Express                           │
+│                                                                 │
+│  1. Fetch knowledge JSON from GitHub (cached 5 min)             │
+│  2. Compute grounded deterministic answer                      │
+│  3. Check learned answers (from think mode)                    │
+│  4. Route to free LLM providers if question is open-ended      │
+│  5. Validate LLM reply against source facts                    │
+│  6. Shape reply (tone, length, format)                         │
+│  7. Return reply + pipeline + follow-ups                       │
+│                                                                 │
+│  Background: Think mode runs every 10 min                      │
+│  → Processes stashed questions through LLM providers           │
+│  → Validates and stores learned answers                        │
+│  → Pushes learned answers back to GitHub knowledge JSON        │
+└────────────────────────┬────────────────────────────────────────┘
+                         │ fetch / push
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  GITHUB REPO (BradleyMatera/ProjectHub)                         │
+│  data/recruiter-knowledge.json ← canonical knowledge base       │
+│                                                                 │
+│  FETCH: Server pulls this JSON every 5 min (cache)              │
+│  PUSH:  Think mode writes learned answers back to this file     │
+│         via GitHub Contents API (PUT request with SHA)          │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-The API runs on a GCP VM free tier. It fetches `recruiter-knowledge.json` from GitHub, caches it, and always computes a grounded, deterministic answer first. Open-ended questions are sent through a priority network of free providers — Groq, Cloudflare Workers AI, GitHub Models, Google Gemini — and fall back to local Ollama (`smollm2:135m`) if needed. Every generative reply is validated against the source data. If no provider succeeds, the grounded answer is returned.
+### Key design principles
+
+- **Grounded-first**: Every question gets a deterministic answer computed from the knowledge JSON. LLM providers only enhance open-ended questions — they never replace the grounded answer.
+- **Validate everything**: Every LLM reply is validated against the source facts. If it fails validation, the grounded answer is returned instead.
+- **Degrade, don't break**: If all LLM providers are exhausted, you still get a fast, correct grounded answer.
+- **Learn and improve**: Questions Scout can't answer well are stashed, processed by think mode, and the learned answers are pushed back to the knowledge JSON on GitHub.
 
 ---
 
-## � How is this free?
+## 🔄 GitHub Knowledge Base Sync
 
-ProjectHub is intentionally built to run on **zero recurring AI spend** and only free-tier infrastructure. Here is the exact breakdown:
+This is the **bidirectional sync** between the GCP VM server and the GitHub repo. It is **not** a one-way pull — the server both reads from and writes to the knowledge JSON on GitHub.
+
+### Direction 1: Server FETCHES from GitHub (read)
+
+```
+Server → fetch(KNOWLEDGE_URL) → raw.githubusercontent.com → data/recruiter-knowledge.json
+```
+
+- **URL**: `https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter-knowledge.json`
+- **Cache**: 5 minutes in memory (`KNOWLEDGE_CACHE_MS = 5 * 60 * 1000`)
+- **Fallback**: If the fetch fails, the server uses the last cached copy
+- **Purpose**: This is the canonical source of truth for all of Scout's knowledge — identity, skills, projects, experience, education, certifications, target roles, rules, FAQ, and learned answers
+
+The knowledge JSON contains:
+- `agent` — Scout's name and persona
+- `identity` — Bradley's name, title, location, contact info, short pitch
+- `summary` — Who I am, what I do, what I'm looking for, core strengths
+- `skills` — Languages, frameworks, cloud, tools
+- `projects` — Project array with names, descriptions, tech stacks, links
+- `experience` — Work history array
+- `education` — Degree, school, GPA, graduation date
+- `certifications` — AWS certs, AI Practitioner, etc.
+- `goals` — Target roles
+- `rules` — What Scout must not do (no hallucination, no overselling)
+- `learnedAnswers` — Array of Q&A pairs learned by think mode and pushed back to this file
+
+### Direction 2: Server PUSHES to GitHub (write)
+
+```
+Server → GitHub Contents API (PUT) → data/recruiter-knowledge.json
+```
+
+- **API**: `https://api.github.com/repos/BradleyMatera/ProjectHub/contents/data/recruiter-knowledge.json`
+- **Auth**: `GITHUB_TOKEN` environment variable on the VM
+- **Method**: `PUT` with the file's current SHA (to avoid conflicts)
+- **Trigger**: Think mode pushes after successfully learning new answers
+- **What gets pushed**: New `learnedAnswers` entries are appended to the existing JSON
+
+#### Push flow (step by step)
+
+1. Think mode processes stashed questions through LLM providers
+2. For each successfully learned answer, it stores it in `learned.json` on the VM
+3. After the batch, `pushLearnedToGitHub()` is called:
+   - **GET** the current file from GitHub API → retrieves SHA + content
+   - Parse the existing JSON, add new answers to `learnedAnswers[]` (dedup by question)
+   - **PUT** the updated JSON back to GitHub with the SHA (atomic update)
+   - Commit message: `"Scout learned N new answer(s) via think mode"`
+4. If push succeeds, the local `learned.json` queue is cleared
+5. The knowledge cache is force-refreshed (`knowledgeCacheAt = 0`) so the next request picks up the new answers
+6. If push fails (no token, API error, conflict), learned answers stay in `learned.json` and will be retried next think cycle
+
+#### What this means
+
+- **The knowledge JSON on GitHub is the single source of truth.**
+- The server reads it, caches it, and writes learned answers back to it.
+- Anyone who edits `data/recruiter-knowledge.json` on GitHub changes what Scout knows — the server picks up changes within 5 minutes.
+- Think mode's learned answers become permanent — they survive server restarts because they're in the repo.
+- The `learnedAnswers` array in the JSON grows over time as Scout learns more.
+
+### Why not a database?
+
+- The knowledge base is small (one JSON file, ~5KB)
+- GitHub provides free hosting, versioning, and an API for reading/writing
+- No database hosting cost, no connection management, no schema migrations
+- Changes are tracked in git history — you can see exactly when Scout learned something
+- The GitHub Contents API handles concurrent access via SHA-based conflict detection
+
+---
+
+## 🧠 Learning System (Think Mode)
+
+Scout has a self-improvement loop called **think mode** that runs automatically every 10 minutes on the VM.
+
+### How it works
+
+```
+Recruiter asks question
+        │
+        ▼
+Scout gives weak answer? ──yes──→ Stash question in learned.json
+        │ no                              │
+        ▼                                 ▼
+Return good answer              Think mode runs (every 10 min)
+                                        │
+                                        ▼
+                                Process up to 5 stashed questions
+                                        │
+                                        ▼
+                                Try ALL LLM providers (not just first)
+                                Pick the best (longest valid) answer
+                                        │
+                                        ▼
+                                Validate against source facts
+                                        │
+                               ┌────────┴────────┐
+                               │ pass             │ fail
+                               ▼                  ▼
+                          Store as learned    Re-stash for retry
+                          Push to GitHub
+                          Clear local queue
+                          Force knowledge refresh
+```
+
+### What makes a "weak answer"?
+
+A reply is stashed for learning if:
+- It came from a grounded handler but the question was open-ended (not in `mustStayGrounded`)
+- The LLM network failed and the grounded fallback was used
+- The answer is too short or generic
+
+### Think mode quality (Phase E improvements)
+
+- **Multi-provider best-answer**: Instead of taking the first valid LLM reply, think mode now tries ALL providers and picks the longest valid answer (more complete = better)
+- **Full prompt validation**: Answers are validated against the full RAG prompt text, not just the raw JSON — this allows paraphrasing while still checking facts
+- **Slop removal**: Each candidate answer is cleaned through `removeSlop()` which strips corporate buzzwords, AI preambles, and disallowed phrases
+
+### Files involved
+
+| File | Location | Purpose |
+|------|----------|---------|
+| `learned.json` | VM filesystem (`/opt/recruiter-chat-api/learned.json`) | Runtime storage for stashed questions and learned answers pending push |
+| `data/recruiter-knowledge.json` | GitHub repo | Canonical knowledge base; `learnedAnswers` array is appended to by think mode |
+| `stats.json` | VM filesystem | Persistent analytics (requests, topics, referrers, hourly trends, provider health) |
+
+### Manual trigger
+
+```
+POST https://projecthub-chat.bradleymatera.dev/api/think
+```
+
+This triggers think mode immediately instead of waiting for the 10-minute interval.
+
+---
+
+## 🧭 Chat Pipeline (Step by Step)
+
+Every chat request goes through a deterministic pipeline. The `pipeline` field in the API response shows exactly which steps were taken:
+
+```
+1. Cache check
+   ├── Cache hit → return cached reply (pipeline: ["cache-hit"])
+   └── Cache miss → continue
+
+2. Knowledge load
+   ├── Fetch from GitHub (or use 5-min cache)
+   └── If unavailable → grounded fallback (pipeline: ["knowledge-unavailable"])
+
+3. Learned answer check
+   ├── Hit → return learned answer (pipeline: ["learned-check:hit"])
+   └── Miss → continue
+
+4. Grounded answer computation
+   └── Always computed — deterministic reply from knowledge JSON
+
+5. mustStayGrounded check
+   ├── true → use grounded answer (saves LLM quota)
+   └── false → try LLM network
+
+6. LLM network (if needed)
+   ├── Try providers in order: groq → cloudflare → github → gemini → grok → ollama
+   ├── First valid reply wins → use it (pipeline: ["network:groq:success"])
+   └── All fail → use grounded answer (pipeline: ["network:all-failed"])
+
+7. Reply shaping
+   └── Apply tone, length, format rules (pipeline: ["shaped"])
+
+8. Frustration detection
+   └── If user seems frustrated → strip preambles, be ultra-direct
+
+9. Follow-up generation
+   └── Generate 2 contextual follow-up suggestions based on topic
+
+10. Weak answer check
+    └── If answer is weak → stash for think mode learning
+
+11. Return response
+    └── { reply, provider, model, pipeline, followUps, grounded, fallback }
+```
+
+### Example pipeline values
+
+- `["cache-hit"]` — served from response cache
+- `["cache-miss", "knowledge-loaded", "learned-check:miss", "mustStayGrounded:true", "shaped"]` — grounded answer, no LLM needed
+- `["cache-miss", "knowledge-loaded", "learned-check:miss", "mustStayGrounded:false", "network:groq:success", "shaped"]` — LLM via Groq
+- `["cache-miss", "knowledge-loaded", "learned-check:hit"]` — answered from learned answers
+
+---
+
+## 🌐 Free Multi-Provider LLM Network
+
+Scout never relies on a single paid API. It rotates through free providers:
+
+| Provider | Type | Model | Daily Limit | Cooldown on failure |
+|----------|------|-------|-------------|---------------------|
+| **Groq** | OpenAI-compatible | `llama-3.1-8b-instant` | 1000 | 60s (rate limit), 24h (credits) |
+| **Cloudflare Workers AI** | Cloudflare | `@cf/meta/llama-3.2-3b-instruct` | 300 | 60s (rate limit), 24h (credits) |
+| **GitHub Models** | OpenAI-compatible | `openai/gpt-4o-mini` | 150 | 60s (rate limit), 24h (credits) |
+| **Google Gemini** | Gemini | `gemini-2.0-flash` | 1500 | 60s (rate limit), 24h (credits) |
+| **xAI Grok** | OpenAI-compatible | `grok-4.3` | 1000 | 60s (rate limit), 24h (credits) |
+| **Local Ollama** | Ollama | `smollm2:135m` | ∞ | N/A (runs on VM CPU) |
+
+### Provider order
+
+Configurable via `PROVIDER_ORDER` env var. Default: `groq,cloudflare,github,gemini,grok,ollama`
+
+### Provider health tracking
+
+The server tracks success/failure/avg latency per provider in `stats.json` and exposes it on the dashboard:
+
+- **Success rate** — percentage of successful responses
+- **Average latency** — mean response time in ms
+- **Failure count** — total failures (rate limits, timeouts, invalid output)
+
+### Validation
+
+Every LLM reply is validated against the source facts:
+1. **Slop removal** — strips corporate buzzwords, AI preambles
+2. **Length check** — minimum 15 characters
+3. **Fact validation** — reply must be grounded in the source text (no hallucination)
+4. **OUT_OF_SCOPE check** — rejects replies that say the question is out of scope
+
+If validation fails, the next provider is tried. If all fail, the grounded answer is returned.
+
+---
+
+## 📊 Dashboard & Live Monitoring
+
+The dashboard at [bradleymatera.github.io/ProjectHub](https://bradleymatera.github.io/ProjectHub/) shows real-time stats from the running backend. It refreshes every 5 seconds.
+
+### Dashboard sections
+
+| Section | What it shows |
+|---------|---------------|
+| **API status** | Online/offline, uptime, requests this restart, all-time requests |
+| **Answer breakdown** | Grounded vs LLM vs cached vs learned counts |
+| **Last provider** | Which provider answered the most recent request |
+| **Provider table** | Per-provider status, used today, daily limit, all-time usage |
+| **Live activity feed** | Real-time stream of requests with provider, latency, topic, and full pipeline path |
+| **Last request pipeline** | Visual breakdown of the decision path for the most recent request |
+| **Where visitors come from** | Referrer domain breakdown (which sites embed the widget) |
+| **What recruiters ask about** | Topic analytics — most asked topics with bar charts |
+| **Request trend (24h)** | Stacked bar chart showing requests per hour, split by grounded/LLM/cached |
+| **Knowledge coverage gaps** | Stashed questions and "other" topic questions that lack dedicated handlers |
+| **Provider health history** | Success rate, avg latency, and failure count per provider |
+| **Recent sessions** | Active chat sessions with visitor intent, turn count, topics, duration |
+| **Learning system** | Stashed count, learned count, think mode status, GitHub sync status |
+| **Recent requests** | Last 40 requests with provider, time, latency, topic, referrer |
+
+### Visitor intent classification
+
+Every visitor is classified based on their question patterns:
+
+| Intent | Trigger | Color on dashboard |
+|--------|---------|-------------------|
+| `recruiter` | Asks about role fit, experience, skills, gaps | Green |
+| `casual` | "Hi", "what is this", first message | Blue |
+| `bot` | Very short generic queries (test, ping) | Red |
+| `engaged` | Has 2+ turns of history | Yellow |
+| `visitor` | Default | Purple |
+
+---
+
+## 🧠 Scout Intelligence
+
+### Conversation memory
+
+- **5 turns** of history sent to the server (increased from 3)
+- **10 turns** kept in the frontend conversation context (increased from 8)
+- **Conversation summary** — after 3+ turns, the LLM prompt includes a summary of topics already covered to avoid repetition
+
+### Follow-up suggestions
+
+Every response includes 0-2 contextual follow-up questions based on the topic:
+
+| Topic | Example follow-ups |
+|-------|-------------------|
+| AWS | "What about his AWS certifications?", "Did he do real production work at AWS?" |
+| Projects | "What tech stack does he use?", "Which project is most relevant?" |
+| Skills | "What are his strongest skills?", "How does he debug issues?" |
+| Role fit | "Is he a fit for a junior web role?", "What are his honest gaps?" |
+
+### Frustration detection
+
+When Scout detects frustration patterns ("just answer", "not making sense", "stop avoiding"), it:
+- Strips all preambles and apologies
+- Removes follow-up suggestions
+- Returns only the direct answer
+- Logs the frustration event in the pipeline
+
+### Grounded handlers
+
+Scout has 20+ deterministic handlers for common recruiter questions:
+
+- Projects, CodePens, portfolio
+- AWS experience, certifications, internship reality check
+- Skills, tech stack, strongest skills
+- Education, GPA, coursework
+- Experience, work history, CIRIS
+- Contact info, LinkedIn, email
+- Role fit (junior web, cloud support, DevOps, SRE, data science, QA)
+- Strengths, weaknesses, honest gaps
+- Interpersonal skills, customer service, teamwork
+- Army/military service
+- Salary (honest: not in the data)
+- Summary (short, full, web dev focused)
+- "What data do you have" — lists available topics
+- Confusion/clarification — apologetic redirect
+- Out-of-scope — honest refusal for non-recruiter questions
+- Prompt injection / security — refuses to reveal system info
+
+### `mustStayGrounded` function
+
+Certain question patterns are forced to use grounded answers (no LLM) to save quota and ensure accuracy:
+- Role fit questions ("is he a good fit for...")
+- Honest assessment questions ("is he worth interviewing")
+- AWS reality checks ("what happened there")
+- Interpersonal/social skills
+- Customer service
+- "What data do you have"
+- Confusion/clarification prompts
+
+---
+
+## 📈 Analytics & Tracking
+
+The server tracks detailed analytics in `stats.json` on the VM:
+
+| Metric | What it tracks |
+|--------|---------------|
+| `recentRequests` | Last 40 requests with question, provider, timestamp, referrer, topic, latency, pipeline |
+| `referrerBreakdown` | Count per referrer domain (which sites embed the widget) |
+| `topicBreakdown` | Daily counts per topic category (projects, aws, skills, etc.) |
+| `hourlyRequests` | Per-hour counts split by grounded/LLM/cached (last 48h) |
+| `providerHealth` | Per-provider success count, failure count, avg latency |
+| `lastPipeline` | Full decision path of the most recent request |
+| `recentSessions` | Active chat sessions with intent, turns, topics, duration |
+| `providerBreakdown` | All-time count per provider |
+| `deployCount` | Number of server deployments |
+| `totalRequestsAllTime` | Total requests across all restarts |
+
+### Topic classification
+
+Every incoming question is classified into one of 16 topics:
+
+`projects` · `aws` · `skills` · `experience` · `education` · `contact` · `role-fit` · `strengths` · `weaknesses` · `interpersonal` · `salary` · `army` · `work-style` · `summary` · `out-of-scope` · `other`
+
+The `other` topic is highlighted on the dashboard as a potential knowledge gap.
+
+---
+
+## 🔌 API Reference
+
+### `POST /api/chat`
+
+Send a chat message and receive Scout's reply.
+
+```json
+// Request
+{
+  "message": "What AWS experience does Bradley have?",
+  "sessionId": "ph_abc123_xyz",
+  "history": [
+    { "user": "Who is Bradley?", "assistant": "Bradley is a junior..." }
+  ]
+}
+
+// Response
+{
+  "reply": "Bradley completed an AWS Cloud Support Engineer internship...",
+  "provider": "grounded",
+  "model": "knowledge-json",
+  "grounded": true,
+  "fallback": false,
+  "pipeline": ["cache-miss", "knowledge-loaded", "learned-check:miss", "mustStayGrounded:true", "shaped"],
+  "followUps": ["What about his AWS certifications?", "Did he do real production work at AWS?"]
+}
+```
+
+### `GET /health`
+
+Returns full server status, provider table, recent requests, analytics, and learning system stats.
+
+### `GET /api/knowledge-health`
+
+Returns knowledge base coverage report:
+
+```json
+{
+  "ok": true,
+  "knowledgeVersion": "1.1.0",
+  "fieldCoverage": {
+    "total": 78,
+    "populated": 78,
+    "empty": [],
+    "coveragePercent": 100
+  },
+  "gapClusters": [
+    { "topic": "serverless+architecture", "count": 3, "examples": ["..."] }
+  ],
+  "hotTopics": [["aws", 27], ["role-fit", 23]],
+  "uncoveredTopics": [["other", 97]],
+  "learnedAnswers": [...],
+  "stashedCount": 13,
+  "learnedCount": 0
+}
+```
+
+### `POST /api/think`
+
+Manually trigger think mode to process stashed questions immediately.
+
+---
+
+## 📁 File Structure
+
+| File | Purpose |
+|------|---------|
+| `ProjectHub.js` | Entry point; concatenation of data.js + utils.js + logic.js + ui.js |
+| `data.js` | Canonical project/CodePen/suggestion data arrays |
+| `logic.js` | Query intent detection, AI backend calls, response generation |
+| `ui.js` | DOM creation, event handling, chat widget rendering |
+| `utils.js` | Shared helpers (GitHub API fetching) |
+| `server-gemini.js` | Backend server — chat API, LLM network, learning system, analytics |
+| `data/recruiter-knowledge.json` | Canonical knowledge base (read by server, written by think mode) |
+| `index.html` | Public GitHub Pages landing site + live dashboard |
+| `local-test.html` | Local test page for the widget |
+| `live-test.html` | Cache-busting test of the live GitHub Pages script |
+| `deploy-gcp.sh` | Deploy script — copies server-gemini.js to GCP VM and restarts service |
+| `docs/` | Detailed on-demand guides |
+| `AGENTS.md` | Canonical instruction source for AI coding agents |
+
+### Rebuilding ProjectHub.js
+
+After editing `data.js`, `utils.js`, `logic.js`, or `ui.js`:
+
+```bash
+cat data.js utils.js logic.js ui.js > ProjectHub.js
+```
+
+The inlined copies in `ProjectHub.js` are a deployment artifact and should stay in sync with the source files.
+
+---
+
+## 💸 How Is This Free?
+
+ProjectHub runs on **zero recurring AI spend** and only free-tier infrastructure.
 
 ### Frontend — free
 
-- **GitHub Pages** hosts `index.html`, `ProjectHub.js`, and all static assets at no cost because this is a public repository.
-- No build step, no bundler, no CI/CD service needed.
-- The widget is consumed via one `<script>` tag from the GitHub Pages URL.
+- **GitHub Pages** hosts all static assets free for public repos
+- No build step, no bundler, no CI/CD needed
+- Widget consumed via one `<script>` tag
 
 ### Backend — free
 
-- **Google Cloud `e2-micro` VM** in an Always Free region (`us-west1`, `us-central1`, or `us-east1`).
-  - 720 free instance hours per month is enough to run one VM continuously.
-  - 30 GB standard persistent disk is within the Always Free allowance.
-  - Same-region egress is free.
-- **Caddy** handles HTTPS with free **Let's Encrypt** certificates.
-- **No database** is required; session memory is the last 3 turns per tab, kept in the Node process.
-- **No paid Node dependencies**; `package.json` dependencies are empty.
+- **GCP e2-micro VM** in Always Free region (`us-central1`)
+  - 720 free instance hours/month = 24/7 operation
+  - 30 GB standard persistent disk included
+- **Caddy** handles HTTPS with free Let's Encrypt certificates
+- **No database** — knowledge JSON on GitHub, stats in local files
+- **No paid Node dependencies**
 
 ### AI / LLM — free
 
-Scout never relies on a single paid API. It uses a rotating network of free providers, plus a local fallback:
-
-| Provider | Cost | Model used |
-|----------|------|------------|
-| **Groq** | Free tier | `llama-3.1-8b-instant` |
-| **Cloudflare Workers AI** | Free tier | `@cf/meta/llama-3.2-3b-instruct` |
-| **GitHub Models** | Free tier with `models:read` token | `openai/gpt-4o-mini` |
-| **Google Gemini** | Free tier | `gemini-2.0-flash` |
-| **xAI Grok** | Optional free credits | `grok-4.3` |
-| **Local Ollama** | Free/open source, runs on the VM | `smollm2:135m` |
-
-The backend (`server-gemini.js`) always computes a deterministic grounded answer first. For open-ended questions it walks the providers in `PROVIDER_ORDER`. Each provider has:
-
-- a daily request cap
-- a 60-second cooldown on rate-limit errors
-- a 24-hour cooldown on credit-exhaustion errors
-
-If a provider fails or returns invalid output, the router tries the next one. If every provider is exhausted, **local Ollama** on the VM is the final fallback. Every generated reply is validated against the source facts, and if nothing passes, the grounded answer is returned.
-
-### Knowledge base — free
-
-- `data/recruiter-knowledge.json` is stored in this repo and fetched raw from GitHub.
-- The backend caches it in memory for 5 minutes, so repeated requests do not hammer GitHub.
-- Response caching avoids repeating identical questions within 10 minutes.
+- 6 free LLM providers with automatic failover
+- Local Ollama as unlimited final fallback
+- Daily quota guards per provider
+- Every reply validated against source facts
 
 ### What this avoids
 
-- No OpenAI, Anthropic, or other paid API subscriptions.
-- No database hosting (Neon, Firebase, etc.).
-- No paid Netlify Functions or AI add-ons.
-- No domain transfer or paid DNS changes.
+- No OpenAI, Anthropic, or paid API subscriptions
+- No database hosting
+- No paid serverless functions
+- No paid DNS or domain transfer
 
-The only optional cost is if the GCP VM somehow leaves Always Free (for example, by choosing a non-qualifying region or machine type). As configured, the monthly bill for the backend should be **$0**.
+### Honest caveats
 
----
-
-## Is this really free? (Caveats)
-
-Yes, as long as each layer stays inside its free tier. Here are the honest limits:
-
-- **GitHub Pages** is free for public repos, but it has a soft bandwidth/repo-size limit (very unlikely to be hit by a chat widget).
-- **GCP Always Free** covers one `e2-micro` VM with 30 GB disk in `us-west1`, `us-central1`, or `us-east1`. If the VM is accidentally upgraded to a larger machine type, or runs in a different region, it can bill.
-- **Free LLM providers are not unlimited.** Groq, Cloudflare, GitHub Models, and Gemini all have free-tier caps, rate limits, and model availability that can change. The backend rotates through them and pauses any provider that hits a limit, but on a very busy day every provider could be exhausted.
-- **The final fallback is local Ollama** (`smollm2:135m`) on the VM. It has no API quota because it runs on the VM's CPU, but it is a small model and may be less natural than the cloud providers.
-- **The widget is designed to degrade, not break.** If all free providers are exhausted, you still get a fast, grounded answer from the knowledge base instead of a natural-language rewrite.
-- **API keys can change.** Free tiers and limits are controlled by each provider and can be reduced. The code does not depend on any single provider, so losing one just changes the fallback order.
-
-In short: there is no paid AI subscription required, and the architecture is built so that losing any one free service does not take Scout offline.
+- Free LLM providers have caps that can change
+- On a very busy day, all providers could be exhausted — Scout degrades to grounded answers, not errors
+- Local Ollama (`smollm2:135m`) is a small model — less natural than cloud providers but always available
+- The widget is designed to degrade, not break
 
 ---
 
-## �💡 Example Queries
+## 🚢 Deployment
+
+### Frontend (GitHub Pages)
+
+1. Commit and push to `master`
+2. GitHub Pages rebuilds automatically from the default branch
+3. Live at `https://bradleymatera.github.io/ProjectHub/`
+
+### Backend (GCP VM)
+
+```bash
+bash deploy-gcp.sh
+```
+
+This script:
+1. Copies `server-gemini.js` to the GCP VM via `gcloud compute scp`
+2. Restarts the systemd service (`recruiter-chat-api`)
+3. Verifies the service is running
+4. No downtime — the swap is atomic
+
+### Environment variables on the VM
+
+The server reads API keys and config from `.env` on the VM:
+
+```
+GROQ_API_KEY=...
+CLOUDFLARE_ACCOUNT_ID=...
+CLOUDFLARE_API_TOKEN=...
+GITHUB_TOKEN=...          # Used for both GitHub Models LLM AND knowledge JSON push
+GEMINI_API_KEY=...
+XAI_API_KEY=...
+KNOWLEDGE_URL=https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter-knowledge.json
+PROVIDER_ORDER=groq,cloudflare,github,gemini,grok,ollama
+```
+
+> The `GITHUB_TOKEN` is dual-purpose: it authenticates to GitHub Models for LLM calls AND authorizes think mode to push learned answers back to the knowledge JSON via the GitHub Contents API.
+
+---
+
+## 💡 Example Queries
 
 Try asking Scout:
 
-- **Project Inquiry** → *"Tell me about Interactive Pokedex"*  
-- **CodePen Inquiry** → *"Tell me about React Calculator"*  
-- **Bio Request** → *"Summarize Bradley as a web dev"*  
-- **Role Fit** → *"Would Bradley be a good fit for data science?"*  
-- **Career Advice** → *"What kind of jobs should he apply for?"*  
+- **Project Inquiry** → *"Tell me about Interactive Pokedex"*
+- **AWS Experience** → *"What AWS experience does Bradley have?"*
+- **Role Fit** → *"Would Bradley be a good fit for a junior web role?"*
+- **Honest Assessment** → *"What are his honest gaps?"*
+- **Interpersonal** → *"How is Brad with people?"*
+- **Customer Service** → *"What about customer service experience?"*
+- **Strengths** → *"What are his strongest skills?"*
+- **Contact** → *"How can I reach Bradley?"*
+- **Summary** → *"Summarize Bradley as a web developer"*
 
 ---
 
 ## 🔗 Links
 
-- 🌍 [Live Demo (GitHub Pages)](https://bradleymatera.github.io/ProjectHub/)  
-- 📂 [Repository](https://github.com/BradleyMatera/ProjectHub)  
-- 💼 [LinkedIn](https://www.linkedin.com/in/championingempatheticwebsolutionsthroughcode/)  
-- 🐙 [GitHub Profile](https://github.com/BradleyMatera)  
+- 🌍 [Live Demo + Dashboard (GitHub Pages)](https://bradleymatera.github.io/ProjectHub/)
+- 📂 [Repository](https://github.com/BradleyMatera/ProjectHub)
+- 💼 [LinkedIn](https://www.linkedin.com/in/bradmatera)
+- 🐙 [GitHub Profile](https://github.com/BradleyMatera)
+- 🏥 [API Health Check](https://projecthub-chat.bradleymatera.dev/health)
+- 📊 [Knowledge Health](https://projecthub-chat.bradleymatera.dev/api/knowledge-health)
 
 ---
 
 ## 🤝 Contributions
-Contributions welcome! Fork the repo, open issues, or submit PRs.  
+
+Contributions welcome! Fork the repo, open issues, or submit PRs.
 
 ---
 
 ## 📄 License
-MIT License  
+
+MIT License
 
 ---
 
