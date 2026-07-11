@@ -1155,7 +1155,7 @@ function handleRoleFit(knowledge, question, role) {
 
 // Build the canonical verified-facts block used by both LLM prompts and grounded fallback.
 function buildKnowledgeContext(knowledge) {
-  const { identity, summary, goals, education, certifications, experience, skills, projects, rules, interviewStories } = knowledge || {};
+  const { identity, summary, goals, education, certifications, experience, skills, projects, rules, interviewStories, blogCatalog } = knowledge || {};
   const title = identity?.title || 'junior software engineer';
   const location = identity?.location || 'Davis, Illinois';
   const preferredName = identity?.preferredName || 'Brad';
@@ -1199,6 +1199,12 @@ function buildKnowledgeContext(knowledge) {
     interviewStories.forEach(s => {
       context += `  Q: "${s.prompt || s.topic}" -> A: "${s.answer || s.story || ''}"\n`;
     });
+  }
+  if (blogCatalog?.records?.length) {
+    const posts = blogCatalog.records;
+    const dev = posts.filter(p => p.platform === 'DEV Community').length;
+    const site = posts.filter(p => p.platform === 'bradleymatera.dev').length;
+    context += `- Writing: ${posts.length} posts on DEV Community (${dev}) and bradleymatera.dev (${site}). Topics include ${posts.slice(0, 5).map(p => p.title).join('; ')}${posts.length > 5 ? '; ...' : ''}\n`;
   }
   if (identity?.shortPitch) context += `- Short pitch: ${identity.shortPitch}\n`;
 
@@ -1263,7 +1269,7 @@ function buildPrompt(knowledge, question, history, provider) {
 }
 
 function buildGroundedFallbackPayload(knowledge, question, history) {
-  const { identity, summary, goals, skills, projects, experience, education, certifications, rulesForAssistant, faq, interviewStories } = knowledge || {};
+  const { identity, summary, goals, skills, projects, experience, education, certifications, rulesForAssistant, faq, interviewStories, blogCatalog } = knowledge || {};
   const name = identity?.name || 'Bradley Matera';
   const title = identity?.title || 'junior software engineer';
   const location = identity?.location || 'Davis, Illinois';
@@ -1909,6 +1915,15 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name} is a ${title} based in ${location.replace(/\s*\(open to relocation\)\s*/i, '')}. He has real shipped projects (${topProjects.join(', ')}), ${sentenceList(certs, 2)} certs, and structured AWS internship training. He's targeting ${sentenceList((goals?.targetRoles || ['junior web', 'cloud support']).slice(0, 2), 2)} roles and is open to relocation.` };
   }
 
+  // Blog / writing / articles
+  if (/blog|article|writing|publication|has he written|what.*he.*write|what has he published|where does he write|dev\.to|bradleymatera\.dev/.test(lowerQuestion)) {
+    const posts = blogCatalog?.records || [];
+    const dev = posts.filter(p => p.platform === 'DEV Community').length;
+    const site = posts.filter(p => p.platform === 'bradleymatera.dev').length;
+    const samples = posts.slice(0, 4).map(p => p.title).filter(Boolean);
+    return { reply: `${name} has written ${posts.length} posts across DEV Community (${dev}) and bradleymatera.dev (${site}). Recent topics include ${sentenceList(samples, 4)}. Links and full briefs are in his blog catalog.` };
+  }
+
   // Dynamic summary from knowledge base
   if (/summary|who is bradley|who is brad\b|about brad|tell me about brad|who is bradley|tell me about bradley|in (20|30) seconds|simple version|honest version|like a normal person|normal person|give me the simple/.test(lowerQuestion)) {
     return { reply: concisePitch(knowledge) };
@@ -1943,7 +1958,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   const isRepairOrTone = repair.shorter || repair.moreHonest || repair.blunt || repair.resumeLanguage || repair.moreTechnical || repair.hrFriendly
     || detectBannedWords(question).length > 0
     || /buzzword|corporate|plain|paragraph|no hype|no marketing|salesy|resume language|passionate|absolutely|certainly/.test(lowerQuestion);
-  if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|languages|databases|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate|kitten|rescue|animal|shelter|volunteer|paid/.test(lowerQuestion)) {
+  if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|languages|databases|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate|kitten|rescue|animal|shelter|volunteer|paid|blog|article|writing|publication|dev\.to/.test(lowerQuestion)) {
     const outOfScope = [
       `That's outside what ${agentName} covers. Ask about ${name}'s projects, skills, AWS background, role fit, or contact info.`,
       `${agentName} sticks to ${name}'s recruiter profile — projects, skills, AWS work, role fit, and how to contact him. That question isn't in the data.`,
@@ -2031,7 +2046,7 @@ function shouldUseGroundedAnswer(question) {
 function isProbablyRelevant(question) {
   const normalized = normalizeQuestion(question);
   // Very broad relevance check - if it mentions Bradley or any career-related terms, let it through
-  return /\b(bradley|brad|matera|candidate|recruiter|software|engineer|developer|web|aws|cloud|support|skill|stack|languages|databases|project|portfolio|contact|email|phone|role|job|education|cert|resume|ciris|ethical|freelance|contributor|intern|internship|work|experience|debug|troubleshoot|document|learn|communication|army|military|construction|case|manager|managers|approach|style|strength|weakness|feedback|management|kitten|rescue|animal|shelter|volunteer|veteran|deploy|afghanistan|68w|medic)\b/.test(normalized) || normalized.includes('bradley');
+  return /\b(bradley|brad|matera|candidate|recruiter|software|engineer|developer|web|aws|cloud|support|skill|stack|languages|databases|project|portfolio|contact|email|phone|role|job|education|cert|resume|ciris|ethical|freelance|contributor|intern|internship|work|experience|debug|troubleshoot|document|learn|communication|army|military|construction|case|manager|managers|approach|style|strength|weakness|feedback|management|kitten|rescue|animal|shelter|volunteer|veteran|deploy|afghanistan|68w|medic|blog|article|writing|publication|dev\.to)\b/.test(normalized) || normalized.includes('bradley');
 }
 
 function cleanModelReply(reply, knowledge, question, history) {
@@ -2053,7 +2068,7 @@ const GEN_ENABLED = process.env.GEN_ENABLED !== 'false';
 
 // Flatten the entire knowledge file into retrievable fact chunks
 function buildRagChunks(knowledge) {
-  const { identity, summary, goals, education, certifications, skills, experience, projects, faq, interviewStories, rules, sourceMaterial } = knowledge || {};
+  const { identity, summary, goals, education, certifications, skills, experience, projects, faq, interviewStories, rules, sourceMaterial, blogCatalog } = knowledge || {};
   const chunks = [];
   const add = (tag, text) => { if (text) chunks.push({ tag, text: String(text) }); };
 
@@ -2076,6 +2091,11 @@ function buildRagChunks(knowledge) {
   (interviewStories || []).forEach(s => add('story', `${s.title || s.topic || ''}: ${s.story || s.summary || ''}`));
   if (rules?.doNot?.length) add('boundaries', `Never claim: ${rules.doNot.slice(0, 4).join('; ')}.`);
   (sourceMaterial || []).forEach((m, i) => { if (m?.content) add('source', `[${m.title || 'source'}-${i}] ${m.content}`); });
+  (blogCatalog?.records || []).forEach((post, i) => {
+    if (post?.title || post?.brief) {
+      add('blog', `[${post.platform || 'blog'}-${i}] ${post.title || 'Post'}: ${post.brief || ''}${post.url ? ` URL: ${post.url}` : ''}`);
+    }
+  });
   return chunks;
 }
 
