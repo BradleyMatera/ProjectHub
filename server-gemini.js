@@ -252,7 +252,11 @@ app.get('/health', async (req, res) => {
       pendingLearned: learnedData.learned.length,
       lastThinkAt: learnedData.lastThinkAt,
       thinkRunning,
-      hasGitHubToken: GITHUB_API_TOKEN.length >= 10
+      hasGitHubToken: GITHUB_API_TOKEN.length >= 10,
+      nextThinkIn: Math.max(0, THINK_INTERVAL_MS - (Date.now() - (learnedData.lastThinkAt || 0))),
+      learnedScores: (learnedData.learned || []).map(l => ({ q: l.q, score: l.score, groundedScore: l.groundedScore, provider: l.provider })),
+      avgLearnedScore: learnedData.learned.length > 0 ? Math.round(learnedData.learned.reduce((s, l) => s + (l.score || 0), 0) / learnedData.learned.length) : 0,
+      avgGroundedScore: learnedData.learned.length > 0 ? Math.round(learnedData.learned.reduce((s, l) => s + (l.groundedScore || 0), 0) / learnedData.learned.length) : 0
     }
   });
 });
@@ -330,7 +334,13 @@ app.get('/api/knowledge-health', async (req, res) => {
       uncoveredTopics,
       learnedAnswers,
       stashedCount: stashed.length,
-      learnedCount: learnedData.learnedCount || 0
+      learnedCount: learnedData.learnedCount || 0,
+      learningVerification: {
+        avgLearnedScore: learnedData.learned.length > 0 ? Math.round(learnedData.learned.reduce((s, l) => s + (l.score || 0), 0) / learnedData.learned.length) : 0,
+        avgGroundedScore: learnedData.learned.length > 0 ? Math.round(learnedData.learned.reduce((s, l) => s + (l.groundedScore || 0), 0) / learnedData.learned.length) : 0,
+        improvementPercent: learnedData.learned.length > 0 ? Math.round(((learnedData.learned.reduce((s, l) => s + (l.score || 0), 0) / learnedData.learned.length) - (learnedData.learned.reduce((s, l) => s + (l.groundedScore || 0), 0) / learnedData.learned.length)) / Math.max(1, learnedData.learned.reduce((s, l) => s + (l.groundedScore || 0), 0) / learnedData.learned.length) * 100) : 0,
+        scoredAnswers: (learnedData.learned || []).map(l => ({ q: l.q, score: l.score, groundedScore: l.groundedScore, provider: l.provider }))
+      }
     });
   } catch (e) {
     res.json({ ok: false, error: e.message });
@@ -1557,8 +1567,15 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: strengths.map(s => `${s}.`).join(' ') };
   }
 
+  // Elevator pitch / 20 seconds / short intro
+  if (/elevator|20 seconds|30 seconds|quick pitch|sell him in|pitch for|give me a pitch|short pitch|one-liner|tl;dr|tl;dr/.test(lowerQuestion)) {
+    const certs = (certifications || []).slice(0, 2).map(c => c.name || c).map(c => c.replace('AWS Certified ', 'AWS '));
+    const topProjects = (projects || []).slice(0, 2).map(p => p.name);
+    return { reply: `${name} is a ${title} based in ${location.replace(/\s*\(open to relocation\)\s*/i, '')}. He has real shipped projects (${topProjects.join(', ')}), ${sentenceList(certs, 2)} certs, and structured AWS internship training. He's targeting ${sentenceList((goals?.targetRoles || ['junior web', 'cloud support']).slice(0, 2), 2)} roles and is open to relocation.` };
+  }
+
   // Dynamic summary from knowledge base
-  if (/summary|who is|about|tell me about|who is brad|who is bradley|in (20|30) seconds|20 seconds|30 seconds|simple version|honest version|like a normal person|normal person|give me the simple/.test(lowerQuestion)) {
+  if (/summary|who is|about|tell me about|who is brad|who is bradley|in (20|30) seconds|simple version|honest version|like a normal person|normal person|give me the simple/.test(lowerQuestion)) {
     return { reply: concisePitch(knowledge) };
   }
 
@@ -1747,18 +1764,40 @@ function validateNetworkReply(text, source) {
   const genNumbers = t.match(/\d[\d.,]*/g) || [];
   if (genNumbers.some(n => !sourceText.includes(n.toLowerCase()))) return false;
   if (/^(facts:|q:|question:|answer:|rephrase|text:)/i.test(t)) return false;
-  // Reject evasive clarifying questions instead of answering
   if (/\?(\s*)$/i.test(t) && /(what would you like|what do you want|what are you interested|what do you mean|could you clarify|tell me more about|let me know)/i.test(t)) return false;
-  // Require at least two concrete grounded entities so replies aren't just generic pronouns
   const entityHits = (t.match(/\b(AWS|React|JavaScript|TypeScript|Node|Next\.js|Full Sail|Davis|Illinois|junior|intern|certif|project|cloud|web|support|debug|document|CIRIS|Pokedex|Lambda|DynamoDB|S3|Amplify|CloudFront|Docker|GitHub)\b/gi) || []);
   const uniqueHits = new Set(entityHits.map(e => e.toLowerCase()));
   if (uniqueHits.size < 2) return false;
-  // Reject garbled/broken grammar from small models
   if (/\b(and|or|but)\s+(way|the|a)\b/i.test(t)) return false;
   if (/\s{2,}/.test(t)) return false;
   if (/\b\w+\s+and\s*$/i.test(t)) return false;
   if (/[a-z]\s+[A-Z][a-z]+\s*$/i.test(t) && !/[.!?]$/.test(t)) return false;
   return true;
+}
+
+// More permissive validator for think mode — allows longer answers and paraphrasing
+function validateThinkReply(text, source) {
+  const t = String(text || '').trim();
+  if (t.length < 25 || t.length > 1200) return { valid: false, reason: 'length' };
+  if (GEN_FALSE_CLAIMS.test(t)) return { valid: false, reason: 'false-claims' };
+  if (GEN_SLOP.test(t)) return { valid: false, reason: 'slop' };
+  if (GEN_OVERCLAIM.test(t)) return { valid: false, reason: 'overclaim' };
+  if (!/\b(bradley|brad|he|his)\b/i.test(t)) return { valid: false, reason: 'no-subject' };
+  if (/\b(I|I'm|I've|my|we|our)\b/.test(t)) return { valid: false, reason: 'first-person' };
+  if (/"|\*|pause|scout here|as scout|hi,|hello,/i.test(t)) return { valid: false, reason: 'meta' };
+  const sourceText = String(source || '').toLowerCase();
+  const genNumbers = t.match(/\d[\d.,]*/g) || [];
+  if (genNumbers.some(n => !sourceText.includes(n.toLowerCase()))) return { valid: false, reason: 'hallucinated-number' };
+  if (/^(facts:|q:|question:|answer:|rephrase|text:)/i.test(t)) return { valid: false, reason: 'prefix' };
+  if (/\?(\s*)$/i.test(t) && /(what would you like|what do you want|what are you interested|what do you mean|could you clarify|tell me more about|let me know)/i.test(t)) return { valid: false, reason: 'evasive' };
+  // Think mode: require at least 1 entity (not 2) — more permissive
+  const entityHits = (t.match(/\b(AWS|React|JavaScript|TypeScript|Node|Next\.js|Full Sail|Davis|Illinois|junior|intern|certif|project|cloud|web|support|debug|document|CIRIS|Pokedex|Lambda|DynamoDB|S3|Amplify|CloudFront|Docker|GitHub|Army|veteran|military|customer|service|team|communicat|reliab|honest|gap|weakness|strength)\b/gi) || []);
+  const uniqueHits = new Set(entityHits.map(e => e.toLowerCase()));
+  if (uniqueHits.size < 1) return { valid: false, reason: 'no-entities' };
+  if (/\b(and|or|but)\s+(way|the|a)\b/i.test(t)) return { valid: false, reason: 'garbled' };
+  if (/\s{2,}/.test(t)) return { valid: false, reason: 'double-space' };
+  if (/\b\w+\s+and\s*$/i.test(t)) return { valid: false, reason: 'trailing-and' };
+  return { valid: true, reason: 'ok', entityCount: uniqueHits.size };
 }
 
 // Convert first-person knowledge text to third person for grounded answers
@@ -2181,14 +2220,68 @@ function flushStats() {
   }
 }
 
+// ============ ANSWER QUALITY SCORING ============
+
+function scoreAnswer(reply, question, knowledge) {
+  if (!reply || reply.length < 10) return 0;
+  let score = 0;
+  const r = reply.toLowerCase();
+  const q = String(question || '').toLowerCase();
+  // Length scoring: 50-400 chars is ideal
+  if (reply.length >= 50 && reply.length <= 400) score += 25;
+  else if (reply.length >= 30 && reply.length <= 600) score += 15;
+  else if (reply.length < 30) score += 5;
+  // Concrete entities
+  const entities = (r.match(/\b(AWS|React|JavaScript|TypeScript|Node|Next\.js|Full Sail|Davis|Illinois|junior|intern|certif|project|cloud|web|support|debug|document|CIRIS|Pokedex|Lambda|DynamoDB|S3|Amplify|CloudFront|Docker|GitHub|Army|veteran|customer|service|team)\b/gi) || []);
+  score += Math.min(entities.length * 5, 20);
+  // Penalize "not in the data" — it's a non-answer
+  if (r.includes('not in') && r.includes('recruiter data')) score -= 30;
+  // Penalize generic summary for non-summary questions
+  if (/is a junior software engineer based in davis/.test(r) && !/summar|bio|who is|elevator|pitch/.test(q)) score -= 20;
+  // Penalize slop
+  if (GEN_SLOP.test(r)) score -= 15;
+  if (GEN_OVERCLAIM.test(r)) score -= 25;
+  // Reward answering the specific question
+  const topic = classifyTopic(question);
+  const topicKeywords = {
+    aws: ['aws', 'cloud', 'lambda', 'dynamodb', 's3', 'certif'],
+    projects: ['project', 'pokedex', 'hub', 'build', 'portfolio'],
+    skills: ['skill', 'javascript', 'react', 'typescript', 'node', 'debug'],
+    experience: ['experience', 'ciris', 'intern', 'work', 'army'],
+    education: ['education', 'degree', 'school', 'gpa', 'full sail'],
+    strengths: ['strength', 'good at', 'strong'],
+    weaknesses: ['weakness', 'gap', 'honest', 'concern'],
+    interpersonal: ['people', 'team', 'communicat', 'customer', 'social'],
+    'role-fit': ['fit', 'role', 'candidate', 'hire', 'position']
+  };
+  const expected = topicKeywords[topic] || [];
+  if (expected.length > 0 && expected.some(kw => r.includes(kw))) score += 20;
+  // Penalize too-short or too-long
+  if (reply.length < 30) score -= 10;
+  if (reply.length > 800) score -= 10;
+  return Math.max(0, Math.min(100, score));
+}
+
 // ============ LEARNING FUNCTIONS ============
+
+// Tone/style requests that are NOT knowledge gaps — don't stash these
+const TONE_REQUEST_RE = /no corporate|without buzzwords|just answer|be direct|say it in one|summarize like a normal|answer the question directly|stop avoiding|no bs|straight answer|plain (english|paragraph|language)|like a normal person|in plain|talk like a|normal tone|less formal|more casual|stop being so|tone|buzzword|corporate tone/;
 
 function isWeakAnswer(reply, question, provider) {
   if (!reply) return false;
   const r = reply.toLowerCase();
+  const q = String(question).toLowerCase();
+  // Don't stash tone/style requests — frustration detector handles these
+  if (TONE_REQUEST_RE.test(q)) return false;
+  // Don't stash if topic is already well-covered by grounded handlers
+  const topic = classifyTopic(question);
+  if (topic === 'summary' || topic === 'strengths' || topic === 'contact' || topic === 'education') return false;
+  // Real gap: answer says "not in the data"
   if (r.includes("not in") && r.includes("recruiter data")) return true;
+  // Real gap: generic summary returned for a non-summary question
   if (provider === 'grounded' && /is a junior software engineer based in davis/.test(r)
-      && !/strength|weakness|cert|project|experience|contact|role|fit|aws|cloud|react|debug|learn|team|reliab|communicat|coding|problem|work style|different|legit|worth|honest|no bs|straight/i.test(question)) return true;
+      && !/strength|weakness|cert|project|experience|contact|role|fit|aws|cloud|react|debug|learn|team|reliab|communicat|coding|problem|work style|different|legit|worth|honest|no bs|straight|summar|bio|who is|elevator|pitch|20 second/i.test(question)) return true;
+  // Real gap: too short and not a yes/no
   if (reply.length < 40 && !/yes|no/i.test(reply)) return true;
   return false;
 }
@@ -2200,9 +2293,11 @@ function stashQuestion(question, reply, provider) {
   const lower = String(question).toLowerCase();
   if (/(ignore|inject|system prompt|\.env|api key|password|hack|bypass|social security|birth date)/.test(lower)) return;
   if (question.length < 5 || question.length > 500) return;
+  // Don't stash tone/style requests
+  if (TONE_REQUEST_RE.test(lower)) return;
   learnedData.stashed.push({
     q: norm, original: String(question).slice(0, 200),
-    badReply: String(reply).slice(0, 300), provider, ts: Date.now()
+    badReply: String(reply).slice(0, 300), provider, ts: Date.now(), retries: 0
   });
   if (learnedData.stashed.length > 100) learnedData.stashed.shift();
   saveLearned();
@@ -2284,9 +2379,19 @@ async function pushLearnedToGitHub() {
 
 async function runThinkMode() {
   if (thinkRunning) return { skipped: 'already running' };
+  // Clean stale stashes (older than 24h) and tone requests
+  const staleCutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const before = learnedData.stashed.length;
+  learnedData.stashed = learnedData.stashed.filter(s =>
+    s.ts > staleCutoff && !TONE_REQUEST_RE.test(s.q) && (s.retries || 0) < 3
+  );
+  if (learnedData.stashed.length < before) {
+    console.log(`[think] Cleaned ${before - learnedData.stashed.length} stale/tone stashes`);
+    saveLearned();
+  }
   if (learnedData.stashed.length === 0) return { skipped: 'no stashed questions' };
   thinkRunning = true;
-  const results = { processed: 0, learned: 0, failed: 0, pushed: false };
+  const results = { processed: 0, learned: 0, failed: 0, pushed: false, rejections: [] };
   console.log(`[think] Processing ${learnedData.stashed.length} stashed questions`);
   try {
     const knowledge = await fetchKnowledge();
@@ -2297,10 +2402,12 @@ async function runThinkMode() {
       try {
         const question = item.original;
         const groundedReply = buildGroundedFallbackPayload(knowledge, question, []).reply;
+        const groundedScore = scoreAnswer(groundedReply, question, knowledge);
         const sourceText = buildPrompt(knowledge, question, [], 'openai').replace(/\s+/g, ' ').toLowerCase();
         let bestReply = null;
         let bestProvider = null;
         let bestScore = 0;
+        let bestEntityCount = 0;
         for (const slug of PROVIDER_ORDER) {
           const def = PROVIDER_DEFS[slug];
           if (!def || isProviderExhausted(slug)) continue;
@@ -2316,28 +2423,47 @@ async function runThinkMode() {
               raw = await callGenerativeRag(knowledge, question, groundedReply, [], Math.min(GEN_TIMEOUT_MS, 8000));
             }
             const cleaned = removeSlop(String(raw || '').trim().replace(/\s+/g, ' '));
-            if (cleaned && cleaned.length >= 25 && !/OUT_OF_SCOPE/i.test(cleaned)
-                && validateNetworkReply(cleaned, sourceText)) {
-              // Score: prefer longer answers (more complete)
-              const score = cleaned.length;
-              if (score > bestScore) {
-                bestReply = cleaned;
-                bestProvider = slug;
-                bestScore = score;
+            if (cleaned && cleaned.length >= 25 && !/OUT_OF_SCOPE/i.test(cleaned)) {
+              const validation = validateThinkReply(cleaned, sourceText);
+              if (validation.valid) {
+                const score = scoreAnswer(cleaned, question, knowledge);
+                if (score > bestScore) {
+                  bestReply = cleaned;
+                  bestProvider = slug;
+                  bestScore = score;
+                  bestEntityCount = validation.entityCount;
+                }
+              } else {
+                results.rejections.push({ provider: slug, reason: validation.reason, length: cleaned.length });
+                console.log(`[think] ${slug} rejected: ${validation.reason} (len ${cleaned.length})`);
               }
             }
           } catch (e) { /* next provider */ }
         }
-        if (bestReply && bestReply.toLowerCase() !== groundedReply.toLowerCase().slice(0, 100)) {
+        // A/B comparison: only accept if learned answer is better than grounded by 10+ points
+        if (bestReply && bestScore >= groundedScore + 10) {
           learnedData.learned.push({
             q: item.q, original: item.original, a: bestReply,
-            provider: bestProvider, learnedAt: Date.now()
+            provider: bestProvider, learnedAt: Date.now(),
+            score: bestScore, groundedScore, entityCount: bestEntityCount
           });
           learnedData.learnedCount = (learnedData.learnedCount || 0) + 1;
           results.learned++;
-          console.log(`[think] Learned: "${item.q}" via ${bestProvider} (score ${bestScore})`);
-        } else {
+          console.log(`[think] Learned: "${item.q}" via ${bestProvider} (score ${bestScore} vs grounded ${groundedScore})`);
+        } else if (bestReply && bestScore > groundedScore) {
+          // Close call — re-stash for another attempt with a different provider set
+          item.retries = (item.retries || 0) + 1;
           learnedData.stashed.push(item);
+          results.failed++;
+          console.log(`[think] Close call for "${item.q}": score ${bestScore} vs grounded ${groundedScore}, re-stashing (retry ${item.retries})`);
+        } else {
+          // No improvement or no valid reply — re-stash with retry count
+          item.retries = (item.retries || 0) + 1;
+          if (item.retries < 3) {
+            learnedData.stashed.push(item);
+          } else {
+            console.log(`[think] Dropping "${item.q}" after 3 failed attempts`);
+          }
           results.failed++;
         }
       } catch (e) { results.failed++; }
@@ -2355,8 +2481,29 @@ async function runThinkMode() {
   return results;
 }
 
-// Background think interval
+// Track provider recovery for auto-triggering think mode
+let lastThinkTriggerCheck = 0;
+function checkProviderRecoveryAndTriggerThink() {
+  const now = Date.now();
+  if (now - lastThinkTriggerCheck < 60 * 1000) return; // Check at most once per minute
+  lastThinkTriggerCheck = now;
+  if (thinkRunning || learnedData.stashed.length === 0) return;
+  // Check if any provider recently recovered from exhaustion
+  for (const slug of PROVIDER_ORDER) {
+    const state = getProviderState(slug);
+    if (state.exhaustedUntil > 0 && state.exhaustedUntil < now && state.exhaustedUntil > now - 120 * 1000) {
+      // Provider recovered in the last 2 minutes — trigger think mode
+      console.log(`[think] Provider ${slug} recovered, auto-triggering think mode`);
+      state.exhaustedUntil = 0; // Clear the flag
+      runThinkMode().catch(e => console.error('[think] Auto-trigger error:', e.message));
+      return;
+    }
+  }
+}
+
+// Background think interval + provider recovery check
 setInterval(() => { runThinkMode().catch(e => console.error('[think] Error:', e.message)); }, THINK_INTERVAL_MS);
+setInterval(() => { checkProviderRecoveryAndTriggerThink(); }, 60 * 1000);
 
 // Flush on graceful shutdown
 process.on('SIGTERM', () => { flushStats(); process.exit(0); });

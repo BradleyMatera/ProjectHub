@@ -658,6 +658,33 @@
           </div>
         </div>
 
+        <h3 style="margin-top:1.5rem;font-size:0.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:0.05em">Learning verification (is Scout getting smarter?)</h3>
+        <div class="live-grid" style="margin-top:0.5rem">
+          <div class="live-metric">
+            <div class="metric-label">Avg learned score</div>
+            <div class="metric-value" id="learn-avg-score">--</div>
+            <div class="metric-sub">Quality of LLM-learned answers (0-100)</div>
+          </div>
+          <div class="live-metric">
+            <div class="metric-label">Avg grounded score</div>
+            <div class="metric-value" id="learn-avg-grounded">--</div>
+            <div class="metric-sub">Quality of deterministic answers (0-100)</div>
+          </div>
+          <div class="live-metric">
+            <div class="metric-label">Improvement</div>
+            <div class="metric-value" id="learn-improvement">--</div>
+            <div class="metric-sub" id="learn-improvement-sub">Learned vs grounded delta</div>
+          </div>
+          <div class="live-metric">
+            <div class="metric-label">Next think run</div>
+            <div class="metric-value" id="learn-next" style="font-size:0.95rem">--</div>
+            <div class="metric-sub">Auto-triggers when providers recover</div>
+          </div>
+        </div>
+        <div id="learn-scores-list" style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem;max-height:150px;overflow-y:auto">
+          <p style="color:var(--soft)">No learned answers yet — think mode will score and compare answers here.</p>
+        </div>
+
         <div class="refresh-bar">
           <span id="live-refresh">Refreshing every 5 seconds…</span>
           <span id="live-updated">Last updated: never</span>
@@ -758,6 +785,12 @@
       const elLearnStatus = document.getElementById('learn-status');
       const elLearnLast = document.getElementById('learn-last');
       const elLearnGithub = document.getElementById('learn-github');
+      const elLearnAvgScore = document.getElementById('learn-avg-score');
+      const elLearnAvgGrounded = document.getElementById('learn-avg-grounded');
+      const elLearnImprovement = document.getElementById('learn-improvement');
+      const elLearnImprovementSub = document.getElementById('learn-improvement-sub');
+      const elLearnNext = document.getElementById('learn-next');
+      const elLearnScoresList = document.getElementById('learn-scores-list');
 
       function fmtUptime(sec) {
         if (!sec && sec !== 0) return '--';
@@ -967,6 +1000,37 @@
           elLearnLast.textContent = learn.lastThinkAt ? 'Last run: ' + new Date(learn.lastThinkAt).toLocaleTimeString() : 'Last run: never';
           elLearnGithub.textContent = learn.hasGitHubToken ? 'Connected' : 'No token';
           elLearnGithub.style.color = learn.hasGitHubToken ? '#34d399' : '#f87171';
+
+          // Learning verification stats
+          const avgScore = learn.avgLearnedScore || 0;
+          const avgGrounded = learn.avgGroundedScore || 0;
+          const improvement = avgGrounded > 0 ? Math.round(((avgScore - avgGrounded) / avgGrounded) * 100) : 0;
+          elLearnAvgScore.textContent = avgScore > 0 ? avgScore + '/100' : '--';
+          elLearnAvgGrounded.textContent = avgGrounded > 0 ? avgGrounded + '/100' : '--';
+          if (avgScore > 0 && avgGrounded > 0) {
+            elLearnImprovement.textContent = (improvement >= 0 ? '+' : '') + improvement + '%';
+            elLearnImprovement.style.color = improvement > 0 ? '#34d399' : improvement < 0 ? '#f87171' : 'var(--soft)';
+            elLearnImprovementSub.textContent = improvement > 0 ? 'Learned answers are better' : improvement < 0 ? 'Learned answers are worse — tuning needed' : 'No improvement yet';
+          } else {
+            elLearnImprovement.textContent = '--';
+            elLearnImprovementSub.textContent = 'No learned answers to compare yet';
+          }
+          const nextThinkIn = learn.nextThinkIn || 0;
+          elLearnNext.textContent = nextThinkIn > 0 ? Math.ceil(nextThinkIn / 1000) + 's' : 'Due now';
+          elLearnNext.style.color = nextThinkIn > 0 ? 'var(--soft)' : '#fbbf24';
+
+          // Scored answers list
+          const scores = learn.learnedScores || [];
+          if (scores.length > 0) {
+            elLearnScoresList.innerHTML = scores.slice(0, 10).map(s => {
+              const delta = (s.score || 0) - (s.groundedScore || 0);
+              const deltaColor = delta > 0 ? '#34d399' : delta < 0 ? '#f87171' : 'var(--soft)';
+              const deltaStr = delta > 0 ? `+${delta}` : `${delta}`;
+              return `<div style="padding:0.3rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.05)"><span style="color:var(--muted)">${(s.q || '').slice(0, 50)}</span> <span style="color:${deltaColor};font-weight:600">${s.score}/100 vs ${s.groundedScore} (${deltaStr})</span> <span style="color:var(--soft);font-size:0.72rem">via ${s.provider}</span></div>`;
+            }).join('');
+          } else {
+            elLearnScoresList.innerHTML = '<p style="color:var(--soft)">No learned answers yet — think mode will score and compare answers here.</p>';
+          }
 
           elUpdated.textContent = 'Last updated: ' + new Date().toLocaleTimeString();
           elRefresh.textContent = 'Refreshing every 5 seconds…';
