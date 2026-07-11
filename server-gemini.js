@@ -1175,7 +1175,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   
   // Salary / private data
   if (/salary|address|home|current salary|pay|compensation/.test(lowerQuestion)) {
-    return { reply: `I don't see salary or address details in the public data. Check his resume or contact him directly.` };
+    return { reply: `Salary and address details are not in the public data. Check his resume or contact him directly.` };
   }
   
   // Default to basic info
