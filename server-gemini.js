@@ -495,6 +495,7 @@ function warmResponseCache(knowledge) {
     try {
       const payload = buildGroundedFallbackPayload(knowledge, q, []);
       if (payload?.reply) {
+        payload.reply = shapeReply(payload.reply, q, knowledge);
         responseCache.set(key, { ts: Date.now(), payload: { ...payload, provider: 'grounded', model: 'knowledge-json', fallback: true, pipeline: ['cache-warm'] } });
         added++;
       }
