@@ -1165,11 +1165,6 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name} has React and Next.js experience from school projects and freelance contributor work, including the Interactive Pokedex demo and CIRIS. It's junior-level project experience, not production ownership.` };
   }
 
-  // Specific capability: troubleshooting / debugging / cloud issues
-  if (/\b(troubleshoot|debug|cloud issues|cloud problems|support|fix\w*)\b/.test(lowerQuestion) && /\b(can he|does he|able to|good at)\b/.test(lowerQuestion)) {
-    return { reply: `${name} has debugging and cloud troubleshooting training from the AWS internship labs and his projects. He's junior, so he still needs mentorship for complex production issues.` };
-  }
-
   // Site purpose / identity (checked before greeting so "hey what is this thing" gets the site answer)
   if (/what is this site for|what page am i on|what is this thing|what is projecthub|what does this site do|who made this|what is this chatbot/.test(lowerQuestion)) {
     return { reply: `This is ${name}'s portfolio site with an embedded recruiter assistant. ${agentName} answers questions about his projects, skills, AWS background, education, and role fit.` };
@@ -1454,16 +1449,6 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply };
   }
 
-  // Teamwork / team player / works with others / interpersonal / social skills
-  if (/teamwork|team player|works with others|how does he work in a team|how is he on a team|collaborat|how does he work with|interpersonal|social skill|works well with|good with people|how is he with people|how is brad with people|how is he around people|people person|ok socially|socially|with people/.test(lowerQuestion)) {
-    return { reply: `${name} has real interpersonal experience: case management (helping clients through court-mandated requirements), Army healthcare specialist (working with crews under pressure), and construction (communicating with homeowners and crews). He communicates clearly with both technical and non-technical people.` };
-  }
-
-  // Customer service / support experience
-  if (/customer service|customer support|client facing|user support|help desk|service desk|support role/.test(lowerQuestion)) {
-    return { reply: `${name} has customer-facing experience from case management (guiding clients through legal processes), Army service, and construction (working directly with homeowners). His communication skills transfer well to customer support and help desk roles.` };
-  }
-
   // 'What data do you have' / what is in his data
   if (/what data|what info|what information|what do you (have|know)|what is in (his|the) data|what can you tell me|what do you have on/.test(lowerQuestion)) {
     return { reply: `${agentName} has verified data on ${name}'s projects, skills (JavaScript, TypeScript, React, AWS), certifications (AWS Solutions Architect, AI Practitioner), education (Full Sail University), work history (AWS internship, CIRIS, case management), target roles, and contact info. Ask about any of those.` };
@@ -1472,44 +1457,6 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   // Confusion / 'you're not making sense' / clarification
   if (/not making sense|makes no sense|what are you talking about|confused|dont understand|do not understand|what do you mean/.test(lowerQuestion)) {
     return { reply: `Sorry about that. ${agentName} covers ${name}'s projects, skills, AWS background, role fit, and contact info. What specifically do you want to know?` };
-  }
-
-  // Work style (checked before generic project branch so "what is his work style" doesn't return a project list)
-  if (/work style|how does he work|how he works|approach to work/.test(lowerQuestion)) {
-    const styles = summary?.workStyle?.length
-      ? summary.workStyle.slice(0, 3)
-      : ['reads nearby code before changing things', 'runs the project locally first', 'documents what he learns'];
-    return { reply: `His work style: ${sentenceList(styles, 3)}.` };
-  }
-
-  // Coding style / how does he code
-  if (/coding style|how does he code|code style|how he codes|programming style|how does he program/.test(lowerQuestion)) {
-    const styles = summary?.workStyle?.slice(0, 2) || ['reads nearby code before changing things', 'makes small reviewable changes'];
-    const strengths = summary?.coreStrengths?.slice(0, 1) || ['learning quickly in unfamiliar codebases'];
-    return { reply: `${name} reads existing code before changing anything, makes small reviewable changes, and documents what he learns. His main strength is ${strengths[0].toLowerCase()}.` };
-  }
-
-  // Approach to learning / how does he learn
-  if (/approach to learning|approach.*learning|how does he learn|how he learns|learning style|fast learner|quick learner|how fast does he learn/.test(lowerQuestion)) {
-    const learning = skills?.learningOrAdjacent?.length ? skills.learningOrAdjacent.slice(0, 2) : ['currently learning C#/.NET fundamentals'];
-    return { reply: `${name} learns by running the project locally, reading the code, and documenting what he finds. Right now he's ${learning.join(' and ').toLowerCase()}. He's honest about what he doesn't know yet and asks useful questions after doing his homework.` };
-  }
-
-  // Communication style / how does he communicate
-  if (/communication style|how does he communicate|how he communicates|communication skill|how does he talk to users|how does he talk to/.test(lowerQuestion)) {
-    const comm = summary?.coreStrengths?.find(s => /communicat/i.test(s)) || 'Communicating with technical and non-technical users';
-    return { reply: `${name} communicates directly and clearly. His case manager experience taught him to explain things to non-technical people, and his documentation shows he can write for other developers too.` };
-  }
-
-  // Problem solving / how does he solve problems
-  if (/problem solving|how does he solve|how does he approach.*problem|how does he debug|approach to debug|approach.*debug|troubleshoot.*approach|how does he troubleshoot/.test(lowerQuestion)) {
-    const debug = summary?.coreStrengths?.find(s => /debug/i.test(s)) || 'Debugging carefully and isolating issues';
-    return { reply: `${name} isolates problems methodically: he reproduces the issue, checks logs and docs, narrows down the cause, and documents the fix. He's honest when he doesn't know the answer yet.` };
-  }
-
-  // Reliability / dependable / can I count on him
-  if (/reliab|dependab|can i count on|show up|work ethic|does he show up/.test(lowerQuestion)) {
-    return { reply: `${name} has a track record of showing up: Army service, construction work, and case management all required reliability under pressure. His work style is methodical and he documents what he does so others can pick up where he left off.` };
   }
 
   // Dynamic projects from knowledge base (narrowed 'work' to 'his work' to avoid catching 'works with people' or 'work history')
@@ -2020,6 +1967,8 @@ async function generateWithNetwork(knowledge, question, history, groundedReply) 
 // Everything else flows to the LLM provider network for natural, contextual answers.
 function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
+  // Honest assessment / gaps: use the fact-backed grounded reply so we don't get evasive LLM answers
+  if (/\b(honest gaps?|his gaps?|weakness|weaknesses|limitations|red flag|concerns? about|what.*missing|what is he missing|not proven)\b/.test(q)) return true;
   // Safety: prompt injection, secret extraction, social engineering
   if (/(ignore|inject|system prompt|\.env|api key|password|bypass|open port|port 11434|localhost|127\.0\.0\.1|:11434|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|hidden config|show.*env|fake reference|social security|birth date|wife|children|family details|medical history|i am.*admin|i am.*owner|i am.*developer|i am.*from the government|i am.*security researcher|bradley'?s friend|his friend|reveal.*environment|reveal.*secret|reveal.*config|show.*contents of|read.*file|show me.*\.json|show me.*learned|show me.*stats|opt\/recruiter|\/opt\/|etc\/passwd|environment variable|ignore that|ignore all previous|override.*rules|override.*instructions)/.test(q)) return true;
   // False-claim requests must be blocked deterministically
