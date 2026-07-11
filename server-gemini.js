@@ -1991,7 +1991,7 @@ function mustStayGrounded(question, history) {
   // Purely factual / sensitive lookups and common recruiter questions have direct grounded answers
   if (/\b(gpa|salary|address|phone number|current address|home address|education|degree|school|full sail|army|military|veteran|production outage history|security clearance|private family|medical history|references|manager name|customer list|exact availability|preferred pay)\b|internship real|intenship|internship\b|senior dev|is he junior|junior candidate/.test(q)) return true;
   if (/weakness|weaknesses|weak at|strength|strongest|greatest|best at|what does he do well|concerns?|not proven|what is he missing|gaps|limitations|red flag|what concerns/.test(q)) return true;
-  if (/where located|where is he|where does he live|based in|where is he based|can relocate|what job fit|what role|certs\b|certifications\b|exprience|internship\b/.test(q)) return true;
+  if (/where located|where is he|where does he live|based in|where is he based|can relocate|what job fit|what role|certs\b|certifications\b|experience|work history|background|internship\b/.test(q)) return true;
   if (/can he work with react|can he troubleshoot|does he write docs|can he talk to users|does he write documentation|does he know react|does he no react|does he know|can he code|can he work with|is he familiar with/.test(q)) return true;
   if (/do not start|don't start|never start|start with/.test(q)) return true;
   if (/good candidate|good fit for|suitable for|is he a fit|would he be a/.test(q)) return true;
