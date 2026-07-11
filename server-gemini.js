@@ -1416,6 +1416,16 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     }
     return { reply: `${name} has Army service in his background. Details are in his resume; ask him directly for specifics.` };
   }
+
+  // Mason County Kitten Rescue / animal care / volunteer work
+  if (/kitten|mason county kitten|animal care|animal shelter|rescue volunteer|rescue work/.test(lowerQuestion)) {
+    const kittenExp = (experience || []).find(e => /kitten|animal care|rescue/i.test(`${e.role} ${e.company} ${e.summary || ''}`));
+    if (kittenExp) {
+      const topResp = (kittenExp.responsibilities || []).slice(0, 4).join('; ');
+      return { reply: `${name} worked with ${kittenExp.company} from ${kittenExp.dates}. He started in a paid, part-time animal care role and continued as a volunteer. ${kittenExp.summary || ''} Responsibilities included ${topResp}.` };
+    }
+    return { reply: `${name} has animal care and volunteer rescue work in his background. Details are in his resume.` };
+  }
   
   // Location
   if (/where located|where is he|where does he live|based in|where is he based|where.*from\b/.test(lowerQuestion)) {
@@ -1801,7 +1811,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   const isRepairOrTone = repair.shorter || repair.moreHonest || repair.blunt || repair.resumeLanguage || repair.moreTechnical || repair.hrFriendly
     || detectBannedWords(question).length > 0
     || /buzzword|corporate|plain|paragraph|no hype|no marketing|salesy|resume language|passionate|absolutely|certainly/.test(lowerQuestion);
-  if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate/.test(lowerQuestion)) {
+  if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate|kitten|rescue|animal|shelter|volunteer|paid/.test(lowerQuestion)) {
     return { reply: `That's not in ${name}'s recruiter data. ${agentName} covers his projects, skills, AWS background, role fit, and contact info.` };
   }
 
@@ -1854,7 +1864,7 @@ function shouldUseGroundedAnswer(question) {
 function isProbablyRelevant(question) {
   const normalized = normalizeQuestion(question);
   // Very broad relevance check - if it mentions Bradley or any career-related terms, let it through
-  return /\b(bradley|brad|matera|candidate|recruiter|software|engineer|developer|web|aws|cloud|support|skill|stack|project|portfolio|contact|email|phone|role|job|education|cert|resume|ciris|ethical|freelance|contributor|intern|internship|work|experience|debug|troubleshoot|document|learn|communication|army|military|construction|case|manager|managers|approach|style|strength|weakness|feedback|management)\b/.test(normalized) || normalized.includes('bradley');
+  return /\b(bradley|brad|matera|candidate|recruiter|software|engineer|developer|web|aws|cloud|support|skill|stack|project|portfolio|contact|email|phone|role|job|education|cert|resume|ciris|ethical|freelance|contributor|intern|internship|work|experience|debug|troubleshoot|document|learn|communication|army|military|construction|case|manager|managers|approach|style|strength|weakness|feedback|management|kitten|rescue|animal|shelter|volunteer|veteran|deploy|afghanistan|68w|medic)\b/.test(normalized) || normalized.includes('bradley');
 }
 
 function cleanModelReply(reply, knowledge, question, history) {
