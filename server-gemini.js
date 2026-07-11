@@ -1908,6 +1908,15 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name}'s core strengths include ${sentenceList(strengths, 3)}. He also learns quickly, works carefully, and communicates clearly.` };
   }
 
+  // Specific early branch for 'what does he write about' style questions
+  if (/write about|writes about|written about|what.*he.*write.*about/.test(lowerQuestion)) {
+    const posts = blogCatalog?.records || [];
+    const dev = posts.filter(p => p.platform === 'DEV Community').length;
+    const site = posts.filter(p => p.platform === 'bradleymatera.dev').length;
+    const samples = posts.slice(0, 4).map(p => p.title).filter(Boolean);
+    return { reply: `${name} has written ${posts.length} posts across DEV Community (${dev}) and bradleymatera.dev (${site}). Recent topics include ${sentenceList(samples, 4)}. Links and full briefs are in his blog catalog.` };
+  }
+
   // Elevator pitch / 20 seconds / short intro
   if (/elevator|20 second|30 second|quick pitch|sell him in|pitch for|give me a pitch|short pitch|one-liner|tl;dr|tl;dr/.test(lowerQuestion)) {
     const certs = (certifications || []).slice(0, 2).map(c => c.name || c).map(c => c.replace('AWS Certified ', 'AWS '));
