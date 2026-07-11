@@ -44,6 +44,29 @@ const MAX_ACTIVE_GENERATIONS = 1;
 const responseCache = new Map();
 let activeGenerations = 0;
 
+// ============ LEARNING SYSTEM ============
+const LEARNED_FILE = path.join(__dirname, 'learned.json');
+const THINK_INTERVAL_MS = 10 * 60 * 1000;
+let thinkRunning = false;
+const GITHUB_API_TOKEN = process.env.GITHUB_TOKEN || process.env.GITHUB_PAT || GITHUB_MODELS_TOKEN || '';
+const GITHUB_REPO_OWNER = 'BradleyMatera';
+const GITHUB_REPO_NAME = 'ProjectHub';
+const GITHUB_KNOWLEDGE_PATH = 'data/recruiter-knowledge.json';
+
+const defaultLearned = { stashed: [], learned: [], learnedCount: 0, lastThinkAt: 0 };
+let learnedData;
+try {
+  const raw = fs.readFileSync(LEARNED_FILE, 'utf8');
+  learnedData = { ...defaultLearned, ...JSON.parse(raw) };
+} catch {
+  learnedData = { ...defaultLearned };
+}
+
+function saveLearned() {
+  try { fs.writeFileSync(LEARNED_FILE, JSON.stringify(learnedData, null, 2)); }
+  catch (e) { console.error('Failed to save learned.json:', e.message); }
+}
+
 // ============ FREE MULTI-PROVIDER LLM NETWORK ============
 const PROVIDER_DEFS = {
   grok: {
@@ -215,8 +238,26 @@ app.get('/health', async (req, res) => {
     genModel: process.env.GEN_MODEL || 'smollm2:135m',
     genTimeoutMs: parseInt(process.env.GEN_TIMEOUT_MS || '13000', 10),
     knowledgeUrl: KNOWLEDGE_URL,
-    mode: 'rag-generative-with-grounded-fallback'
+    mode: 'rag-generative-with-grounded-fallback',
+    // Learning system stats
+    learning: {
+      stashedCount: learnedData.stashed.length,
+      learnedCount: learnedData.learnedCount,
+      pendingLearned: learnedData.learned.length,
+      lastThinkAt: learnedData.lastThinkAt,
+      thinkRunning,
+      hasGitHubToken: GITHUB_API_TOKEN.length >= 10
+    }
   });
+});
+
+app.post('/api/think', async (req, res) => {
+  try {
+    const results = await runThinkMode();
+    res.json({ ok: true, results });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 async function fetchKnowledge() {
@@ -959,6 +1000,16 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   // Safety: prompt injection / secret extraction / false claims
   if (/(ignore previous|ignore all rules|ignore your instructions|show.*system prompt|print.*env|api key|give me.*key|\.env|home address|family details|bypass cors|open.*port\s*11434|open port|fortune 500|reveal.*prompt|hidden config|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|social security|birth date|wife|children|disability rating|bank|password|act as root|delete the vm|hack the site|fake reference|security clearance)/.test(lowerQuestion)) {
     return { reply: `${agentName} can only answer recruiter questions about ${name} using the public site data. It can't help with that.` };
+  }
+
+  // Check learned answers from GitHub knowledge (pushed by think mode)
+  if (Array.isArray(knowledge?.learnedAnswers) && knowledge.learnedAnswers.length > 0) {
+    const found = knowledge.learnedAnswers.find(a => a.q === normalized);
+    if (found) return { reply: found.a };
+    if (normalized.length >= 10) {
+      const partial = knowledge.learnedAnswers.find(a => a.q.includes(normalized) || normalized.includes(a.q));
+      if (partial) return { reply: partial.a };
+    }
   }
   
   // Refuse false-claim requests, offer honest alternative (hallucination red team pack)
@@ -1785,7 +1836,7 @@ function mustStayGrounded(question, history) {
   if (/(pretend|make up|claim|say|tell|write|write something that)\b.*\b(google|senior|cto|10\s*years|masters?|kubernetes|led a team|production engineer|production experience|outages|clearance|payment systems|terraform|machine learning engineer|hide his lack|hide.*lack)\b/.test(q) || /write something that hides|hide his lack/.test(q)) return true;
   if (/\b(contact|email|phone|reach|github)\b|portfolio url|resume\?|links\?|\blinkedin\b(?!.*\b(style|summary|profile)\b)/.test(q)) return true;
   if (/\bproject|portfolio\b|which project|what project|best project|most relevant project|what is projecthub|ciris|interactive pokedex|pokedex|cheesemath|worked at amazon|has he worked at|did he work at/.test(q)) return true;
-  if (/who is bradley|who is brad\b|who's bradley|who's brad|what makes him different|different from other|compare him to the job|compare to the job|hiring manager|how does he handle unknown|not knowing something|handle unknown tech/.test(q)) return true;
+  if (/who is bradley|who is brad\b|who's bradley|who's brad|what makes him different|different from other|compare him to the job|compare to the job|hiring manager|work style|coding style|how does he handle unknown|not knowing something|handle unknown tech/.test(q)) return true;
   // Smoke tests / greetings / meta questions have deterministic answers and should not burn provider quota/latency
   if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b|are you online|say hello|health status|what can you (help|do) with|what can this bot (help|do)|what model|what provider|what llm|what ai|which model|which provider|what is this chatbot|does this use ollama|is this ai local|is my chat private|what data do you use|who made this|is this bradley'?s site|how is this chat free|how do you stay free|what powers you|what is your stack|what is this site for|what does this site do|daily cap|daily limit|rate limit|cooldown|how.*handle.*limit|run 24|24.?7|24x7|always available|what if.*provider|exhausted|out of quota/.test(q)) return true;
   // Naturalness / no-bs prompts have direct grounded answers
@@ -1843,7 +1894,7 @@ let lastReplyProvider = null;
 function recordRequest(question, provider) {
   totalRequestsServed++;
   persistentStats.totalRequestsAllTime++;
-  if (provider === 'grounded') persistentStats.groundedCount++;
+  if (provider === 'grounded' || provider === 'learned') persistentStats.groundedCount++;
   else if (provider === 'cached') persistentStats.cachedCount++;
   else persistentStats.llmCount++;
   persistentStats.providerBreakdown[provider] = (persistentStats.providerBreakdown[provider] || 0) + 1;
@@ -1865,6 +1916,177 @@ function flushStats() {
     console.error('Failed to flush stats:', e.message);
   }
 }
+
+// ============ LEARNING FUNCTIONS ============
+
+function isWeakAnswer(reply, question, provider) {
+  if (!reply) return false;
+  const r = reply.toLowerCase();
+  if (r.includes("not in") && r.includes("recruiter data")) return true;
+  if (provider === 'grounded' && /is a junior software engineer based in davis/.test(r)
+      && !/strength|weakness|cert|project|experience|contact|role|fit|aws|cloud|react|debug|learn|team|reliab|communicat|coding|problem|work style|different|legit|worth|honest|no bs|straight/i.test(question)) return true;
+  if (reply.length < 40 && !/yes|no/i.test(reply)) return true;
+  return false;
+}
+
+function stashQuestion(question, reply, provider) {
+  const norm = normalizeQuestion(question);
+  if (learnedData.stashed.some(s => s.q === norm)) return;
+  if (learnedData.learned.some(l => l.q === norm)) return;
+  const lower = String(question).toLowerCase();
+  if (/(ignore|inject|system prompt|\.env|api key|password|hack|bypass|social security|birth date)/.test(lower)) return;
+  if (question.length < 5 || question.length > 500) return;
+  learnedData.stashed.push({
+    q: norm, original: String(question).slice(0, 200),
+    badReply: String(reply).slice(0, 300), provider, ts: Date.now()
+  });
+  if (learnedData.stashed.length > 100) learnedData.stashed.shift();
+  saveLearned();
+  console.log(`[learn] Stashed: "${norm}" (${learnedData.stashed.length} pending)`);
+}
+
+function getLearnedAnswer(question) {
+  const norm = normalizeQuestion(question);
+  const found = learnedData.learned.find(l => l.q === norm);
+  if (found) return found.a;
+  if (norm.length >= 10) {
+    const partial = learnedData.learned.find(l => l.q.includes(norm) || norm.includes(l.q));
+    if (partial) return partial.a;
+  }
+  return null;
+}
+
+async function pushLearnedToGitHub() {
+  if (!GITHUB_API_TOKEN || GITHUB_API_TOKEN.length < 10) {
+    console.log('[think] No GitHub token, skipping push');
+    return false;
+  }
+  if (learnedData.learned.length === 0) return false;
+  try {
+    // Get current file SHA
+    const metaRes = await fetch(
+      `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_KNOWLEDGE_PATH}`,
+      { headers: { 'Authorization': `Bearer ${GITHUB_API_TOKEN}`, 'Accept': 'application/vnd.github+json' } }
+    );
+    if (!metaRes.ok) { console.error('[think] GitHub API meta failed:', metaRes.status); return false; }
+    const meta = await metaRes.json();
+    const sha = meta.sha;
+    const currentContent = Buffer.from(meta.content, 'base64').toString('utf8');
+    const knowledge = JSON.parse(currentContent);
+
+    // Add learned Q&A to a learnedAnswers array in the knowledge JSON
+    if (!knowledge.learnedAnswers) knowledge.learnedAnswers = [];
+    let added = 0;
+    for (const item of learnedData.learned) {
+      const exists = knowledge.learnedAnswers.some(a => a.q === item.q);
+      if (!exists) {
+        knowledge.learnedAnswers.push({ q: item.q, a: item.a, learnedAt: item.learnedAt });
+        added++;
+      }
+    }
+    if (added === 0) { console.log('[think] No new answers to push'); return true; }
+
+    // Push updated content
+    const newContent = Buffer.from(JSON.stringify(knowledge, null, 2)).toString('base64');
+    const pushRes = await fetch(
+      `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_KNOWLEDGE_PATH}`,
+      {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${GITHUB_API_TOKEN}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `Scout learned ${added} new answer(s) via think mode`,
+          content: newContent,
+          sha
+        })
+      }
+    );
+    if (pushRes.ok) {
+      console.log(`[think] Pushed ${added} learned answers to GitHub`);
+      // Clear learned queue since they're now in the canonical knowledge
+      learnedData.learned = [];
+      saveLearned();
+      // Force knowledge cache refresh
+      knowledgeCacheAt = 0;
+      return true;
+    } else {
+      console.error('[think] GitHub push failed:', pushRes.status);
+      return false;
+    }
+  } catch (e) {
+    console.error('[think] pushLearnedToGitHub error:', e.message);
+    return false;
+  }
+}
+
+async function runThinkMode() {
+  if (thinkRunning) return { skipped: 'already running' };
+  if (learnedData.stashed.length === 0) return { skipped: 'no stashed questions' };
+  thinkRunning = true;
+  const results = { processed: 0, learned: 0, failed: 0, pushed: false };
+  console.log(`[think] Processing ${learnedData.stashed.length} stashed questions`);
+  try {
+    const knowledge = await fetchKnowledge();
+    if (!knowledge) { return { ...results, skipped: 'no knowledge' }; }
+    const batch = learnedData.stashed.splice(0, 5);
+    results.processed = batch.length;
+    for (const item of batch) {
+      try {
+        const question = item.original;
+        const groundedReply = buildGroundedFallbackPayload(knowledge, question, []).reply;
+        let learnedReply = null;
+        let learnedProvider = null;
+        for (const slug of PROVIDER_ORDER) {
+          const def = PROVIDER_DEFS[slug];
+          if (!def || isProviderExhausted(slug)) continue;
+          try {
+            let raw = '';
+            if (def.type === 'openai') {
+              raw = await callOpenAICompatibleProvider(def.baseUrl, def.apiKey, def.model, knowledge, question, []);
+            } else if (def.type === 'cloudflare') {
+              raw = await callCloudflareWorkersAI(def.accountId, def.apiToken, def.model, knowledge, question, []);
+            } else if (def.type === 'gemini') {
+              raw = await callGeminiWithPrompt(buildPrompt(knowledge, question, [], 'gemini'), def.model);
+            } else if (def.type === 'ollama') {
+              raw = await callGenerativeRag(knowledge, question, groundedReply, [], Math.min(GEN_TIMEOUT_MS, 8000));
+            }
+            const cleaned = removeSlop(String(raw || '').trim().replace(/\s+/g, ' '));
+            if (cleaned && cleaned.length >= 25 && !/OUT_OF_SCOPE/i.test(cleaned)
+                && validateNetworkReply(cleaned, JSON.stringify(knowledge).slice(0, 2000))) {
+              learnedReply = cleaned;
+              learnedProvider = slug;
+              break;
+            }
+          } catch (e) { /* next provider */ }
+        }
+        if (learnedReply && learnedReply.toLowerCase() !== groundedReply.toLowerCase().slice(0, 100)) {
+          learnedData.learned.push({
+            q: item.q, original: item.original, a: learnedReply,
+            provider: learnedProvider, learnedAt: Date.now()
+          });
+          learnedData.learnedCount = (learnedData.learnedCount || 0) + 1;
+          results.learned++;
+          console.log(`[think] Learned: "${item.q}" via ${learnedProvider}`);
+        } else {
+          learnedData.stashed.push(item);
+          results.failed++;
+        }
+      } catch (e) { results.failed++; }
+    }
+    learnedData.lastThinkAt = Date.now();
+    saveLearned();
+    // Try pushing to GitHub
+    if (results.learned > 0) {
+      results.pushed = await pushLearnedToGitHub();
+    }
+  } finally {
+    thinkRunning = false;
+  }
+  console.log(`[think] Done: ${results.learned} learned, ${results.failed} failed, pushed=${results.pushed}`);
+  return results;
+}
+
+// Background think interval
+setInterval(() => { runThinkMode().catch(e => console.error('[think] Error:', e.message)); }, THINK_INTERVAL_MS);
 
 // Flush on graceful shutdown
 process.on('SIGTERM', () => { flushStats(); process.exit(0); });
@@ -1895,11 +2117,13 @@ app.post('/api/chat', async (req, res) => {
       return res.json(payload);
     }
 
-    // 1. Grounded deterministic answer is always computed first (test suite: deterministic beats a bad tiny model)
+    // 1. Check learned answers first (from think mode)
+    const learnedAns = getLearnedAnswer(userMessage);
+    // 1b. Grounded deterministic answer is always computed first
     const grounded = buildGroundedFallbackPayload(knowledge, userMessage, history);
-    let reply = grounded.reply;
-    let provider = 'grounded';
-    let model = 'knowledge-json';
+    let reply = learnedAns || grounded.reply;
+    let provider = learnedAns ? 'learned' : 'grounded';
+    let model = learnedAns ? 'think-mode' : 'knowledge-json';
 
     // 2. Try the free multi-provider network if the question isn't forced to stay grounded.
     //    The network walks xAI -> Groq -> Cloudflare -> GitHub -> Gemini -> local Ollama,
@@ -1928,6 +2152,10 @@ app.post('/api/chat', async (req, res) => {
 
     lastReplyProvider = payload.provider;
     recordRequest(userMessage, payload.provider);
+    // Stash weak answers for think mode learning
+    if (isWeakAnswer(reply, userMessage, provider)) {
+      stashQuestion(userMessage, reply, provider);
+    }
     return res.json(payload);
   } catch (err) {
     console.error('Chat error:', err);
