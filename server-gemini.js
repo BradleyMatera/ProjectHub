@@ -3153,7 +3153,23 @@ async function pushLearnedToGitHub() {
         added++;
       }
     }
-    if (added === 0) { console.log('[think] No new answers to push'); return true; }
+    if (added === 0) {
+      console.log('[think] No new answers to push');
+      // Move to scoredHistory even if already in canonical knowledge so the queue doesn't grow stale.
+      for (const l of learnedData.learned) {
+        learnedData.scoredHistory.push({
+          q: l.q, score: l.score, groundedScore: l.groundedScore, provider: l.provider, learnedAt: l.learnedAt,
+          verdict: l.judgment?.verdict, reason: l.judgment?.reason,
+          faithfulness: l.judgment?.faithfulness, relevance: l.judgment?.relevance,
+          helpfulness: l.judgment?.helpfulness, safety: l.judgment?.safety,
+          judgeProvider: l.judgment?.provider
+        });
+      }
+      if (learnedData.scoredHistory.length > 50) learnedData.scoredHistory = learnedData.scoredHistory.slice(-50);
+      learnedData.learned = [];
+      saveLearned();
+      return true;
+    }
 
     // Push updated content
     const newContent = Buffer.from(JSON.stringify(knowledge, null, 2)).toString('base64');
@@ -3171,9 +3187,15 @@ async function pushLearnedToGitHub() {
     );
     if (pushRes.ok) {
       console.log(`[think] Pushed ${added} learned answers to GitHub`);
-      // Move scored answers to history before clearing
+      // Move scored answers to history before clearing, preserving the judgment.
       for (const l of learnedData.learned) {
-        learnedData.scoredHistory.push({ q: l.q, score: l.score, groundedScore: l.groundedScore, provider: l.provider, learnedAt: l.learnedAt });
+        learnedData.scoredHistory.push({
+          q: l.q, score: l.score, groundedScore: l.groundedScore, provider: l.provider, learnedAt: l.learnedAt,
+          verdict: l.judgment?.verdict, reason: l.judgment?.reason,
+          faithfulness: l.judgment?.faithfulness, relevance: l.judgment?.relevance,
+          helpfulness: l.judgment?.helpfulness, safety: l.judgment?.safety,
+          judgeProvider: l.judgment?.provider
+        });
       }
       if (learnedData.scoredHistory.length > 50) learnedData.scoredHistory = learnedData.scoredHistory.slice(-50);
       // Clear learned queue since they're now in the canonical knowledge
@@ -3204,7 +3226,7 @@ async function runThinkMode() {
     console.log(`[think] Cleaned ${before - learnedData.stashed.length} stale/tone stashes`);
     saveLearned();
   }
-  if (learnedData.stashed.length === 0) return { skipped: 'no stashed questions' };
+  if (learnedData.stashed.length === 0 && learnedData.learned.length === 0) return { skipped: 'no stashed questions' };
   thinkRunning = true;
   const results = { processed: 0, learned: 0, failed: 0, pushed: false, rejections: [] };
   console.log(`[think] Processing ${learnedData.stashed.length} stashed questions`);
@@ -3334,8 +3356,8 @@ async function runThinkMode() {
     }
     learnedData.lastThinkAt = Date.now();
     saveLearned();
-    // Try pushing to GitHub
-    if (results.learned > 0) {
+    // Try pushing to GitHub (also push any pending learned answers from a previous run)
+    if (results.learned > 0 || learnedData.learned.length > 0) {
       results.pushed = await pushLearnedToGitHub();
     }
   } finally {
