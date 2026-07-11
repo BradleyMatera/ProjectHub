@@ -1494,24 +1494,24 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `Yes, ${name} fits a junior frontend developer role. His strongest projects use JavaScript, TypeScript, React, and Next.js. It's project and internship experience, not production ownership.` };
   }
 
+  // 'What kind of roles is he looking for?' — return target roles list, not a fit assessment (check before generic role-fit)
+  if (/what kind of roles?|what roles.*(target|looking|fit)|fit for what kind|what kind of jobs?|what kind of work|what kind of position/.test(lowerQuestion)) {
+    const roles = goals?.targetRoles || [];
+    if (roles.length > 0) {
+      return { reply: `${name} is targeting entry-level tech roles. Examples include ${sentenceList(roles.slice(0, 6), 6)}. He learns quickly and does best with mentorship or a structured teaching program.` };
+    }
+    return { reply: `${name} is looking for entry-level tech, IT, support, or software roles where he can learn hands-on.` };
+  }
+
   // Role-fit / career-fit questions (broadened to catch natural recruiter phrasing)
   const role = findRoleInQuestion(question);
-  if (role && /(fit|candidate|what makes|suitable|right for|good for|apply for|what kind of|how about|what about|role for|job for|would.*fit|should.*fit|bad fit|good fit|strong fit|best fit|is he a|is bradley a|good match|strong match|a match for|perfect for|missing for|gaps for|missing to be|should he apply|jobs should|work as a|work as an|pitch|sell|why hire|why should.*hire|good candidate|would he be a)/.test(lowerQuestion)) {
+  if (role && /(fit|candidate|what makes|suitable|right for|good for|apply for|how about|what about|role for|job for|would.*fit|should.*fit|bad fit|good fit|strong fit|best fit|is he a|is bradley a|good match|strong match|a match for|perfect for|missing for|gaps for|missing to be|should he apply|jobs should|work as a|work as an|pitch|sell|why hire|why should.*hire|good candidate|would he be a)/.test(lowerQuestion)) {
     return handleRoleFit(knowledge, question, role);
   }
   // 'Which is the best fit?' without a specific role
   if (/which.*best fit|best fit for him|which role.*best/.test(lowerQuestion)) {
     const targetRoles = (goals?.targetRoles || ['junior web', 'cloud support', 'technical support']).slice(0, 3);
     return { reply: `Based on the data, ${name}'s strongest matches are ${sentenceList(targetRoles, 3)} roles. Junior web and cloud support are the most direct fits given his React/Next.js projects and AWS background.` };
-  }
-
-  // 'What kind of roles is he looking for?' — return target roles list, not a fit assessment
-  if (/what kind of roles?|what roles.*(target|looking|fit)|fit for what kind|what kind of jobs?/.test(lowerQuestion)) {
-    const roles = goals?.targetRoles || [];
-    if (roles.length > 0) {
-      return { reply: `${name} is targeting entry-level tech roles. Examples include ${sentenceList(roles.slice(0, 6), 6)}. He learns quickly and does best with mentorship or a structured teaching program.` };
-    }
-    return { reply: `${name} is looking for entry-level tech, IT, support, or software roles where he can learn hands-on.` };
   }
 
   // Reasons to interview
