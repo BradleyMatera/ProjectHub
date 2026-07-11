@@ -619,6 +619,16 @@
           <p style="color:var(--soft)">Loading…</p>
         </div>
 
+        <h3 style="margin-top:1.5rem;font-size:0.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:0.05em">Provider health history</h3>
+        <div id="live-provider-health" style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem">
+          <p style="color:var(--soft)">Loading…</p>
+        </div>
+
+        <h3 style="margin-top:1.5rem;font-size:0.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:0.05em">Recent sessions</h3>
+        <div id="live-sessions" style="font-size:0.82rem;color:var(--muted);max-height:200px;overflow-y:auto;margin-top:0.5rem">
+          <p style="color:var(--soft)">Loading…</p>
+        </div>
+
         <h3 style="margin-top:1.5rem;font-size:0.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:0.05em">Recent requests</h3>
         <div id="live-recent" style="font-size:0.82rem;color:var(--muted);max-height:200px;overflow-y:auto;margin-top:0.5rem">
           <p style="color:var(--soft)">Loading…</p>
@@ -740,6 +750,8 @@
       const elTopics = document.getElementById('live-topics');
       const elTrend = document.getElementById('live-trend');
       const elGaps = document.getElementById('live-gaps');
+      const elProviderHealth = document.getElementById('live-provider-health');
+      const elSessions = document.getElementById('live-sessions');
       const elLearnStashed = document.getElementById('learn-stashed');
       const elLearnCount = document.getElementById('learn-count');
       const elLearnPending = document.getElementById('learn-pending');
@@ -917,6 +929,33 @@
               }).join('');
             }
             elGaps.innerHTML = gapHtml;
+          }
+
+          // Provider health history
+          const health = data.providerHealth || {};
+          const healthEntries = Object.entries(health);
+          if (healthEntries.length > 0) {
+            elProviderHealth.innerHTML = healthEntries.map(([slug, h]) => {
+              const total = h.successes + h.failures;
+              const successRate = total > 0 ? Math.round((h.successes / total) * 100) : 0;
+              const color = successRate >= 80 ? '#34d399' : successRate >= 50 ? '#fbbf24' : '#f87171';
+              return `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;border-bottom:1px solid rgba(148,163,184,0.08)"><span style="color:var(--muted);min-width:80px">${slug}</span><div style="flex:1;height:6px;background:rgba(148,163,184,0.1);border-radius:3px;overflow:hidden"><div style="height:6px;background:${color};width:${successRate}%"></div></div><span style="color:${color};font-size:0.75rem;min-width:40px;text-align:right">${successRate}%</span><span style="color:var(--soft);font-size:0.72rem;min-width:60px">${h.avgMs || 0}ms avg</span><span style="color:var(--soft);font-size:0.72rem;min-width:50px">${h.successes}✓ ${h.failures}✗</span></div>`;
+            }).join('');
+          } else {
+            elProviderHealth.innerHTML = '<p style="color:var(--soft)">No provider health data yet.</p>';
+          }
+
+          // Recent sessions
+          const sessions = data.recentSessions || [];
+          if (sessions.length === 0) {
+            elSessions.innerHTML = '<p style="color:var(--soft)">No active sessions.</p>';
+          } else {
+            const intentColors = { recruiter: '#34d399', casual: '#60a5fa', bot: '#f87171', engaged: '#fbbf24', visitor: '#a78bfa' };
+            elSessions.innerHTML = sessions.map(s => {
+              const started = new Date(s.startedAt).toLocaleTimeString();
+              const intentColor = intentColors[s.intent] || '#64748b';
+              return `<div style="padding:0.3rem 0;border-bottom:1px solid rgba(148,163,184,0.08)"><span style="color:${intentColor}">${s.intent}</span> · <span style="color:var(--soft)">${started}</span> · <span style="color:var(--muted)">${s.turns} turns</span> · <span style="color:var(--muted)">${s.durationSec}s</span>${s.referrer !== 'unknown' ? ` · <span style="color:#64748b;font-size:0.75rem">${s.referrer}</span>` : ''}<br><span style="color:#475569;font-size:0.72rem">${s.topics.join(', ')}</span></div>`;
+            }).join('');
           }
 
           // Learning system stats

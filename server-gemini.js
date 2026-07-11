@@ -236,6 +236,8 @@ app.get('/health', async (req, res) => {
     topicBreakdown: persistentStats.topicBreakdown,
     hourlyRequests: persistentStats.hourlyRequests,
     lastPipeline: persistentStats.lastPipeline || [],
+    providerHealth: persistentStats.providerHealth,
+    recentSessions: getRecentSessions(),
     // Provider table
     providerOrder: PROVIDER_ORDER,
     providers,
@@ -1822,6 +1824,7 @@ async function generateWithNetwork(knowledge, question, history, groundedReply) 
     if (!isProviderEnabled(slug) || !isProviderAvailable(slug)) continue;
 
     recordProviderAttempt(slug);
+    const providerStart = Date.now();
     try {
       let raw = '';
       if (def.type === 'openai') {
@@ -1836,12 +1839,15 @@ async function generateWithNetwork(knowledge, question, history, groundedReply) 
 
       const cleaned = removeSlop(String(raw || '').trim().replace(/\s+/g, ' '));
       if (cleaned && cleaned.length >= 15 && validateNetworkReply(cleaned, sourceText)) {
+        recordProviderHealth(slug, true, Date.now() - providerStart);
         return { reply: cleaned, provider: slug, model: def.model || GEN_MODEL };
       }
       console.log(`Provider ${slug} output rejected (length ${cleaned?.length || 0}): ${cleaned.slice(0, 120)}`);
+      recordProviderHealth(slug, false, Date.now() - providerStart);
     } catch (err) {
       const msg = String(err.message || '').toLowerCase();
       console.error(`Provider ${slug} failed: ${err.message.slice(0, 200)}`);
+      recordProviderHealth(slug, false, Date.now() - providerStart);
       if (/credits|depleted|spending limit|permission-denied|402|403/.test(msg)) {
         markProviderExhausted(slug, 24 * 60 * 60 * 1000);
       } else if (/401|unauthorized|invalid.*key|invalid.*token|auth/.test(msg)) {
@@ -1909,7 +1915,9 @@ const defaultStats = {
   referrerBreakdown: {}, // { "bradleymatera.dev": 45, "codepen.io": 12 }
   topicBreakdown: {}, // { "2026-07-10": { projects: 12, aws: 8, ... } }
   hourlyRequests: {}, // { "2026-07-10T22": { total: 15, grounded: 8, llm: 5, cached: 2 } }
-  lastPipeline: [] // last request's decision path
+  lastPipeline: [], // last request's decision path
+  sessions: [], // last 50 { id, turns, topics, startedAt, durationSec, referrer, intent }
+  providerHealth: {} // { groq: { successes: 45, failures: 3, avgMs: 1200 }, ... }
 };
 
 let persistentStats;
@@ -1953,6 +1961,75 @@ function extractReferrer(req) {
   } catch {
     return 'unknown';
   }
+}
+
+function detectVisitorIntent(question, history) {
+  const q = String(question || '').toLowerCase();
+  const turns = Array.isArray(history) ? history.length : 0;
+  // Recruiter: asks about role fit, experience, skills, gaps
+  if (/\b(fit|hire|candidate|role|job|position|experience|skill|gap|concern|weakness|strength|interview|recruiter|resume)\b/.test(q)) return 'recruiter';
+  // Casual: asks "what is this", "who is brad"
+  if (/^(hey|hi|hello|yo|sup|what is this|who is|what does this do|what can you)/.test(q) && turns === 0) return 'casual';
+  // Bot/scanner: rapid identical questions or very short generic queries
+  if (turns === 0 && q.length < 10 && /^(test|hello|hi|ping|test123)/.test(q)) return 'bot';
+  // Returning: has history
+  if (turns >= 2) return 'engaged';
+  return 'visitor';
+}
+
+// In-memory session tracking (not persisted per-request for performance)
+const activeSessions = new Map();
+
+function trackSession(sessionId, question, provider, referrer, intent) {
+  if (!sessionId) return;
+  if (!activeSessions.has(sessionId)) {
+    activeSessions.set(sessionId, {
+      id: sessionId, turns: 0, topics: [], startedAt: Date.now(),
+      referrer, intent, lastActiveAt: Date.now()
+    });
+  }
+  const sess = activeSessions.get(sessionId);
+  sess.turns++;
+  sess.lastActiveAt = Date.now();
+  const topic = classifyTopic(question);
+  if (!sess.topics.includes(topic)) sess.topics.push(topic);
+  sess.intent = intent;
+
+  // Prune stale sessions (inactive > 30 min)
+  const cutoff = Date.now() - 30 * 60 * 1000;
+  for (const [id, s] of activeSessions) {
+    if (s.lastActiveAt < cutoff) activeSessions.delete(id);
+  }
+}
+
+function getRecentSessions() {
+  return Array.from(activeSessions.values())
+    .sort((a, b) => b.lastActiveAt - a.lastActiveAt)
+    .slice(0, 20)
+    .map(s => ({
+      id: s.id.slice(0, 12) + '…',
+      turns: s.turns,
+      topics: s.topics.slice(0, 5),
+      startedAt: s.startedAt,
+      durationSec: Math.round((s.lastActiveAt - s.startedAt) / 1000),
+      referrer: s.referrer,
+      intent: s.intent
+    }));
+}
+
+function recordProviderHealth(slug, success, latencyMs) {
+  if (!persistentStats.providerHealth[slug]) {
+    persistentStats.providerHealth[slug] = { successes: 0, failures: 0, avgMs: 0, totalMs: 0 };
+  }
+  const h = persistentStats.providerHealth[slug];
+  if (success) {
+    h.successes++;
+    h.totalMs += latencyMs || 0;
+    h.avgMs = Math.round(h.totalMs / h.successes);
+  } else {
+    h.failures++;
+  }
+  statsDirty = true;
 }
 
 function recordRequest(question, provider, opts = {}) {
@@ -2299,6 +2376,9 @@ app.post('/api/chat', async (req, res) => {
     }
 
     lastReplyProvider = payload.provider;
+    const intent = detectVisitorIntent(userMessage, history);
+    const sessionId = req.body.sessionId || '';
+    trackSession(sessionId, userMessage, payload.provider, referrer, intent);
     recordRequest(userMessage, payload.provider, { referrer, pipeline, latencyMs: Date.now() - reqStart });
     // Stash weak answers for think mode learning
     if (isWeakAnswer(reply, userMessage, provider)) {
