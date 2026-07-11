@@ -2745,10 +2745,7 @@ function classifyTopic(question) {
   if (/education|degree|school|full sail|gpa|graduat/.test(q)) return 'education';
   if (/contact|email|phone|reach|linkedin|portfolio link|github profile/.test(q)) return 'contact';
   if (/resume|cv|cover letter/.test(q)) return 'resume';
-  if (/role|fit|hire|candidate|job|position|devops|sre|support|qa|data/.test(q)) return 'role-fit';
-  if (/strength|strongest|greatest|best at|good at|standout|impressive|excellent/.test(q)) return 'strengths';
-  if (/weakness|weak at|concern|gap|limitation|red flag|worried|hesitant/.test(q)) return 'weaknesses';
-  if (/team|people|interpersonal|social|customer service|communication|collaborat/.test(q)) return 'interpersonal';
+  // Specific job-context topics before the broad role-fit bucket so "remote role" and "availability" win.
   if (/salary|pay|compensation|rate|hourly|annual|budget/.test(q)) return 'salary';
   if (/benefit|health insurance|pto|vacation|time off|401k|retirement|equity|bonus/.test(q)) return 'benefits';
   if (/remote|work from home|wfh|hybrid|on.?site|office|relocation|relocate|move|location|davis|illinois/.test(q)) return 'remote';
@@ -2757,6 +2754,10 @@ function classifyTopic(question) {
   if (/methodology|workflow|process|how does he work|how he code|approach|problem.?solving|debugging|troubleshoot|root cause/.test(q)) return 'methodology';
   if (/motivation|why does he want|why he wants|passion|interested in|excited about|career goal/.test(q)) return 'motivation';
   if (/reference|recommendation|referral|previous manager|colleague/.test(q)) return 'references';
+  if (/role|fit|hire|candidate|job|position|devops|sre|support|qa|data/.test(q)) return 'role-fit';
+  if (/strength|strongest|greatest|best at|good at|standout|impressive|excellent/.test(q)) return 'strengths';
+  if (/weakness|weak at|concern|gap|limitation|red flag|worried|hesitant/.test(q)) return 'weaknesses';
+  if (/team|people|interpersonal|social|customer service|communication|collaborat/.test(q)) return 'interpersonal';
   if (/army|military|veteran/.test(q)) return 'army';
   if (/work style|coding style|management style|feedback|preferred|work ethic|organized/.test(q)) return 'work-style';
   if (/who is brad|tell me about|summary|bio|about brad|overview|elevator|pitch/.test(q)) return 'summary';
