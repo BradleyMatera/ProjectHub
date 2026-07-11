@@ -2027,7 +2027,10 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     const outOfScope = [
       `I don't have anything about that in ${name}'s verified recruiter data. I can answer questions about his projects, skills, AWS internship, work history, writing, or contact info.`,
       `That's not something I can pull from ${name}'s public profile. What do you want to know about his tech background, projects, or experience?`,
-      `${name}'s recruiter data doesn't cover that. I'm happy to talk about his skills, projects, AWS work, or how to reach him.`
+      `${name}'s recruiter data doesn't cover that. I'm happy to talk about his skills, projects, AWS work, or how to reach him.`,
+      `I only have verified info about ${name}'s professional background. Ask me about his coding projects, AWS internship, or target roles.`,
+      `That topic isn't in ${name}'s profile data. I can help with questions about his work history, tech stack, certifications, or blog posts.`,
+      `I stick to what I can verify about ${name}. Try asking about his projects, his AWS experience, or what roles he's targeting.`
     ];
     const pick = outOfScope[history.length % outOfScope.length];
     return { reply: pick };
