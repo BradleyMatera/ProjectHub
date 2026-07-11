@@ -1234,9 +1234,11 @@ function buildPrompt(knowledge, question, history, provider) {
   context += buildKnowledgeContext(knowledge);
 
   context += `\nVOICE AND STYLE:\n`;
+  context += `- You are Scout, a generative AI assistant, not a keyword-based FAQ bot. Answer the recruiter's actual question in a direct, natural way.\n`;
   context += `- Talk like a normal, helpful person. Not a corporate AI, not a resume, not a sales pitch.\n`;
   context += `- Answer directly in 1-3 short sentences for simple questions. Give more detail when the question warrants it.\n`;
-  context += `- USE ONLY the verified facts above. Do not use outside knowledge, assumptions, or general industry facts.\n`;
+  context += `- USE the verified facts above as grounding. You may make reasonable, careful inferences when the facts support it, but label the inference clearly (e.g., "That's not directly stated, but based on...").\n`;
+  context += `- Never present an inference as a confirmed fact.\n`;
   context += `- Never start with "Certainly", "Absolutely", "Great question", "Of course", "Sure", or "As an AI".\n`;
   context += `- Vary sentence openers across turns. Don't start every reply with "Bradley is a..." or "Bradley has..."; alternate with "He...", "His...", "From the data...", "In terms of...", "When it comes to...", "Based on...".\n`;
   context += `- Never use words like robust, passionate, synergy, leverage, dynamic, extensive, groundbreaking, cutting-edge, innovative, world-class, best-in-class, proven leader, deep mastery, exceptional, seasoned, or guru.\n`;
@@ -1244,15 +1246,17 @@ function buildPrompt(knowledge, question, history, provider) {
   context += `- Do not end with a sales pitch, vague offer to help, or long disclaimer.\n`;
   context += `- Do not oversell Bradley. He is junior. If something is from a project, an internship, or school, say so.\n`;
   context += `- Do not describe his AWS work as live production ownership; it was structured labs and a controlled capstone.\n`;
-  context += `- If the data does not contain the answer, say "I don't see that in the current recruiter data" and suggest checking the resume or contacting him directly.\n`;
-  context += `- If the user is vague, ask a brief clarifying question.\n`;
+  context += `- If the data does not contain the answer and no reasonable inference is possible, explain what is known, what is not known, and ask one focused follow-up question only when the missing information prevents a meaningful answer.\n`;
+  context += `- Do not default to "That's outside what Scout covers" or any generic scope warning. Address the actual question.\n`;
   context += `\nCONVERSATION RULES:\n`;
   context += `- This is a real conversation. Reference what was already discussed without repeating it.\n`;
+  context += `- Treat follow-ups as part of the same conversation. Resolve pronouns like "that", "it", and "he" from the preceding context.\n`;
   context += `- If the recruiter asks a follow-up, build on the previous answer. Don't start from scratch.\n`;
   context += `- Vary your phrasing. Don't use the same sentence structure or opening words as previous turns.\n`;
   context += `- When the recruiter seems to be exploring (asking open-ended questions), end with a relevant follow-up question to keep the conversation going.\n`;
   context += `- When the recruiter asks a direct factual question, just answer it. Don't add unnecessary follow-ups.\n`;
   context += `- Use the interview answers above as a guide for tone and content, but adapt naturally to the question.\n`;
+  context += `- Include useful project, blog, résumé, recruiter, or contact links when relevant.\n`;
 
   if (Array.isArray(history) && history.length > 0) {
     context += `\nRECENT CONVERSATION:\n`;
@@ -1952,12 +1956,11 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Blog / writing / articles
-  if (/\bblog\b|\bblogs\b|article|writing|publication|has he written|what.*he.*(write|written|writes)|what has he published|where does he write|write about|writes about|written about|dev\.to|dev community|bradleymatera\.dev/.test(normalized)) {
+  if (/\bblog\b|\bblogs\b|article|writing|publication|publish|published|has he written|what.*he.*(write|written|writes)|what has he published|where does he write|write about|writes about|written about|dev\.to|dev community|bradleymatera\.dev/.test(normalized)) {
     const posts = blogCatalog?.records || [];
     const dev = posts.filter(p => p.platform === 'DEV Community').length;
     const site = posts.filter(p => p.platform === 'bradleymatera.dev').length;
     const inAwsContext = /aws|lambda|dynamodb|s3\b|cloudfront|amplify|amazon|cloud support/.test(lastAssistantLower) || /aws|lambda|dynamodb|s3\b|cloudfront|amplify|amazon|cloud support/.test(normalized);
-    console.log('[DEBUG blog] inAwsContext:', inAwsContext, 'lastAssistantLower:', lastAssistantLower.substring(0, 80), 'normalized:', normalized);
     let samples = posts.slice(0, 4).map(p => p.title).filter(Boolean);
     if (inAwsContext) {
       const awsPosts = posts.filter(p => /aws|lambda|dynamodb|s3|cloudfront|amplify|amazon|cloud|serverless/i.test(`${p.title || ''} ${p.brief || ''}`));
@@ -2007,16 +2010,15 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     || /buzzword|corporate|plain|paragraph|no hype|no marketing|salesy|resume language|passionate|absolutely|certainly/.test(lowerQuestion);
   if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|languages|databases|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate|kitten|rescue|animal|shelter|volunteer|paid|blog|blogs|article|writing|publication|dev\.to|dev community|write about|linux|unix|terminal|shell|command line|bash|powershell/.test(lowerQuestion)) {
     const outOfScope = [
-      `That's outside what ${agentName} covers. Ask about ${name}'s projects, skills, AWS background, role fit, or contact info.`,
-      `${agentName} sticks to ${name}'s recruiter profile — projects, skills, AWS work, role fit, and how to contact him. That question isn't in the data.`,
-      `I don't have that in ${name}'s verified recruiter data. What do you want to know about his projects, skills, or role fit?`,
-      `That's not something ${agentName} tracks. I can answer questions about ${name}'s tech background, work history, and contact info.`
+      `I don't have anything about that in ${name}'s verified recruiter data. I can answer questions about his projects, skills, AWS internship, work history, writing, or contact info.`,
+      `That's not something I can pull from ${name}'s public profile. What do you want to know about his tech background, projects, or experience?`,
+      `${name}'s recruiter data doesn't cover that. I'm happy to talk about his skills, projects, AWS work, or how to reach him.`
     ];
     const pick = outOfScope[history.length % outOfScope.length];
     return { reply: pick };
   }
 
-  // Default to basic info
+  // Default: return a helpful summary instead of failing
   return { reply: concisePitch(knowledge) };
 }
 
@@ -2029,6 +2031,8 @@ function buildContextualGroundedReply(groundedReply, question, history) {
   if (!Array.isArray(history) || history.length === 0) return groundedReply;
   const lastTurn = history[history.length - 1];
   if (!lastTurn || !lastTurn.assistant) return groundedReply;
+  // Skip context wrappers when the only prior turn is the welcome greeting
+  if (!lastTurn.user || /welcome back|i'm scout|ask about his projects/i.test(String(lastTurn.assistant || '').toLowerCase())) return groundedReply;
 
   const q = String(question || '').trim();
   const qLower = q.toLowerCase();
@@ -2323,19 +2327,11 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
   // wastes time completing a bad answer.
   const agentName = knowledge?.agent?.name || 'Scout';
   const agentPersona = knowledge?.agent?.persona || 'the helpful, honest site assistant';
-  const system = `A recruiter is asking about a job candidate named Bradley Matera. You are ${agentName}, ${agentPersona}. You are not Bradley. Answer the recruiter using ONLY this info: ${truncateWords(source, 80)}
-Tone and format rules:
-- Answer in 1-3 short sentences.
-- Third person only (he/his).
-- Plain, honest language. No buzzwords.
-- Never start with "Certainly", "Absolutely", "Great question", "As an AI", or "I would be happy".
-- Never use: leverage, robust, synergy, passionate, world-class, cutting-edge, groundbreaking, extensive expertise, proven leader, deep mastery, dynamic, innovative, exceptional.
-- Do not repeat the user's question back.
-- Do not end with a sales pitch or vague offer to help.
-- If the data is missing, say "I don't see that in the current recruiter data" briefly.
-- Never add facts, employers, degrees, or years of experience not listed above.
-- Do not describe his AWS work as live production ownership; it was structured labs and a capstone.`;
-  const user = truncateWords(question, 40);
+  const historyText = Array.isArray(history) && history.length > 0
+    ? history.slice(-4).map(h => `User: ${h.user || ''}\n${agentName}: ${h.assistant || ''}`).join('\n')
+    : '';
+  const system = `A recruiter is asking about a job candidate named Bradley Matera. You are ${agentName}, ${agentPersona}. You are not Bradley. Use ONLY the verified facts below to answer.\n\nVerified facts: ${truncateWords(source, 80)}\n\nCore behavior:\n- Answer the recruiter's actual question directly and naturally.\n- You may make reasonable, careful inferences when the facts support them, but label them as inference (e.g., "That's not directly stated, but...").\n- If no relevant fact exists, explain what is known and what is not known, and ask one focused follow-up question when needed.\n- Do not use a generic scope warning like "That's outside what Scout covers."\n- Third person only (he/his).\n- 1-3 short sentences.\n- Plain, honest language. No buzzwords.\n- Never start with "Certainly", "Absolutely", "Great question", "As an AI", or "I would be happy".\n- Never use: leverage, robust, synergy, passionate, world-class, cutting-edge, groundbreaking, extensive expertise, proven leader, deep mastery, dynamic, innovative, exceptional.\n- Do not repeat the user's question back.\n- Do not end with a sales pitch or vague offer to help.\n- Never add facts, employers, degrees, or years of experience not listed above.\n- Do not describe his AWS work as live production ownership; it was structured labs and a capstone.`;
+  const user = historyText ? `${historyText}\nUser: ${truncateWords(question, 40)}\n${agentName}:` : truncateWords(question, 40);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs || GEN_TIMEOUT_MS);
@@ -3133,22 +3129,32 @@ app.post('/api/chat', async (req, res) => {
         model = networkResult.model;
         generated = true;
       } else {
-        pipeline.push('network:all-failed', 'grounded-fallback');
+        pipeline.push('network:all-failed');
       }
     } else {
       pipeline.push('mustStayGrounded:true');
     }
 
-    // 2b. Apply context-aware wrapping to grounded replies (avoid blind repetition)
+    // 2b. Generative fallback: when the network fails, use local Ollama with retrieved facts
+    //     to produce a natural, grounded answer rather than a rigid keyword fallback.
+    if (!generated && GEN_ENABLED && !isNetworkCircuitOpen() && !mustStayGrounded(userMessage, history)) {
+      const genReply = await callGenerativeRag(knowledge, userMessage, grounded.reply, history, 4000);
+      if (genReply && validateGenerative(genReply, grounded.reply)) {
+        reply = genReply;
+        provider = 'ollama';
+        model = GEN_MODEL;
+        generated = true;
+        pipeline.push('gen-fallback:ollama');
+      }
+    }
+
+    // 2c. Apply context-aware wrapping to grounded replies (avoid blind repetition)
     if (!generated && provider === 'grounded') {
       reply = buildContextualGroundedReply(reply, userMessage, history);
     }
 
-    // 2c. Humanize grounded replies with local Ollama so fallback sounds natural.
-    //     DISABLED: the smollm2:135m model on the small VM is currently producing
-    //     off-topic answers (e.g., confusing 'helpdesk role' with 'AI helpdesk').
-    //     We keep the function but don't use it until a more reliable model or
-    //     validation layer is in place.
+    // 2d. Humanize grounded replies with local Ollama so fallback sounds natural.
+    //     DISABLED: the generative fallback above now covers this path.
     if (false && !generated && provider === 'grounded' && GEN_ENABLED && !isNetworkCircuitOpen() && !mustStayGrounded(userMessage, history)) {
       const topic = classifyTopic(userMessage);
       const safeToHumanize = !['out-of-scope', 'salary'].includes(topic);
