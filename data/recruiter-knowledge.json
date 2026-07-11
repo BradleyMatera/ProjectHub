@@ -28,6 +28,12 @@
       "Communicating with technical and non-technical users",
       "Staying calm and organized under pressure"
     ],
+    "honestGaps": [
+      "Data structures and algorithms (DSA). I have taken Udemy courses and discussed the math with others, but I have no production mentorship in DSA and no formal CS degree.",
+      "Turning a brand-new problem into working code from a blank file without guidance. I can read, understand, debug, and modify code, but I usually need help to architect a solution from scratch.",
+      "Most LeetCode-style problems. I cannot reliably solve them on my own yet.",
+      "Choosing the right data structure or algorithm for an unfamiliar production problem. I understand some foundations but not how to apply them in production contexts."
+    ],
     "workStyle": [
       "Read nearby code and follow existing patterns before changing things",
       "Run the project locally before making changes",
@@ -495,7 +501,11 @@
     },
     {
       "prompt": "Can you code",
-      "answer": "Yes, at a junior level. I can handle basics and level-one work in the languages I studied in school: JavaScript, TypeScript, React, Node.js, HTML, CSS, and SQL. I read code carefully and follow existing patterns before I change things. I want to keep learning without always leaning on AI, especially if the team is willing to teach and be supportive. I also put money and time into my own education through courses and programs I qualify for."
+      "answer": "Yes, at a junior level. I can read code, understand what it is doing, follow the logic, make changes, debug problems, and learn new systems. I can handle basics and level-one work in the languages I studied in school: JavaScript, TypeScript, React, Node.js, HTML, CSS, and SQL. My honest gap is data structures and algorithms. I have taken Udemy courses but never had production mentorship in DSA, and I cannot reliably solve most LeetCode problems on my own or build a complete program from a blank file without help. I am willing to improve that at a company that trains and mentors."
+    },
+    {
+      "prompt": "What is your biggest weakness",
+      "answer": "Data structures and algorithms. I have taken Udemy courses and talked through the math with people, but I have never had production mentorship in DSA and I do not have a formal CS degree. I cannot work through most LeetCode problems on my own yet, and I struggle to look at a new problem and turn it into code from a blank file. I am aware of it, I am willing to do the work, and I learn quickly when someone is willing to teach."
     }
   ],
   "rules": {
@@ -524,7 +534,11 @@
   "faq": [
     {
       "question": "Can Bradley code?",
-      "answer": "Yes, at a junior level. He can code basics and level-one work in the languages he studied in school, including JavaScript, TypeScript, React, Node.js, HTML, CSS, and SQL. He reads code carefully, follows existing patterns, and is eager to learn more without leaning on AI if the team is willing to teach and be supportive. He also continues his own education through self-funded courses and programs he qualifies for."
+      "answer": "Yes, at a junior level. He can read code, understand what it is doing, follow the logic, make changes, debug problems, and learn new systems. He can handle basics and level-one work in the languages he studied in school, including JavaScript, TypeScript, React, Node.js, HTML, CSS, and SQL. What he struggles with is looking at a completely new problem and turning it into working code from a blank file without help. He is aware of the gap and willing to improve at a company that trains and mentors."
+    },
+    {
+      "question": "What are Bradley's weaknesses?",
+      "answer": "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He cannot reliably solve most LeetCode-style problems on his own yet, and he struggles to architect solutions from scratch for unfamiliar problems. He is aware of the gap, willing to put in the work to fix it, and learns well with mentorship."
     },
     {
       "question": "What is Bradley Matera's strongest technical background?",
