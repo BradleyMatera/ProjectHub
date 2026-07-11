@@ -2404,7 +2404,7 @@ async function runThinkMode() {
   const staleCutoff = Date.now() - 24 * 60 * 60 * 1000;
   const before = learnedData.stashed.length;
   learnedData.stashed = learnedData.stashed.filter(s =>
-    s.ts > staleCutoff && !TONE_REQUEST_RE.test(s.q) && (s.retries || 0) < 3
+    s.ts > staleCutoff && !TONE_REQUEST_RE.test(s.q) && (s.retries || 0) < 5
   );
   if (learnedData.stashed.length < before) {
     console.log(`[think] Cleaned ${before - learnedData.stashed.length} stale/tone stashes`);
@@ -2434,7 +2434,7 @@ async function runThinkMode() {
         for (const slug of PROVIDER_ORDER) {
           const def = PROVIDER_DEFS[slug];
           if (!def) continue;
-          if (!isProviderAvailable(slug)) { exhaustedProviders++; continue; }
+          if (!isProviderEnabled(slug) || !isProviderAvailable(slug)) { exhaustedProviders++; continue; }
           availableProviders++;
           try {
             let raw = '';
@@ -2476,8 +2476,8 @@ async function runThinkMode() {
         if (availableProviders === 0) {
           console.log(`[think] No available providers (${exhaustedProviders} exhausted) for "${item.q.slice(0, 40)}" — re-stashing`);
         }
-        // A/B comparison: only accept if learned answer is better than grounded by 10+ points
-        if (bestReply && bestScore >= groundedScore + 10) {
+        // A/B comparison: only accept if learned answer is better than grounded by 5+ points
+        if (bestReply && bestScore >= groundedScore + 5) {
           learnedData.learned.push({
             q: item.q, original: item.original, a: bestReply,
             provider: bestProvider, learnedAt: Date.now(),
@@ -2495,10 +2495,10 @@ async function runThinkMode() {
         } else {
           // No improvement or no valid reply — re-stash with retry count
           item.retries = (item.retries || 0) + 1;
-          if (item.retries < 3) {
+          if (item.retries < 5) {
             learnedData.stashed.push(item);
           } else {
-            console.log(`[think] Dropping "${item.q}" after 3 failed attempts`);
+            console.log(`[think] Dropping "${item.q}" after 5 failed attempts`);
           }
           results.failed++;
         }
