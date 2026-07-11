@@ -1784,7 +1784,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Weaknesses / concerns / what is not proven
-  if (/weakness|weaknesses|weak at|concern|not proven|what is he missing|what is missing|gaps|limitations|bad fit|red flag|what concerns|leetcode|data structures|dsa\b|algorithms?/.test(lowerQuestion)) {
+  if (/weakness|weaknesses|weak at|bad at|not good at|concern|not proven|what is he missing|what is missing|gaps|limitations|bad fit|red flag|what concerns|leetcode|data structures|dsa\b|algorithms?/.test(lowerQuestion)) {
     const gaps = (summary?.honestGaps || []);
     if (gaps.length > 0) {
       return { reply: `${name}'s honest gaps are data structures and algorithms (he has taken courses but lacks production mentorship and a formal CS degree), turning a brand-new problem into code from a blank file without guidance, and most LeetCode-style problems. He is aware of these gaps and wants to improve at a company that trains and mentors; his strengths are reading code, debugging, documentation, and learning quickly.` };
