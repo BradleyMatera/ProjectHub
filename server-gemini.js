@@ -1528,20 +1528,20 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   
   // CS degree / computer science degree specifically
   if (/computer science degree|cs degree|cs major|computer science major/.test(lowerQuestion)) {
-    return { reply: `${name} does not have a computer science degree. He holds a ${education?.degree || 'Bachelor of Science in Web Development'} from ${education?.school || 'Full Sail University'}.` };
+    return { reply: `No — ${name}'s degree is a B.S. in Web Development from Full Sail University, not computer science.` };
   }
 
   // What did he learn / what was his coursework
   if (/what did he learn|what did he study|what was his coursework|what did he learn there|what does he know from school|what technologies did he learn/.test(lowerQuestion)) {
     const langs = (skills?.languagesAndFrameworks || []).slice(0, 6).join(', ');
-    return { reply: `${name} studied web development at ${education?.school || 'Full Sail University'}. Coursework and projects covered ${langs || 'JavaScript, React, Node.js, HTML, CSS, and SQL'}.` };
+    return { reply: `At Full Sail, ${name} focused on web development. The program covered ${langs || 'JavaScript, React, Node.js, HTML, CSS, and SQL'} through coursework and projects.` };
   }
 
   // What degree does he have / what is his degree
   if (/what degree|which degree|what.*degree.*he.*have|what diploma|what did he graduate/.test(lowerQuestion)) {
     if (education?.degree && education?.school) {
-      let edu = `${name} holds a ${education.degree} from ${education.school}`;
-      if (education?.graduated) edu += `, graduated ${education.graduated}`;
+      let edu = `${name} earned a ${education.degree} from ${education.school}`;
+      if (education?.graduated) edu += `, graduating ${education.graduated}`;
       return { reply: edu + '.' };
     }
     return { reply: `${name}'s education details are available in his full profile.` };
@@ -1549,7 +1549,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
 
   // Is [school] respected / accredited / good
   if (/is full sail|accredited|respected|prestigious|good school/.test(lowerQuestion)) {
-    return { reply: `The recruiter data only lists that ${name} holds a ${education?.degree || 'Bachelor of Science in Web Development'} from ${education?.school || 'Full Sail University'}. It doesn't include rankings or accreditation details, so evaluate the school independently if that matters for the role.` };
+    return { reply: `The recruiter data only lists that ${name} studied web development at Full Sail University. Rankings and accreditation aren't included, so judge the school independently if it matters for the role.` };
   }
 
   // Dynamic education from knowledge base
@@ -1895,6 +1895,11 @@ function buildContextualGroundedReply(groundedReply, question, history) {
       const short = firstSentence(groundedReply);
       return `To clarify: ${short}`;
     }
+  }
+
+  // Direct rephrasing / clarification like "I meant...", "What I mean is..." — answer plainly, no prefix.
+  if (/^(i meant|what i mean|clarifying|to be clear|more precisely|in other words)\b/.test(qLower)) {
+    return groundedReply;
   }
 
   // Repeated nearly-identical question — answer briefly and refer back.
