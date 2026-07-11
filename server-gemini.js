@@ -53,7 +53,7 @@ const GITHUB_REPO_OWNER = 'BradleyMatera';
 const GITHUB_REPO_NAME = 'ProjectHub';
 const GITHUB_KNOWLEDGE_PATH = 'data/recruiter-knowledge.json';
 
-const defaultLearned = { stashed: [], learned: [], learnedCount: 0, lastThinkAt: 0 };
+const defaultLearned = { stashed: [], learned: [], learnedCount: 0, lastThinkAt: 0, scoredHistory: [] };
 let learnedData;
 try {
   const raw = fs.readFileSync(LEARNED_FILE, 'utf8');
@@ -254,9 +254,9 @@ app.get('/health', async (req, res) => {
       thinkRunning,
       hasGitHubToken: GITHUB_API_TOKEN.length >= 10,
       nextThinkIn: Math.max(0, THINK_INTERVAL_MS - (Date.now() - (learnedData.lastThinkAt || 0))),
-      learnedScores: (learnedData.learned || []).map(l => ({ q: l.q, score: l.score, groundedScore: l.groundedScore, provider: l.provider })),
-      avgLearnedScore: learnedData.learned.length > 0 ? Math.round(learnedData.learned.reduce((s, l) => s + (l.score || 0), 0) / learnedData.learned.length) : 0,
-      avgGroundedScore: learnedData.learned.length > 0 ? Math.round(learnedData.learned.reduce((s, l) => s + (l.groundedScore || 0), 0) / learnedData.learned.length) : 0
+      learnedScores: [...(learnedData.learned || []), ...(learnedData.scoredHistory || [])].map(l => ({ q: l.q, score: l.score, groundedScore: l.groundedScore, provider: l.provider })),
+      avgLearnedScore: [...(learnedData.learned || []), ...(learnedData.scoredHistory || [])].length > 0 ? Math.round([...learnedData.learned, ...(learnedData.scoredHistory || [])].reduce((s, l) => s + (l.score || 0), 0) / [...learnedData.learned, ...(learnedData.scoredHistory || [])].length) : 0,
+      avgGroundedScore: [...(learnedData.learned || []), ...(learnedData.scoredHistory || [])].length > 0 ? Math.round([...learnedData.learned, ...(learnedData.scoredHistory || [])].reduce((s, l) => s + (l.groundedScore || 0), 0) / [...learnedData.learned, ...(learnedData.scoredHistory || [])].length) : 0
     }
   });
 });
@@ -313,11 +313,16 @@ app.get('/api/knowledge-health', async (req, res) => {
     const hotTopics = Object.entries(allTopics).sort((a, b) => b[1] - a[1]).slice(0, 10);
     const uncoveredTopics = Object.entries(allTopics).filter(([t]) => t === 'other' || t === 'out-of-scope');
 
-    // Learned answers
-    const learnedAnswers = (learnedData.learned || []).map(a => ({
+    // Learned answers (from local pending queue + GitHub knowledge base)
+    const localLearned = (learnedData.learned || []).map(a => ({
       q: a.q, provider: a.provider, learnedAt: a.learnedAt,
       answer: String(a.a || '').slice(0, 120)
     }));
+    const githubLearned = (knowledge?.learnedAnswers || []).map(a => ({
+      q: a.q, provider: 'github-knowledge', learnedAt: a.learnedAt,
+      answer: String(a.a || '').slice(0, 120)
+    }));
+    const learnedAnswers = [...localLearned, ...githubLearned];
 
     res.json({
       ok: true,
@@ -335,12 +340,17 @@ app.get('/api/knowledge-health', async (req, res) => {
       learnedAnswers,
       stashedCount: stashed.length,
       learnedCount: learnedData.learnedCount || 0,
-      learningVerification: {
-        avgLearnedScore: learnedData.learned.length > 0 ? Math.round(learnedData.learned.reduce((s, l) => s + (l.score || 0), 0) / learnedData.learned.length) : 0,
-        avgGroundedScore: learnedData.learned.length > 0 ? Math.round(learnedData.learned.reduce((s, l) => s + (l.groundedScore || 0), 0) / learnedData.learned.length) : 0,
-        improvementPercent: learnedData.learned.length > 0 ? Math.round(((learnedData.learned.reduce((s, l) => s + (l.score || 0), 0) / learnedData.learned.length) - (learnedData.learned.reduce((s, l) => s + (l.groundedScore || 0), 0) / learnedData.learned.length)) / Math.max(1, learnedData.learned.reduce((s, l) => s + (l.groundedScore || 0), 0) / learnedData.learned.length) * 100) : 0,
-        scoredAnswers: (learnedData.learned || []).map(l => ({ q: l.q, score: l.score, groundedScore: l.groundedScore, provider: l.provider }))
-      }
+      learningVerification: (() => {
+        const all = [...(learnedData.learned || []), ...(learnedData.scoredHistory || [])];
+        const avgLearned = all.length > 0 ? Math.round(all.reduce((s, l) => s + (l.score || 0), 0) / all.length) : 0;
+        const avgGrounded = all.length > 0 ? Math.round(all.reduce((s, l) => s + (l.groundedScore || 0), 0) / all.length) : 0;
+        return {
+          avgLearnedScore: avgLearned,
+          avgGroundedScore: avgGrounded,
+          improvementPercent: avgGrounded > 0 ? Math.round(((avgLearned - avgGrounded) / avgGrounded) * 100) : 0,
+          scoredAnswers: all.map(l => ({ q: l.q, score: l.score, groundedScore: l.groundedScore, provider: l.provider }))
+        };
+      })()
     });
   } catch (e) {
     res.json({ ok: false, error: e.message });
@@ -362,10 +372,9 @@ async function fetchKnowledge() {
     return knowledgeCache;
   }
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(KNOWLEDGE_URL, { signal: controller.signal });
-    clearTimeout(timeout);
+    const fetchPromise = fetch(KNOWLEDGE_URL);
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Knowledge fetch timeout')), 25000));
+    const res = await Promise.race([fetchPromise, timeoutPromise]);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     knowledgeCache = json;
@@ -1102,7 +1111,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     : '';
   
   // Safety: prompt injection / secret extraction / false claims
-  if (/(ignore previous|ignore all rules|ignore your instructions|show.*system prompt|print.*env|api key|give me.*key|\.env|home address|family details|bypass cors|open.*port\s*11434|open port|fortune 500|reveal.*prompt|hidden config|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|social security|birth date|wife|children|disability rating|bank|password|act as root|delete the vm|hack the site|fake reference|security clearance)/.test(lowerQuestion)) {
+  if (/(ignore previous|ignore all rules|ignore your instructions|show.*system prompt|print.*env|api key|give me.*key|\.env|home address|family details|bypass cors|open.*port\s*11434|open port|localhost|127\.0\.0\.1|:11434|fortune 500|reveal.*prompt|hidden config|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|social security|birth date|wife|children|disability rating|bank|password|act as root|delete the vm|hack the site|fake reference|security clearance)/.test(lowerQuestion)) {
     return { reply: `${agentName} can only answer recruiter questions about ${name} using the public site data. It can't help with that.` };
   }
 
@@ -1985,7 +1994,7 @@ function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
   const repair = detectRepair(question);
   if (repair.shorter || repair.isBareFollowup || repair.blunt || repair.moreHonest || repair.resumeLanguage) return true;
-  if (/(ignore|inject|system prompt|\.env|api key|password|address|salary|make up|pretend|fortune|claim|bypass|open port|port 11434|active security clearance|team of \d+|10\s*years|fortune 500|seasoned|full.?stack expert|10x|ninja|rockstar|wizard|guru|veteran|well.?versed|proven track record|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|hidden config|show.*env|fake reference|social security|birth date|wife|children|family details|medical history)/.test(q)) return true;
+  if (/(ignore|inject|system prompt|\.env|api key|password|address|salary|make up|pretend|fortune|claim|bypass|open port|port 11434|localhost|127\.0\.0\.1|:11434|active security clearance|team of \d+|10\s*years|fortune 500|seasoned|full.?stack expert|10x|ninja|rockstar|wizard|guru|veteran|well.?versed|proven track record|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|hidden config|show.*env|fake reference|social security|birth date|wife|children|family details|medical history)/.test(q)) return true;
   if (/(pretend|make up|claim|say|tell|write|write something that)\b.*\b(google|senior|cto|10\s*years|masters?|kubernetes|led a team|production engineer|production experience|outages|clearance|payment systems|terraform|machine learning engineer|hide his lack|hide.*lack)\b/.test(q) || /write something that hides|hide his lack/.test(q)) return true;
   if (/\b(contact|email|phone|reach|github)\b|portfolio url|resume\?|links\?|\blinkedin\b(?!.*\b(style|summary|profile)\b)/.test(q)) return true;
   if (/\bproject|portfolio\b|which project|what project|best project|most relevant project|what is projecthub|ciris|interactive pokedex|pokedex|cheesemath|worked at amazon|has he worked at|did he work at/.test(q)) return true;
@@ -2368,6 +2377,11 @@ async function pushLearnedToGitHub() {
     );
     if (pushRes.ok) {
       console.log(`[think] Pushed ${added} learned answers to GitHub`);
+      // Move scored answers to history before clearing
+      for (const l of learnedData.learned) {
+        learnedData.scoredHistory.push({ q: l.q, score: l.score, groundedScore: l.groundedScore, provider: l.provider, learnedAt: l.learnedAt });
+      }
+      if (learnedData.scoredHistory.length > 50) learnedData.scoredHistory = learnedData.scoredHistory.slice(-50);
       // Clear learned queue since they're now in the canonical knowledge
       learnedData.learned = [];
       saveLearned();
@@ -2656,4 +2670,8 @@ app.use((req, res, next) => { if (statsDirty) flushStats(); next(); });
 
 app.listen(PORT, '127.0.0.1', () => {
   console.log(`Recruiter chat API running on http://127.0.0.1:${PORT} with Ollama backend`);
+  // Pre-warm knowledge cache in background (non-blocking)
+  setTimeout(() => {
+    fetchKnowledge().then(() => console.log('Knowledge cache pre-warmed')).catch(e => console.log('Pre-warm failed:', e.message));
+  }, 100);
 });
