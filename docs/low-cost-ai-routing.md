@@ -1,6 +1,6 @@
 # low-cost-ai-routing.md
 
-**Read when:** You need to understand how ProjectHub stays 100% free by routing LLM calls through free provider tiers and local Ollama.
+**Read when:** You need to understand how ProjectHub stays 100% free by routing LLM calls through free provider tiers, with grounded knowledge as the final fallback.
 
 ---
 
@@ -23,7 +23,7 @@ ProjectHub stays grounded-first and free-provider-first:
    - Google Gemini (`gemini-2.0-flash`)
    - xAI Grok (`grok-4.3`) optional
    - OpenAI-compatible (configurable) optional
-4. Local Ollama (`smollm2:135m`) is the final fallback if all free providers are exhausted or fail.
+4. If all free providers are exhausted or fail validation, the API returns a fast, deterministic grounded answer from `data/recruiter-knowledge.json`.
 5. Every provider reply is validated against the grounded source facts before it is returned.
 6. Safety and false-claim checks run BEFORE learned answers to block injection, XSS, social engineering, and exaggerated claims.
 7. In-memory session cache keeps the last 3 turns per tab. Frontend sends 5 turns and keeps 10.
@@ -41,22 +41,20 @@ Netlify remains the DNS host for `bradleymatera.dev` and `bradleymatera.github.i
 - The widget calls the GCP backend directly from the browser.
 - Session memory lives in the GCP backend process; no external database is needed.
 - Quota enforcement and cooldowns are handled inside `server-gemini.js`.
-- No paid AI polishing path is used; all generative responses come from free providers or local Ollama.
+- No paid AI polishing path is used; all generative responses come from free providers, with the grounded knowledge base as the final fallback.
 
 ---
 
 ## Google Cloud Spend
 
-The backend is intended to run on a GCP Always Free `e2-micro` instance with no monthly compute bill. Ollama only runs tiny open-weight models (`smollm2:135m`, ~135M parameters) that fit easily in the VM's limited RAM and CPU.
+The backend is intended to run on a GCP Always Free `e2-micro` instance with no monthly compute bill. The grounded fallback requires no LLM calls and no local model, so it keeps the VM small and predictable.
 
 Safer options:
 
 - Keep the Always Free VM as the default backend.
 - Add Google Cloud budget alerts at `$5`, `$10`, and `$20` as guardrails.
 - If testing a larger VM, run it only on demand and stop it automatically.
-- Avoid running large local models; rely on the free provider network instead.
-
-Do not expose `localhost:11434` publicly. Keep all model access behind the recruiter chat API.
+- Avoid running large local models; rely on the free provider network and the grounded fallback instead.
 
 ---
 
@@ -64,7 +62,7 @@ Do not expose `localhost:11434` publicly. Keep all model access behind the recru
 
 Think Mode runs every 10 minutes and processes stashed questions through the same free provider network. It adds zero cost because:
 - It uses the same free LLM providers (no additional API calls beyond what the daily quota allows)
-- Local Ollama is the final fallback (unlimited, runs on VM CPU)
+- The grounded knowledge base is the final fallback (no LLM charges)
 - It pushes learned answers back to GitHub via the Contents API (free, no database)
 - False-claim and safety questions are filtered before stashing (no wasted LLM calls)
 - The `learned.json` file on the VM is tiny (a few KB)

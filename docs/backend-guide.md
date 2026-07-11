@@ -6,7 +6,7 @@
 
 ## Goal
 
-Host a **zero-cost** chat API that serves the ProjectHub widget from a Google Cloud free-tier VM. The backend routes open-ended recruiter questions through a priority network of free LLM providers, falling back to local Ollama, instead of relying on a single paid API.
+Host a **zero-cost** chat API that serves the ProjectHub widget from a Google Cloud free-tier VM. The backend routes open-ended recruiter questions through a priority network of free LLM providers, falling back to a fast, grounded answer from `data/recruiter-knowledge.json` if every provider is unavailable or the reply fails validation.
 
 ---
 
@@ -37,13 +37,13 @@ flowchart LR
   D -- OpenAI-compatible REST --> E3[GitHub Models]
   D -- Gemini REST --> E4[Google Gemini]
   D -- OpenAI-compatible REST --> E5[xAI Grok]
-  D -- local HTTP --> E6[Ollama smollm2:135m]
+  D -- deterministic fallback --> E6[Grounded knowledge base]
   D -- fetch/cache --> F[recruiter-knowledge.json on GitHub]
   D -- grounded fallback --> G[Local knowledge base]
   D -- Think Mode --> H[learned.json + push to GitHub]
 ```
 
-Current production path: Netlify DNS `A` record for `projecthub-chat.bradleymatera.dev` points to the GCP VM external IP `35.208.20.1`. Caddy terminates HTTPS with Let's Encrypt and proxies to the Node API on `127.0.0.1:3000`. The Node API (`server-gemini.js`) always computes a grounded answer first, then routes open-ended questions through the free provider network in priority order. If no provider succeeds, it falls back to local Ollama and, ultimately, the grounded answer.
+Current production path: Netlify DNS `A` record for `projecthub-chat.bradleymatera.dev` points to the GCP VM external IP `35.208.20.1`. Caddy terminates HTTPS with Let's Encrypt and proxies to the Node API on `127.0.0.1:3000`. The Node API (`server-gemini.js`) always computes a grounded answer first, then routes open-ended questions through the free provider network in priority order. If no provider succeeds or the reply fails validation, the fast, grounded answer is returned.
 
 ---
 
@@ -68,7 +68,7 @@ The backend uses a rotating network of free LLM providers. You need keys for the
 | Google Gemini | https://aistudio.google.com/app/apikey | `gemini-2.0-flash` |
 | xAI Grok | https://console.x.ai/ | `grok-4.3` (optional; free credits can be exhausted quickly) |
 | OpenAI-compatible | Any OpenAI-compatible endpoint | configurable (optional) |
-| Ollama | Installed locally on the VM | `smollm2:135m` (final fallback) |
+| Grounded fallback | `data/recruiter-knowledge.json` hosted on GitHub | Final answer when all providers are unavailable or replies fail validation |
 
 You do **not** need to add billing to any provider to run Scout. The system works as long as at least one provider has remaining free quota.
 
@@ -99,7 +99,7 @@ CLOUDFLARE_MODEL=@cf/meta/llama-3.2-3b-instruct
 GEMINI_API_KEY=AIza...
 GEMINI_MODEL=gemini-2.0-flash
 
-PROVIDER_ORDER=groq,cloudflare,github,gemini,grok,ollama
+PROVIDER_ORDER=groq,cloudflare,github,gemini,grok
 GEN_MODEL=smollm2:135m
 GEN_TIMEOUT_MS=8000
 
@@ -120,7 +120,7 @@ The server includes:
 - Response caching (10 minutes)
 - Grounded-first routing with safety and false-claim checks BEFORE learned answers
 - Free multi-provider LLM network with daily quota guards and cooldown
-- Local Ollama fallback
+- Fast grounded fallback from `data/recruiter-knowledge.json`
 - Timeout handling (15 seconds total, 8 seconds per provider)
 - Think Mode self-improvement loop (every 10 minutes)
 - Safety regex system (injection, XSS, social engineering, secret extraction)
@@ -226,6 +226,6 @@ const res = await fetch("https://projecthub-chat.bradleymatera.dev/api/chat", {
 - [ ] Static regional IP attached to running VM
 - [ ] Same-region traffic only
 - [ ] HTTPS certificate free (Let's Encrypt via Caddy)
-- [ ] All LLM calls use free-tier providers or local Ollama
+- [ ] All LLM calls use free-tier providers; grounded fallback requires no LLM credits
 - [ ] Provider quota/cooldown guards enabled (`PROVIDER_ORDER` and daily limits set)
 - [ ] No paid AI subscriptions required to keep Scout online

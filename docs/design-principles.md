@@ -38,7 +38,7 @@ The free provider network is unreliable by nature. Scout degrades gracefully:
 - Per-provider retry once on transient errors.
 - Circuit breaker opens when too many recent calls fail, skipping the network entirely.
 - Response cache warms common questions so first-time visitors get instant replies.
-- Local Ollama remains a last-resort fallback.
+- The grounded knowledge base is the last-resort fallback; it needs no LLM calls and keeps Scout online when all providers are unavailable.
 
 ## 6. Fast Feedback
 
