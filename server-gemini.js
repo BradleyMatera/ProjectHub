@@ -1870,7 +1870,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Dynamic summary from knowledge base
-  if (/summary|who is|about brad|tell me about brad|who is brad|who is bradley|tell me about bradley|in (20|30) seconds|simple version|honest version|like a normal person|normal person|give me the simple/.test(lowerQuestion)) {
+  if (/summary|who is bradley|who is brad\b|about brad|tell me about brad|who is bradley|tell me about bradley|in (20|30) seconds|simple version|honest version|like a normal person|normal person|give me the simple/.test(lowerQuestion)) {
     return { reply: concisePitch(knowledge) };
   }
 
