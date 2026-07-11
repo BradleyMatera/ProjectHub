@@ -1308,7 +1308,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
 
   // Bare 'what kind / what type' follow-ups — resolve to target roles or skills from previous context.
   if (/^\s*(what kind|what type|what sort)\b/i.test(question)) {
-    if (/role|job|position|work|target|fit|can he do|what can he do|entry.level/i.test(lastAssistantLower)) {
+    if (/\b(role|job|position|work|target|fit)\b|can he do|what can he do|entry.level/i.test(lastAssistantLower)) {
       const targetRoles = (goals?.targetRoles || []).slice(0, 6).join(', ');
       return { reply: `He's targeting ${targetRoles || 'entry-level tech, IT, and support roles'}.` };
     }
