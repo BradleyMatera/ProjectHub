@@ -44,6 +44,36 @@ const MAX_ACTIVE_GENERATIONS = 1;
 const responseCache = new Map();
 let activeGenerations = 0;
 
+// Circuit breaker for the free LLM provider network.
+// When the last several network calls all failed, skip the network for a cooldown
+// and return the fast grounded fallback instead.
+const networkHealth = { failures: [], successes: [], lastSuccessAt: Date.now() };
+const CIRCUIT_BREAKER_WINDOW = 10; // look at last 10 outcomes
+const CIRCUIT_BREAKER_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
+const CIRCUIT_BREAKER_FAILURE_THRESHOLD = 0.8; // skip if >=80% of recent calls failed
+
+function recordNetworkOutcome(success) {
+  const now = Date.now();
+  if (success) {
+    networkHealth.successes.push(now);
+    networkHealth.lastSuccessAt = now;
+  } else {
+    networkHealth.failures.push(now);
+  }
+  // Trim old entries
+  const cutoff = now - 5 * 60 * 1000;
+  networkHealth.failures = networkHealth.failures.filter(t => t > cutoff);
+  networkHealth.successes = networkHealth.successes.filter(t => t > cutoff);
+}
+
+function isNetworkCircuitOpen() {
+  const total = networkHealth.failures.length + networkHealth.successes.length;
+  if (total < CIRCUIT_BREAKER_WINDOW) return false;
+  const failureRate = networkHealth.failures.length / total;
+  const recentlySuccessful = (Date.now() - networkHealth.lastSuccessAt) < CIRCUIT_BREAKER_COOLDOWN_MS;
+  return failureRate >= CIRCUIT_BREAKER_FAILURE_THRESHOLD && !recentlySuccessful;
+}
+
 // ============ LEARNING SYSTEM ============
 const LEARNED_FILE = path.join(__dirname, 'learned.json');
 const THINK_INTERVAL_MS = 10 * 60 * 1000;
@@ -379,11 +409,44 @@ async function fetchKnowledge() {
     const json = await res.json();
     knowledgeCache = json;
     knowledgeCacheAt = now;
+    // Warm response cache for common questions in the background.
+    setTimeout(() => warmResponseCache(json), 10);
     return json;
   } catch (err) {
     console.error('Failed to fetch knowledge:', err.message);
     return knowledgeCache;
   }
+}
+
+// Pre-compute grounded replies for common questions so users get fast, consistent answers.
+function warmResponseCache(knowledge) {
+  const commonQuestions = [
+    'Who is Bradley Matera?',
+    'What can you tell me about Brad?',
+    'What roles is he targeting?',
+    'What is his tech stack?',
+    'Does he have AWS experience?',
+    'What certifications does he have?',
+    'What projects has he worked on?',
+    'Is he a fit for a junior frontend role?',
+    'What are his weaknesses?',
+    'How can I contact him?',
+  ];
+  let added = 0;
+  for (const q of commonQuestions) {
+    const key = normalizeQuestion(q);
+    if (responseCache.has(key)) continue;
+    try {
+      const payload = buildGroundedFallbackPayload(knowledge, q, []);
+      if (payload?.reply) {
+        responseCache.set(key, { ts: Date.now(), payload: { ...payload, provider: 'grounded', model: 'knowledge-json', fallback: true, pipeline: ['cache-warm'] } });
+        added++;
+      }
+    } catch (e) {
+      console.error(`Cache warm failed for "${q}":`, e.message);
+    }
+  }
+  console.log(`Response cache warmed with ${added} entries`);
 }
 
 function normalizeQuestion(question, knowledge = null) {
@@ -1029,17 +1092,14 @@ function handleRoleFit(knowledge, question, role) {
   return { reply: `${name} is ${fitStatement} for ${role}. The data shows ${skillsPhrase === 'no direct matching skills' ? 'no direct matching skills' : skillsPhrase + ' but not the core skills typically expected'}. He is a better match for ${sentenceList(targetRoles, 3)} roles.` };
 }
 
-function buildPrompt(knowledge, question, history, provider) {
-  const { identity, summary, goals, education, certifications, experience, skills, projects, rules, faq, interviewStories, conversationQualityStandards } = knowledge || {};
-  const name = identity?.name || 'Bradley Matera';
-  const preferredName = identity?.preferredName || 'Brad';
+// Build the canonical verified-facts block used by both LLM prompts and grounded fallback.
+function buildKnowledgeContext(knowledge) {
+  const { identity, summary, goals, education, certifications, experience, skills, projects, rules, interviewStories } = knowledge || {};
   const title = identity?.title || 'junior software engineer';
   const location = identity?.location || 'Davis, Illinois';
+  const preferredName = identity?.preferredName || 'Brad';
 
-  let context = `You are Scout, the assistant for Bradley Matera. You're an approachable recruiter-side helper in a chat widget on his portfolio site. You answer questions about Bradley from verified facts. You are NOT Bradley, but you represent him honestly and warmly.\n\n`;
-  context += `Bradley is a ${title} based in ${location}. He goes by ${preferredName}.\n\n`;
-
-  // RAG context — rich enough for the LLM to answer naturally without hallucinating
+  let context = `Bradley is a ${title} based in ${location}. He goes by ${preferredName}.\n\n`;
   context += `VERIFIED FACTS ABOUT BRADLEY:\n`;
   if (summary?.whoIAm) context += `- Who he is: ${summary.whoIAm}\n`;
   if (summary?.whatIDo) context += `- What he does: ${summary.whatIDo}\n`;
@@ -1076,10 +1136,28 @@ function buildPrompt(knowledge, question, history, provider) {
     rules.doNot.forEach(r => context += `- ${r}\n`);
   }
 
+  return context;
+}
+
+function buildPrompt(knowledge, question, history, provider) {
+  const { identity, summary, goals, education, certifications, experience, skills, projects, rules, faq, interviewStories, conversationQualityStandards } = knowledge || {};
+  const name = identity?.name || 'Bradley Matera';
+  const preferredName = identity?.preferredName || 'Brad';
+  const title = identity?.title || 'junior software engineer';
+  const location = identity?.location || 'Davis, Illinois';
+
+  let context = `You are Scout, the assistant for Bradley Matera. You're an approachable recruiter-side helper in a chat widget on his portfolio site. You answer questions about Bradley from verified facts. You are NOT Bradley, but you represent him honestly and warmly.\n\n`;
+  context += `Bradley is a ${title} based in ${location}. He goes by ${preferredName}.\n\n`;
+
+  // RAG context — shared with the grounded fallback so answers stay aligned
+  context += buildKnowledgeContext(knowledge);
+
   context += `\nVOICE AND STYLE:\n`;
   context += `- Talk like a normal, helpful person. Not a corporate AI, not a resume, not a sales pitch.\n`;
   context += `- Answer directly in 1-3 short sentences for simple questions. Give more detail when the question warrants it.\n`;
+  context += `- USE ONLY the verified facts above. Do not use outside knowledge, assumptions, or general industry facts.\n`;
   context += `- Never start with "Certainly", "Absolutely", "Great question", "Of course", "Sure", or "As an AI".\n`;
+  context += `- Vary sentence openers across turns. Don't start every reply with "Bradley is a..." or "Bradley has..."; alternate with "He...", "His...", "From the data...", "In terms of...", "When it comes to...", "Based on...".\n`;
   context += `- Never use words like robust, passionate, synergy, leverage, dynamic, extensive, groundbreaking, cutting-edge, innovative, world-class, best-in-class, proven leader, deep mastery, exceptional, seasoned, or guru.\n`;
   context += `- Do not repeat the user's question back at them.\n`;
   context += `- Do not end with a sales pitch, vague offer to help, or long disclaimer.\n`;
@@ -1163,6 +1241,11 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   // Specific capability: React
   if (/\b(react|next\.?js)\b/.test(lowerQuestion) && /\b(can he|does he|work with|know|use|comfortable)\b/.test(lowerQuestion)) {
     return { reply: `${name} has React and Next.js experience from school projects and freelance contributor work, including the Interactive Pokedex demo and CIRIS. It's junior-level project experience, not production ownership.` };
+  }
+
+  // Specific capability: troubleshooting / debugging / cloud issues
+  if (/\b(troubleshoot|debug|cloud issues|cloud problems|support|fix\w*)\b/.test(lowerQuestion) && /\b(can he|does he|able to|good at)\b/.test(lowerQuestion)) {
+    return { reply: `${name} has debugging and cloud troubleshooting training from the AWS internship labs and his projects. He's junior, so he still needs mentorship for complex production issues.` };
   }
 
   // Site purpose / identity (checked before greeting so "hey what is this thing" gets the site answer)
@@ -1310,8 +1393,13 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
 
   // Role-fit / career-fit questions (broadened to catch natural recruiter phrasing)
   const role = findRoleInQuestion(question);
-  if (role && /(fit|candidate|what makes|suitable|right for|good for|apply for|what kind of|how about|role for|job for|would.*fit|should.*fit|bad fit|good fit|strong fit|is he a|is bradley a|good match|strong match|a match for|perfect for|missing for|gaps for|missing to be|should he apply|jobs should|work as a|work as an|pitch|sell|why hire|why should.*hire|good candidate|would he be a)/.test(lowerQuestion)) {
+  if (role && /(fit|candidate|what makes|suitable|right for|good for|apply for|what kind of|how about|what about|role for|job for|would.*fit|should.*fit|bad fit|good fit|strong fit|best fit|is he a|is bradley a|good match|strong match|a match for|perfect for|missing for|gaps for|missing to be|should he apply|jobs should|work as a|work as an|pitch|sell|why hire|why should.*hire|good candidate|would he be a)/.test(lowerQuestion)) {
     return handleRoleFit(knowledge, question, role);
+  }
+  // 'Which is the best fit?' without a specific role
+  if (/which.*best fit|best fit for him|which role.*best/.test(lowerQuestion)) {
+    const targetRoles = (goals?.targetRoles || ['junior web', 'cloud support', 'technical support']).slice(0, 3);
+    return { reply: `Based on the data, ${name}'s strongest matches are ${sentenceList(targetRoles, 3)} roles. Junior web and cloud support are the most direct fits given his React/Next.js projects and AWS background.` };
   }
 
   // Reasons to interview
@@ -1449,6 +1537,16 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply };
   }
 
+  // Teamwork / team player / works with others / interpersonal / social skills
+  if (/teamwork|team player|works with others|how does he work in a team|how is he on a team|collaborat|how does he work with|interpersonal|social skill|works well with|good with people|how is he with people|how is brad with people|how is he around people|people person|ok socially|socially|with people/.test(lowerQuestion)) {
+    return { reply: `${name} has real interpersonal experience: case management (helping clients through court-mandated requirements), Army healthcare specialist (working with crews under pressure), and construction (communicating with homeowners and crews). He communicates clearly with both technical and non-technical people.` };
+  }
+
+  // Customer service / support experience
+  if (/customer service|customer support|client facing|user support|help desk|service desk|support role/.test(lowerQuestion)) {
+    return { reply: `${name} has customer-facing experience from case management (guiding clients through legal processes), Army service, and construction (working directly with homeowners). His communication skills transfer well to customer support and help desk roles.` };
+  }
+
   // 'What data do you have' / what is in his data
   if (/what data|what info|what information|what do you (have|know)|what is in (his|the) data|what can you tell me|what do you have on/.test(lowerQuestion)) {
     return { reply: `${agentName} has verified data on ${name}'s projects, skills (JavaScript, TypeScript, React, AWS), certifications (AWS Solutions Architect, AI Practitioner), education (Full Sail University), work history (AWS internship, CIRIS, case management), target roles, and contact info. Ask about any of those.` };
@@ -1457,6 +1555,44 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   // Confusion / 'you're not making sense' / clarification
   if (/not making sense|makes no sense|what are you talking about|confused|dont understand|do not understand|what do you mean/.test(lowerQuestion)) {
     return { reply: `Sorry about that. ${agentName} covers ${name}'s projects, skills, AWS background, role fit, and contact info. What specifically do you want to know?` };
+  }
+
+  // Work style (checked before generic project branch so "what is his work style" doesn't return a project list)
+  if (/work style|how does he work|how he works|approach to work/.test(lowerQuestion)) {
+    const styles = summary?.workStyle?.length
+      ? summary.workStyle.slice(0, 3)
+      : ['reads nearby code before changing things', 'runs the project locally first', 'documents what he learns'];
+    return { reply: `His work style: ${sentenceList(styles, 3)}.` };
+  }
+
+  // Coding style / how does he code
+  if (/coding style|how does he code|code style|how he codes|programming style|how does he program/.test(lowerQuestion)) {
+    const styles = summary?.workStyle?.slice(0, 2) || ['reads nearby code before changing things', 'makes small reviewable changes'];
+    const strengths = summary?.coreStrengths?.slice(0, 1) || ['learning quickly in unfamiliar codebases'];
+    return { reply: `${name} reads existing code before changing anything, makes small reviewable changes, and documents what he learns. His main strength is ${strengths[0].toLowerCase()}.` };
+  }
+
+  // Approach to learning / how does he learn
+  if (/approach to learning|approach.*learning|how does he learn|how he learns|learning style|fast learner|quick learner|how fast does he learn/.test(lowerQuestion)) {
+    const learning = skills?.learningOrAdjacent?.length ? skills.learningOrAdjacent.slice(0, 2) : ['currently learning C#/.NET fundamentals'];
+    return { reply: `${name} learns by running the project locally, reading the code, and documenting what he finds. Right now he's ${learning.join(' and ').toLowerCase()}. He's honest about what he doesn't know yet and asks useful questions after doing his homework.` };
+  }
+
+  // Communication style / how does he communicate
+  if (/communication style|how does he communicate|how he communicates|communication skill|how does he talk to users|how does he talk to/.test(lowerQuestion)) {
+    const comm = summary?.coreStrengths?.find(s => /communicat/i.test(s)) || 'Communicating with technical and non-technical users';
+    return { reply: `${name} communicates directly and clearly. His case manager experience taught him to explain things to non-technical people, and his documentation shows he can write for other developers too.` };
+  }
+
+  // Problem solving / how does he solve problems
+  if (/problem solving|how does he solve|how does he approach.*problem|how does he debug|approach to debug|approach.*debug|troubleshoot.*approach|how does he troubleshoot/.test(lowerQuestion)) {
+    const debug = summary?.coreStrengths?.find(s => /debug/i.test(s)) || 'Debugging carefully and isolating issues';
+    return { reply: `${name} isolates problems methodically: he reproduces the issue, checks logs and docs, narrows down the cause, and documents the fix. He's honest when he doesn't know the answer yet.` };
+  }
+
+  // Reliability / dependable / can I count on him
+  if (/reliab|dependab|can i count on|show up|work ethic|does he show up/.test(lowerQuestion)) {
+    return { reply: `${name} has a track record of showing up: Army service, construction work, and case management all required reliability under pressure. His work style is methodical and he documents what he does so others can pick up where he left off.` };
   }
 
   // Dynamic projects from knowledge base (narrowed 'work' to 'his work' to avoid catching 'works with people' or 'work history')
@@ -1589,7 +1725,7 @@ function buildGroundedFallback(knowledge, question, history) {
 }
 
 // Wrap a grounded reply with conversation context awareness.
-// If the last turn covered the same topic, acknowledge it instead of repeating blindly.
+// If the last turn covered the same topic, use a varied follow-up opener instead of repeating blindly.
 function buildContextualGroundedReply(groundedReply, question, history) {
   if (!Array.isArray(history) || history.length === 0) return groundedReply;
   const lastTurn = history[history.length - 1];
@@ -1602,14 +1738,20 @@ function buildContextualGroundedReply(groundedReply, question, history) {
   // Same topic as last turn — check if the grounded reply is nearly identical to the last answer
   const lastAns = String(lastTurn.assistant || '').toLowerCase().replace(/<[^>]+>/g, '').trim();
   const groundedNorm = String(groundedReply || '').toLowerCase().replace(/<[^>]+>/g, '').trim();
-  // If the answers share >60% of words, it's a repeat
   const groundedWords = new Set(groundedNorm.split(/\s+/).filter(w => w.length > 4));
   const lastWords = new Set(lastAns.split(/\s+/).filter(w => w.length > 4));
   if (groundedWords.size === 0) return groundedReply;
   const overlap = [...groundedWords].filter(w => lastWords.has(w)).length / groundedWords.size;
   if (overlap > 0.6) {
-    // Add a brief acknowledgment prefix instead of repeating the same info
-    return `As I mentioned, ${groundedReply.charAt(0).toLowerCase()}${groundedReply.slice(1)}`;
+    // Vary the follow-up prefix; don't force lowercase because it breaks names and proper nouns
+    const prefixes = [
+      'To add to that,',
+      'Building on that,',
+      'Also,',
+      'Related to that,',
+    ];
+    const prefix = prefixes[history.length % prefixes.length];
+    return `${prefix} ${groundedReply}`;
   }
   return groundedReply;
 }
@@ -1913,6 +2055,13 @@ Tone and format rules:
 }
 
 async function generateWithNetwork(knowledge, question, history, groundedReply) {
+  // Circuit breaker: if the network has been failing consistently, skip it entirely
+  // and let the caller fall back to the fast grounded reply.
+  if (isNetworkCircuitOpen()) {
+    console.log('Network circuit open; skipping provider calls');
+    return null;
+  }
+
   // Use the full RAG prompt as the validation source so cloud models can cite
   // any fact from the verified context without being rejected for paraphrasing.
   const sourceText = buildPrompt(knowledge, question, history, 'openai').replace(/\s+/g, ' ').toLowerCase();
@@ -1942,6 +2091,7 @@ async function generateWithNetwork(knowledge, question, history, groundedReply) 
       const cleaned = removeSlop(String(raw || '').trim().replace(/\s+/g, ' '));
       if (cleaned && cleaned.length >= 15 && validateNetworkReply(cleaned, sourceText)) {
         recordProviderHealth(slug, true, Date.now() - providerStart);
+        recordNetworkOutcome(true);
         return { reply: cleaned, provider: slug, model: def.model || GEN_MODEL };
       }
       console.log(`Provider ${slug} output rejected (length ${cleaned?.length || 0}): ${cleaned.slice(0, 120)}`);
@@ -1959,6 +2109,7 @@ async function generateWithNetwork(knowledge, question, history, groundedReply) 
       }
     }
   }
+  recordNetworkOutcome(false);
   return null;
 }
 
@@ -1967,8 +2118,6 @@ async function generateWithNetwork(knowledge, question, history, groundedReply) 
 // Everything else flows to the LLM provider network for natural, contextual answers.
 function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
-  // Honest assessment / gaps: use the fact-backed grounded reply so we don't get evasive LLM answers
-  if (/\b(honest gaps?|his gaps?|weakness|weaknesses|limitations|red flag|concerns? about|what.*missing|what is he missing|not proven)\b/.test(q)) return true;
   // Safety: prompt injection, secret extraction, social engineering
   if (/(ignore|inject|system prompt|\.env|api key|password|bypass|open port|port 11434|localhost|127\.0\.0\.1|:11434|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|hidden config|show.*env|fake reference|social security|birth date|wife|children|family details|medical history|i am.*admin|i am.*owner|i am.*developer|i am.*from the government|i am.*security researcher|bradley'?s friend|his friend|reveal.*environment|reveal.*secret|reveal.*config|show.*contents of|read.*file|show me.*\.json|show me.*learned|show me.*stats|opt\/recruiter|\/opt\/|etc\/passwd|environment variable|ignore that|ignore all previous|override.*rules|override.*instructions)/.test(q)) return true;
   // False-claim requests must be blocked deterministically
