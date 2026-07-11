@@ -29,7 +29,11 @@ const GITHUB_MODELS_MODEL = process.env.GITHUB_MODELS_MODEL || 'openai/gpt-4o-mi
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || '';
 const CLOUDFLARE_MODEL = process.env.CLOUDFLARE_MODEL || '@cf/meta/llama-3.2-3b-instruct';
-const PROVIDER_ORDER = (process.env.PROVIDER_ORDER || 'groq,cloudflare,github,gemini,grok').split(',').map(s => s.trim()).filter(Boolean);
+const PROVIDER_ORDER = (process.env.PROVIDER_ORDER || 'groq,cloudflare,github,gemini,grok')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean)
+  .filter(s => s !== 'ollama');
 
 const KNOWLEDGE_URL = process.env.KNOWLEDGE_URL || 'https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter-knowledge.json';
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://bradleymatera.dev,https://www.bradleymatera.dev,https://bradleymatera.github.io').split(',').map(s => s.trim()).filter(Boolean);
@@ -1328,7 +1332,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${agentName} covers ${name}'s projects, skills, AWS background, education, certifications, role fit, honest limitations, and how to contact him.` };
   }
   if (/what model|what provider|what llm|what ai|which model|which provider/.test(lowerQuestion)) {
-    return { reply: `${agentName} uses a free multi-provider network (Groq, Cloudflare, GitHub Models, Gemini) and falls back to a small local Ollama model on the GCP VM.` };
+    return { reply: `${agentName} uses a free multi-provider network (Groq, Cloudflare Workers AI, GitHub Models, Google Gemini) and falls back to fast, grounded answers from ${name}'s verified recruiter data.` };
   }
   if (/what is this chatbot using|does this use ollama|is this ai local|is my chat private|what data do you use/.test(lowerQuestion)) {
     return { reply: `${agentName} is grounded in ${name}'s public recruiter data file. Nothing private is stored beyond short session context.` };
@@ -1337,13 +1341,13 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `Yes, this is ${name}'s portfolio. He built the site and ${agentName} himself.` };
   }
   if (/how is this chat free|how do you stay free|what powers you|what is your stack|free tier|free providers/.test(lowerQuestion)) {
-    return { reply: `${agentName} runs entirely on free tiers: GitHub Pages hosts the widget, a GCP free-tier VM runs the Node API, open-ended questions route through free LLM providers (Groq, Cloudflare Workers AI, GitHub Models, Gemini), and local Ollama is the final fallback. No paid AI subscriptions are needed.` };
+    return { reply: `${agentName} runs entirely on free tiers: GitHub Pages hosts the widget, a GCP free-tier VM runs the Node API, open-ended questions route through free LLM providers (Groq, Cloudflare Workers AI, GitHub Models, Gemini), and the final fallback is a fast, grounded answer from ${name}'s verified recruiter data. No paid AI subscriptions are needed.` };
   }
   if (/daily cap|daily limit|rate limit|cooldown|how.*handle.*limit|run 24|24.?7|24x7|always available|what if.*provider|exhausted|out of quota/.test(lowerQuestion)) {
-    return { reply: `${agentName} is designed to stay online 24/7 without paid AI. Each free provider has its own daily request cap and rate limit. When a provider hits its cap, returns a rate-limit error, or reports exhausted credits, ${agentName} pauses that provider (60 seconds for rate limits, 24 hours for credit exhaustion) and tries the next free provider in priority order. If every free provider is unavailable, the final fallback is local Ollama running directly on the GCP VM, which has no API quota. That layered fallback means the widget keeps working as long as the VM and GitHub Pages are up.` };
+    return { reply: `${agentName} is designed to stay online 24/7 without paid AI. Each free provider has its own daily request cap and rate limit. When a provider hits its cap, returns a rate-limit error, or reports exhausted credits, ${agentName} pauses that provider (60 seconds for rate limits, 24 hours for credit exhaustion) and tries the next free provider in priority order. If every free provider is unavailable, the final fallback is a fast, grounded answer from ${name}'s verified recruiter data. That layered fallback means the widget keeps working as long as the VM and GitHub Pages are up.` };
   }
   if (/health status|are you healthy|how are you running|system status/.test(lowerQuestion)) {
-    return { reply: `${agentName} is online. The backend runs on a free GCP VM with a multi-provider LLM network and a local Ollama fallback.` };
+    return { reply: `${agentName} is online. The backend runs on a free GCP VM with a multi-provider LLM network; if all providers are unavailable, the final fallback is a fast, grounded answer from ${name}'s verified recruiter data.` };
   }
   // Repair: shorter / more honest / tone changes using previous answer
   if (repair.shorter && lastAssistant) {
