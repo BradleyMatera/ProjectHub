@@ -1284,8 +1284,8 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   const lastAssistantLower = lastAssistant.toLowerCase();
   const inKittenContext = /kitten|rescue|animal/i.test(lastAssistantLower);
   const inArmyContext = /army|military|combat medic|68w|fort bragg|afghanistan/i.test(lastAssistantLower);
-  const inAwsContext = /aws|lambda|dynamodb|s3|cloud/i.test(lastAssistantLower);
-  const inProjectContext = /project|pokedex|metadata|ciris/i.test(lastAssistantLower);
+  const inAwsContext = /aws|lambda|dynamodb|amazon s3|aws amplify|cloudfront|ec2|amazon web services/i.test(lastAssistantLower);
+  const inProjectContext = /pokedex|metadata extraction|serverless|ciris|interactive pokedex|projecthub|smokebuddy/i.test(lastAssistantLower);
 
   if (/^\s*(was that|was it|is that)\b/i.test(question) && inKittenContext && /paid|pay|volunteer|money|compensat/.test(lowerQuestion)) {
     return { reply: `Yes, he started in a paid, part-time animal care role for a few months and then continued as a regular volunteer at Mason County Kitten Rescue.` };
