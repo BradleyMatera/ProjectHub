@@ -4771,5 +4771,12 @@
       ],
       "content": "transformation logic in samples/textured cube/main.ts or samples/hello triangle/main.ts to observe the effect on the live demo. 3. Update triangle demo.ts if you want to add uniforms, resize behavior, or alternative render passes. 4. Run bun run build:pages to generate a static export inside docs/ for easy hosting. Why It Exists WebGPU is powerful but verbose when you just want to understand the basics. Triangle Shader Lab strips the concept down to the essentials and gives you a playground that you can tinker with, refactor, or extend into new demos without inheriting an entire game engine."
     }
+  ],
+  "learnedAnswers": [
+    {
+      "q": "what is his preferred management style?",
+      "a": "Brad prefers a collaborative and transparent management style where he's encouraged to learn and grow. He values open communication and feedback, and likes to work with managers who support his learning and development as a junior engineer.",
+      "learnedAt": 1783747286095
+    }
   ]
 }
