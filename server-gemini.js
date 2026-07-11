@@ -1294,7 +1294,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     const kittenExp = (experience || []).find(e => /kitten|animal care|rescue/i.test(`${e.role} ${e.company} ${e.summary || ''}`));
     if (kittenExp) {
       const topResp = (kittenExp.responsibilities || []).slice(0, 5).map(r => r.charAt(0).toLowerCase() + r.slice(1)).join('; ');
-      return { reply: `Day to day, he ${topResp}.` };
+      return { reply: `Day to day, he handled ${topResp}.` };
     }
   }
 
