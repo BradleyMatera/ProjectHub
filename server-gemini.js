@@ -1421,8 +1421,8 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   if (/kitten|mason county kitten|animal care|animal shelter|rescue volunteer|rescue work/.test(lowerQuestion)) {
     const kittenExp = (experience || []).find(e => /kitten|animal care|rescue/i.test(`${e.role} ${e.company} ${e.summary || ''}`));
     if (kittenExp) {
-      const topResp = (kittenExp.responsibilities || []).slice(0, 4).map(r => r.charAt(0).toLowerCase() + r.slice(1)).join('; ');
-      return { reply: `${name} worked with ${kittenExp.company} from ${kittenExp.dates}. ${kittenExp.summary || ''} Responsibilities included ${topResp}.` };
+      const topResp = (kittenExp.responsibilities || []).slice(0, 5).map(r => r.charAt(0).toLowerCase() + r.slice(1)).join('; ');
+      return { reply: `${name} worked with ${kittenExp.company} from ${kittenExp.dates}. He started in a paid, part-time animal care role and continued as a volunteer. His work included ${topResp}.` };
     }
     return { reply: `${name} has animal care and volunteer rescue work in his background. Details are in his resume.` };
   }
