@@ -1889,8 +1889,8 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `The catch: he's junior, and his AWS experience is structured labs, not production. The upside: real React/Next.js projects, AWS Solutions Architect and AI Practitioner certs, and work habits that mean less hand-holding.` };
   }
 
-  // Remaining naturalness patterns — general catch-all
-  if (/is he good|is he legit|real projects|does he write|can he talk|can he troubleshoot|does he write docs|what can he actually do|what does he actually know|what does he actually do|is he the real deal|not just a portfolio|not a portfolio|what is the catch|what.s the catch/.test(lowerQuestion)) {
+  // Remaining naturalness patterns — general catch-all for capability/doubt phrasing
+  if (/is he good|is he legit|real projects|does he write code|does he write docs|can he talk|can he troubleshoot|what can he actually do|what does he actually know|what does he actually do|is he the real deal|not just a portfolio|not a portfolio|what is the catch|what.s the catch/.test(lowerQuestion)) {
     const certsList = (certifications || []).slice(0, 2).map(c => c.name || c);
     const topProjects = (projects || []).slice(0, 3).map(p => p.name);
     const shortCerts = certsList.map(c => c.replace('AWS Certified ', 'AWS '));
