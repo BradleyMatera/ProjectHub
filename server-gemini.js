@@ -257,6 +257,86 @@ app.get('/health', async (req, res) => {
   });
 });
 
+app.get('/api/knowledge-health', async (req, res) => {
+  try {
+    const knowledge = await fetchKnowledge();
+    if (!knowledge) return res.json({ ok: false, error: 'Knowledge not loaded' });
+
+    // Field coverage
+    const fields = {};
+    const checkField = (obj, prefix = '') => {
+      for (const [key, val] of Object.entries(obj || {})) {
+        const path = prefix ? `${prefix}.${key}` : key;
+        if (val == null || val === '' || (Array.isArray(val) && val.length === 0)) {
+          fields[path] = { hasData: false };
+        } else if (typeof val === 'object' && !Array.isArray(val)) {
+          checkField(val, path);
+        } else {
+          fields[path] = { hasData: true, type: Array.isArray(val) ? 'array' : typeof val, length: Array.isArray(val) ? val.length : String(val).length };
+        }
+      }
+    };
+    checkField(knowledge);
+
+    const totalFields = Object.keys(fields).length;
+    const populatedFields = Object.values(fields).filter(f => f.hasData).length;
+    const emptyFields = Object.entries(fields).filter(([, f]) => !f.hasData).map(([k]) => k);
+
+    // Gap clustering — group stashed questions by keyword overlap
+    const stashed = learnedData.stashed || [];
+    const clusters = {};
+    for (const item of stashed) {
+      const words = String(item.q || '').toLowerCase().split(/\s+/).filter(w => w.length > 3 && !/bradley|brad|matera|about|what|does|know|tell|please|would|could|should/.test(w));
+      const key = words.slice(0, 2).sort().join('+') || 'misc';
+      if (!clusters[key]) clusters[key] = { count: 0, questions: [] };
+      clusters[key].count++;
+      clusters[key].questions.push(item.q);
+    }
+    const gapClusters = Object.entries(clusters)
+      .map(([key, data]) => ({ topic: key, count: data.count, examples: data.questions.slice(0, 3) }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    // Topic analytics — which topics have the most questions
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const todayTopics = persistentStats.topicBreakdown[todayKey] || {};
+    const allTopics = {};
+    for (const day of Object.values(persistentStats.topicBreakdown || {})) {
+      for (const [t, c] of Object.entries(day)) {
+        allTopics[t] = (allTopics[t] || 0) + c;
+      }
+    }
+    const hotTopics = Object.entries(allTopics).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const uncoveredTopics = Object.entries(allTopics).filter(([t]) => t === 'other' || t === 'out-of-scope');
+
+    // Learned answers
+    const learnedAnswers = (learnedData.learned || []).map(a => ({
+      q: a.q, provider: a.provider, learnedAt: a.learnedAt,
+      answer: String(a.a || '').slice(0, 120)
+    }));
+
+    res.json({
+      ok: true,
+      knowledgeVersion: knowledge.version,
+      lastUpdated: knowledge.lastUpdated,
+      fieldCoverage: {
+        total: totalFields,
+        populated: populatedFields,
+        empty: emptyFields,
+        coveragePercent: totalFields > 0 ? Math.round((populatedFields / totalFields) * 100) : 0
+      },
+      gapClusters,
+      hotTopics,
+      uncoveredTopics,
+      learnedAnswers,
+      stashedCount: stashed.length,
+      learnedCount: learnedData.learnedCount || 0
+    });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
 app.post('/api/think', async (req, res) => {
   try {
     const results = await runThinkMode();
@@ -2217,8 +2297,10 @@ async function runThinkMode() {
       try {
         const question = item.original;
         const groundedReply = buildGroundedFallbackPayload(knowledge, question, []).reply;
-        let learnedReply = null;
-        let learnedProvider = null;
+        const sourceText = buildPrompt(knowledge, question, [], 'openai').replace(/\s+/g, ' ').toLowerCase();
+        let bestReply = null;
+        let bestProvider = null;
+        let bestScore = 0;
         for (const slug of PROVIDER_ORDER) {
           const def = PROVIDER_DEFS[slug];
           if (!def || isProviderExhausted(slug)) continue;
@@ -2235,21 +2317,25 @@ async function runThinkMode() {
             }
             const cleaned = removeSlop(String(raw || '').trim().replace(/\s+/g, ' '));
             if (cleaned && cleaned.length >= 25 && !/OUT_OF_SCOPE/i.test(cleaned)
-                && validateNetworkReply(cleaned, JSON.stringify(knowledge).slice(0, 2000))) {
-              learnedReply = cleaned;
-              learnedProvider = slug;
-              break;
+                && validateNetworkReply(cleaned, sourceText)) {
+              // Score: prefer longer answers (more complete)
+              const score = cleaned.length;
+              if (score > bestScore) {
+                bestReply = cleaned;
+                bestProvider = slug;
+                bestScore = score;
+              }
             }
           } catch (e) { /* next provider */ }
         }
-        if (learnedReply && learnedReply.toLowerCase() !== groundedReply.toLowerCase().slice(0, 100)) {
+        if (bestReply && bestReply.toLowerCase() !== groundedReply.toLowerCase().slice(0, 100)) {
           learnedData.learned.push({
-            q: item.q, original: item.original, a: learnedReply,
-            provider: learnedProvider, learnedAt: Date.now()
+            q: item.q, original: item.original, a: bestReply,
+            provider: bestProvider, learnedAt: Date.now()
           });
           learnedData.learnedCount = (learnedData.learnedCount || 0) + 1;
           results.learned++;
-          console.log(`[think] Learned: "${item.q}" via ${learnedProvider}`);
+          console.log(`[think] Learned: "${item.q}" via ${bestProvider} (score ${bestScore})`);
         } else {
           learnedData.stashed.push(item);
           results.failed++;
