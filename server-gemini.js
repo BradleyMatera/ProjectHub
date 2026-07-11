@@ -1304,6 +1304,18 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     }
   }
 
+  // Bare 'what kind / what type' follow-ups — resolve to target roles or skills from previous context.
+  if (/^\s*(what kind|what type|what sort)\b/i.test(question)) {
+    if (/role|job|position|work|target|fit|can he do|what can he do|entry.level/i.test(lastAssistantLower)) {
+      const targetRoles = (goals?.targetRoles || []).slice(0, 6).join(', ');
+      return { reply: `He's targeting ${targetRoles || 'entry-level tech, IT, and support roles'}.` };
+    }
+    if (/skill|stack|tech|language|tool/i.test(lastAssistantLower)) {
+      const topSkills = (skills?.languagesAndFrameworks || []).slice(0, 5).join(', ');
+      return { reply: `His main skills include ${topSkills || 'JavaScript, TypeScript, React, Node.js, HTML, CSS, SQL'}.` };
+    }
+  }
+
   // Generic bare follow-ups — re-execute with the previous topic substituted.
   const isBareFollowup = /^\s*(was that|what did he do there|what about that|how about that|tell me more about that|is that|was it|what about it)\b/i.test(question);
   if (isBareFollowup && lastAssistant) {
@@ -1711,6 +1723,17 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name} has database exposure through ${dbSkills || 'SQL and DynamoDB'} from school projects and his AWS internship. It's not production DBA work, but he can read schemas and write basic queries.` };
   }
 
+  // Linux / terminal / command line / shell
+  if (/\blinux\b|\bunix\b|terminal|command.?line|shell|bash|powershell|cmd\.exe|cli\b|use.*terminal|can he use.*terminal|know.*linux|command prompt/.test(lowerQuestion)) {
+    const tools = (skills?.toolsAndWorkflows || []).filter(s => /linux|terminal|shell|command|git cli/i.test(s));
+    const hasDocker = (skills?.toolsAndWorkflows || []).some(s => /docker/i.test(s));
+    const hasAWS = (skills?.cloudAndInfrastructure || []).some(s => /aws/i.test(s));
+    if (tools.length || hasDocker || hasAWS) {
+      return { reply: `${name} has used the terminal and command line for Docker, Git CLI, AWS CLI workflows, GitHub Actions, and basic shell tasks. He's comfortable at a junior level but is not a Linux administrator.` };
+    }
+    return { reply: `The data doesn't show direct Linux or terminal-heavy experience. His strongest areas are JavaScript/TypeScript, React, Node.js, and AWS support work.` };
+  }
+
   // Dynamic skills from knowledge base
   if (/skill|stack|technical|technologies|what does he know|what can he do|what stack/.test(lowerQuestion)) {
     const langs = (skills?.languagesAndFrameworks || []).slice(0, 3).join(', ');
@@ -1962,12 +1985,17 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `Salary and address details are not in the public data. Check his resume or contact him directly.` };
   }
 
+  // User frustration / confusion / pushback — acknowledge and redirect instead of repeating the out-of-scope phrase
+  if (/this isn.t coherent|that doesn.t make sense|what does that even mean|what does that mean|you.?re not helping|this is unhelpful|that.s not helpful|that makes no sense|this is broken|you keep saying that|why do you keep|stop repeating|speak normally|explain yourself/.test(lowerQuestion)) {
+    return { reply: `Sorry that wasn't clear. ${agentName} answers from Bradley's verified recruiter data. Ask about his skills, projects, AWS background, target roles, or how to contact him.` };
+  }
+
   // Out-of-scope: non-recruiter questions (jokes, sports, food, time, zodiac, weather, etc.)
   // Skip if this is a repair/tone-control prompt — those should fall through to concisePitch
   const isRepairOrTone = repair.shorter || repair.moreHonest || repair.blunt || repair.resumeLanguage || repair.moreTechnical || repair.hrFriendly
     || detectBannedWords(question).length > 0
     || /buzzword|corporate|plain|paragraph|no hype|no marketing|salesy|resume language|passionate|absolutely|certainly/.test(lowerQuestion);
-  if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|languages|databases|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate|kitten|rescue|animal|shelter|volunteer|paid|blog|article|writing|publication|dev\.to|dev community|write about/.test(lowerQuestion)) {
+  if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|languages|databases|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate|kitten|rescue|animal|shelter|volunteer|paid|blog|article|writing|publication|dev\.to|dev community|write about|linux|unix|terminal|shell|command line|bash|powershell/.test(lowerQuestion)) {
     const outOfScope = [
       `That's outside what ${agentName} covers. Ask about ${name}'s projects, skills, AWS background, role fit, or contact info.`,
       `${agentName} sticks to ${name}'s recruiter profile — projects, skills, AWS work, role fit, and how to contact him. That question isn't in the data.`,
@@ -2055,7 +2083,7 @@ function shouldUseGroundedAnswer(question) {
 function isProbablyRelevant(question) {
   const normalized = normalizeQuestion(question);
   // Very broad relevance check - if it mentions Bradley or any career-related terms, let it through
-  return /\b(bradley|brad|matera|candidate|recruiter|software|engineer|developer|web|aws|cloud|support|skill|stack|languages|databases|project|portfolio|contact|email|phone|role|job|education|cert|resume|ciris|ethical|freelance|contributor|intern|internship|work|experience|debug|troubleshoot|document|learn|communication|army|military|construction|case|manager|managers|approach|style|strength|weakness|feedback|management|kitten|rescue|animal|shelter|volunteer|veteran|deploy|afghanistan|68w|medic|blog|article|writing|publication|dev\.to|dev community)\b/.test(normalized) || normalized.includes('bradley') || normalized.includes('write about') || normalized.includes('writes about');
+  return /\b(bradley|brad|matera|candidate|recruiter|software|engineer|developer|web|aws|cloud|support|skill|stack|languages|databases|project|portfolio|contact|email|phone|role|job|education|cert|resume|ciris|ethical|freelance|contributor|intern|internship|work|experience|debug|troubleshoot|document|learn|communication|army|military|construction|case|manager|managers|approach|style|strength|weakness|feedback|management|kitten|rescue|animal|shelter|volunteer|veteran|deploy|afghanistan|68w|medic|blog|article|writing|publication|dev\.to|dev community|linux|unix|terminal|command.?line|shell|bash|powershell)\b/.test(normalized) || normalized.includes('bradley') || normalized.includes('write about') || normalized.includes('writes about');
 }
 
 function cleanModelReply(reply, knowledge, question, history) {
@@ -2555,7 +2583,7 @@ function classifyTopic(question) {
   const q = String(question || '').toLowerCase();
   if (/project|portfolio|codepen|shipped|github repo/.test(q)) return 'projects';
   if (/aws|cloud|lambda|dynamodb|serverless|certification|cert/.test(q)) return 'aws';
-  if (/skill|stack|tech|javascript|typescript|react|node|sql/.test(q)) return 'skills';
+  if (/skill|stack|tech|javascript|typescript|react|node|sql|linux|terminal|command.?line|shell|bash|powershell/.test(q)) return 'skills';
   if (/experience|intern|work history|background|ciris|freelance/.test(q)) return 'experience';
   if (/education|degree|school|full sail|gpa|graduat/.test(q)) return 'education';
   if (/contact|email|phone|reach|linkedin/.test(q)) return 'contact';

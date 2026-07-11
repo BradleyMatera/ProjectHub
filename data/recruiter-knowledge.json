@@ -176,6 +176,9 @@
       "GitHub",
       "VS Code",
       "Docker",
+      "Linux / Unix command line basics",
+      "Terminal / shell workflows",
+      "Git CLI",
       "Trello",
       "API integration",
       "Debugging",
@@ -646,7 +649,15 @@
       "fullsail": "full sail",
       "weaknes": "weakness",
       "clould": "cloud",
-      "suport": "support"
+      "suport": "support",
+      "termnial": "terminal",
+      "termial": "terminal",
+      "terminl": "terminal",
+      "expiernce": "experience",
+      "experiance": "experience",
+      "expereince": "experience",
+      "linx": "linux",
+      "linus": "linux"
     },
     "antiSlop": {
       "avoidWords": [
