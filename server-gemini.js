@@ -1483,6 +1483,17 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name} is honest about his DSA gap. He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in data structures and algorithms and has no formal CS degree. He cannot reliably solve most LeetCode-style problems on his own yet. He is aware of the gap and wants to improve at a company that trains and mentors.` };
   }
 
+  // Frontend / backend / full-stack developer direct questions
+  if (/\b(is he|does he)\b.*\b(frontend|backend|full.?stack)\b.*\b(developer|engineer|dev)\b/.test(lowerQuestion)) {
+    if (/full.?stack/.test(lowerQuestion)) {
+      return { reply: `${name} is not a full-stack developer. He's a junior frontend-leaning developer with React, Next.js, and JavaScript project experience, plus some backend exposure from school and an AWS internship. He's not ready to own a full-stack production system yet.` };
+    }
+    if (/backend/.test(lowerQuestion)) {
+      return { reply: `${name} is not a backend developer. He has some backend exposure from school (Node.js, SQL) and an AWS internship, but his strongest work is on the frontend and support side.` };
+    }
+    return { reply: `Yes, ${name} fits a junior frontend developer role. His strongest projects use JavaScript, TypeScript, React, and Next.js. It's project and internship experience, not production ownership.` };
+  }
+
   // Role-fit / career-fit questions (broadened to catch natural recruiter phrasing)
   const role = findRoleInQuestion(question);
   if (role && /(fit|candidate|what makes|suitable|right for|good for|apply for|what kind of|how about|what about|role for|job for|would.*fit|should.*fit|bad fit|good fit|strong fit|best fit|is he a|is bradley a|good match|strong match|a match for|perfect for|missing for|gaps for|missing to be|should he apply|jobs should|work as a|work as an|pitch|sell|why hire|why should.*hire|good candidate|would he be a)/.test(lowerQuestion)) {
@@ -1847,7 +1858,14 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     || detectBannedWords(question).length > 0
     || /buzzword|corporate|plain|paragraph|no hype|no marketing|salesy|resume language|passionate|absolutely|certainly/.test(lowerQuestion);
   if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate|kitten|rescue|animal|shelter|volunteer|paid/.test(lowerQuestion)) {
-    return { reply: `That's not in ${name}'s recruiter data. ${agentName} covers his projects, skills, AWS background, role fit, and contact info.` };
+    const outOfScope = [
+      `That's outside what ${agentName} covers. Ask about ${name}'s projects, skills, AWS background, role fit, or contact info.`,
+      `${agentName} sticks to ${name}'s recruiter profile — projects, skills, AWS work, role fit, and how to contact him. That question isn't in the data.`,
+      `I don't have that in ${name}'s verified recruiter data. What do you want to know about his projects, skills, or role fit?`,
+      `That's not something ${agentName} tracks. I can answer questions about ${name}'s tech background, work history, and contact info.`
+    ];
+    const pick = outOfScope[history.length % outOfScope.length];
+    return { reply: pick };
   }
 
   // Default to basic info
@@ -1859,32 +1877,55 @@ function buildGroundedFallback(knowledge, question, history) {
 }
 
 // Wrap a grounded reply with conversation context awareness.
-// If the last turn covered the same topic, use a varied follow-up opener instead of repeating blindly.
 function buildContextualGroundedReply(groundedReply, question, history) {
   if (!Array.isArray(history) || history.length === 0) return groundedReply;
   const lastTurn = history[history.length - 1];
   if (!lastTurn || !lastTurn.assistant) return groundedReply;
 
+  const q = String(question || '').trim();
+  const qLower = q.toLowerCase();
   const currentTopic = classifyTopic(question);
   const lastTopic = classifyTopic(lastTurn.user || '');
-  if (currentTopic === 'other' || currentTopic !== lastTopic) return groundedReply;
-
-  // Same topic as last turn — check if the grounded reply is nearly identical to the last answer
   const lastAns = String(lastTurn.assistant || '').toLowerCase().replace(/<[^>]+>/g, '').trim();
   const groundedNorm = String(groundedReply || '').toLowerCase().replace(/<[^>]+>/g, '').trim();
+
+  // Bare follow-up / clarification request — answer from the last topic instead of returning a generic reply.
+  if (/^what do you mean\??|^tell me more\.?|^explain\.?|^why\??|^how\??|^can you clarify|^what about that\??|^elaborate/.test(qLower)) {
+    if (currentTopic === lastTopic && currentTopic !== 'other') {
+      const short = firstSentence(groundedReply);
+      return `To clarify: ${short}`;
+    }
+  }
+
+  // Repeated nearly-identical question — answer briefly and refer back.
+  const lastQNorm = String(lastTurn.user || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+  const qNorm = qLower.replace(/[^a-z0-9\s]/g, '').trim();
+  const qWords = new Set(qNorm.split(/\s+/).filter(w => w.length > 3));
+  const lastQWords = new Set(lastQNorm.split(/\s+/).filter(w => w.length > 3));
+  const qOverlap = qWords.size > 0 ? [...qWords].filter(w => lastQWords.has(w)).length / qWords.size : 0;
+  if (qOverlap > 0.5) {
+    const short = firstSentence(groundedReply);
+    return `As I mentioned, ${short.toLowerCase()}`;
+  }
+
+  // Same topic as last turn — check if the grounded reply is nearly identical to the last answer
+  if (currentTopic === 'other' || currentTopic !== lastTopic) return groundedReply;
+
   const groundedWords = new Set(groundedNorm.split(/\s+/).filter(w => w.length > 4));
   const lastWords = new Set(lastAns.split(/\s+/).filter(w => w.length > 4));
   if (groundedWords.size === 0) return groundedReply;
   const overlap = [...groundedWords].filter(w => lastWords.has(w)).length / groundedWords.size;
   if (overlap > 0.6) {
-    // Vary the follow-up prefix; don't force lowercase because it breaks names and proper nouns
-    const prefixes = [
+    // Vary the follow-up transition based on turn count; keep proper nouns capitalized
+    const transitions = [
       'To add to that,',
       'Building on that,',
       'Also,',
       'Related to that,',
+      'More specifically,',
+      'To put it another way,',
     ];
-    const prefix = prefixes[history.length % prefixes.length];
+    const prefix = transitions[history.length % transitions.length];
     return `${prefix} ${groundedReply}`;
   }
   return groundedReply;
