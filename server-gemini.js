@@ -251,12 +251,13 @@ function sentenceList(items, max = 5) {
 function removeSlop(reply) {
   // Remove common AI slop phrases and inflated language
   const slopPatterns = [
-    /^(certainly|absolutely|great question|of course|sure!|sure,)/i,
+    /^(certainly|absolutely|great question|of course|sure!|sure,|i'd be happy to|i would be happy to|i'm here to help|let me know if you need anything else|feel free to ask)/i,
     /\b(certainly|absolutely|of course)\b/gi,
-    /\b(extensive expertise|proven leader|deep mastery|robust|dynamic|synergy|leverage|passionate|passion)\b/gi,
-    /\b(groundbreaking|cutting-edge|innovative|world-class|best-in-class)\b/gi,
+    /\b(extensive expertise|proven leader|deep mastery|robust|dynamic|synergy|leverage|passionate|passion|seasoned|guru|ninja|rockstar|wizard|10x|exceptional|remarkable|outstanding|impressive)\b/gi,
+    /\b(groundbreaking|cutting-edge|innovative|world-class|best-in-class|state-of-the-art|cutting edge)\b/gi,
     /as an ai\b/gi,
     /as bradley matera's recruiter assistant\b/gi,
+    /\b(i hope this helps|does that help|is there anything else|let me know if you have any questions)\b/gi,
   ];
   let cleaned = reply;
   slopPatterns.forEach(pattern => {
@@ -850,11 +851,14 @@ function buildPrompt(knowledge, question, history, provider) {
 
   context += `\nVOICE AND STYLE:\n`;
   context += `- Talk like a normal, helpful person. Not a corporate AI, not a resume.\n`;
-  context += `- Answer directly in 1-3 sentences. Be warm but honest.\n`;
-  context += `- Never start with "Certainly", "Absolutely", "Great question", "Of course", or "Sure".\n`;
-  context += `- Never use words like robust, passionate, synergy, leverage, dynamic, extensive, groundbreaking, cutting-edge, innovative, world-class, or best-in-class.\n`;
+  context += `- Answer directly in 1-3 short sentences. Be warm but honest.\n`;
+  context += `- Never start with "Certainly", "Absolutely", "Great question", "Of course", "Sure", or "As an AI".\n`;
+  context += `- Never use words like robust, passionate, synergy, leverage, dynamic, extensive, groundbreaking, cutting-edge, innovative, world-class, best-in-class, proven leader, deep mastery, exceptional, seasoned, or guru.\n`;
+  context += `- Do not repeat the user's question back at them.\n`;
+  context += `- Do not end with a sales pitch, vague offer to help, or long disclaimer.\n`;
   context += `- Do not oversell Bradley. He is junior. If something is from a project, an internship, or school, say so.\n`;
-  context += `- If the data does not contain the answer, say you do not see it and suggest checking the resume or contacting him directly.\n`;
+  context += `- Do not describe his AWS work as live production ownership; it was structured labs and a controlled capstone.\n`;
+  context += `- If the data does not contain the answer, say "I don't see that in the current recruiter data" and suggest checking the resume or contacting him directly.\n`;
   context += `- If the user is vague, ask a brief clarifying question.\n`;
 
   if (Array.isArray(history) && history.length > 0) {
@@ -1359,7 +1363,18 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
   // wastes time completing a bad answer.
   const agentName = knowledge?.agent?.name || 'Scout';
   const agentPersona = knowledge?.agent?.persona || 'the helpful, honest site assistant';
-  const system = `A recruiter is asking about a job candidate named Bradley Matera. You are ${agentName}, ${agentPersona}. You are not Bradley. Answer the recruiter using ONLY this info: ${truncateWords(source, 80)}\nRules: third person only (he/his), 1-3 short sentences, plain honest language, no greetings, no buzzwords, never add facts or employers not listed above.`;
+  const system = `A recruiter is asking about a job candidate named Bradley Matera. You are ${agentName}, ${agentPersona}. You are not Bradley. Answer the recruiter using ONLY this info: ${truncateWords(source, 80)}
+Tone and format rules:
+- Answer in 1-3 short sentences.
+- Third person only (he/his).
+- Plain, honest language. No buzzwords.
+- Never start with "Certainly", "Absolutely", "Great question", "As an AI", or "I would be happy".
+- Never use: leverage, robust, synergy, passionate, world-class, cutting-edge, groundbreaking, extensive expertise, proven leader, deep mastery, dynamic, innovative, exceptional.
+- Do not repeat the user's question back.
+- Do not end with a sales pitch or vague offer to help.
+- If the data is missing, say "I don't see that in the current recruiter data" briefly.
+- Never add facts, employers, degrees, or years of experience not listed above.
+- Do not describe his AWS work as live production ownership; it was structured labs and a capstone.`;
   const user = truncateWords(question, 40);
 
   const controller = new AbortController();
