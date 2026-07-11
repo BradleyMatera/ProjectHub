@@ -975,9 +975,17 @@ function buildPrompt(knowledge, question, history, provider) {
 
   if (Array.isArray(history) && history.length > 0) {
     context += `\nRECENT CONVERSATION:\n`;
-    history.slice(-3).forEach((turn, i) => {
+    history.slice(-5).forEach((turn, i) => {
       context += `User: ${turn.user || ''}\nScout: ${turn.assistant || ''}\n`;
     });
+    // Add conversation summary for long conversations
+    if (history.length >= 3) {
+      const topicsCovered = history.slice(-5).map(t => classifyTopic(t.user || '')).filter(t => t !== 'other');
+      const uniqueTopics = [...new Set(topicsCovered)];
+      if (uniqueTopics.length > 0) {
+        context += `\n(Topics already covered: ${uniqueTopics.join(', ')}. Do not repeat info from earlier turns unless asked.)\n`;
+      }
+    }
   }
 
   context += `\nUser: ${question}\nScout:`;
@@ -2256,7 +2264,33 @@ app.post('/api/chat', async (req, res) => {
     reply = shapeReply(reply, userMessage, knowledge);
     pipeline.push('shaped');
 
-    const payload = { reply, provider, model, fallback: false, grounded: provider === 'grounded', pipeline };
+    // 3b. Frustration detection — switch to ultra-direct mode
+    const frustrationPatterns = /not making sense|makes no sense|just answer|why can't you|you.?re not|stop avoiding|answer the question|just tell me|be direct/;
+    if (frustrationPatterns.test(userMessage.toLowerCase())) {
+      pipeline.push('frustration-detected');
+      // Strip any preamble or suggestions — just give the answer
+      reply = reply.replace(/^(sorry|apolog|my bad)[^.]*\.\s*/i, '').replace(/\s*(ask me about|try asking|you can also ask).*$/i, '').trim();
+    }
+
+    // 3c. Generate contextual follow-up suggestions
+    const topic = classifyTopic(userMessage);
+    const followUpMap = {
+      'projects': ['What tech stack does he use?', 'Which project is most relevant to my role?'],
+      'aws': ['What about his AWS certifications?', 'Did he do real production work at AWS?'],
+      'skills': ['What are his strongest skills?', 'How does he debug issues?'],
+      'experience': ['What did he do at CIRIS?', 'Tell me about his AWS internship'],
+      'education': ['What was his GPA?', 'What coursework is relevant?'],
+      'contact': ['Does he have a LinkedIn?', 'What roles is he targeting?'],
+      'role-fit': ['Is he a fit for a junior web role?', 'What are his honest gaps?'],
+      'strengths': ['What are his weaknesses?', 'Can you give an example?'],
+      'weaknesses': ['What are his strengths?', 'Is he a good fit for a support role?'],
+      'interpersonal': ['Does he have customer service experience?', 'How does he handle conflict?'],
+      'work-style': ['Does he write documentation?', 'How does he handle unfamiliar code?'],
+      'summary': ['What are his strongest skills?', 'What projects should I look at first?']
+    };
+    const followUps = followUpMap[topic] || [];
+
+    const payload = { reply, provider, model, fallback: false, grounded: provider === 'grounded', pipeline, followUps };
     if (!hasHistory) {
       responseCache.set(cacheKey, { ts: Date.now(), payload });
       if (responseCache.size > RESPONSE_CACHE_LIMIT) {

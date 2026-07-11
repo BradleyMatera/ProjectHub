@@ -1038,7 +1038,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
   function rememberTurn(role, content) {
     conversationContext.push({ role, content: normalizeForCompare(content).slice(0, 420), at: Date.now() });
-    conversationContext = conversationContext.slice(-8);
+    conversationContext = conversationContext.slice(-10);
   }
 
   function renderSuggestions() {

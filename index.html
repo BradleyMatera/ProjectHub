@@ -614,6 +614,11 @@
           <p style="color:var(--soft)">Loading…</p>
         </div>
 
+        <h3 style="margin-top:1.5rem;font-size:0.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:0.05em">Knowledge coverage gaps</h3>
+        <div id="live-gaps" style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem">
+          <p style="color:var(--soft)">Loading…</p>
+        </div>
+
         <h3 style="margin-top:1.5rem;font-size:0.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:0.05em">Recent requests</h3>
         <div id="live-recent" style="font-size:0.82rem;color:var(--muted);max-height:200px;overflow-y:auto;margin-top:0.5rem">
           <p style="color:var(--soft)">Loading…</p>
@@ -734,6 +739,7 @@
       const elReferrers = document.getElementById('live-referrers');
       const elTopics = document.getElementById('live-topics');
       const elTrend = document.getElementById('live-trend');
+      const elGaps = document.getElementById('live-gaps');
       const elLearnStashed = document.getElementById('learn-stashed');
       const elLearnCount = document.getElementById('learn-count');
       const elLearnPending = document.getElementById('learn-pending');
@@ -892,8 +898,28 @@
             return `<div title="${h.label}: ${h.total} total (${h.grounded} grounded, ${h.llm} LLM, ${h.cached} cached)" style="flex:1;display:flex;flex-direction:column-reverse;min-width:${barW}px"><div style="height:${groundedH}px;background:#34d399;border-radius:1px"></div><div style="height:${llmH}px;background:#60a5fa"></div><div style="height:${cachedH}px;background:#fbbf24"></div></div>`;
           }).join('')}</div><div style="display:flex;justify-content:space-between;margin-top:0.3rem;font-size:0.7rem;color:var(--soft)"><span>24h ago</span><span>now</span></div><div style="margin-top:0.4rem;font-size:0.75rem;color:var(--soft)"><span style="color:#34d399">■</span> grounded <span style="color:#60a5fa;margin-left:0.5rem">■</span> LLM <span style="color:#fbbf24;margin-left:0.5rem">■</span> cached</div>`;
 
-          // Learning system stats
+          // Knowledge coverage gaps — show 'other' topic questions and stashed questions
+          const otherQuestions = recent.filter(r => r.topic === 'other' || r.topic === 'out-of-scope').slice(0, 8);
           const learn = data.learning || {};
+          const stashedCount = learn.stashedCount || 0;
+          if (otherQuestions.length === 0 && stashedCount === 0) {
+            elGaps.innerHTML = '<p style="color:var(--soft)">No gaps detected yet.</p>';
+          } else {
+            let gapHtml = '';
+            if (stashedCount > 0) {
+              gapHtml += `<div style="margin-bottom:0.5rem;padding:0.4rem 0.6rem;background:rgba(248,113,113,0.08);border-radius:6px;border:1px solid rgba(248,113,113,0.2)"><span style="color:#f87171">⚠ ${stashedCount} stashed question(s)</span> <span style="color:var(--soft);font-size:0.75rem">— think mode will process these</span></div>`;
+            }
+            if (otherQuestions.length > 0) {
+              gapHtml += '<div style="margin-bottom:0.3rem;color:var(--soft);font-size:0.78rem">Questions with no dedicated handler:</div>';
+              gapHtml += otherQuestions.map(r => {
+                const time = new Date(r.ts).toLocaleTimeString();
+                return `<div style="padding:0.2rem 0;font-size:0.78rem"><span style="color:var(--soft)">${time}</span> · <span style="color:#f87171">[${r.topic}]</span> ${r.q}</div>`;
+              }).join('');
+            }
+            elGaps.innerHTML = gapHtml;
+          }
+
+          // Learning system stats
           elLearnStashed.textContent = typeof learn.stashedCount === 'number' ? learn.stashedCount : '--';
           elLearnCount.textContent = typeof learn.learnedCount === 'number' ? learn.learnedCount : '--';
           elLearnPending.textContent = (typeof learn.pendingLearned === 'number' ? learn.pendingLearned : '--') + ' pending push to GitHub';

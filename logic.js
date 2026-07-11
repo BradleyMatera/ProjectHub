@@ -65,7 +65,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
             acc[acc.length - 1].assistant = turn.content;
           }
           return acc;
-        }, []).slice(-3);
+        }, []).slice(-5);
 
         const res = await fetch(CHAT_API_URL, {
           method: "POST",
