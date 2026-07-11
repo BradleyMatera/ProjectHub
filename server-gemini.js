@@ -1410,7 +1410,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
       const details = armyExp.details || {};
       const rank = details.rank ? ` as a ${details.rank}` : '';
       const deployment = details.deployment ? `, deployed ${details.deployment}` : '';
-      const awards = details.awards?.length ? ` Awards include ${sentenceList(details.awards, 5)}.` : '';
+      const awards = details.awards?.length ? ` Awards include ${sentenceList(details.awards, 10)}.` : '';
       const unit = details.unit ? ` with ${details.unit}` : '';
       return { reply: `${name} served in the U.S. Army${rank}${unit}${armyExp.dates ? ` (${armyExp.dates})` : ''}${deployment}. He provided medical support and trained soldiers on medical and safety procedures.${awards}` };
     }
@@ -1421,8 +1421,8 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   if (/kitten|mason county kitten|animal care|animal shelter|rescue volunteer|rescue work/.test(lowerQuestion)) {
     const kittenExp = (experience || []).find(e => /kitten|animal care|rescue/i.test(`${e.role} ${e.company} ${e.summary || ''}`));
     if (kittenExp) {
-      const topResp = (kittenExp.responsibilities || []).slice(0, 4).join('; ');
-      return { reply: `${name} worked with ${kittenExp.company} from ${kittenExp.dates}. He started in a paid, part-time animal care role and continued as a volunteer. ${kittenExp.summary || ''} Responsibilities included ${topResp}.` };
+      const topResp = (kittenExp.responsibilities || []).slice(0, 4).map(r => r.charAt(0).toLowerCase() + r.slice(1)).join('; ');
+      return { reply: `${name} worked with ${kittenExp.company} from ${kittenExp.dates}. ${kittenExp.summary || ''} Responsibilities included ${topResp}.` };
     }
     return { reply: `${name} has animal care and volunteer rescue work in his background. Details are in his resume.` };
   }
