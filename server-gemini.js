@@ -2043,6 +2043,7 @@ function toThirdPerson(text) {
     .replace(/\bI learn\b/g, 'he learns')
     .replace(/\bI work\b/g, 'he works')
     .replace(/\bI built\b/g, 'he built')
+    .replace(/\bI usually need\b/g, 'he usually needs')
     .replace(/\bI need\b/g, 'he needs')
     .replace(/\bI want\b/g, 'he wants')
     .replace(/\bI can\b/g, 'he can')
