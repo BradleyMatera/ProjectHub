@@ -30,7 +30,7 @@ const CLOUDFLARE_MODEL = process.env.CLOUDFLARE_MODEL || '@cf/meta/llama-3.2-3b-
 const PROVIDER_ORDER = (process.env.PROVIDER_ORDER || 'groq,cloudflare,github,gemini,grok,ollama').split(',').map(s => s.trim()).filter(Boolean);
 
 const KNOWLEDGE_URL = process.env.KNOWLEDGE_URL || 'https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter-knowledge.json';
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://bradleymatera.dev,https://www.bradleymatera.dev').split(',').map(s => s.trim()).filter(Boolean);
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://bradleymatera.dev,https://www.bradleymatera.dev,https://bradleymatera.github.io').split(',').map(s => s.trim()).filter(Boolean);
 
 let knowledgeCache = null;
 let knowledgeCacheAt = 0;
@@ -186,10 +186,17 @@ app.get('/', (req, res) => {
 });
 
 app.get('/health', async (req, res) => {
+  const providers = providerStatus();
+  const totalFreeUsedToday = providers.reduce((sum, p) => sum + (p.usedToday || 0), 0);
   res.json({
     ok: true,
+    status: 'online',
+    uptimeSeconds: Math.floor(process.uptime()),
+    totalRequestsServed,
+    lastReplyProvider,
+    totalFreeUsedToday,
     providerOrder: PROVIDER_ORDER,
-    providers: providerStatus(),
+    providers,
     genModel: process.env.GEN_MODEL || 'smollm2:135m',
     genTimeoutMs: parseInt(process.env.GEN_TIMEOUT_MS || '13000', 10),
     knowledgeUrl: KNOWLEDGE_URL,
@@ -1511,6 +1518,8 @@ function mustStayGrounded(question, history) {
 let llmHealthy = LLM_PROVIDER !== 'ollama'; // ollama on the 1GB VM is treated as garnish only
 let llmLastFailAt = 0;
 const LLM_RETRY_AFTER_MS = 10 * 60 * 1000;
+let totalRequestsServed = 0;
+let lastReplyProvider = null;
 
 app.post('/api/chat', async (req, res) => {
   let userMessage = '';
@@ -1518,18 +1527,21 @@ app.post('/api/chat', async (req, res) => {
     userMessage = String(req.body.message || '').trim();
     if (!userMessage) return res.status(400).json({ error: 'Missing message.' });
     if (userMessage.length > 600) return res.status(400).json({ error: 'Message is too long.' });
+    totalRequestsServed++;
 
     const history = Array.isArray(req.body.history) ? req.body.history : [];
     const hasHistory = history.length > 0;
     const cacheKey = normalizeQuestion(userMessage);
     const cached = !hasHistory ? responseCache.get(cacheKey) : null;
     if (cached && (Date.now() - cached.ts) < RESPONSE_CACHE_MS) {
+      lastReplyProvider = cached.payload.provider || 'cached';
       return res.json({ ...cached.payload, cached: true });
     }
 
     const knowledge = await fetchKnowledge();
     if (!knowledge) {
       const payload = { ...buildGroundedFallbackPayload({}, userMessage, history), provider: 'grounded', fallback: true };
+      lastReplyProvider = 'grounded';
       return res.json(payload);
     }
 
@@ -1564,11 +1576,13 @@ app.post('/api/chat', async (req, res) => {
       }
     }
 
+    lastReplyProvider = payload.provider;
     return res.json(payload);
   } catch (err) {
     console.error('Chat error:', err);
     const knowledge = knowledgeCache || {};
     const grounded = buildGroundedFallbackPayload(knowledge, userMessage, []);
+    lastReplyProvider = 'grounded';
     return res.json({ reply: grounded.reply, provider: 'grounded', model: 'knowledge-json', fallback: true });
   }
 });

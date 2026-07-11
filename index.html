@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <meta name="description" content="ProjectHub is a free, embeddable AI recruiter assistant named Scout. It showcases Bradley Matera's projects, skills, and background through a multi-provider LLM network and grounded RAG." />
   <title>ProjectHub · Scout Recruiter Assistant</title>
   <style>
@@ -276,12 +279,113 @@
 
     .footer-text { margin: 0; color: var(--soft); font-size: 0.88rem; line-height: 1.55; }
 
-    #bradley-chat { margin-top: 1.5rem; }
+    .live-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin: 0.85rem 0;
+    }
+
+    .live-metric {
+      padding: 0.9rem 1rem;
+      border-radius: 16px;
+      border: 1px solid rgba(52, 211, 153, 0.22);
+      background: rgba(2, 6, 23, 0.38);
+    }
+
+    .live-metric .metric-label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #bbf7d0;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    .live-metric .metric-value {
+      margin: 0.35rem 0 0;
+      color: var(--text);
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .live-metric .metric-sub {
+      margin: 0.25rem 0 0;
+      color: var(--soft);
+      font-size: 0.82rem;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #34d399;
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45);
+      animation: livePulse 1.6s infinite;
+    }
+
+    @keyframes livePulse {
+      0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45); }
+      70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    }
+
+    .provider-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.85rem 0 0;
+      font-size: 0.88rem;
+    }
+
+    .provider-table th,
+    .provider-table td {
+      padding: 0.55rem 0.6rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .provider-table th {
+      color: var(--soft);
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .provider-table td { color: var(--muted); }
+
+    .provider-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.18rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .status-online { color: #bbf7d0; background: rgba(52, 211, 153, 0.14); }
+    .status-cooldown { color: #fde68a; background: rgba(251, 191, 36, 0.14); }
+    .status-offline { color: #fecaca; background: rgba(248, 113, 113, 0.14); }
+    .status-disabled { color: var(--soft); background: rgba(148, 163, 184, 0.12); }
+
+    .refresh-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+      color: var(--soft);
+      font-size: 0.82rem;
+    }
 
     @media (max-width: 860px) {
       .card { padding: 1.4rem; border-radius: 22px; }
       .status-grid { grid-template-columns: 1fr; }
       .free-grid { grid-template-columns: 1fr; }
+      .live-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .hero-panel { align-items: flex-start; }
     }
 
@@ -291,6 +395,7 @@
       .hero-panel { flex-direction: column; }
       .flow-box { align-items: stretch; flex-direction: column; }
       .flow-arrow { transform: rotate(90deg); }
+      .live-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -435,6 +540,56 @@
       </section>
 
       <section class="card-section">
+        <h2>Live free-tier monitor</h2>
+        <p>
+          Real-time numbers from the running backend. It refreshes every 5 seconds so you can see which free providers are active, how many requests have been served today, and which provider answered last.
+        </p>
+
+        <div class="live-grid">
+          <div class="live-metric">
+            <div class="metric-label"><span class="live-dot"></span> API status</div>
+            <div class="metric-value" id="live-status">Loading…</div>
+            <div class="metric-sub" id="live-uptime">--</div>
+          </div>
+          <div class="live-metric">
+            <div class="metric-label">Total requests</div>
+            <div class="metric-value" id="live-total">--</div>
+            <div class="metric-sub">Served by the chat API</div>
+          </div>
+          <div class="live-metric">
+            <div class="metric-label">Free tier used today</div>
+            <div class="metric-value" id="live-used">--</div>
+            <div class="metric-sub">Across all providers</div>
+          </div>
+          <div class="live-metric">
+            <div class="metric-label">Last provider</div>
+            <div class="metric-value" id="live-last">--</div>
+            <div class="metric-sub">Most recent reply source</div>
+          </div>
+        </div>
+
+        <table class="provider-table">
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Model</th>
+              <th>Status</th>
+              <th>Used today</th>
+              <th>Daily limit</th>
+            </tr>
+          </thead>
+          <tbody id="live-providers">
+            <tr><td colspan="5">Loading provider data…</td></tr>
+          </tbody>
+        </table>
+
+        <div class="refresh-bar">
+          <span id="live-refresh">Refreshing every 5 seconds…</span>
+          <span id="live-updated">Last updated: never</span>
+        </div>
+      </section>
+
+      <section class="card-section">
         <h2>How to embed ProjectHub</h2>
         <p>
           This is the script tag used to load the floating ProjectHub chat widget:
@@ -499,6 +654,80 @@
       </footer>
     </main>
   </div>
+
+  <script>
+    (function () {
+      const API_HEALTH = 'https://projecthub-chat.bradleymatera.dev/health';
+      const elStatus = document.getElementById('live-status');
+      const elUptime = document.getElementById('live-uptime');
+      const elTotal = document.getElementById('live-total');
+      const elUsed = document.getElementById('live-used');
+      const elLast = document.getElementById('live-last');
+      const elProviders = document.getElementById('live-providers');
+      const elUpdated = document.getElementById('live-updated');
+      const elRefresh = document.getElementById('live-refresh');
+
+      function fmtUptime(sec) {
+        if (!sec && sec !== 0) return '--';
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = sec % 60;
+        return `${h}h ${m}m ${s}s`;
+      }
+
+      function providerClass(p) {
+        if (!p.enabled) return 'status-disabled';
+        if (p.exhausted) return 'status-cooldown';
+        if (!p.available) return 'status-offline';
+        return 'status-online';
+      }
+
+      function providerLabel(p) {
+        if (!p.enabled) return 'Disabled';
+        if (p.exhausted) return 'Cooldown';
+        if (!p.available) return 'Unavailable';
+        return 'Active';
+      }
+
+      async function update() {
+        try {
+          const res = await fetch(API_HEALTH, { cache: 'no-store' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+
+          elStatus.textContent = data.ok ? 'Online' : 'Issue';
+          elUptime.textContent = 'Uptime: ' + fmtUptime(data.uptimeSeconds);
+          elTotal.textContent = typeof data.totalRequestsServed === 'number' ? data.totalRequestsServed.toLocaleString() : '--';
+          elUsed.textContent = typeof data.totalFreeUsedToday === 'number' ? data.totalFreeUsedToday.toLocaleString() : '--';
+          elLast.textContent = data.lastReplyProvider ? data.lastReplyProvider : 'None yet';
+
+          const rows = (data.providers || []).map(p => {
+            const used = typeof p.usedToday === 'number' ? p.usedToday : '--';
+            const limit = p.limit ? p.limit.toLocaleString() : '∞';
+            return `<tr>
+              <td><strong>${p.slug}</strong></td>
+              <td>${p.model || '--'}</td>
+              <td><span class="provider-status ${providerClass(p)}">${providerLabel(p)}</span></td>
+              <td>${used}</td>
+              <td>${limit}</td>
+            </tr>`;
+          }).join('');
+          elProviders.innerHTML = rows || '<tr><td colspan="5">No provider data</td></tr>';
+
+          elUpdated.textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+          elRefresh.textContent = 'Refreshing every 5 seconds…';
+        } catch (err) {
+          elStatus.textContent = 'Offline / Error';
+          elUptime.textContent = 'Could not reach backend';
+          elRefresh.textContent = 'Retrying…';
+          console.error('Live dashboard error:', err);
+        }
+      }
+
+      update();
+      setInterval(update, 5000);
+    })();
+  </script>
 
   <!-- ProjectHub chat widget -->
   <script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=8"></script>
