@@ -107,7 +107,7 @@ SCENARIOS = [
         "turns": [
             {"user": "Hi", "checks": {"min_len": 5}},
             {"user": "What can you tell me about Brad?", "checks": {"min_len": 30, "banned": BANNED_OPENERS}},
-            {"user": "What roles is he targeting?", "checks": {"min_len": 20, "must_contain": ["junior"]}},
+            {"user": "What roles is he targeting?", "checks": {"min_len": 20, "must_contain_any": ["junior", "entry-level"]}},
             {"user": "Is he a fit for a junior frontend role?", "checks": {"min_len": 20}},
             {"user": "What are his honest gaps?", "checks": {"min_len": 20, "must_contain_any": ["junior", "production", "gap", "limit", "learning", "experience", "c#", "net"]}},
         ],
