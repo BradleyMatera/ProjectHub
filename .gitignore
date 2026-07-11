@@ -19,6 +19,11 @@ CLAUDE.md
 *_test_suite*.txt
 run-tests.js
 
+# Runtime data files (generated on the VM)
+stats.json
+learned.json
+*.backup.*
+
 # Screenshots and media clutter
 Screenshot_*.jpg
 Screenshot_*.png

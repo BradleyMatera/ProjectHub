@@ -62,6 +62,16 @@ function elapsedTime(seconds) {
   return rem > 0 ? `${hrs} hr ${rem} min` : `${hrs} hr`;
 }
 
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function getTheme(container) {
   return container && container.classList.contains('ph-dark') ? 'g100' : 'white';
 }
@@ -72,6 +82,33 @@ function setStatus(container, message, type = 'info') {
   el.className = `ph-analytics__status ph-analytics__status--${type}`;
   el.textContent = message;
   el.hidden = false;
+}
+
+function wrapScrollBox(element, maxHeightClass = 'ph-scroll-box') {
+  if (!element || !element.firstElementChild) return element;
+  const wrapper = document.createElement('div');
+  wrapper.className = `ph-scroll-box ${maxHeightClass}`;
+  wrapper.appendChild(element.firstElementChild);
+  element.appendChild(wrapper);
+
+  const toggle = document.createElement('button');
+  toggle.className = 'ph-show-all';
+  toggle.type = 'button';
+  toggle.textContent = 'Show all';
+  toggle.addEventListener('click', () => {
+    const isExpanded = wrapper.classList.contains('ph-scroll-box--expanded');
+    if (isExpanded) {
+      wrapper.classList.remove('ph-scroll-box--expanded');
+      wrapper.style.maxHeight = '';
+      toggle.textContent = 'Show all';
+    } else {
+      wrapper.classList.add('ph-scroll-box--expanded');
+      wrapper.style.maxHeight = 'none';
+      toggle.textContent = 'Show less';
+    }
+  });
+  element.appendChild(toggle);
+  return element;
 }
 
 function hideStatus(container) {
@@ -195,6 +232,35 @@ function renderDonutChart(holder, data, container) {
   }
 }
 
+function renderDonutBreakdown(holder, breakdown, title, container) {
+  try {
+    const chartData = Object.entries(breakdown || {})
+      .map(([group, value]) => ({ group, value: Number(value) || 0 }))
+      .filter(d => d.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
+    if (chartData.length === 0) {
+      holder.textContent = 'No data';
+      return;
+    }
+    const total = chartData.reduce((s, d) => s + d.value, 0);
+    new DonutChart(holder, {
+      data: chartData,
+      options: {
+        title,
+        resizable: true,
+        donut: { center: { label: String(total) } },
+        height: '300px',
+        width: '100%',
+        theme: getTheme(container),
+      },
+    });
+  } catch (e) {
+    console.error('Failed to render donut breakdown chart:', e);
+    holder.textContent = 'Chart unavailable';
+  }
+}
+
 function renderProviderTable(tbody, providers, providerBreakdown) {
   if (!Array.isArray(providers) || providers.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6">No provider data</td></tr>';
@@ -249,15 +315,45 @@ function renderSessionsTable(tbody, sessions) {
     tbody.innerHTML = '<tr><td colspan="5">No recent sessions</td></tr>';
     return;
   }
-  tbody.innerHTML = sessions.slice(0, 12).map((s) => {
+  tbody.innerHTML = sessions.slice(0, 15).map((s) => {
     const topics = Array.isArray(s.topics) ? s.topics.join(', ') : '—';
     const referrer = sanitizeReferrer(s.referrer);
-    return `<tr>
-      <td><span class="ph-badge ph-badge--${s.intent || 'visitor'}">${s.intent || 'visitor'}</span></td>
-      <td>${formatTime(s.startedAt)}</td>
-      <td>${formatNumber(s.turns)}</td>
-      <td>${topics}</td>
-      <td>${elapsedTime(s.durationSec)}${referrer !== 'unknown' ? ` · ${referrer}` : ''}</td>
+    const providerMix = Object.entries(s.providerMix || {})
+      .map(([p, c]) => `${p}:${c}`).join(' ') || '—';
+    const fullJson = JSON.stringify({
+      id: s.id,
+      startedAt: s.startedAt,
+      lastActiveAt: s.lastActiveAt,
+      durationSec: s.durationSec,
+      turns: s.turns,
+      intent: s.intent,
+      topics: s.topics,
+      referrer: s.referrer,
+      providerMix: s.providerMix,
+      lastQuestion: s.lastQuestion,
+      lastReply: s.lastReply,
+      lastGroundedReply: s.lastGroundedReply
+    }, null, 2);
+    return `<tr class="ph-expandable-row">
+      <td colspan="5">
+        <details>
+          <summary>
+            <span class="ph-badge ph-badge--${s.intent || 'visitor'}">${s.intent || 'visitor'}</span>
+            <span class="ph-muted">${formatTime(s.startedAt)}</span>
+            <span class="ph-muted">${formatNumber(s.turns)} turns</span>
+            <span class="ph-muted">${topics}</span>
+            <span class="ph-muted">${elapsedTime(s.durationSec)}${referrer !== 'unknown' ? ` · ${referrer}` : ''}</span>
+          </summary>
+          <div class="ph-expandable-content">
+            <div class="ph-field-label">Provider mix</div>
+            <div class="ph-field-value">${providerMix}</div>
+            <div class="ph-field-label">Last question</div>
+            <div class="ph-field-value">${s.lastQuestion || '—'}</div>
+            <div class="ph-field-label">Full session record</div>
+            <pre>${escapeHtml(fullJson)}</pre>
+          </div>
+        </details>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -267,20 +363,42 @@ function renderRecentRequests(container, requests) {
     container.innerHTML = '<p>No requests yet.</p>';
     return;
   }
-  const list = document.createElement('div');
-  list.className = 'ph-activity-list';
-  list.innerHTML = requests.slice(0, 20).map((r) => {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'ph-activity-list';
+  wrapper.innerHTML = requests.slice(0, 20).map((r) => {
     const providerClass = `ph-provider-${r.provider || 'llm'}`;
     const topicTag = r.topic ? ` <span class="ph-muted">[${r.topic}]</span>` : '';
     const latencyTag = r.latencyMs != null ? ` <span class="ph-muted">${r.latencyMs}ms</span>` : '';
     const referrer = r.referrer && r.referrer !== 'unknown' ? ` <span class="ph-muted">from ${sanitizeReferrer(r.referrer)}</span>` : '';
-    return `<div class="ph-activity-item">
-      <span class="ph-provider-tag ${providerClass}">${r.provider}</span>
-      <span class="ph-muted">${formatTime(r.ts)}</span>${latencyTag}${topicTag}${referrer}
-    </div>`;
+    const fullJson = JSON.stringify({
+      q: r.q,
+      provider: r.provider,
+      ts: r.ts,
+      referrer: r.referrer,
+      topic: r.topic,
+      latencyMs: r.latencyMs,
+      pipeline: r.pipeline,
+      reply: r.reply,
+      groundedReply: r.groundedReply
+    }, null, 2);
+    const sanitizedQ = String(r.q || '').replace(/\b\w{2,}@\w+\.\w+\b/g, '[email]').slice(0, 120);
+    return `<details class="ph-expandable-row">
+      <summary>
+        <span class="ph-provider-tag ${providerClass}">${r.provider}</span>
+        <span class="ph-muted">${formatTime(r.ts)}</span>${latencyTag}${topicTag}${referrer}
+      </summary>
+      <div class="ph-expandable-content">
+        <div class="ph-field-label">Question</div>
+        <div class="ph-field-value">${escapeHtml(sanitizedQ)}${(r.q || '').length > 120 ? '…' : ''}</div>
+        <div class="ph-field-label">Reply</div>
+        <div class="ph-field-value">${escapeHtml(r.reply || '—').slice(0, 300)}${(r.reply || '').length > 300 ? '…' : ''}</div>
+        <div class="ph-field-label">Full request record</div>
+        <pre>${escapeHtml(fullJson)}</pre>
+      </div>
+    </details>`;
   }).join('');
   container.innerHTML = '';
-  container.appendChild(list);
+  container.appendChild(wrapper);
 }
 
 function renderActivityFeed(container, requests) {
@@ -348,9 +466,19 @@ function renderKnowledgeGaps(container, data) {
   const recent = data.recentRequests || [];
   const learn = data.learning || {};
   const stashedCount = learn.stashedCount || 0;
-  const otherQuestions = recent.filter(r => r.topic === 'other' || r.topic === 'out-of-scope').slice(0, 8);
+  const uncategorized = recent.filter(r => r.topic === 'uncategorized' || r.topic === 'other').slice(0, 8);
 
-  if (otherQuestions.length === 0 && stashedCount === 0) {
+  // Cluster uncategorized question stems to show which new topics might be needed.
+  const stemCounts = {};
+  for (const r of recent.filter(r => r.topic === 'uncategorized' || r.topic === 'other')) {
+    const q = String(r.q || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim();
+    const words = q.split(/\s+/).filter(w => w.length > 3 && !/brad|matera|about|what|does|know|tell|please|would|could|should|does|is|are|can|will|have|has|had|do|did/.test(w));
+    const stem = words.slice(0, 2).sort().join(' ');
+    if (stem) stemCounts[stem] = (stemCounts[stem] || 0) + 1;
+  }
+  const topStems = Object.entries(stemCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+  if (uncategorized.length === 0 && stashedCount === 0 && topStems.length === 0) {
     container.innerHTML = '<p>No gaps detected yet.</p>';
     return;
   }
@@ -362,14 +490,26 @@ function renderKnowledgeGaps(container, data) {
       <span class="ph-muted">— think mode will process these</span>
     </div>`;
   }
-  if (otherQuestions.length > 0) {
-    html += '<p class="ph-muted">Questions with no dedicated handler:</p>';
-    html += '<div class="ph-activity-list">' + otherQuestions.map(r => {
+  if (topStems.length > 0) {
+    html += '<p class="ph-muted">Top uncategorized question stems — add a topic regex if any become frequent:</p>';
+    html += '<div class="ph-bar-list">' + topStems.map(([stem, count]) => `
+      <div class="ph-bar-row">
+        <div class="ph-bar-label">
+          <span class="ph-bar-key">${escapeHtml(stem)}</span>
+          <span class="ph-bar-count">${formatNumber(count)}</span>
+        </div>
+        <div class="ph-bar-track"><div class="ph-bar-fill" style="width:${Math.min(100, Math.round((count / topStems[0][1]) * 100))}%"></div></div>
+      </div>
+    `).join('') + '</div>';
+  }
+  if (uncategorized.length > 0) {
+    html += '<p class="ph-muted">Recent uncategorized questions:</p>';
+    html += '<div class="ph-activity-list">' + uncategorized.map(r => {
       const sanitizedQ = String(r.q || '').replace(/\b\w{2,}@\w+\.\w+\b/g, '[email]').slice(0, 80);
       return `<div class="ph-activity-item">
         <span class="ph-muted">${formatTime(r.ts)}</span>
-        <span class="ph-provider-tag ph-provider-out-of-scope">[${r.topic}]</span>
-        <span class="ph-muted">${sanitizedQ}${(r.q || '').length > 80 ? '…' : ''}</span>
+        <span class="ph-provider-tag ph-provider-out-of-scope">[${r.topic === 'other' ? 'uncategorized' : r.topic}]</span>
+        <span class="ph-muted">${escapeHtml(sanitizedQ)}${(r.q || '').length > 80 ? '…' : ''}</span>
       </div>`;
     }).join('') + '</div>';
   }
@@ -382,6 +522,8 @@ function renderLearningSystem(container, data) {
   const avgGrounded = learn.avgGroundedScore || 0;
   const improvement = avgGrounded > 0 ? Math.round(((avgScore - avgGrounded) / avgGrounded) * 100) : 0;
   const nextThinkIn = learn.nextThinkIn || 0;
+  const pipeline = learn.learningPipeline || {};
+  const judgments = learn.judgmentHistory || [];
 
   const grid = document.createElement('div');
   grid.className = 'ph-learning-grid';
@@ -430,29 +572,60 @@ function renderLearningSystem(container, data) {
   container.innerHTML = '';
   container.appendChild(grid);
 
-  const scores = learn.learnedScores || [];
-  if (scores.length > 0) {
-    const scoresList = document.createElement('div');
-    scoresList.className = 'ph-activity-list';
-    scoresList.style.marginTop = '1rem';
-    scoresList.innerHTML = '<p class="ph-muted">Recent learned answer scores</p>' +
-      scores.slice(0, 10).map(s => {
-        const delta = (s.score || 0) - (s.groundedScore || 0);
-        const deltaClass = delta > 0 ? 'ph-text-success' : delta < 0 ? 'ph-text-error' : 'ph-muted';
-        const deltaStr = delta > 0 ? `+${delta}` : `${delta}`;
-        const sanitizedQ = String(s.q || '').slice(0, 50);
-        return `<div class="ph-activity-item">
-          <span class="ph-muted">${sanitizedQ}${(s.q || '').length > 50 ? '…' : ''}</span>
-          <span class="${deltaClass}">${s.score}/100 vs ${s.groundedScore} (${deltaStr})</span>
-          <span class="ph-muted">via ${s.provider}</span>
-        </div>`;
-      }).join('');
-    container.appendChild(scoresList);
+  const pipelineDiv = document.createElement('div');
+  pipelineDiv.className = 'ph-pipeline-counts';
+  pipelineDiv.style.marginTop = '1rem';
+  pipelineDiv.innerHTML = `
+    <div class="ph-pipeline-count">
+      <span class="ph-pipeline-count-value">${formatNumber(pipeline.stashed || learn.stashedCount || 0)}</span>
+      <span class="ph-pipeline-count-label">Stashed</span>
+    </div>
+    <div class="ph-pipeline-count">
+      <span class="ph-pipeline-count-value">${formatNumber(pipeline.scored || 0)}</span>
+      <span class="ph-pipeline-count-label">Scored</span>
+    </div>
+    <div class="ph-pipeline-count">
+      <span class="ph-pipeline-count-value">${formatNumber(pipeline.promoted || learn.pendingLearned || 0)}</span>
+      <span class="ph-pipeline-count-label">Promoted</span>
+    </div>
+    <div class="ph-pipeline-count">
+      <span class="ph-pipeline-count-value">${formatNumber(pipeline.pushed || 0)}</span>
+      <span class="ph-pipeline-count-label">Pushed to GitHub</span>
+    </div>
+  `;
+  container.appendChild(pipelineDiv);
+
+  if (judgments.length > 0) {
+    const verdictClass = v => v === 'learned_wins' ? 'ph-text-success' : v === 'grounded_wins' ? 'ph-text-error' : 'ph-muted';
+    const table = document.createElement('div');
+    table.className = 'ph-analytics__table-wrap';
+    table.innerHTML = `
+      <p class="ph-muted" style="padding:0.75rem 1rem 0">Recent evaluations (LLM-as-judge)</p>
+      <table class="ph-analytics__table">
+        <thead>
+          <tr><th>Question</th><th>Verdict</th><th>F / R / H / S</th><th>Reason</th></tr>
+        </thead>
+        <tbody>
+          ${judgments.slice(0, 10).map(j => {
+            const q = escapeHtml(String(j.q || '').slice(0, 40));
+            const verdict = j.verdict || 'pending';
+            const scores = [j.faithfulness, j.relevance, j.helpfulness, j.safety].map(n => n == null ? '—' : n).join(' / ');
+            return `<tr>
+              <td>${q}${(j.q || '').length > 40 ? '…' : ''}</td>
+              <td class="${verdictClass(verdict)}">${verdict}</td>
+              <td>${scores}</td>
+              <td>${escapeHtml(j.reason || '—').slice(0, 80)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+    container.appendChild(table);
   } else {
     const empty = document.createElement('p');
     empty.className = 'ph-muted';
     empty.style.marginTop = '1rem';
-    empty.textContent = 'No learned answers yet — think mode will score and compare answers here.';
+    empty.textContent = 'No judge evaluations yet — think mode will record verdicts here.';
     container.appendChild(empty);
   }
 }
@@ -547,11 +720,13 @@ function render(container, data) {
   const recentContainer = container.querySelector('.ph-analytics__recent-requests');
   if (recentContainer && health) {
     renderRecentRequests(recentContainer, health.recentRequests);
+    wrapScrollBox(recentContainer, 'ph-scroll-box--lg');
   }
 
   const activityContainer = container.querySelector('.ph-analytics__activity-feed');
   if (activityContainer && health) {
     renderActivityFeed(activityContainer, health.recentRequests);
+    wrapScrollBox(activityContainer, 'ph-scroll-box--sm');
   }
   const pipelineContainer = container.querySelector('.ph-analytics__last-pipeline');
   if (pipelineContainer && health) {
@@ -565,7 +740,13 @@ function render(container, data) {
       acc[domain] = (acc[domain] || 0) + count;
       return acc;
     }, {});
-    renderBarList(referrerContainer, sanitized, { emptyText: 'No referrer data yet', limit: 10 });
+    referrerContainer.innerHTML = '<div class="ph-analytics__referrers-bar"></div><div class="ph-analytics__referrers-chart"></div>';
+    const barHolder = referrerContainer.querySelector('.ph-analytics__referrers-bar');
+    const chartHolder = referrerContainer.querySelector('.ph-analytics__referrers-chart');
+    renderBarList(barHolder, sanitized, { emptyText: 'No referrer data yet', limit: 10 });
+    if (Object.keys(sanitized).length > 0) {
+      renderDonutBreakdown(chartHolder, sanitized, 'Visitors by referrer', container);
+    }
   }
 
   const topicContainer = container.querySelector('.ph-analytics__topics');
@@ -576,7 +757,7 @@ function render(container, data) {
       });
       return acc;
     }, {});
-    renderBarList(topicContainer, allTopics, { emptyText: 'No topic data yet', highlight: k => k === 'other' || k === 'out-of-scope' });
+    renderBarList(topicContainer, allTopics, { emptyText: 'No topic data yet', highlight: k => k === 'uncategorized' || k === 'out-of-scope' });
   }
 
   const gapsContainer = container.querySelector('.ph-analytics__gaps');
@@ -745,7 +926,11 @@ export function mount(selector) {
     </div>
 
     <div class="ph-analytics__section">
-      <h3 class="ph-analytics__section-title">Learning system (Scout think mode)</h3>
+      <div class="ph-analytics__header" style="margin-bottom:0.5rem">
+        <h3 class="ph-analytics__section-title">Learning system (Scout think mode)</h3>
+        <button class="cds--btn cds--btn--secondary" id="ph-analytics-think" type="button">Run Think Mode now</button>
+      </div>
+      <p class="ph-muted">Uses LLM-as-judge: every promoted answer must beat the grounded baseline on faithfulness, relevance, helpfulness, and safety.</p>
       <div class="ph-analytics__learning"></div>
     </div>
 
@@ -763,6 +948,24 @@ export function mount(selector) {
     themeBtn.addEventListener('click', () => {
       container.classList.toggle('ph-dark');
       refresh(container);
+    });
+  }
+
+  const thinkBtn = container.querySelector('#ph-analytics-think');
+  if (thinkBtn) {
+    thinkBtn.addEventListener('click', async () => {
+      thinkBtn.disabled = true;
+      thinkBtn.textContent = 'Running…';
+      try {
+        const res = await fetch('https://projecthub-chat.bradleymatera.dev/api/think', { method: 'POST' });
+        const data = await res.json();
+        setStatus(container, data.ok ? 'Think Mode finished — refreshing…' : `Think Mode failed: ${data.error || 'unknown'}`, data.ok ? 'info' : 'error');
+      } catch (e) {
+        setStatus(container, `Think Mode request failed: ${e.message}`, 'error');
+      } finally {
+        setTimeout(() => { thinkBtn.disabled = false; thinkBtn.textContent = 'Run Think Mode now'; }, 2000);
+      }
+      await refresh(container);
     });
   }
 

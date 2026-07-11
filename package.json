@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "reset-stats": "node scripts/reset-stats.js",
+    "reset-stats:remote": "node scripts/reset-stats.js --remote",
+    "judge-poc": "node scripts/think-judge-poc.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

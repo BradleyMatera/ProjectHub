@@ -293,7 +293,30 @@ app.get('/health', async (req, res) => {
       nextThinkIn: Math.max(0, THINK_INTERVAL_MS - (Date.now() - (learnedData.lastThinkAt || 0))),
       learnedScores: [...(learnedData.learned || []), ...(learnedData.scoredHistory || [])].map(l => ({ q: l.q, score: l.score, groundedScore: l.groundedScore, provider: l.provider })),
       avgLearnedScore: [...(learnedData.learned || []), ...(learnedData.scoredHistory || [])].length > 0 ? Math.round([...learnedData.learned, ...(learnedData.scoredHistory || [])].reduce((s, l) => s + (l.score || 0), 0) / [...learnedData.learned, ...(learnedData.scoredHistory || [])].length) : 0,
-      avgGroundedScore: [...(learnedData.learned || []), ...(learnedData.scoredHistory || [])].length > 0 ? Math.round([...learnedData.learned, ...(learnedData.scoredHistory || [])].reduce((s, l) => s + (l.groundedScore || 0), 0) / [...learnedData.learned, ...(learnedData.scoredHistory || [])].length) : 0
+      avgGroundedScore: [...(learnedData.learned || []), ...(learnedData.scoredHistory || [])].length > 0 ? Math.round([...learnedData.learned, ...(learnedData.scoredHistory || [])].reduce((s, l) => s + (l.groundedScore || 0), 0) / [...learnedData.learned, ...(learnedData.scoredHistory || [])].length) : 0,
+      learningPipeline: {
+        stashed: learnedData.stashed.length,
+        scored: (learnedData.scoredHistory || []).length,
+        promoted: (learnedData.learned || []).length,
+        pushed: (learnedData.learnedCount || 0) - (learnedData.learned || []).length
+      },
+      judgmentHistory: [...(learnedData.learned || []), ...(learnedData.scoredHistory || [])]
+        .sort((a, b) => (b.learnedAt || 0) - (a.learnedAt || 0))
+        .slice(0, 20)
+        .map(l => ({
+          q: l.q,
+          score: l.score,
+          groundedScore: l.groundedScore,
+          provider: l.provider,
+          verdict: l.judgment?.verdict || l.verdict || 'pending',
+          reason: l.judgment?.reason || l.reason || '',
+          faithfulness: l.judgment?.faithfulness,
+          relevance: l.judgment?.relevance,
+          helpfulness: l.judgment?.helpfulness,
+          safety: l.judgment?.safety,
+          judgeProvider: l.judgment?.provider,
+          learnedAt: l.learnedAt
+        }))
     }
   });
 });
@@ -892,6 +915,96 @@ async function callGeminiWithPrompt(prompt, model) {
 
 async function callGemini(knowledge, question, history, model) {
   return callGeminiWithPrompt(buildPrompt(knowledge, question, history, 'gemini'), model);
+}
+
+// Generic raw-prompt caller for non-recruiter tasks (e.g., judge, evaluation).
+async function callProviderRaw(slug, systemPrompt, userPrompt) {
+  const def = PROVIDER_DEFS[slug];
+  if (!def) throw new Error(`Unknown provider: ${slug}`);
+  if (!isProviderEnabled(slug) || !isProviderAvailable(slug)) throw new Error(`Provider ${slug} not enabled or available`);
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+
+  try {
+    if (def.type === 'openai') {
+      const res = await fetch(`${def.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${def.apiKey}`
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: def.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          max_tokens: 300,
+          temperature: 0.2,
+          top_p: 0.9
+        })
+      });
+      clearTimeout(timeout);
+      if (!res.ok) throw new Error(`Raw ${slug} failed: ${res.status}`);
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || '';
+    }
+
+    if (def.type === 'cloudflare') {
+      const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${def.accountId}/ai/run/${def.model}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${def.apiToken}`
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ]
+        })
+      });
+      clearTimeout(timeout);
+      if (!res.ok) throw new Error(`Raw ${slug} failed: ${res.status}`);
+      const data = await res.json();
+      const result = data.result || {};
+      return result.response || result.message?.content || '';
+    }
+
+    if (def.type === 'gemini') {
+      clearTimeout(timeout);
+      return await callGeminiWithPrompt(`${systemPrompt}\n\n${userPrompt}`, def.model);
+    }
+
+    if (def.type === 'ollama') {
+      const res = await fetch(`${OLLAMA_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: def.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          stream: false,
+          options: { temperature: 0.2, top_p: 0.9, num_predict: 300 }
+        })
+      });
+      clearTimeout(timeout);
+      if (!res.ok) throw new Error(`Raw ${slug} failed: ${res.status}`);
+      const data = await res.json();
+      return data.message?.content || '';
+    }
+
+    throw new Error(`Unsupported provider type: ${def.type}`);
+  } catch (e) {
+    clearTimeout(timeout);
+    throw e;
+  }
 }
 
 function findRoleInQuestion(question) {
@@ -2630,18 +2743,25 @@ function classifyTopic(question) {
   if (/experience|intern|work history|background|ciris|freelance|volunteer/.test(q)) return 'experience';
   if (/\bblog\b|\bblogs\b|article|writing|publication|has he written|what.*he.*(write|written|writes)|what has he published|where does he write|write about|writes about|written about|dev\.to|dev community/.test(q)) return 'writing';
   if (/education|degree|school|full sail|gpa|graduat/.test(q)) return 'education';
-  if (/contact|email|phone|reach|linkedin/.test(q)) return 'contact';
+  if (/contact|email|phone|reach|linkedin|portfolio link|github profile/.test(q)) return 'contact';
+  if (/resume|cv|cover letter/.test(q)) return 'resume';
   if (/role|fit|hire|candidate|job|position|devops|sre|support|qa|data/.test(q)) return 'role-fit';
-  if (/strength|strongest|greatest|best at|good at/.test(q)) return 'strengths';
-  if (/weakness|weak at|concern|gap|limitation|red flag/.test(q)) return 'weaknesses';
+  if (/strength|strongest|greatest|best at|good at|standout|impressive|excellent/.test(q)) return 'strengths';
+  if (/weakness|weak at|concern|gap|limitation|red flag|worried|hesitant/.test(q)) return 'weaknesses';
   if (/team|people|interpersonal|social|customer service|communication|collaborat/.test(q)) return 'interpersonal';
-  if (/salary|pay|compensation|rate/.test(q)) return 'salary';
+  if (/salary|pay|compensation|rate|hourly|annual|budget/.test(q)) return 'salary';
+  if (/benefit|health insurance|pto|vacation|time off|401k|retirement|equity|bonus/.test(q)) return 'benefits';
+  if (/remote|work from home|wfh|hybrid|on.?site|office|relocation|relocate|move|location|davis|illinois/.test(q)) return 'remote';
+  if (/availability|start date|when can he start|notice|available|ready to start|part.?time|full.?time/.test(q)) return 'availability';
+  if (/interview|screening|phone screen|technical interview|behavioral|prep/.test(q)) return 'interview';
+  if (/methodology|workflow|process|how does he work|how he code|approach|problem.?solving|debugging|troubleshoot|root cause/.test(q)) return 'methodology';
+  if (/motivation|why does he want|why he wants|passion|interested in|excited about|career goal/.test(q)) return 'motivation';
+  if (/reference|recommendation|referral|previous manager|colleague/.test(q)) return 'references';
   if (/army|military|veteran/.test(q)) return 'army';
-  if (/work style|coding style|management style|approach|debug|problem|feedback|preferred/.test(q)) return 'work-style';
-  if (/who is brad|tell me about|summary|bio|about brad/.test(q)) return 'summary';
-  if (/blog|article|writing|publication|dev\.to|dev community|has he written|what.*he.*write|write about/.test(q)) return 'writing';
-  if (/not in|out of scope|favorite|food|pizza|weather|sports/.test(q)) return 'out-of-scope';
-  return 'other';
+  if (/work style|coding style|management style|feedback|preferred|work ethic|organized/.test(q)) return 'work-style';
+  if (/who is brad|tell me about|summary|bio|about brad|overview|elevator|pitch/.test(q)) return 'summary';
+  if (/not in|out of scope|favorite|food|pizza|weather|sports|politic|religion|hobby|personal/.test(q)) return 'out-of-scope';
+  return 'uncategorized';
 }
 
 function extractReferrer(req) {
@@ -2672,12 +2792,13 @@ function detectVisitorIntent(question, history) {
 // In-memory session tracking (not persisted per-request for performance)
 const activeSessions = new Map();
 
-function trackSession(sessionId, question, provider, referrer, intent) {
+function trackSession(sessionId, question, provider, referrer, intent, reply, groundedReply) {
   if (!sessionId) return;
   if (!activeSessions.has(sessionId)) {
     activeSessions.set(sessionId, {
       id: sessionId, turns: 0, topics: [], startedAt: Date.now(),
-      referrer, intent, lastActiveAt: Date.now()
+      referrer, intent, lastActiveAt: Date.now(), providerMix: {}, lastQuestion: '',
+      lastReply: '', lastGroundedReply: ''
     });
   }
   const sess = activeSessions.get(sessionId);
@@ -2686,6 +2807,10 @@ function trackSession(sessionId, question, provider, referrer, intent) {
   const topic = classifyTopic(question);
   if (!sess.topics.includes(topic)) sess.topics.push(topic);
   sess.intent = intent;
+  sess.providerMix[provider] = (sess.providerMix[provider] || 0) + 1;
+  sess.lastQuestion = String(question).slice(0, 120);
+  sess.lastReply = reply ? String(reply).slice(0, 400) : '';
+  sess.lastGroundedReply = groundedReply ? String(groundedReply).slice(0, 400) : '';
 
   // Prune stale sessions (inactive > 30 min)
   const cutoff = Date.now() - 30 * 60 * 1000;
@@ -2703,9 +2828,14 @@ function getRecentSessions() {
       turns: s.turns,
       topics: s.topics.slice(0, 5),
       startedAt: s.startedAt,
+      lastActiveAt: s.lastActiveAt,
       durationSec: Math.round((s.lastActiveAt - s.startedAt) / 1000),
       referrer: s.referrer,
-      intent: s.intent
+      intent: s.intent,
+      providerMix: s.providerMix,
+      lastQuestion: s.lastQuestion,
+      lastReply: s.lastReply,
+      lastGroundedReply: s.lastGroundedReply
     }));
 }
 
@@ -2761,7 +2891,9 @@ function recordRequest(question, provider, opts = {}) {
     referrer,
     topic,
     latencyMs: opts.latencyMs || null,
-    pipeline: pipeline.length > 0 ? pipeline : undefined
+    pipeline: pipeline.length > 0 ? pipeline : undefined,
+    reply: opts.reply ? String(opts.reply).slice(0, 400) : undefined,
+    groundedReply: opts.groundedReply ? String(opts.groundedReply).slice(0, 400) : undefined
   });
   if (persistentStats.recentRequests.length > 40) persistentStats.recentRequests.pop();
 
@@ -2825,7 +2957,17 @@ function scoreAnswer(reply, question, knowledge) {
     strengths: ['strength', 'good at', 'strong'],
     weaknesses: ['weakness', 'gap', 'honest', 'concern'],
     interpersonal: ['people', 'team', 'communicat', 'customer', 'social'],
-    'role-fit': ['fit', 'role', 'candidate', 'hire', 'position']
+    'role-fit': ['fit', 'role', 'candidate', 'hire', 'position'],
+    writing: ['blog', 'article', 'write', 'published', 'dev.to'],
+    resume: ['resume', 'cv', 'cover letter'],
+    benefits: ['benefit', 'health insurance', 'pto', 'vacation', '401k', 'equity'],
+    remote: ['remote', 'hybrid', 'relocation', 'office', 'location'],
+    availability: ['availability', 'start date', 'available', 'notice'],
+    interview: ['interview', 'screening', 'behavioral', 'technical'],
+    methodology: ['method', 'workflow', 'process', 'approach', 'problem', 'debug'],
+    motivation: ['motivation', 'passion', 'interested', 'career goal'],
+    references: ['reference', 'recommendation', 'referral'],
+    'work-style': ['work style', 'coding style', 'feedback', 'organized']
   };
   const expected = topicKeywords[topic] || [];
   if (expected.length > 0 && expected.some(kw => r.includes(kw))) score += 20;
@@ -2833,6 +2975,91 @@ function scoreAnswer(reply, question, knowledge) {
   if (reply.length < 30) score -= 10;
   if (reply.length > 800) score -= 10;
   return Math.max(0, Math.min(100, score));
+}
+
+// ============ LLM-AS-JUDGE EVALUATION ============
+// Scientific basis: LLM-as-judge is a validated evaluation method for comparing
+// generated answers against a grounded baseline. We use it to decide whether a
+// learned answer is genuinely better before promoting it to the knowledge base.
+
+const JUDGE_ORDER = ['groq', 'github', 'grok', 'cloudflare', 'gemini', 'ollama'];
+
+function buildJudgePrompt(learned, grounded, question, knowledge) {
+  const chunks = buildRagChunks(knowledge);
+  const retrieved = retrieveChunks(question, chunks, 3);
+  const facts = retrieved.map(c => c.text).join('\n\n---\n\n');
+  const system = `You are an objective answer-quality evaluator. Compare the GROUNDED answer (deterministic, fact-based) and the LEARNED answer (proposed improvement) for the user's question. Score each dimension 0-100 and return ONLY a JSON object with no markdown or commentary.`;
+  const user = `QUESTION: ${question}
+
+SOURCE FACTS:
+${facts}
+
+GROUNDED ANSWER:
+${grounded}
+
+LEARNED ANSWER:
+${learned}
+
+Return JSON exactly in this shape:
+{
+  "faithfulness": 0-100,
+  "relevance": 0-100,
+  "helpfulness": 0-100,
+  "safety": 0-100,
+  "verdict": "learned_wins" | "grounded_wins" | "tie",
+  "reason": "one sentence explaining the decision"
+}
+
+Scoring guidance:
+- Faithfulness: learned answer must not contradict source facts.
+- Relevance: learned answer must directly answer the question.
+- Helpfulness: learned answer should be more natural, concise, or complete than grounded.
+- Safety: learned answer must avoid unsupported claims, buzzwords, and overselling.
+- Verdict: learned_wins only if it is better in at least one dimension and worse in none.`;
+  return { system, user };
+}
+
+function parseJudgeOutput(text) {
+  if (!text) return null;
+  const cleaned = text.replace(/```json\s*|\s*```/gi, '').trim();
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (typeof parsed.faithfulness !== 'number' || typeof parsed.relevance !== 'number' || typeof parsed.helpfulness !== 'number' || typeof parsed.safety !== 'number') return null;
+    if (!['learned_wins', 'grounded_wins', 'tie'].includes(parsed.verdict)) return null;
+    return {
+      faithfulness: Math.max(0, Math.min(100, Math.round(parsed.faithfulness))),
+      relevance: Math.max(0, Math.min(100, Math.round(parsed.relevance))),
+      helpfulness: Math.max(0, Math.min(100, Math.round(parsed.helpfulness))),
+      safety: Math.max(0, Math.min(100, Math.round(parsed.safety))),
+      verdict: parsed.verdict,
+      reason: String(parsed.reason || '').slice(0, 200)
+    };
+  } catch (e) {
+    // Try to extract a JSON object from a longer response
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (match && match[0] !== cleaned) return parseJudgeOutput(match[0]);
+    return null;
+  }
+}
+
+async function judgeLearnedAnswer(learned, grounded, question, knowledge) {
+  const { system, user } = buildJudgePrompt(learned, grounded, question, knowledge);
+  for (const slug of JUDGE_ORDER) {
+    if (!isProviderEnabled(slug) || !isProviderAvailable(slug)) continue;
+    try {
+      const providerStart = Date.now();
+      const raw = await callProviderRaw(slug, system, user);
+      const parsed = parseJudgeOutput(raw);
+      if (parsed) {
+        console.log(`[judge] ${slug} verdict: ${parsed.verdict} (${parsed.faithfulness}F/${parsed.relevance}R/${parsed.helpfulness}H/${parsed.safety}S) for "${question.slice(0, 40)}" in ${Date.now() - providerStart}ms`);
+        return { ...parsed, provider: slug };
+      }
+      console.log(`[judge] ${slug} returned unparseable output: ${raw.slice(0, 120)}`);
+    } catch (e) {
+      console.log(`[judge] ${slug} error: ${String(e.message || e).slice(0, 100)}`);
+    }
+  }
+  return null;
 }
 
 // ============ LEARNING FUNCTIONS ============
@@ -3042,28 +3269,62 @@ async function runThinkMode() {
         if (availableProviders === 0) {
           console.log(`[think] No available providers (${exhaustedProviders} exhausted) for "${item.q.slice(0, 40)}" — re-stashing`);
         }
-        // A/B comparison: only accept if learned answer is better than grounded by 5+ points
-        if (bestReply && bestScore >= groundedScore + 5) {
+
+        // LLM-as-judge: independently verify the learned answer against the grounded answer.
+        let judgment = null;
+        if (bestReply) {
+          try {
+            judgment = await judgeLearnedAnswer(bestReply, groundedReply, question, knowledge);
+          } catch (e) {
+            console.log(`[think] Judge error for "${item.q.slice(0, 40)}": ${String(e.message || e).slice(0, 100)}`);
+          }
+        }
+
+        const judgePromotes = judgment &&
+          judgment.verdict === 'learned_wins' &&
+          judgment.faithfulness >= 70 &&
+          judgment.safety >= 70;
+        const heuristicImprovement = bestReply && bestScore >= groundedScore + 5;
+
+        if (bestReply && heuristicImprovement && judgePromotes) {
           learnedData.learned.push({
             q: item.q, original: item.original, a: bestReply,
             provider: bestProvider, learnedAt: Date.now(),
-            score: bestScore, groundedScore, entityCount: bestEntityCount
+            score: bestScore, groundedScore, entityCount: bestEntityCount,
+            judgment
           });
           learnedData.learnedCount = (learnedData.learnedCount || 0) + 1;
           results.learned++;
-          console.log(`[think] Learned: "${item.q}" via ${bestProvider} (score ${bestScore} vs grounded ${groundedScore})`);
-        } else if (bestReply && bestScore > groundedScore) {
-          // Close call — re-stash for another attempt with a different provider set
-          item.retries = (item.retries || 0) + 1;
-          learnedData.stashed.push(item);
-          results.failed++;
-          console.log(`[think] Close call for "${item.q}": score ${bestScore} vs grounded ${groundedScore}, re-stashing (retry ${item.retries})`);
-        } else {
-          // No improvement or no valid reply — re-stash with retry count
+          console.log(`[think] Learned: "${item.q}" via ${bestProvider} (score ${bestScore} vs grounded ${groundedScore}, judge ${judgment.verdict})`);
+        } else if (bestReply && (heuristicImprovement || (judgment && judgment.verdict !== 'grounded_wins'))) {
+          // Close call or judge unavailable — re-stash for another attempt with a different provider set
           item.retries = (item.retries || 0) + 1;
           if (item.retries < 5) {
             learnedData.stashed.push(item);
           } else {
+            // Record the failed judgment in history so the dashboard can show why it did not promote
+            learnedData.scoredHistory.push({
+              q: item.q, score: bestScore, groundedScore, provider: bestProvider,
+              verdict: judgment?.verdict || 'failed', reason: judgment?.reason || 'heuristic did not improve enough',
+              learnedAt: Date.now()
+            });
+            if (learnedData.scoredHistory.length > 50) learnedData.scoredHistory = learnedData.scoredHistory.slice(-50);
+            console.log(`[think] Dropping "${item.q}" after 5 failed attempts`);
+          }
+          results.failed++;
+          console.log(`[think] Close call for "${item.q}": score ${bestScore} vs grounded ${groundedScore}, judge ${judgment?.verdict || 'none'}, re-stashing (retry ${item.retries})`);
+        } else {
+          // No improvement or judge says grounded wins — re-stash/drop with retry count
+          item.retries = (item.retries || 0) + 1;
+          if (item.retries < 5) {
+            learnedData.stashed.push(item);
+          } else {
+            learnedData.scoredHistory.push({
+              q: item.q, score: bestScore, groundedScore, provider: bestProvider || 'none',
+              verdict: judgment?.verdict || 'failed', reason: judgment?.reason || 'no valid learned reply',
+              learnedAt: Date.now()
+            });
+            if (learnedData.scoredHistory.length > 50) learnedData.scoredHistory = learnedData.scoredHistory.slice(-50);
             console.log(`[think] Dropping "${item.q}" after 5 failed attempts`);
           }
           results.failed++;
@@ -3128,7 +3389,7 @@ app.post('/api/chat', async (req, res) => {
     if (cached && (Date.now() - cached.ts) < RESPONSE_CACHE_MS) {
       pipeline.push('cache-hit');
       lastReplyProvider = cached.payload.provider || 'cached';
-      recordRequest(userMessage, 'cached', { referrer, pipeline, latencyMs: Date.now() - reqStart });
+      recordRequest(userMessage, 'cached', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: cached.payload.reply, groundedReply: cached.payload.reply });
       return res.json({ ...cached.payload, cached: true, pipeline });
     }
     pipeline.push('cache-miss');
@@ -3138,7 +3399,7 @@ app.post('/api/chat', async (req, res) => {
       pipeline.push('knowledge-unavailable', 'grounded-fallback');
       const payload = { ...buildGroundedFallbackPayload({}, userMessage, history), provider: 'grounded', fallback: true, pipeline };
       lastReplyProvider = 'grounded';
-      recordRequest(userMessage, 'grounded', { referrer, pipeline, latencyMs: Date.now() - reqStart });
+      recordRequest(userMessage, 'grounded', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: payload.reply, groundedReply: payload.reply });
       return res.json(payload);
     }
     pipeline.push('knowledge-loaded');
@@ -3257,8 +3518,8 @@ app.post('/api/chat', async (req, res) => {
     lastReplyProvider = payload.provider;
     const intent = detectVisitorIntent(userMessage, history);
     const sessionId = req.body.sessionId || '';
-    trackSession(sessionId, userMessage, payload.provider, referrer, intent);
-    recordRequest(userMessage, payload.provider, { referrer, pipeline, latencyMs: Date.now() - reqStart });
+    trackSession(sessionId, userMessage, payload.provider, referrer, intent, reply, grounded.reply);
+    recordRequest(userMessage, payload.provider, { referrer, pipeline, latencyMs: Date.now() - reqStart, reply, groundedReply: grounded.reply });
     // Stash weak answers for think mode learning
     if (isWeakAnswer(reply, userMessage, provider)) {
       stashQuestion(userMessage, reply, provider);
@@ -3270,7 +3531,7 @@ app.post('/api/chat', async (req, res) => {
     const knowledge = knowledgeCache || {};
     const grounded = buildGroundedFallbackPayload(knowledge, userMessage, []);
     lastReplyProvider = 'grounded';
-    recordRequest(userMessage, 'grounded', { referrer, pipeline, latencyMs: Date.now() - reqStart });
+    recordRequest(userMessage, 'grounded', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: grounded.reply, groundedReply: grounded.reply });
     return res.json({ reply: grounded.reply, provider: 'grounded', model: 'knowledge-json', fallback: true, pipeline });
   }
 });
