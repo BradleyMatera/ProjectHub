@@ -538,6 +538,8 @@ function normalizeQuestion(question, knowledge = null) {
     .replace(/locaton|locatiom|loction/g, 'location')
     .replace(/compny|compnay|companie/g, 'company')
     .replace(/intership|internshp|intern/g, 'internship')
+    .replace(/volenteerd/g, 'volunteered')
+    .replace(/volenteer/g, 'volunteer')
     .replace(/\bwat\b/g, 'what')
     .replace(/\bno\b(?=\s+react|\s+aws|\s+js|\s+cloud|\s+node|\s+ts|\s+typescript|\s+javascript|\s+python|\s+java|\s+c#)/g, 'know')
     .replace(/\bcn\b/g, 'can')
@@ -1496,7 +1498,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Mason County Kitten Rescue / animal care / volunteer work
-  if (/kitten|mason county kitten|animal care|animal shelter|rescue volunteer|rescue work/.test(lowerQuestion)) {
+  if (/kitten|mason county kitten|animal care|animal shelter|rescue volunteer|rescue work|volunteer|volunteered|has he.*volunteer|does he.*volunteer|volunteer work/.test(normalized)) {
     const kittenExp = (experience || []).find(e => /kitten|animal care|rescue/i.test(`${e.role} ${e.company} ${e.summary || ''}`));
     if (kittenExp) {
       const topResp = (kittenExp.responsibilities || []).slice(0, 5).map(r => r.charAt(0).toLowerCase() + r.slice(1)).join('; ');
@@ -1934,7 +1936,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Specific early branch for 'what does he write about' style questions
-  if (/write about|writes about|written about|what.*he.*write.*about/.test(lowerQuestion)) {
+  if (/write about|writes about|written about|what.*he.*write.*about|\bblogs\b/.test(normalized)) {
     const posts = blogCatalog?.records || [];
     const dev = posts.filter(p => p.platform === 'DEV Community').length;
     const site = posts.filter(p => p.platform === 'bradleymatera.dev').length;
@@ -1950,12 +1952,17 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Blog / writing / articles
-  if (/\bblog\b|article|writing|publication|has he written|what.*he.*(write|written|writes)|what has he published|where does he write|write about|writes about|written about|dev\.to|dev community|bradleymatera\.dev/.test(lowerQuestion)) {
+  if (/\bblog\b|\bblogs\b|article|writing|publication|has he written|what.*he.*(write|written|writes)|what has he published|where does he write|write about|writes about|written about|dev\.to|dev community|bradleymatera\.dev/.test(normalized)) {
     const posts = blogCatalog?.records || [];
     const dev = posts.filter(p => p.platform === 'DEV Community').length;
     const site = posts.filter(p => p.platform === 'bradleymatera.dev').length;
-    const samples = posts.slice(0, 4).map(p => p.title).filter(Boolean);
-    return { reply: `${name} has written ${posts.length} posts across DEV Community (${dev}) and bradleymatera.dev (${site}). Recent topics include ${sentenceList(samples, 4)}. Links and full briefs are in his blog catalog.` };
+    const inAwsContext = /aws|lambda|dynamodb|s3\b|cloudfront|amplify|amazon|cloud support/.test(lastAssistantLower) || /aws|lambda|dynamodb|s3\b|cloudfront|amplify|amazon|cloud support/.test(normalized);
+    let samples = posts.slice(0, 4).map(p => p.title).filter(Boolean);
+    if (inAwsContext) {
+      const awsPosts = posts.filter(p => /aws|lambda|dynamodb|s3|cloudfront|amplify|amazon|cloud|serverless/i.test(`${p.title || ''} ${p.brief || ''}`));
+      if (awsPosts.length > 0) samples = awsPosts.slice(0, 4).map(p => p.title).filter(Boolean);
+    }
+    return { reply: `${name} has written ${posts.length} posts across DEV Community (${dev}) and bradleymatera.dev (${site}).${inAwsContext && samples.length ? ' AWS-related posts include' : ' Recent topics include'} ${sentenceList(samples, 4)}. Links and full briefs are in his blog catalog.` };
   }
 
   // Dynamic summary from knowledge base
@@ -1997,7 +2004,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   const isRepairOrTone = repair.shorter || repair.moreHonest || repair.blunt || repair.resumeLanguage || repair.moreTechnical || repair.hrFriendly
     || detectBannedWords(question).length > 0
     || /buzzword|corporate|plain|paragraph|no hype|no marketing|salesy|resume language|passionate|absolutely|certainly/.test(lowerQuestion);
-  if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|languages|databases|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate|kitten|rescue|animal|shelter|volunteer|paid|blog|article|writing|publication|dev\.to|dev community|write about|linux|unix|terminal|shell|command line|bash|powershell/.test(lowerQuestion)) {
+  if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|languages|databases|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate|kitten|rescue|animal|shelter|volunteer|paid|blog|blogs|article|writing|publication|dev\.to|dev community|write about|linux|unix|terminal|shell|command line|bash|powershell/.test(lowerQuestion)) {
     const outOfScope = [
       `That's outside what ${agentName} covers. Ask about ${name}'s projects, skills, AWS background, role fit, or contact info.`,
       `${agentName} sticks to ${name}'s recruiter profile — projects, skills, AWS work, role fit, and how to contact him. That question isn't in the data.`,
@@ -2085,7 +2092,7 @@ function shouldUseGroundedAnswer(question) {
 function isProbablyRelevant(question) {
   const normalized = normalizeQuestion(question);
   // Very broad relevance check - if it mentions Bradley or any career-related terms, let it through
-  return /\b(bradley|brad|matera|candidate|recruiter|software|engineer|developer|web|aws|cloud|support|skill|stack|languages|databases|project|portfolio|contact|email|phone|role|job|education|cert|resume|ciris|ethical|freelance|contributor|intern|internship|work|experience|debug|troubleshoot|document|learn|communication|army|military|construction|case|manager|managers|approach|style|strength|weakness|feedback|management|kitten|rescue|animal|shelter|volunteer|veteran|deploy|afghanistan|68w|medic|blog|article|writing|publication|dev\.to|dev community|linux|unix|terminal|command.?line|shell|bash|powershell)\b/.test(normalized) || normalized.includes('bradley') || normalized.includes('write about') || normalized.includes('writes about');
+  return /\b(bradley|brad|matera|candidate|recruiter|software|engineer|developer|web|aws|cloud|support|skill|stack|languages|databases|project|portfolio|contact|email|phone|role|job|education|cert|resume|ciris|ethical|freelance|contributor|intern|internship|work|experience|debug|troubleshoot|document|learn|communication|army|military|construction|case|manager|managers|approach|style|strength|weakness|feedback|management|kitten|rescue|animal|shelter|volunteer|veteran|deploy|afghanistan|68w|medic|blog|blogs|article|writing|publication|dev\.to|dev community|linux|unix|terminal|command.?line|shell|bash|powershell)\b/.test(normalized) || normalized.includes('bradley') || normalized.includes('write about') || normalized.includes('writes about');
 }
 
 function cleanModelReply(reply, knowledge, question, history) {
@@ -2586,7 +2593,8 @@ function classifyTopic(question) {
   if (/project|portfolio|codepen|shipped|github repo/.test(q)) return 'projects';
   if (/aws|cloud|lambda|dynamodb|serverless|certification|cert/.test(q)) return 'aws';
   if (/skill|stack|tech|javascript|typescript|react|node|sql|linux|terminal|command.?line|shell|bash|powershell/.test(q)) return 'skills';
-  if (/experience|intern|work history|background|ciris|freelance/.test(q)) return 'experience';
+  if (/experience|intern|work history|background|ciris|freelance|volunteer/.test(q)) return 'experience';
+  if (/\bblog\b|\bblogs\b|article|writing|publication|has he written|what.*he.*(write|written|writes)|what has he published|where does he write|write about|writes about|written about|dev\.to|dev community/.test(q)) return 'writing';
   if (/education|degree|school|full sail|gpa|graduat/.test(q)) return 'education';
   if (/contact|email|phone|reach|linkedin/.test(q)) return 'contact';
   if (/role|fit|hire|candidate|job|position|devops|sre|support|qa|data/.test(q)) return 'role-fit';
