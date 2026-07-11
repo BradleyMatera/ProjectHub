@@ -921,7 +921,7 @@ export function mount(selector) {
 
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Recent requests</h3>
-      <p class="ph-muted">Original questions are hidden on the public dashboard; only provider, time, topic, and referrer domain are shown.</p>
+      <p class="ph-muted">Each row shows provider, time, topic, and referrer. Click a row to expand the full request record, including the sanitized question and reply preview.</p>
       <div class="ph-analytics__recent-requests"></div>
     </div>
 
