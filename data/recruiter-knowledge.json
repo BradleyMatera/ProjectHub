@@ -15,12 +15,12 @@
     "portfolioUrl": "https://bradleymatera.dev/",
     "linkedInUrl": "https://www.linkedin.com/in/bradmatera",
     "gitHubUrl": "https://github.com/BradleyMatera",
-    "shortPitch": "I am a junior software engineer based in Davis, Illinois, open to relocation. My background is in web development, AWS support engineering training, troubleshooting, documentation, and AI-assisted development. I learn quickly, work carefully in existing codebases, and like building useful software that can be explained and maintained."
+    "shortPitch": "I am a junior software engineer based in Davis, Illinois, open to relocation. My background is in web development, AWS support engineering training, troubleshooting, documentation, and AI-assisted development. I am open to any entry-level tech, IT, or support role where I can learn hands-on, and I do best with mentorship or a structured teaching program because I learn quickly and can prove value fast."
   },
   "summary": {
     "whoIAm": "Junior software engineer focused on JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation. I am early in my career, but I learn quickly, work carefully in existing codebases, and like building useful software that can be explained and maintained.",
     "whatIDo": "Build and support web applications, write documentation, debug issues, integrate APIs, and work with cloud services in training and project environments.",
-    "whatIAmLookingFor": "Junior software engineering, frontend, backend, cloud support, software support, and technical support roles where I can learn, document, troubleshoot, and contribute to real systems.",
+    "whatIAmLookingFor": "Any entry-level tech role where I can contribute on day one and learn hands-on. I do best with mentorship or a structured teaching program, and my past learning shows I can pick up new tech quickly and prove value fast.",
     "coreStrengths": [
       "Learning quickly in unfamiliar codebases",
       "Writing clear documentation and onboarding guides",
@@ -37,18 +37,55 @@
     ]
   },
   "goals": {
-    "shortTerm": "Land a junior software engineering or technical support role where I can learn production systems, improve my debugging skills, and contribute to a team.",
-    "longTerm": "Grow into a well-rounded engineer who can own features, support systems, mentor others, and keep software understandable and maintainable.",
+    "shortTerm": "Land any entry-level tech role where I can learn hands-on, improve my debugging and communication skills, and contribute to a team. I'm especially drawn to places that offer mentorship or a structured teaching program, because I learn quickly and can prove value fast.",
+    "longTerm": "Grow into a well-rounded engineer or support professional who can own features, support systems, mentor others, and keep software understandable and maintainable.",
     "targetRoles": [
       "Junior Software Engineer",
       "Junior Web Developer",
       "Junior Frontend Developer",
+      "Backend Developer",
+      "Frontend/UI Developer",
       "Cloud Support Engineer",
       "Software Support Specialist",
       "Application Support Engineer",
       "Technical Support Engineer",
-      "Backend Developer",
-      "Frontend/UI Developer"
+      "IT Support Specialist",
+      "Help Desk Technician",
+      "Desktop Support Technician",
+      "Service Desk Analyst",
+      "Field Service Technician",
+      "Computer Technician",
+      "Hardware Technician",
+      "Network Technician",
+      "Junior Network Engineer",
+      "Junior Systems Administrator",
+      "Junior Systems Engineer",
+      "Systems Administrator",
+      "Systems Engineer",
+      "Infrastructure Technician",
+      "Datacenter Technician",
+      "NOC Technician",
+      "SOC Analyst",
+      "IT Operations Associate",
+      "Technical Operations Associate",
+      "Support Analyst",
+      "L1 Support Engineer",
+      "L2 Support Engineer",
+      "QA Engineer",
+      "QA Tester",
+      "Associate Data Analyst",
+      "Associate Product Manager",
+      "DevOps Apprentice",
+      "Site Reliability Apprentice",
+      "Customer Success Associate",
+      "Implementation Specialist",
+      "Low-Code / No-Code Developer",
+      "WordPress Developer",
+      "Shopify Developer",
+      "Web Content Administrator",
+      "Salesforce Administrator",
+      "ServiceNow Administrator",
+      "IT Technician"
     ],
     "relocation": "Open to relocation."
   },
@@ -451,6 +488,10 @@
     {
       "prompt": "Why are you a good junior candidate",
       "answer": "I am not trying to sell myself as senior. I am a good junior candidate because I learn quickly, troubleshoot carefully, document what I learn, and can work through unclear problems without getting defensive. I bring AWS training, current web development skills, AI-assisted workflow experience, customer communication experience, and reliability from my Army and construction background."
+    },
+    {
+      "prompt": "What kind of role are you looking for",
+      "answer": "Any entry-level tech, IT, or support role where I can contribute and learn hands-on. That includes software engineering, web development, cloud support, application support, technical support, helpdesk, desktop support, QA, and similar computer-focused work. I do best when there is mentorship or a structured teaching program, because I learn fast and can prove value quickly. If I know the tech I can work with it at an entry level; if I don't know it yet, I can pick it up with the right guidance."
     }
   ],
   "rules": {
@@ -487,7 +528,7 @@
     },
     {
       "question": "What kind of roles is Bradley targeting?",
-      "answer": "Junior software engineering, junior web/frontend/backend development, cloud support, software support, application support, and technical support roles."
+      "answer": "Any entry-level tech, IT, or support role where he can learn hands-on. That includes software engineering, web development, cloud support, application support, technical support, helpdesk, desktop support, QA, data/implementation roles, low-code development, and similar computer-focused positions. He especially values mentorship or structured teaching programs because he learns quickly and can prove value fast."
     },
     {
       "question": "Is Bradley open to relocation?",
