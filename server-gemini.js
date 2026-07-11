@@ -975,7 +975,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   
   // Clarifying question for truly ambiguous prompts (test suite section 11)
   if (/^(can he do it|compare him to the job|what about that project|what happened there|is it relevant|was that real)\??$/.test(lowerQuestion.trim()) && !lastAssistant) {
-    return { reply: `Which part do you mean: his AWS internship, a specific project, or his overall role fit? Point me at one and I'll answer directly.` };
+    return { reply: `Which part is meant: his AWS internship, a specific project, or his overall role fit? Point at one and ${agentName} will answer directly.` };
   }
   
   // Army / military
