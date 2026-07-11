@@ -4777,6 +4777,11 @@
       "q": "what is his preferred management style?",
       "a": "Brad prefers a collaborative and transparent management style where he's encouraged to learn and grow. He values open communication and feedback, and likes to work with managers who support his learning and development as a junior engineer.",
       "learnedAt": 1783747286095
+    },
+    {
+      "q": "what is his approach to mentorship?",
+      "a": "Bradley views mentorship as an opportunity to learn from others, share knowledge, and grow as a professional. He's open to guidance, constructive feedback, and support from more experienced colleagues or mentors. He's also willing to help others, whether it's explaining concepts, providing code reviews, or just being a sounding board for ideas.",
+      "learnedAt": 1783757306629
     }
   ]
 }
