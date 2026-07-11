@@ -1278,7 +1278,27 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   const lastUser = Array.isArray(history) && history.length > 0
     ? String(history[history.length - 1]?.user || '')
     : '';
-  
+
+  // Contextual pronoun follow-ups: 'was that paid?', 'what did he do there?', 'how about that?'
+  // Re-execute with the previous topic substituted so the right branch can answer.
+  const isBareFollowup = /^\s*(was that|what did he do there|what about that|how about that|tell me more about that|is that|was it|what about it)\b/i.test(question);
+  const lastTopic = classifyTopic(lastUser);
+  if (isBareFollowup && lastTopic !== 'other') {
+    let contextualQuestion = question;
+    if (lastTopic === 'experience' && /kitten|rescue|animal/i.test(lastAssistant)) {
+      contextualQuestion = 'What did he do at Mason County Kitten Rescue';
+    } else if (lastTopic === 'army') {
+      contextualQuestion = 'Tell me about his Army service';
+    } else if (lastTopic === 'aws') {
+      contextualQuestion = 'Does he have AWS experience';
+    } else if (lastTopic === 'projects') {
+      contextualQuestion = 'Tell me about his projects';
+    }
+    if (contextualQuestion !== question) {
+      return buildGroundedFallbackPayload(knowledge, contextualQuestion, history.slice(0, -1));
+    }
+  }
+
   // Safety: prompt injection / secret extraction / false claims / social engineering
   if (/(ignore previous|ignore all previous|ignore all rules|ignore your instructions|ignore all instructions|ignore that|override.*rules|override.*instructions|show.*system prompt|print.*env|api key|give me.*key|\.env|home address|family details|bypass cors|open.*port\s*11434|open port|localhost|127\.0\.0\.1|:11434|fortune 500|reveal.*prompt|reveal.*environment|reveal.*secret|reveal.*config|hidden config|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|social security|birth date|wife|children|disability rating|bank|password|act as root|delete the vm|hack the site|fake reference|security clearance|i am.*admin|i am.*owner|i am.*developer|i am.*from the government|i am.*security researcher|bradley'?s friend|his friend|show.*contents of|read.*file|show me.*\.json|show me.*learned|show me.*stats|opt\/recruiter|\/opt\/|etc\/passwd|environment variable)/.test(lowerQuestion)) {
     return { reply: `${agentName} can only answer recruiter questions about ${name} using the public site data. It can't help with that.` };
@@ -1412,7 +1432,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   if (/awards|medals|ribbons|what.*earn.*army|what.*get.*army|combat medical badge/.test(lowerQuestion)) {
     const armyExp = (experience || []).find(e => /army|military/i.test(`${e.role} ${e.company} ${e.summary || ''}`));
     if (armyExp?.details?.awards?.length) {
-      return { reply: `${name}'s Army awards include ${sentenceList(armyExp.details.awards, 10)}.` };
+      return { reply: `His awards include ${sentenceList(armyExp.details.awards, 10)}.` };
     }
   }
 
@@ -1733,7 +1753,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Teamwork / team player / works with others / interpersonal / social skills
-  if (/teamwork|team player|works with others|how does he work in a team|how is he on a team|collaborat|how does he work with|interpersonal|social skill|works well with|good with people|how is he with people|how is brad with people|how is he around people|people person|ok socially|socially|with people/.test(lowerQuestion)) {
+  if (/teamwork|team player|works with others|do well in a team|good in a team|work in a team|how does he work in a team|how is he on a team|collaborat|how does he work with|interpersonal|social skill|works well with|good with people|how is he with people|how is brad with people|how is he around people|people person|ok socially|socially|with people/.test(lowerQuestion)) {
     return { reply: `${name} has real interpersonal experience: case management (helping clients through court-mandated requirements), Army healthcare specialist (working with crews under pressure), and construction (communicating with homeowners and crews). He communicates clearly with both technical and non-technical people.` };
   }
 
