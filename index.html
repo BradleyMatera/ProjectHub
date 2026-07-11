@@ -589,6 +589,30 @@
           <p style="color:var(--soft)">Loading…</p>
         </div>
 
+        <h3 style="margin-top:1.5rem;font-size:0.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:0.05em">Learning system (Scout think mode)</h3>
+        <div class="live-grid" style="margin-top:0.5rem">
+          <div class="live-metric">
+            <div class="metric-label">Stashed questions</div>
+            <div class="metric-value" id="learn-stashed">--</div>
+            <div class="metric-sub">Unanswered, pending think mode</div>
+          </div>
+          <div class="live-metric">
+            <div class="metric-label">Learned answers</div>
+            <div class="metric-value" id="learn-count">--</div>
+            <div class="metric-sub" id="learn-pending">-- pending push to GitHub</div>
+          </div>
+          <div class="live-metric">
+            <div class="metric-label">Think mode status</div>
+            <div class="metric-value" id="learn-status" style="font-size:0.95rem">--</div>
+            <div class="metric-sub" id="learn-last">Last run: never</div>
+          </div>
+          <div class="live-metric">
+            <div class="metric-label">GitHub sync</div>
+            <div class="metric-value" id="learn-github" style="font-size:0.95rem">--</div>
+            <div class="metric-sub">Pushes learned answers to knowledge JSON</div>
+          </div>
+        </div>
+
         <div class="refresh-bar">
           <span id="live-refresh">Refreshing every 5 seconds…</span>
           <span id="live-updated">Last updated: never</span>
@@ -675,6 +699,12 @@
       const elRecent = document.getElementById('live-recent');
       const elUpdated = document.getElementById('live-updated');
       const elRefresh = document.getElementById('live-refresh');
+      const elLearnStashed = document.getElementById('learn-stashed');
+      const elLearnCount = document.getElementById('learn-count');
+      const elLearnPending = document.getElementById('learn-pending');
+      const elLearnStatus = document.getElementById('learn-status');
+      const elLearnLast = document.getElementById('learn-last');
+      const elLearnGithub = document.getElementById('learn-github');
 
       function fmtUptime(sec) {
         if (!sec && sec !== 0) return '--';
@@ -739,10 +769,21 @@
           } else {
             elRecent.innerHTML = recent.map(r => {
               const time = new Date(r.ts).toLocaleTimeString();
-              const color = r.provider === 'grounded' ? '#34d399' : r.provider === 'cached' ? '#fbbf24' : '#60a5fa';
+              const color = r.provider === 'grounded' ? '#34d399' : r.provider === 'cached' ? '#fbbf24' : r.provider === 'learned' ? '#a78bfa' : '#60a5fa';
               return `<div style="padding:0.3rem 0;border-bottom:1px solid rgba(148,163,184,0.08)"><span style="color:${color}">${r.provider}</span> · <span style="color:var(--soft)">${time}</span> · ${r.q}</div>`;
             }).join('');
           }
+
+          // Learning system stats
+          const learn = data.learning || {};
+          elLearnStashed.textContent = typeof learn.stashedCount === 'number' ? learn.stashedCount : '--';
+          elLearnCount.textContent = typeof learn.learnedCount === 'number' ? learn.learnedCount : '--';
+          elLearnPending.textContent = (typeof learn.pendingLearned === 'number' ? learn.pendingLearned : '--') + ' pending push to GitHub';
+          elLearnStatus.textContent = learn.thinkRunning ? 'Running…' : 'Idle';
+          elLearnStatus.style.color = learn.thinkRunning ? '#fbbf24' : '#34d399';
+          elLearnLast.textContent = learn.lastThinkAt ? 'Last run: ' + new Date(learn.lastThinkAt).toLocaleTimeString() : 'Last run: never';
+          elLearnGithub.textContent = learn.hasGitHubToken ? 'Connected' : 'No token';
+          elLearnGithub.style.color = learn.hasGitHubToken ? '#34d399' : '#f87171';
 
           elUpdated.textContent = 'Last updated: ' + new Date().toLocaleTimeString();
           elRefresh.textContent = 'Refreshing every 5 seconds…';

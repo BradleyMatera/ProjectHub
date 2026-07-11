@@ -1133,8 +1133,8 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `Which part is meant: his AWS internship, a specific project, or his overall role fit? Point at one and ${agentName} will answer directly.` };
   }
   
-  // Army / military
-  if (/army|military|veteran|service/.test(lowerQuestion)) {
+  // Army / military (narrowed 'service' to 'army service' to avoid catching 'customer service')
+  if (/army|military|veteran|army service|military service/.test(lowerQuestion)) {
     const armyExp = (experience || []).find(e => /army|military/i.test(`${e.role} ${e.company} ${e.summary || ''}`));
     if (armyExp) {
       return { reply: `${name} served in the Army (${armyExp.role}${armyExp.dates ? `, ${armyExp.dates}` : ''}). It shows discipline and teamwork, and he's open about how it shaped his work habits.` };
@@ -1333,9 +1333,24 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply };
   }
 
-  // Teamwork / team player / works with others (checked before work style so 'how does he work in a team' doesn't match work-style first)
-  if (/teamwork|team player|works with others|how does he work in a team|how is he on a team|collaborat|how does he work with/.test(lowerQuestion)) {
-    return { reply: `${name} has teamwork experience from Army service, construction crews, and case management work. He communicates clearly with technical and non-technical people, which shows up in his documentation habits.` };
+  // Teamwork / team player / works with others / interpersonal / social skills
+  if (/teamwork|team player|works with others|how does he work in a team|how is he on a team|collaborat|how does he work with|interpersonal|social skill|works well with|good with people|how is he with people|how is brad with people|how is he around people|people person|ok socially|socially|with people/.test(lowerQuestion)) {
+    return { reply: `${name} has real interpersonal experience: case management (helping clients through court-mandated requirements), Army healthcare specialist (working with crews under pressure), and construction (communicating with homeowners and crews). He communicates clearly with both technical and non-technical people.` };
+  }
+
+  // Customer service / support experience
+  if (/customer service|customer support|client facing|user support|help desk|service desk|support role/.test(lowerQuestion)) {
+    return { reply: `${name} has customer-facing experience from case management (guiding clients through legal processes), Army service, and construction (working directly with homeowners). His communication skills transfer well to customer support and help desk roles.` };
+  }
+
+  // 'What data do you have' / what is in his data
+  if (/what data|what info|what information|what do you (have|know)|what is in (his|the) data|what can you tell me|what do you have on/.test(lowerQuestion)) {
+    return { reply: `${agentName} has verified data on ${name}'s projects, skills (JavaScript, TypeScript, React, AWS), certifications (AWS Solutions Architect, AI Practitioner), education (Full Sail University), work history (AWS internship, CIRIS, case management), target roles, and contact info. Ask about any of those.` };
+  }
+
+  // Confusion / 'you're not making sense' / clarification
+  if (/not making sense|makes no sense|what are you talking about|confused|dont understand|do not understand|what do you mean/.test(lowerQuestion)) {
+    return { reply: `Sorry about that. ${agentName} covers ${name}'s projects, skills, AWS background, role fit, and contact info. What specifically do you want to know?` };
   }
 
   // Work style (checked before generic project branch so "what is his work style" doesn't return a project list)
@@ -1376,8 +1391,8 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name} has a track record of showing up: Army service, construction work, and case management all required reliability under pressure. His work style is methodical and he documents what he does so others can pick up where he left off.` };
   }
 
-  // Dynamic projects from knowledge base
-  if (/project|portfolio|work|real projects|best project|shipped/.test(lowerQuestion)) {
+  // Dynamic projects from knowledge base (narrowed 'work' to 'his work' to avoid catching 'works with people')
+  if (/project|portfolio|his work|real projects|best project|shipped/.test(lowerQuestion)) {
     const projectList = projects?.slice(0, 5) || [];
     if (projectList.length > 0) {
       const projectNames = projectList.map(p => p.name).join(', ');
@@ -1841,6 +1856,8 @@ function mustStayGrounded(question, history) {
   if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b|are you online|say hello|health status|what can you (help|do) with|what can this bot (help|do)|what model|what provider|what llm|what ai|which model|which provider|what is this chatbot|does this use ollama|is this ai local|is my chat private|what data do you use|who made this|is this bradley'?s site|how is this chat free|how do you stay free|what powers you|what is your stack|what is this site for|what does this site do|daily cap|daily limit|rate limit|cooldown|how.*handle.*limit|run 24|24.?7|24x7|always available|what if.*provider|exhausted|out of quota/.test(q)) return true;
   // Naturalness / no-bs prompts have direct grounded answers
   if (/why should i care|what can he actually do|what does he actually know|what does he actually do|is he worth|worth calling|worth interviewing|is he good|is he legit|real projects|not just a portfolio|not a portfolio|what is the catch|how about his aws|what happened there|what about that project|what about cloud|cloud stuff|aws thingy|aws work|tell me about aws|give me the honest|give me the simple|just the facts|tell me straight|like a normal person|normal person|no bs|no bull|straight answer|plain english/.test(q)) return true;
+  // Interpersonal / social / customer service / data scope / confusion prompts have grounded answers
+  if (/interpersonal|social skill|works well with|good with people|how is he with people|people person|socially|customer service|customer support|help desk|service desk|what data|what info|what information|what do you (have|know)|what is in (his|the) data|not making sense|makes no sense|confused|dont understand|do not understand/.test(q)) return true;
   // Interview questions and explicit tone-word bans get the deterministic reply so they are accurate
   if (/interview question|what.*ask him|what.*verify|what questions|reasons? to interview|why hire|why should.*hire|three reasons/.test(q)) return true;
   if (detectBannedWords(question).length > 0) return true;
