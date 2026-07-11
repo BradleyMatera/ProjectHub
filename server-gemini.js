@@ -1978,7 +1978,7 @@ function mustStayGrounded(question, history) {
   if (/(pretend|make up|claim|say|tell|write|write something that)\b.*\b(google|senior|cto|10\s*years|10\+\s*years|masters?|master.s|kubernetes|led a team|production engineer|production experience|outages|clearance|payment systems|terraform|machine learning engineer|hide his lack|hide.*lack|full.?stack expert|10x|ninja|rockstar|wizard|guru|rust)\b/.test(q) || /write something that hides|hide his lack/.test(q)) return true;
   if (/\b(contact|email|phone|reach|github)\b|portfolio url|resume\?|links\?|\blinkedin\b(?!.*\b(style|summary|profile)\b)/.test(q)) return true;
   if (/\bproject|portfolio\b|which project|what project|best project|most relevant project|what is projecthub|ciris|interactive pokedex|pokedex|cheesemath|worked at amazon|has he worked at|did he work at/.test(q)) return true;
-  if (/who is bradley|who is brad\b|who's bradley|who's brad|what makes him different|different from other|compare him to the job|compare to the job|hiring manager|work style|coding style|how does he handle unknown|not knowing something|handle unknown tech|how does he solve|how does he approach.*problem|how does he debug/.test(q)) return true;
+  if (/who is bradley|who is brad\b|who's bradley|who's brad|what makes him different|different from other|compare him to the job|compare to the job|hiring manager|work style|how does he work|how he works|coding style|how does he handle unknown|not knowing something|handle unknown tech|how does he solve|how does he approach.*problem|how does he debug/.test(q)) return true;
   // Smoke tests / greetings / meta questions have deterministic answers and should not burn provider quota/latency
   if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b|are you online|say hello|health status|what can you (help|do) with|what can this bot (help|do)|what model|what provider|what llm|what ai|which model|which provider|what is this chatbot|does this use ollama|is this ai local|is my chat private|what data do you use|who made this|is this bradley'?s site|how is this chat free|how do you stay free|what powers you|what is your stack|what is this site for|what does this site do|daily cap|daily limit|rate limit|cooldown|how.*handle.*limit|run 24|24.?7|24x7|always available|what if.*provider|exhausted|out of quota/.test(q)) return true;
   // Naturalness / no-bs prompts have direct grounded answers
@@ -1997,6 +1997,8 @@ function mustStayGrounded(question, history) {
   if (/good candidate|good fit for|suitable for|is he a fit|would he be a/.test(q)) return true;
   // Recruiter role-fit and capability questions
   if (/\bfit for\b|\ba fit for\b|\bwould he fit\b|\bshould i consider\b|\bwhy hire\b|\bwhat roles\b|\brole fit\b|\bjob fit\b|\bsuitable for\b|\bgood match\b|\bbad fit\b|\bgood fit\b|\bstrong fit\b|\baws experience\b|\bcloud experience\b|\breact experience\b/.test(q)) return true;
+  // Out-of-scope questions should get the grounded "not in recruiter data" reply, not LLM hallucinations
+  if (!isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate/.test(q)) return true;
   const shape = detectShape(question);
   if (shape.json || shape.bullets || shape.table || shape.maxWords || shape.paragraph || shape.oneSentence) return true;
   return false;
