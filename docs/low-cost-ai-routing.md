@@ -22,10 +22,13 @@ ProjectHub stays grounded-first and free-provider-first:
    - GitHub Models (`openai/gpt-4o-mini`)
    - Google Gemini (`gemini-2.0-flash`)
    - xAI Grok (`grok-4.3`) optional
+   - OpenAI-compatible (configurable) optional
 4. Local Ollama (`smollm2:135m`) is the final fallback if all free providers are exhausted or fail.
 5. Every provider reply is validated against the grounded source facts before it is returned.
-6. In-memory session cache keeps the last 3 turns per tab.
-7. Response caches avoid repeated work, but context-dependent follow-ups bypass the global cache.
+6. Safety and false-claim checks run BEFORE learned answers to block injection, XSS, social engineering, and exaggerated claims.
+7. In-memory session cache keeps the last 3 turns per tab. Frontend sends 5 turns and keeps 10.
+8. Response caches avoid repeated work, but context-dependent follow-ups bypass the global cache.
+9. Out-of-scope questions are forced to grounded replies by `mustStayGrounded` to prevent LLM hallucinations.
 
 This keeps the widget useful even if every free provider tier is temporarily exhausted.
 
@@ -57,6 +60,17 @@ Do not expose `localhost:11434` publicly. Keep all model access behind the recru
 
 ---
 
+## Think Mode Cost
+
+Think Mode runs every 10 minutes and processes stashed questions through the same free provider network. It adds zero cost because:
+- It uses the same free LLM providers (no additional API calls beyond what the daily quota allows)
+- Local Ollama is the final fallback (unlimited, runs on VM CPU)
+- It pushes learned answers back to GitHub via the Contents API (free, no database)
+- False-claim and safety questions are filtered before stashing (no wasted LLM calls)
+- The `learned.json` file on the VM is tiny (a few KB)
+
+---
+
 ## Routing Policy
 
 The multi-provider router tries each enabled provider in `PROVIDER_ORDER` until one returns a valid reply:
@@ -68,4 +82,4 @@ The multi-provider router tries each enabled provider in `PROVIDER_ORDER` until 
 - If a provider call fails or returns an invalid reply, mark it (rate-limit = 60s cooldown, credit exhaustion = 24h cooldown) and try the next provider.
 - If no provider succeeds, return the grounded answer.
 
-Deterministic/factual questions bypass the network entirely and return the grounded answer immediately to save quota and latency.
+Deterministic/factual questions bypass the network entirely and return the grounded answer immediately to save quota and latency. The `mustStayGrounded` function enforces this for 15+ categories of questions including role fit, experience, work style, interpersonal skills, safety patterns, false-claim patterns, out-of-scope questions, and meta questions about the bot.

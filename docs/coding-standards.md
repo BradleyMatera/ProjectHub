@@ -10,6 +10,8 @@
 - Put detailed documentation in `docs/`.
 - Put shared source modules at root: `data.js`, `logic.js`, `ui.js`, `utils.js`.
 - `ProjectHub.js` is the inlined/concatenated deployment artifact. When you edit a source module, mirror the change in `ProjectHub.js` if it is still the live distribution file.
+- `server-gemini.js` is the backend server. It is deployed to the VM as `server.js`. Edit `server-gemini.js` in the repo, then deploy.
+- Test suites live in `/tmp/test-suite-*.py` and run against the live API. Run them sequentially with delays to avoid 429 rate limits.
 
 ## Naming Conventions
 
@@ -34,6 +36,8 @@
 - `package.json` is for metadata only. The backend calls all providers with vanilla `fetch`; no OpenAI SDK is required in production.
 - The widget must run when loaded via `https://bradleymatera.github.io/ProjectHub/ProjectHub.js`.
 - `index.html` is the public GitHub Pages landing site; use `local-test.html` for local widget testing.
+- `server-gemini.js` must pass `node --check` before deployment.
+- `data/recruiter-knowledge.json` must be valid JSON — verify with `python3 -c "import json; json.load(open('data/recruiter-knowledge.json'))"` before pushing.
 
 ## Documentation Rule
 

@@ -9,8 +9,10 @@
 The production backend is `server-gemini.js`, a Node.js/Express app running on a GCP VM free tier. It serves:
 
 - `GET /` — service status.
-- `GET /health` — provider order, per-provider quota/cooldown status, and configuration.
+- `GET /health` — provider order, per-provider quota/cooldown status, learning system stats, recent sessions.
+- `GET /api/knowledge-health` — knowledge base coverage report, learned answers, gap clusters, learning verification.
 - `POST /api/chat` — the main recruiter chat endpoint.
+- `POST /api/think` — manually trigger think mode to process stashed questions.
 
 The frontend widget (`ProjectHub.js`) is vanilla JavaScript and loads the backend endpoint from the published GitHub Pages URL. No build step or framework is required on either side.
 
@@ -29,15 +31,14 @@ Request body:
 {
   "message": "user's raw query",
   "sessionId": "stable browser session id",
+  "history": [
+    { "user": "recent user question", "assistant": "recent assistant answer" }
+  ],
   "options": {
     "memoryEnabled": true,
     "flavorEnabled": true,
     "visitorName": "Jordan"
-  },
-  "context": [
-    { "role": "user", "content": "recent user question" },
-    { "role": "assistant", "content": "recent assistant answer" }
-  ]
+  }
 }
 ```
 
@@ -57,12 +58,37 @@ Response body:
   "reply": "Recruiter-safe answer text",
   "provider": "groq",
   "model": "llama-3.1-8b-instant",
+  "grounded": false,
   "fallback": false,
-  "cached": false
+  "cached": false,
+  "pipeline": ["cache-miss", "knowledge-loaded", "learned-check:miss", "mustStayGrounded:false", "network:groq:success", "shaped"],
+  "followUps": ["What about his AWS certifications?", "Did he do real production work at AWS?"]
 }
 ```
 
-When the question is routed to the deterministic fallback, `provider` is `grounded` and `model` is `knowledge-json`. When the multi-provider network succeeds, `provider` and `model` reflect the winning provider. If every provider fails, the response falls back to the grounded answer and `fallback` is `true`.
+When the question is routed to the deterministic fallback, `provider` is `grounded` and `model` is `knowledge-json`. When the multi-provider network succeeds, `provider` and `model` reflect the winning provider. If every provider fails, the response falls back to the grounded answer and `fallback` is `true`. The `pipeline` array shows the exact decision path. The `followUps` array contains 0-2 contextual follow-up suggestions.
+
+## Safety and False-Claim Checks
+
+In `buildGroundedFallbackPayload`, the check order is:
+
+1. **Safety regex** — blocks prompt injection, XSS, social engineering, secret extraction, data exfiltration attempts
+2. **False-claim regex** — refuses requests to describe Bradley as senior/10x/rockstar/ninja/wizard/guru/world-class, or to write exaggerated claims. Returns an honest alternative instead.
+3. **Learned answers** — checks GitHub knowledge `learnedAnswers` array for matching questions
+4. **Grounded handlers** — 40+ deterministic handlers for common recruiter questions
+
+This ordering ensures that even if a false-claim answer was accidentally learned by Think Mode, it is always blocked by the false-claim regex before the learned answer is returned.
+
+The `mustStayGrounded` function determines whether a question should skip the LLM network entirely and use the grounded answer. It returns `true` for:
+- Safety/injection patterns
+- False-claim patterns
+- Role fit, experience, work history questions
+- Work style, coding style, problem-solving, learning style
+- Interpersonal/social skills, customer service
+- Smoke tests, greetings, meta questions
+- Out-of-scope questions (not recruiter-related)
+- Interview questions, banned buzzwords
+- Repair/refinement requests ("shorter", "more honest", "just the facts")
 
 The browser should treat `reply` as the primary answer. The current widget renders it directly in the chat transcript.
 
@@ -76,6 +102,7 @@ Open-ended questions are routed through a priority network of free providers:
 4. **Google Gemini** (`gemini-2.0-flash`)
 5. **xAI Grok** (`grok-4.3`) — optional, free credits can be exhausted quickly
 6. **Local Ollama** (`smollm2:135m`) final fallback
+7. **OpenAI-compatible** (configurable) — optional, for custom endpoints
 
 The order is controlled by `PROVIDER_ORDER` in the VM `.env`.
 
@@ -107,13 +134,16 @@ Key variables on the GCP VM (`.env`):
 | `GITHUB_MODELS_TOKEN` | GitHub personal access token with `models:read` |
 | `GEMINI_API_KEY` | Google Gemini API key |
 | `XAI_API_KEY` | xAI Grok API key |
+| `OPENAI_API_KEY` | OpenAI-compatible API key (optional) |
+| `OPENAI_BASE_URL` | OpenAI-compatible base URL (optional) |
+| `OPENAI_MODEL` | OpenAI-compatible model name (optional) |
 | `PROVIDER_ORDER` | Comma-separated provider slugs, e.g. `groq,cloudflare,github,gemini,grok,ollama` |
 | `GEN_MODEL` | Local Ollama fallback model, default `smollm2:135m` |
 | `GEN_TIMEOUT_MS` | Per-provider timeout in ms, default `8000` |
 
 ## Session Memory
 
-The browser creates a per-tab `sessionId` and sends the last few turns as `context`. The GCP backend keeps only the last three turns per session in memory; there is no external database dependency.
+The browser creates a per-tab `sessionId` and sends the last 5 turns as `history`. The GCP backend keeps only the last three turns per session in memory; there is no external database dependency. The frontend keeps 10 turns of conversation context.
 
 Context-dependent messages such as “tell me more,” “what about that project,” or “same for AWS” bypass the global response cache so the router can use recent session context.
 
@@ -121,7 +151,7 @@ The widget asks for the visitor's name at the start of each browser tab session 
 
 Repeated or semantically repeated questions should not return the same answer verbatim. The backend checks recent session memory; if the same core question has already been answered, it politely says so, quotes the useful part of the earlier answer, and offers follow-ups. Forced-choice recruiter questions such as “if you had to pick one strongest role” resolve to one answer instead of cycling through target-role lists.
 
-Profile-adjacent personal questions that are not in verified data, such as favorite food or hobbies, go through the guarded generative fallback. The model may phrase the response naturally, but it must not invent personal facts; it should say the detail is not verified and bridge to recruiter-useful topics.
+Profile-adjacent personal questions that are not in verified data, such as favorite food or hobbies, are forced to the grounded "not in recruiter data" reply by `mustStayGrounded`, preventing LLM hallucinations on out-of-scope topics.
 
 ## Security Requirements
 

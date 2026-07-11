@@ -36,9 +36,11 @@ flowchart LR
   D -- Cloudflare REST --> E2[Cloudflare Workers AI]
   D -- OpenAI-compatible REST --> E3[GitHub Models]
   D -- Gemini REST --> E4[Google Gemini]
-  D -- local HTTP --> E5[Ollama smollm2:135m]
+  D -- OpenAI-compatible REST --> E5[xAI Grok]
+  D -- local HTTP --> E6[Ollama smollm2:135m]
   D -- fetch/cache --> F[recruiter-knowledge.json on GitHub]
   D -- grounded fallback --> G[Local knowledge base]
+  D -- Think Mode --> H[learned.json + push to GitHub]
 ```
 
 Current production path: Netlify DNS `A` record for `projecthub-chat.bradleymatera.dev` points to the GCP VM external IP `35.208.20.1`. Caddy terminates HTTPS with Let's Encrypt and proxies to the Node API on `127.0.0.1:3000`. The Node API (`server-gemini.js`) always computes a grounded answer first, then routes open-ended questions through the free provider network in priority order. If no provider succeeds, it falls back to local Ollama and, ultimately, the grounded answer.
@@ -65,6 +67,7 @@ The backend uses a rotating network of free LLM providers. You need keys for the
 | GitHub Models | GitHub Settings → Developer settings → Personal access tokens → `models:read` | `openai/gpt-4o-mini` |
 | Google Gemini | https://aistudio.google.com/app/apikey | `gemini-2.0-flash` |
 | xAI Grok | https://console.x.ai/ | `grok-4.3` (optional; free credits can be exhausted quickly) |
+| OpenAI-compatible | Any OpenAI-compatible endpoint | configurable (optional) |
 | Ollama | Installed locally on the VM | `smollm2:135m` (final fallback) |
 
 You do **not** need to add billing to any provider to run Scout. The system works as long as at least one provider has remaining free quota.
@@ -99,17 +102,31 @@ GEMINI_MODEL=gemini-2.0-flash
 PROVIDER_ORDER=groq,cloudflare,github,gemini,grok,ollama
 GEN_MODEL=smollm2:135m
 GEN_TIMEOUT_MS=8000
+
+# Optional: OpenAI-compatible provider
+OPENAI_API_KEY=...
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_DAILY_LIMIT=200
+
+# Think Mode
+GITHUB_TOKEN=ghp_...  # Used for both GitHub Models LLM AND knowledge JSON push
 ```
 
 The server includes:
-- CORS configuration for allowed origins
+- CORS configuration for allowed origins (rejects non-allowed origins with `callback(null, false)`)
 - Rate limiting (20 requests/minute)
 - Knowledge caching (5 minutes)
 - Response caching (10 minutes)
-- Grounded-first routing
+- Grounded-first routing with safety and false-claim checks BEFORE learned answers
 - Free multi-provider LLM network with daily quota guards and cooldown
 - Local Ollama fallback
-- Timeout handling (15 seconds total, 7 seconds per provider)
+- Timeout handling (15 seconds total, 8 seconds per provider)
+- Think Mode self-improvement loop (every 10 minutes)
+- Safety regex system (injection, XSS, social engineering, secret extraction)
+- False-claim regex system (exaggerated claims, buzzwords, tone manipulation)
+- `mustStayGrounded` function to force deterministic answers for critical queries
+- Out-of-scope question guard (prevents LLM hallucinations on non-recruiter topics)
 
 ### 4. Run the API as a Service
 
@@ -160,7 +177,7 @@ Caddy obtains and renews the Let's Encrypt certificate automatically. Do not add
 
 ### 7. CORS Configuration
 
-The Node API sets CORS. Caddy should not add CORS headers. Keep `https://bradleymatera.github.io`, `https://bradleymatera.dev`, and `https://www.bradleymatera.dev` in `ALLOWED_ORIGINS`; include `https://*.codepen.io` only when CodePen embedding needs to call the API.
+The Node API sets CORS with `callback(null, false)` for non-allowed origins (returns response without CORS headers, which browsers block). Caddy should not add CORS headers. Keep `https://bradleymatera.github.io`, `https://bradleymatera.dev`, and `https://www.bradleymatera.dev` in `ALLOWED_ORIGINS`; include `https://*.codepen.io` only when CodePen embedding needs to call the API.
 
 ### 8. Static IP and DNS
 

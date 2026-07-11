@@ -60,12 +60,12 @@ Plain strings shown in the chat dropdown:
 1. Edit `data.js`.
 2. If `ProjectHub.js` still contains the inlined data module, mirror the change there.
 3. Open `local-test.html` locally and verify the new data appears in dropdowns and responses.
-4. Commit and push to `main`.
+4. Commit and push to `master`.
 5. Confirm on GitHub Pages after the build finishes.
 
 ## Recruiter Knowledge
 
-`data/recruiter-knowledge.json` contains `identity`, `summary`, `goals`, `education`, `certifications`, `skills`, `experience`, `projects`, `faq`, `interviewStories`, `rules`, and `agent`.
+`data/recruiter-knowledge.json` contains `identity`, `summary`, `goals`, `education`, `certifications`, `skills`, `experience`, `projects`, `faq`, `interviewStories`, `rules`, `agent`, and `learnedAnswers`.
 
 ## sourceMaterial
 
@@ -89,8 +89,31 @@ The backend `buildRagChunks` adds these to the retriever, so open-ended question
 3. Commit and push the JSON.
 4. The backend reads the raw GitHub URL; wait for the cache to refresh or restart the API.
 
+## learnedAnswers
+
+The `learnedAnswers` array is appended to by Think Mode. Each entry has:
+
+```json
+{
+  "q": "what is his preferred management style?",
+  "a": "Brad prefers a collaborative and transparent management style...",
+  "learnedAt": 1783747286095
+}
+```
+
+Think Mode filters questions before stashing to prevent learning false claims:
+- Safety regex blocks injection, XSS, social engineering, secret extraction
+- False-claim regex blocks requests to describe Bradley as senior/10x/rockstar/etc.
+- Tone/style requests are not stashed
+- Out-of-scope questions are not stashed
+- Format/shape requests (JSON, table, bullet) are not stashed
+
+In `buildGroundedFallbackPayload`, the false-claim check runs BEFORE the learned answers check, so even if a false-claim answer was accidentally learned, it is always blocked.
+
 ## Data Integrity Tips
 
 - Keep `name` values stable; `logic.js` matches against them.
 - Avoid duplicate tech strings; `logic.js` deduplicates via `Set`.
 - Make sure every `repo` points to a valid `https://github.com/BradleyMatera/...` URL.
+- Verify JSON validity before pushing: `python3 -c "import json; json.load(open('data/recruiter-knowledge.json'))"`
+- Never add false-claim answers to `learnedAnswers` manually — Think Mode handles this with safety filtering.

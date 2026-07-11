@@ -61,12 +61,14 @@ ProjectHub has three layers, all running on free infrastructure:
 │  server-gemini.js · Node.js / Express                           │
 │                                                                 │
 │  1. Fetch knowledge JSON from GitHub (cached 5 min)             │
-│  2. Compute grounded deterministic answer                      │
-│  3. Check learned answers (from think mode)                    │
-│  4. Route to free LLM providers if question is open-ended      │
-│  5. Validate LLM reply against source facts                    │
-│  6. Shape reply (tone, length, format)                         │
-│  7. Return reply + pipeline + follow-ups                       │
+│  2. Safety check — block injection, XSS, social engineering      │
+│  3. False-claim check — refuse exaggerated/untrue claims         │
+│  4. Check learned answers (from think mode)                      │
+│  5. Compute grounded deterministic answer                        │
+│  6. Route to free LLM providers if question is open-ended        │
+│  7. Validate LLM reply against source facts                      │
+│  8. Shape reply (tone, length, format)                           │
+│  9. Return reply + pipeline + follow-ups                         │
 │                                                                 │
 │  Background: Think mode runs every 10 min                      │
 │  → Processes stashed questions through LLM providers           │
@@ -243,35 +245,43 @@ Every chat request goes through a deterministic pipeline. The `pipeline` field i
    ├── Fetch from GitHub (or use 5-min cache)
    └── If unavailable → grounded fallback (pipeline: ["knowledge-unavailable"])
 
-3. Learned answer check
+3. Safety check (in `buildGroundedFallbackPayload`)
+   ├── Injection/XSS/social engineering → blocked (pipeline: ["grounded"])
+   └── Pass → continue
+
+4. False-claim check
+   ├── Exaggerated/untrue claims → refused with honest alternative
+   └── Pass → continue
+
+5. Learned answer check
    ├── Hit → return learned answer (pipeline: ["learned-check:hit"])
    └── Miss → continue
 
-4. Grounded answer computation
+6. Grounded answer computation
    └── Always computed — deterministic reply from knowledge JSON
 
-5. mustStayGrounded check
+7. mustStayGrounded check
    ├── true → use grounded answer (saves LLM quota)
    └── false → try LLM network
 
-6. LLM network (if needed)
+8. LLM network (if needed)
    ├── Try providers in order: groq → cloudflare → github → gemini → grok → ollama
    ├── First valid reply wins → use it (pipeline: ["network:groq:success"])
    └── All fail → use grounded answer (pipeline: ["network:all-failed"])
 
-7. Reply shaping
+9. Reply shaping
    └── Apply tone, length, format rules (pipeline: ["shaped"])
 
-8. Frustration detection
-   └── If user seems frustrated → strip preambles, be ultra-direct
+10. Frustration detection
+    └── If user seems frustrated → strip preambles, be ultra-direct
 
-9. Follow-up generation
-   └── Generate 2 contextual follow-up suggestions based on topic
+11. Follow-up generation
+    └── Generate 2 contextual follow-up suggestions based on topic
 
-10. Weak answer check
+12. Weak answer check
     └── If answer is weak → stash for think mode learning
 
-11. Return response
+13. Return response
     └── { reply, provider, model, pipeline, followUps, grounded, fallback }
 ```
 
@@ -295,13 +305,12 @@ Scout never relies on a single paid API. It rotates through free providers:
 | **GitHub Models** | OpenAI-compatible | `openai/gpt-4o-mini` | 150 | 60s (rate limit), 24h (credits) |
 | **Google Gemini** | Gemini | `gemini-2.0-flash` | 1500 | 60s (rate limit), 24h (credits) |
 | **xAI Grok** | OpenAI-compatible | `grok-4.3` | 1000 | 60s (rate limit), 24h (credits) |
+| **OpenAI-compatible** | OpenAI-compatible | configurable | 200 | 60s (rate limit), 24h (credits) |
 | **Local Ollama** | Ollama | `smollm2:135m` | ∞ | N/A (runs on VM CPU) |
 
 ### Provider order
 
 Configurable via `PROVIDER_ORDER` env var. Default: `groq,cloudflare,github,gemini,grok,ollama`
-
-### Provider health tracking
 
 The server tracks success/failure/avg latency per provider in `stats.json` and exposes it on the dashboard:
 
@@ -387,7 +396,7 @@ When Scout detects frustration patterns ("just answer", "not making sense", "sto
 
 ### Grounded handlers
 
-Scout has 20+ deterministic handlers for common recruiter questions:
+Scout has 40+ deterministic handlers for common recruiter questions:
 
 - Projects, CodePens, portfolio
 - AWS experience, certifications, internship reality check
@@ -413,9 +422,51 @@ Certain question patterns are forced to use grounded answers (no LLM) to save qu
 - Honest assessment questions ("is he worth interviewing")
 - AWS reality checks ("what happened there")
 - Interpersonal/social skills
-- Customer service
+- Customer service / help desk
+- Work style, coding style, problem-solving
+- Learning style, mentorship
+- Experience, work history, background
 - "What data do you have"
 - Confusion/clarification prompts
+- Out-of-scope questions (not recruiter-related)
+- Safety/injection attempts (always blocked)
+- False-claim requests (always refused with honest alternative)
+- Smoke tests, greetings, meta questions about the bot
+- Interview questions, banned buzzwords
+
+### Think Mode safety
+
+Think Mode filters questions before stashing to prevent learning false claims:
+- Safety regex blocks injection, XSS, social engineering, secret extraction
+- False-claim regex blocks requests to describe Bradley as senior/10x/rockstar/etc.
+- Tone/style requests are not stashed
+- Out-of-scope questions are not stashed
+- Format/shape requests (JSON, table, bullet) are not stashed
+
+In `buildGroundedFallbackPayload`, the check order is:
+1. Safety regex (injection, secrets, social engineering)
+2. False-claim regex (exaggerated claims, buzzwords) — runs BEFORE learned answers
+3. Learned answers (from GitHub knowledge)
+4. Grounded handlers (40+ deterministic handlers)
+
+This ensures that even if a false-claim answer was accidentally learned, it is always blocked.
+
+---
+
+## 🧪 Test Suites
+
+ProjectHub has 6 comprehensive test suites (474+ tests total):
+
+| Suite | Tests | Purpose |
+|-------|-------|---------|
+| **Adversarial** | 67 | Prompt injection, XSS, social engineering, false claims, data exfiltration |
+| **Coverage** | 162 | Every grounded handler path returns expected reply |
+| **Load/Stress** | 41 | Concurrency, rapid-fire, session continuity, cache, rate limits |
+| **Regression** | 62 | Topic classification, provider routing, gap questions, banned words |
+| **Edge Cases** | 28 | Empty input, long input, special chars, unicode, rapid session |
+| **Verification** | 115 | ETL pipeline, cost, infrastructure, data integrity, Think Mode safety |
+
+All tests run against the live API at `https://projecthub-chat.bradleymatera.dev`.
 
 ---
 
@@ -487,8 +538,8 @@ Returns knowledge base coverage report:
   "ok": true,
   "knowledgeVersion": "1.1.0",
   "fieldCoverage": {
-    "total": 78,
-    "populated": 78,
+    "total": 79,
+    "populated": 79,
     "empty": [],
     "coveragePercent": 100
   },
@@ -560,7 +611,7 @@ ProjectHub runs on **zero recurring AI spend** and only free-tier infrastructure
 
 ### AI / LLM — free
 
-- 6 free LLM providers with automatic failover
+- **6 free LLM providers** with automatic failover
 - Local Ollama as unlimited final fallback
 - Daily quota guards per provider
 - Every reply validated against source facts
