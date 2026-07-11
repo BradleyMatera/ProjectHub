@@ -1505,6 +1505,15 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `Based on the data, ${name}'s strongest matches are ${sentenceList(targetRoles, 3)} roles. Junior web and cloud support are the most direct fits given his React/Next.js projects and AWS background.` };
   }
 
+  // 'What kind of roles is he looking for?' — return target roles list, not a fit assessment
+  if (/what kind of roles?|what roles.*(target|looking|fit)|fit for what kind|what kind of jobs?/.test(lowerQuestion)) {
+    const roles = goals?.targetRoles || [];
+    if (roles.length > 0) {
+      return { reply: `${name} is targeting entry-level tech roles. Examples include ${sentenceList(roles.slice(0, 6), 6)}. He learns quickly and does best with mentorship or a structured teaching program.` };
+    }
+    return { reply: `${name} is looking for entry-level tech, IT, support, or software roles where he can learn hands-on.` };
+  }
+
   // Reasons to interview
   if (/reasons? to interview|why should.*interview|why hire|why should.*hire|what makes him worth|three reasons/.test(lowerQuestion)) {
     return { reply: `He has real projects in React/Next.js and a public GitHub. He holds AWS Solutions Architect and AI Practitioner certifications. He documents carefully, debugs methodically, and communicates well. He's junior, so scope early work and provide mentorship.` };
