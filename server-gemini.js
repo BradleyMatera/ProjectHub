@@ -433,24 +433,21 @@ function sentenceList(items, max = 5) {
 }
 
 function removeSlop(reply) {
-  // Remove common AI slop phrases and inflated language
+  // Remove only stale corporate jargon and meta-AI phrasing; keep natural voice.
   const slopPatterns = [
-    /^(certainly|absolutely|great question|of course|sure!|sure,|i'd be happy to|i would be happy to|i'm here to help|let me know if you need anything else|feel free to ask|i can help)/i,
+    /^(certainly|absolutely|great question|of course|sure!|sure,|i'd be happy to|i would be happy to|i'm here to help|i can help)/i,
     /\b(certainly|absolutely|of course)\b/gi,
-    /\b(extensive expertise|proven leader|deep mastery|robust|dynamic|synergy|leverage|passionate|passion|seasoned|guru|ninja|rockstar|wizard|10x|exceptional|remarkable|outstanding|impressive|enthusiasm|eager to|excited to|excited about|thrilled|delighted|keen to)\b/gi,
+    /\b(extensive expertise|proven leader|deep mastery|robust|dynamic|synergy|leverage|seasoned|guru|ninja|rockstar|wizard|10x|exceptional|remarkable|outstanding|impressive)\b/gi,
     /\b(groundbreaking|cutting-edge|innovative|world-class|best-in-class|state-of-the-art|cutting edge|game.?changer|disruptive|flagship|premier|top-tier)\b/gi,
     /\b(highly motivated|self-starter|results-oriented|detail-oriented|go-getter|thought leader|visionary|strategic thinker)\b/gi,
     /as an ai\b/gi,
     /as bradley matera's recruiter assistant\b/gi,
-    /\b(i hope this helps|does that help|is there anything else|let me know if you have any questions|what would you like to know|what else can i help with|what do you want to know)\b/gi,
   ];
   let cleaned = reply;
   slopPatterns.forEach(pattern => {
     cleaned = cleaned.replace(pattern, match => {
       if (/^(certainly|absolutely|great question|of course|sure!|sure,)/i.test(match)) return '';
-      if (/\b(passionate|passion)\b/i.test(match)) return 'interested';
-      if (/\b(eager to|excited to|excited about|keen to)\b/i.test(match)) return 'willing to';
-      return '';
+      return ' ';
     });
   });
   return cleaned.replace(/\s+/g, ' ').trim().replace(/^[\.,\s]+/, '').replace(/\s{2,}/g, ' ');
@@ -635,7 +632,7 @@ async function callOpenAICompatibleProvider(baseUrl, apiKey, model, knowledge, q
     body: JSON.stringify({
       model,
       messages,
-      max_tokens: 200,
+      max_tokens: 300,
       temperature: 0.7,
       top_p: 0.9
     })
@@ -745,7 +742,7 @@ async function callGeminiWithPrompt(prompt, model) {
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        maxOutputTokens: 200,
+        maxOutputTokens: 300,
         temperature: 0.7,
         topK: 1,
         topP: 0.9
@@ -1791,25 +1788,25 @@ function validateGenerative(text, groundedReply) {
 // slop/false-claim guards while skipping the strict proper-noun whitelist.
 function validateNetworkReply(text, source) {
   const t = String(text || '').trim();
-  if (t.length < 25 || t.length > 600) return false;
+  // Allow very short conversational replies ("Yes, he does.") up to longer answers.
+  if (t.length < 10 || t.length > 1000) return false;
   if (GEN_FALSE_CLAIMS.test(t)) return false;
   if (GEN_SLOP.test(t)) return false;
   if (GEN_OVERCLAIM.test(t)) return false;
-  if (!/\b(bradley|brad|he|his)\b/i.test(t)) return false;
-  if (/\b(I|I'm|I've|my|we|our)\b/.test(t)) return false;
-  if (/"|\*|pause|scout here|as scout|hi,|hello,/i.test(t)) return false;
+  // Must still be about Bradley, but allow first-person voice ("I'd say he's...").
+  if (!/\b(bradley|brad|he|his|him|scout)\b/i.test(t)) return false;
   const sourceText = String(source || '').toLowerCase();
   const genNumbers = t.match(/\d[\d.,]*/g) || [];
   if (genNumbers.some(n => !sourceText.includes(n.toLowerCase()))) return false;
   if (/^(facts:|q:|question:|answer:|rephrase|text:)/i.test(t)) return false;
-  if (/\?(\s*)$/i.test(t) && /(what would you like|what do you want|what are you interested|what do you mean|could you clarify|tell me more about|let me know)/i.test(t)) return false;
-  const entityHits = (t.match(/\b(AWS|React|JavaScript|TypeScript|Node|Next\.js|Full Sail|Davis|Illinois|junior|intern|certif|project|cloud|web|support|debug|document|CIRIS|Pokedex|Lambda|DynamoDB|S3|Amplify|CloudFront|Docker|GitHub)\b/gi) || []);
+  // Allow clarifying follow-up questions; only block prompt echoes.
+  if (/\?(\s*)$/i.test(t) && /^(what would you like|what do you want|what are you interested|what do you mean|could you clarify|tell me more about|let me know)/i.test(t)) return false;
+  // Require only one relevant entity, so simple answers like "He's based in Illinois" pass.
+  const entityHits = (t.match(/\b(AWS|React|JavaScript|TypeScript|Node|Next\.js|Full Sail|Davis|Illinois|junior|intern|certif|project|cloud|web|support|debug|document|CIRIS|Pokedex|Lambda|DynamoDB|S3|Amplify|CloudFront|Docker|GitHub|Army|veteran|military|customer|service|team|communicat|reliab|honest|learn|career|role|skill|work|experience|prefer|style|adapt|collaborat|contribut|grow|mentor)\b/gi) || []);
   const uniqueHits = new Set(entityHits.map(e => e.toLowerCase()));
-  if (uniqueHits.size < 2) return false;
-  if (/\b(and|or|but)\s+(way|the|a)\b/i.test(t)) return false;
+  if (uniqueHits.size < 1) return false;
+  // Keep only the most basic hygiene checks.
   if (/\s{2,}/.test(t)) return false;
-  if (/\b\w+\s+and\s*$/i.test(t)) return false;
-  if (/[a-z]\s+[A-Z][a-z]+\s*$/i.test(t) && !/[.!?]$/.test(t)) return false;
   return true;
 }
 
@@ -2023,8 +2020,6 @@ async function generateWithNetwork(knowledge, question, history, groundedReply) 
 // Everything else flows to the LLM provider network for natural, contextual answers.
 function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
-  const repair = detectRepair(question);
-  if (repair.shorter || repair.isBareFollowup || repair.blunt || repair.moreHonest || repair.resumeLanguage) return true;
   // Safety: prompt injection, secret extraction, social engineering
   if (/(ignore|inject|system prompt|\.env|api key|password|bypass|open port|port 11434|localhost|127\.0\.0\.1|:11434|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|hidden config|show.*env|fake reference|social security|birth date|wife|children|family details|medical history|i am.*admin|i am.*owner|i am.*developer|i am.*from the government|i am.*security researcher|bradley'?s friend|his friend|reveal.*environment|reveal.*secret|reveal.*config|show.*contents of|read.*file|show me.*\.json|show me.*learned|show me.*stats|opt\/recruiter|\/opt\/|etc\/passwd|environment variable|ignore that|ignore all previous|override.*rules|override.*instructions)/.test(q)) return true;
   // False-claim requests must be blocked deterministically
@@ -2034,8 +2029,7 @@ function mustStayGrounded(question, history) {
   // Smoke test / health check patterns — deterministic for monitoring
   if (/are you online|say hello|health status|daily cap|daily limit|rate limit|cooldown|how.*handle.*limit|run 24|24.?7|24x7|always available|what if.*provider|exhausted|out of quota/.test(q)) return true;
   if (detectBannedWords(question).length > 0) return true;
-  // Out-of-scope questions should get the grounded "not in recruiter data" reply, not LLM hallucinations
-  if (!isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate/.test(q)) return true;
+  // Structured output requests stay grounded for consistent formatting
   const shape = detectShape(question);
   if (shape.json || shape.bullets || shape.table || shape.maxWords || shape.paragraph || shape.oneSentence) return true;
   return false;
