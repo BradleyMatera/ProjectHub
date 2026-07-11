@@ -1761,7 +1761,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   // Strengths (checked before summary so 'about his strengths' doesn't match summary's 'about')
   if (/strength|strongest|greatest|best at|what does he do well/.test(lowerQuestion)) {
     const strengths = summary?.coreStrengths?.length
-      ? summary.coreStrengths.slice(0, 3)
+      ? summary.coreStrengths.slice(0, 3).map(s => s.charAt(0).toLowerCase() + s.slice(1))
       : ['learning quickly', 'documenting clearly', 'debugging carefully'];
     return { reply: `${name}'s core strengths include ${sentenceList(strengths, 3)}. He also learns quickly, works carefully, and communicates clearly.` };
   }
