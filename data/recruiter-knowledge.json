@@ -492,6 +492,10 @@
     {
       "prompt": "What kind of role are you looking for",
       "answer": "Any entry-level tech, IT, or support role where I can contribute and learn hands-on. That includes software engineering, web development, cloud support, application support, technical support, helpdesk, desktop support, QA, and similar computer-focused work. I do best when there is mentorship or a structured teaching program, because I learn fast and can prove value quickly. If I know the tech I can work with it at an entry level; if I don't know it yet, I can pick it up with the right guidance."
+    },
+    {
+      "prompt": "Can you code",
+      "answer": "Yes, at a junior level. I can handle basics and level-one work in the languages I studied in school: JavaScript, TypeScript, React, Node.js, HTML, CSS, and SQL. I read code carefully and follow existing patterns before I change things. I want to keep learning without always leaning on AI, especially if the team is willing to teach and be supportive. I also put money and time into my own education through courses and programs I qualify for."
     }
   ],
   "rules": {
@@ -518,6 +522,10 @@
     ]
   },
   "faq": [
+    {
+      "question": "Can Bradley code?",
+      "answer": "Yes, at a junior level. He can code basics and level-one work in the languages he studied in school, including JavaScript, TypeScript, React, Node.js, HTML, CSS, and SQL. He reads code carefully, follows existing patterns, and is eager to learn more without leaning on AI if the team is willing to teach and be supportive. He also continues his own education through self-funded courses and programs he qualifies for."
+    },
     {
       "question": "What is Bradley Matera's strongest technical background?",
       "answer": "JavaScript, TypeScript, React, Node.js, HTML, CSS, and SQL, plus AWS support training and project work with Lambda, DynamoDB, S3, and Amplify."
