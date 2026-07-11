@@ -1432,13 +1432,13 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name} has animal care and volunteer rescue work in his background. Details are in his resume.` };
   }
   
-  // Location
-  if (/where located|where is he|where does he live|based in|where is he based|where.*from\b/.test(lowerQuestion)) {
+  // Location / relocation / preferred location
+  if (/where located|where is he|where does he live|based in|where is he based|where.*from\b|preferred location|location preference|where does he want to work/.test(lowerQuestion)) {
     return { reply: `${name} is based in ${location}.` };
   }
 
   // Relocation / availability / remote
-  if (/relocat|remote only|remote\?|on.?site|hybrid|availab/.test(lowerQuestion)) {
+  if (/relocat|remote only|remote\?|on.?site|hybrid|availab|preferred work arrangement|work arrangement/.test(lowerQuestion)) {
     if (goals?.relocation) {
       return { reply: `${goals.relocation} Exact start dates aren't in the public data, so confirm timing with him directly.` };
     }
@@ -1515,6 +1515,32 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `You can reach ${name} by ${contact.join(', ')}.` };
   }
   
+  // CS degree / computer science degree specifically
+  if (/computer science degree|cs degree|cs major|computer science major/.test(lowerQuestion)) {
+    return { reply: `${name} does not have a computer science degree. He holds a ${education?.degree || 'Bachelor of Science in Web Development'} from ${education?.school || 'Full Sail University'}.` };
+  }
+
+  // What did he learn / what was his coursework
+  if (/what did he learn|what did he study|what was his coursework|what did he learn there|what does he know from school|what technologies did he learn/.test(lowerQuestion)) {
+    const langs = (skills?.languagesAndFrameworks || []).slice(0, 6).join(', ');
+    return { reply: `${name} studied web development at ${education?.school || 'Full Sail University'}. Coursework and projects covered ${langs || 'JavaScript, React, Node.js, HTML, CSS, and SQL'}.` };
+  }
+
+  // What degree does he have / what is his degree
+  if (/what degree|which degree|what.*degree.*he.*have|what diploma|what did he graduate/.test(lowerQuestion)) {
+    if (education?.degree && education?.school) {
+      let edu = `${name} holds a ${education.degree} from ${education.school}`;
+      if (education?.graduated) edu += `, graduated ${education.graduated}`;
+      return { reply: edu + '.' };
+    }
+    return { reply: `${name}'s education details are available in his full profile.` };
+  }
+
+  // Is [school] respected / accredited / good
+  if (/is full sail|accredited|respected|prestigious|good school/.test(lowerQuestion)) {
+    return { reply: `The recruiter data only lists that ${name} holds a ${education?.degree || 'Bachelor of Science in Web Development'} from ${education?.school || 'Full Sail University'}. It doesn't include rankings or accreditation details, so evaluate the school independently if that matters for the role.` };
+  }
+
   // Dynamic education from knowledge base
   if (/education|degree|school|full sail|gpa/.test(lowerQuestion)) {
     if (education?.degree && education?.school) {
@@ -1577,6 +1603,11 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name}'s AWS experience is detailed in his profile.` };
   }
 
+  // Production work / real production / live ownership follow-ups
+  if (/production work|production experience|real production|live production|production environment|production ownership|was it production|was any of that production|was this production/.test(lowerQuestion)) {
+    return { reply: `${name}'s AWS work was structured labs and a capstone, not live production ownership. His projects are school, freelance contributor, or personal demos. He has not held a production-owning engineering role yet; that's part of why he's targeting junior and support-level positions.` };
+  }
+
   // Dynamic skills from knowledge base
   if (/skill|stack|technical|technologies|what does he know|what can he do|what stack/.test(lowerQuestion)) {
     const langs = (skills?.languagesAndFrameworks || []).slice(0, 3).join(', ');
@@ -1595,21 +1626,24 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Specific-skill yes/no (does he know Python, can he use Go, etc.)
-  const skillAskMatch = lowerQuestion.match(/\b(?:does he know|can he use|can he work with|is he familiar with|does he have)\s+(?:in\s+)?([a-z0-9+#.]+)/);
+  const skillAskMatch = lowerQuestion.match(/\b(?:does he know|can he use|can he work with|is he familiar with|does he have)\s+(?:in\s+)?([a-z0-9+#.]{2,})/);
   if (skillAskMatch) {
     const asked = skillAskMatch[1].toLowerCase();
-    const allSkills = [
-      ...(skills?.languagesAndFrameworks || []),
-      ...(skills?.cloudAndInfrastructure || []),
-      ...(skills?.toolsAndWorkflows || []),
-      ...(skills?.aiAndAutomation || []),
-      ...(skills?.learningOrAdjacent || [])
-    ].map(s => s.toLowerCase());
-    const known = allSkills.some(s => s.includes(asked) || asked.includes(s));
-    if (known) {
-      return { reply: `Yes, ${name} has ${asked} in his listed skills or adjacent learning.` };
+    const stopWords = new Set(['a', 'an', 'the', 'any', 'some', 'much', 'many', 'preferred', 'location', 'experience', 'skills', 'in', 'of', 'for']);
+    if (!stopWords.has(asked)) {
+      const allSkills = [
+        ...(skills?.languagesAndFrameworks || []),
+        ...(skills?.cloudAndInfrastructure || []),
+        ...(skills?.toolsAndWorkflows || []),
+        ...(skills?.aiAndAutomation || []),
+        ...(skills?.learningOrAdjacent || [])
+      ].map(s => s.toLowerCase());
+      const known = allSkills.some(s => s.includes(asked) || asked.includes(s));
+      if (known) {
+        return { reply: `Yes, ${name} has ${asked} in his listed skills or adjacent learning.` };
+      }
+      return { reply: `The data doesn't show direct ${asked} experience. He's strongest in JavaScript/TypeScript, React, Node.js, and AWS support work.` };
     }
-    return { reply: `The data doesn't show direct ${asked} experience. He's strongest in JavaScript/TypeScript, React, Node.js, and AWS support work.` };
   }
   
   // Specific project lookup by name (allow partial matches on significant words)
