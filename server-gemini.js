@@ -1916,7 +1916,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Blog / writing / articles
-  if (/blog|article|writing|publication|has he written|what.*he.*write|what has he published|where does he write|dev\.to|bradleymatera\.dev/.test(lowerQuestion)) {
+  if (/\bblog\b|article|writing|publication|has he written|what.*he.*(write|written|writes)|what has he published|where does he write|write about|writes about|written about|dev\.to|dev community|bradleymatera\.dev/.test(lowerQuestion)) {
     const posts = blogCatalog?.records || [];
     const dev = posts.filter(p => p.platform === 'DEV Community').length;
     const site = posts.filter(p => p.platform === 'bradleymatera.dev').length;
@@ -1958,7 +1958,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   const isRepairOrTone = repair.shorter || repair.moreHonest || repair.blunt || repair.resumeLanguage || repair.moreTechnical || repair.hrFriendly
     || detectBannedWords(question).length > 0
     || /buzzword|corporate|plain|paragraph|no hype|no marketing|salesy|resume language|passionate|absolutely|certainly/.test(lowerQuestion);
-  if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|languages|databases|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate|kitten|rescue|animal|shelter|volunteer|paid|blog|article|writing|publication|dev\.to/.test(lowerQuestion)) {
+  if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|languages|databases|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate|kitten|rescue|animal|shelter|volunteer|paid|blog|article|writing|publication|dev\.to|dev community|write about/.test(lowerQuestion)) {
     const outOfScope = [
       `That's outside what ${agentName} covers. Ask about ${name}'s projects, skills, AWS background, role fit, or contact info.`,
       `${agentName} sticks to ${name}'s recruiter profile — projects, skills, AWS work, role fit, and how to contact him. That question isn't in the data.`,
@@ -2046,7 +2046,7 @@ function shouldUseGroundedAnswer(question) {
 function isProbablyRelevant(question) {
   const normalized = normalizeQuestion(question);
   // Very broad relevance check - if it mentions Bradley or any career-related terms, let it through
-  return /\b(bradley|brad|matera|candidate|recruiter|software|engineer|developer|web|aws|cloud|support|skill|stack|languages|databases|project|portfolio|contact|email|phone|role|job|education|cert|resume|ciris|ethical|freelance|contributor|intern|internship|work|experience|debug|troubleshoot|document|learn|communication|army|military|construction|case|manager|managers|approach|style|strength|weakness|feedback|management|kitten|rescue|animal|shelter|volunteer|veteran|deploy|afghanistan|68w|medic|blog|article|writing|publication|dev\.to)\b/.test(normalized) || normalized.includes('bradley');
+  return /\b(bradley|brad|matera|candidate|recruiter|software|engineer|developer|web|aws|cloud|support|skill|stack|languages|databases|project|portfolio|contact|email|phone|role|job|education|cert|resume|ciris|ethical|freelance|contributor|intern|internship|work|experience|debug|troubleshoot|document|learn|communication|army|military|construction|case|manager|managers|approach|style|strength|weakness|feedback|management|kitten|rescue|animal|shelter|volunteer|veteran|deploy|afghanistan|68w|medic|blog|article|writing|publication|dev\.to|dev community)\b/.test(normalized) || normalized.includes('bradley') || normalized.includes('write about') || normalized.includes('writes about');
 }
 
 function cleanModelReply(reply, knowledge, question, history) {
@@ -2558,6 +2558,7 @@ function classifyTopic(question) {
   if (/army|military|veteran/.test(q)) return 'army';
   if (/work style|coding style|management style|approach|debug|problem|feedback|preferred/.test(q)) return 'work-style';
   if (/who is brad|tell me about|summary|bio|about brad/.test(q)) return 'summary';
+  if (/blog|article|writing|publication|dev\.to|dev community|has he written|what.*he.*write|write about/.test(q)) return 'writing';
   if (/not in|out of scope|favorite|food|pizza|weather|sports/.test(q)) return 'out-of-scope';
   return 'other';
 }
@@ -3140,6 +3141,7 @@ app.post('/api/chat', async (req, res) => {
       'weaknesses': ['What are his strengths?', 'Is he a good fit for a support role?'],
       'interpersonal': ['Does he have customer service experience?', 'How does he handle conflict?'],
       'work-style': ['Does he write documentation?', 'How does he handle unfamiliar code?'],
+      'writing': ['What topics does he write about?', 'Where does he publish?', 'Has he written about AWS?'],
       'summary': ['What are his strongest skills?', 'What projects should I look at first?']
     };
     const followUps = followUpMap[topic] || [];
