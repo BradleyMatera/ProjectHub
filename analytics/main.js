@@ -111,6 +111,33 @@ function wrapScrollBox(element, maxHeightClass = 'ph-scroll-box') {
   return element;
 }
 
+function getOpenDetailIndices(container) {
+  if (!container) return [];
+  return Array.from(container.querySelectorAll('details')).map((d, i) => d.open ? i : -1).filter(i => i >= 0);
+}
+
+function setOpenDetailIndices(container, indices) {
+  if (!container || !indices || indices.length === 0) return;
+  const details = container.querySelectorAll('details');
+  for (const i of indices) {
+    if (details[i]) details[i].open = true;
+  }
+}
+
+function pauseRefresh(container) {
+  const interval = Number(container.dataset.phAnalyticsInterval || '0');
+  if (interval) {
+    clearInterval(interval);
+    container.dataset.phAnalyticsInterval = '';
+  }
+}
+
+function resumeRefresh(container) {
+  pauseRefresh(container);
+  const interval = setInterval(() => refresh(container), REFRESH_INTERVAL_MS);
+  container.dataset.phAnalyticsInterval = String(interval);
+}
+
 function hideStatus(container) {
   const el = container.querySelector('.ph-analytics__status');
   if (el) el.hidden = true;
@@ -714,13 +741,17 @@ function render(container, data) {
   }
 
   if (sessionsTableBody && health) {
+    const openSessionRows = getOpenDetailIndices(sessionsTableBody);
     renderSessionsTable(sessionsTableBody, health.recentSessions);
+    setOpenDetailIndices(sessionsTableBody, openSessionRows);
   }
 
   const recentContainer = container.querySelector('.ph-analytics__recent-requests');
   if (recentContainer && health) {
+    const openRequestRows = getOpenDetailIndices(recentContainer);
     renderRecentRequests(recentContainer, health.recentRequests);
     wrapScrollBox(recentContainer, 'ph-scroll-box--lg');
+    setOpenDetailIndices(recentContainer, openRequestRows);
   }
 
   const activityContainer = container.querySelector('.ph-analytics__activity-feed');
@@ -843,6 +874,7 @@ export function mount(selector) {
         <p class="ph-analytics__subtitle">Real-time numbers from the running backend, refreshed every 5 seconds</p>
       </div>
       <div class="ph-analytics__controls">
+        <button class="cds--btn cds--btn--secondary" id="ph-analytics-pause" type="button">Pause updates</button>
         <button class="cds--btn cds--btn--primary" id="ph-analytics-refresh" type="button">Refresh now</button>
         <button class="cds--btn cds--btn--ghost" id="ph-analytics-theme" type="button">Toggle theme</button>
         <span class="ph-analytics__updated" id="ph-analytics-updated"></span>
@@ -948,6 +980,22 @@ export function mount(selector) {
     themeBtn.addEventListener('click', () => {
       container.classList.toggle('ph-dark');
       refresh(container);
+    });
+  }
+
+  const pauseBtn = container.querySelector('#ph-analytics-pause');
+  if (pauseBtn) {
+    pauseBtn.addEventListener('click', () => {
+      const isPaused = container.classList.contains('ph-analytics--paused');
+      if (isPaused) {
+        container.classList.remove('ph-analytics--paused');
+        resumeRefresh(container);
+        pauseBtn.textContent = 'Pause updates';
+      } else {
+        container.classList.add('ph-analytics--paused');
+        pauseRefresh(container);
+        pauseBtn.textContent = 'Resume updates';
+      }
     });
   }
 
