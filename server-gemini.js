@@ -1280,19 +1280,32 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     : '';
 
   // Contextual pronoun follow-ups: 'was that paid?', 'what did he do there?', 'how about that?'
-  // Re-execute with the previous topic substituted so the right branch can answer.
+  // Use the previous assistant reply to determine the topic and answer accordingly.
+  const lastAssistantLower = lastAssistant.toLowerCase();
+  const inKittenContext = /kitten|rescue|animal/i.test(lastAssistantLower);
+  const inArmyContext = /army|military|combat medic|68w|fort bragg|afghanistan/i.test(lastAssistantLower);
+  const inAwsContext = /aws|lambda|dynamodb|s3|cloud/i.test(lastAssistantLower);
+  const inProjectContext = /project|pokedex|metadata|ciris/i.test(lastAssistantLower);
+
+  if (/^\s*(was that|was it|is that)\b/i.test(question) && inKittenContext && /paid|pay|volunteer|money|compensat/.test(lowerQuestion)) {
+    return { reply: `Yes, he started in a paid, part-time animal care role for a few months and then continued as a regular volunteer at Mason County Kitten Rescue.` };
+  }
+  if (/^\s*what did he do there\b/i.test(question) && inKittenContext) {
+    const kittenExp = (experience || []).find(e => /kitten|animal care|rescue/i.test(`${e.role} ${e.company} ${e.summary || ''}`));
+    if (kittenExp) {
+      const topResp = (kittenExp.responsibilities || []).slice(0, 5).map(r => r.charAt(0).toLowerCase() + r.slice(1)).join('; ');
+      return { reply: `Day to day, he ${topResp}.` };
+    }
+  }
+
+  // Generic bare follow-ups — re-execute with the previous topic substituted.
   const isBareFollowup = /^\s*(was that|what did he do there|what about that|how about that|tell me more about that|is that|was it|what about it)\b/i.test(question);
   if (isBareFollowup && lastAssistant) {
     let contextualQuestion = null;
-    if (/kitten|rescue|animal/i.test(lastAssistant)) {
-      contextualQuestion = 'What did he do at Mason County Kitten Rescue';
-    } else if (/army|military|combat medic|68w|fort bragg|afghanistan/i.test(lastAssistant)) {
-      contextualQuestion = 'Tell me about his Army service';
-    } else if (/aws|lambda|dynamodb|s3|cloud/i.test(lastAssistant)) {
-      contextualQuestion = 'Does he have AWS experience';
-    } else if (/project|pokedex|metadata|ciris/i.test(lastAssistant)) {
-      contextualQuestion = 'Tell me about his projects';
-    }
+    if (inKittenContext) contextualQuestion = 'What did he do at Mason County Kitten Rescue';
+    else if (inArmyContext) contextualQuestion = 'Tell me about his Army service';
+    else if (inAwsContext) contextualQuestion = 'Does he have AWS experience';
+    else if (inProjectContext) contextualQuestion = 'Tell me about his projects';
     if (contextualQuestion) {
       return buildGroundedFallbackPayload(knowledge, contextualQuestion, history.slice(0, -1));
     }
@@ -1431,7 +1444,11 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   if (/awards|medals|ribbons|what.*earn.*army|what.*get.*army|combat medical badge/.test(lowerQuestion)) {
     const armyExp = (experience || []).find(e => /army|military/i.test(`${e.role} ${e.company} ${e.summary || ''}`));
     if (armyExp?.details?.awards?.length) {
-      return { reply: `His awards include ${sentenceList(armyExp.details.awards, 10)}.` };
+      const awards = sentenceList(armyExp.details.awards, 10);
+      if (inArmyContext) {
+        return { reply: `During his service he earned ${awards}.` };
+      }
+      return { reply: `His awards include ${awards}.` };
     }
   }
 
