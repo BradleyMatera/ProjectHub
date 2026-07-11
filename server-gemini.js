@@ -1596,6 +1596,10 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   
   // CS degree / computer science degree specifically
   if (/computer science degree|cs degree|cs major|computer science major/.test(lowerQuestion)) {
+    // Clarification phrasing like "I meant a four-year CS degree"
+    if (/i meant|what i mean|to be clear|more precisely|four.year|4.year/.test(lowerQuestion)) {
+      return { reply: `No, he doesn't have a four-year computer science degree. His degree is a B.S. in Web Development from Full Sail University.` };
+    }
     return { reply: `No — ${name}'s degree is a B.S. in Web Development from Full Sail University, not computer science.` };
   }
 
