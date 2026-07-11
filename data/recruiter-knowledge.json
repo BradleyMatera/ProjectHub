@@ -4912,6 +4912,11 @@
       "q": "was it real production work?",
       "a": "His AWS internship was a structured training program with guided support rotations and controlled capstone projects, not direct production work with customer data.",
       "learnedAt": 1783794329179
+    },
+    {
+      "q": "can brad work in erp?",
+      "a": "Brad Matera is an assistant to the recruiter, but he does have some specific responsibilities that are related to EPR (Electronic Performance Reporting). He has experience with ERP systems for various industries such as finance and healthcare. However, his primary focus on AWS engineering remains focused solely on software development and technical skills rather than EPC or ERP",
+      "learnedAt": 1783795279836
     }
   ]
 }
