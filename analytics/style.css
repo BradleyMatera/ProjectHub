@@ -168,3 +168,209 @@
     grid-template-columns: 1fr;
   }
 }
+
+.ph-analytics__two-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ph-analytics__two-col > .ph-analytics__section {
+  margin-bottom: 0;
+}
+
+.ph-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 0;
+}
+
+.ph-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.ph-status--online { background: rgba(25, 128, 56, 0.15); color: #42be65; }
+.ph-status--online::before { background: #42be65; }
+
+.ph-status--cooldown { background: rgba(251, 191, 36, 0.15); color: #f1c21b; }
+.ph-status--cooldown::before { background: #f1c21b; }
+
+.ph-status--offline { background: rgba(218, 30, 40, 0.15); color: #fa4d56; }
+.ph-status--offline::before { background: #fa4d56; }
+
+.ph-status--disabled { background: rgba(120, 119, 119, 0.15); color: #a8a8a8; }
+.ph-status--disabled::before { background: #a8a8a8; }
+
+.ph-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #393939;
+  color: #f4f4f4;
+}
+
+.ph-badge--recruiter { background: #198038; }
+.ph-badge--casual { background: #0f62fe; }
+.ph-badge--engaged { background: #f1c21b; color: #161616; }
+.ph-badge--bot { background: #da1e28; }
+
+.ph-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ph-activity-item {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--ph-analytics-border);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.ph-provider-tag {
+  display: inline-block;
+  min-width: 5rem;
+  padding: 0.1rem 0.4rem;
+  margin-right: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  text-align: center;
+  letter-spacing: 0.04em;
+  background: #393939;
+  color: #f4f4f4;
+}
+
+.ph-provider-grounded { background: #198038; }
+.ph-provider-learned { background: #8a3ffc; }
+.ph-provider-cached { background: #f1c21b; color: #161616; }
+.ph-provider-llm { background: #0f62fe; }
+.ph-provider-out-of-scope { background: #da1e28; }
+
+.ph-muted {
+  color: var(--ph-analytics-muted);
+  font-size: 0.875rem;
+}
+
+.ph-pipeline {
+  color: var(--ph-analytics-muted);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  word-break: break-word;
+}
+
+.ph-pipeline-step {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+  margin: 0.15rem 0.1rem;
+  font-size: 0.75rem;
+  font-family: 'IBM Plex Mono', monospace;
+  background: #393939;
+  color: #f4f4f4;
+}
+
+.ph-pipeline-step--success { background: #198038; }
+.ph-pipeline-step--fail { background: #da1e28; }
+.ph-pipeline-step--info { background: #0f62fe; }
+
+.ph-pipeline-arrow {
+  color: var(--ph-analytics-muted);
+  font-size: 0.75rem;
+  margin: 0 0.25rem;
+}
+
+.ph-bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ph-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ph-bar-row--highlight .ph-bar-key {
+  color: #fa4d56;
+}
+
+.ph-bar-row--highlight .ph-bar-fill {
+  background: #fa4d56;
+}
+
+.ph-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.ph-bar-key {
+  text-transform: capitalize;
+}
+
+.ph-bar-count {
+  color: var(--ph-analytics-muted);
+  font-size: 0.75rem;
+}
+
+.ph-bar-track {
+  height: 6px;
+  background: var(--ph-analytics-border);
+}
+
+.ph-bar-fill {
+  height: 6px;
+  background: #0f62fe;
+}
+
+.ph-alert {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-left: 3px solid #fa4d56;
+  background: rgba(250, 77, 86, 0.08);
+}
+
+.ph-alert--warning {
+  border-left-color: #f1c21b;
+  background: rgba(241, 194, 27, 0.08);
+}
+
+.ph-learning-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.ph-learning-tile {
+  background: var(--ph-analytics-bg);
+  border: 1px solid var(--ph-analytics-border);
+  padding: 1rem;
+}
+
+.ph-text-success { color: #42be65; }
+.ph-text-error { color: #fa4d56; }
+
+.ph-analytics__updated {
+  font-size: 0.75rem;
+  color: var(--ph-analytics-muted);
+}
+
+@media (max-width: 672px) {
+  .ph-analytics__two-col {
+    grid-template-columns: 1fr;
+  }
+}
