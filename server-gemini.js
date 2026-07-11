@@ -1110,8 +1110,8 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     ? String(history[history.length - 1]?.user || '')
     : '';
   
-  // Safety: prompt injection / secret extraction / false claims
-  if (/(ignore previous|ignore all rules|ignore your instructions|show.*system prompt|print.*env|api key|give me.*key|\.env|home address|family details|bypass cors|open.*port\s*11434|open port|localhost|127\.0\.0\.1|:11434|fortune 500|reveal.*prompt|hidden config|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|social security|birth date|wife|children|disability rating|bank|password|act as root|delete the vm|hack the site|fake reference|security clearance)/.test(lowerQuestion)) {
+  // Safety: prompt injection / secret extraction / false claims / social engineering
+  if (/(ignore previous|ignore all rules|ignore your instructions|show.*system prompt|print.*env|api key|give me.*key|\.env|home address|family details|bypass cors|open.*port\s*11434|open port|localhost|127\.0\.0\.1|:11434|fortune 500|reveal.*prompt|reveal.*environment|reveal.*secret|reveal.*config|hidden config|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|social security|birth date|wife|children|disability rating|bank|password|act as root|delete the vm|hack the site|fake reference|security clearance|i am.*admin|i am.*owner|i am.*developer|i am.*from the government|i am.*security researcher|show.*contents of|read.*file|show me.*\.json|show me.*learned|show me.*stats|opt\/recruiter|\/opt\/|etc\/passwd|environment variable)/.test(lowerQuestion)) {
     return { reply: `${agentName} can only answer recruiter questions about ${name} using the public site data. It can't help with that.` };
   }
 
@@ -1126,7 +1126,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
   
   // Refuse false-claim requests, offer honest alternative (hallucination red team pack)
-  if (/(pretend|make up|claim|say|tell|write)\b.*\b(google|senior|cto|10 years|masters|kubernetes|led a team|production engineer|production experience|outages|clearance|fortune|payment systems|startup|papers|hackathons|l4|azure|dba|machine learning engineer|rust)/.test(lowerQuestion) || /write something that hides|hide his lack/.test(lowerQuestion)) {
+  if (/(pretend|make up|claim|say|tell|write)\b.*\b(google|senior|cto|10 years|10\+ years|masters?|master.s|kubernetes|led a team|production engineer|production experience|outages|clearance|fortune|payment systems|startup|papers|hackathons|l4|azure|dba|machine learning engineer|rust|full.?stack expert|10x|ninja|rockstar|wizard|guru)/.test(lowerQuestion) || /write something that hides|hide his lack/.test(lowerQuestion)) {
     return { reply: `That claim isn't in ${name}'s verified data. The honest version: he's a junior engineer with real React/Next.js projects, AWS certifications, and structured AWS internship training. That's the story worth telling.` };
   }
   
@@ -1180,13 +1180,6 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   if (/health status|are you healthy|how are you running|system status/.test(lowerQuestion)) {
     return { reply: `${agentName} is online. The backend runs on a free GCP VM with a multi-provider LLM network and a local Ollama fallback.` };
   }
-  if (/what model|what provider|what llm|what ai|which model|which provider/.test(lowerQuestion)) {
-    return { reply: `${agentName} uses a free multi-provider network (Groq, Cloudflare, GitHub Models, Gemini) and falls back to a small local Ollama model on the GCP VM.` };
-  }
-  if (/what is this chatbot using|does this use ollama|is this ai local|is my chat private|what data do you use/.test(lowerQuestion)) {
-    return { reply: `${agentName} is grounded in ${name}'s public recruiter data file. Nothing private is stored beyond short session context.` };
-  }
-
   // Repair: shorter / more honest / tone changes using previous answer
   if (repair.shorter && lastAssistant) {
     return { reply: truncateWords(firstSentence(lastAssistant.replace(/<[^>]+>/g, ' ')), 20) };
@@ -1348,7 +1341,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
   
   // Bad-fit / what roles are a poor match (checked before target-roles so it wins over 'what jobs')
-  if (/bad fit|poor fit|not a fit|not a good fit|wrong role|wrong job|jobs to avoid|roles to avoid|would not fit|should not apply/.test(lowerQuestion)) {
+  if (/bad fit|poor fit|not a fit|not a good fit|wrong role|wrong job|jobs to avoid|roles to avoid|would not fit|should not apply|what.*avoid|where.*not fit|what.*poor match|what.*bad match/.test(lowerQuestion)) {
     return { reply: `${name} is junior, so senior, lead, architect, or production-owner roles are a poor fit. He's best suited for junior web, cloud support, software support, and technical support roles.` };
   }
 
@@ -1368,11 +1361,6 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name} is looking for junior software engineering roles.` };
   }
 
-  // Bad-fit / what roles are a poor match
-  if (/bad fit|poor fit|not a fit|not a good fit|wrong role|wrong job|jobs to avoid|roles to avoid|would not fit|should not apply/.test(lowerQuestion)) {
-    return { reply: `${name} is junior, so senior, lead, architect, or production-owner roles are a poor fit. He's best suited for junior web, cloud support, software support, and technical support roles.` };
-  }
-  
   // Dynamic AWS/cloud from knowledge base (checked before generic skill matcher so 'does he have AWS experience' gets a detailed answer)
   if (/aws|cloud|lambda|dynamo|s3|amplify|amazon/.test(lowerQuestion)) {
     const cloudSkills = skills?.cloudAndInfrastructure || [];
@@ -1389,7 +1377,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Dynamic skills from knowledge base
-  if (/skill|stack|technical|background|what does he know|what can he do|actually do|what stack/.test(lowerQuestion)) {
+  if (/skill|stack|technical|technologies|what does he know|what can he do|what stack/.test(lowerQuestion)) {
     const langs = (skills?.languagesAndFrameworks || []).slice(0, 3).join(', ');
     const cloud = (skills?.cloudAndInfrastructure || []).slice(0, 3).join(', ');
     const tools = (skills?.toolsAndWorkflows || []).slice(0, 3).join(', ');
@@ -1400,7 +1388,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Specific-skill yes/no (does he know Python, can he do Go, etc.)
-  const skillAskMatch = lowerQuestion.match(/\b(?:does he know|can he code|can he work with|is he familiar with|does he have)\s+([a-z0-9+#.]+)/);
+  const skillAskMatch = lowerQuestion.match(/\b(?:does he know|can he code|can he work with|is he familiar with|does he have)\s+(?:in\s+)?([a-z0-9+#.]+)/);
   if (skillAskMatch) {
     const asked = skillAskMatch[1].toLowerCase();
     const allSkills = [
@@ -1504,8 +1492,8 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name} has a track record of showing up: Army service, construction work, and case management all required reliability under pressure. His work style is methodical and he documents what he does so others can pick up where he left off.` };
   }
 
-  // Dynamic projects from knowledge base (narrowed 'work' to 'his work' to avoid catching 'works with people')
-  if (/project|portfolio|his work|real projects|best project|shipped/.test(lowerQuestion)) {
+  // Dynamic projects from knowledge base (narrowed 'work' to 'his work' to avoid catching 'works with people' or 'work history')
+  if (/project|portfolio|his work on|real projects|best project|shipped/.test(lowerQuestion)) {
     const projectList = projects?.slice(0, 5) || [];
     if (projectList.length > 0) {
       const projectNames = projectList.map(p => p.name).join(', ');
@@ -1558,7 +1546,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Remaining naturalness patterns — general catch-all
-  if (/is he good|is he legit|real projects|does he write|can he talk|can he troubleshoot|does he write docs|what can he actually do|what does he actually know|what does he actually do|is he the real deal|not just a portfolio|not a portfolio/.test(lowerQuestion)) {
+  if (/is he good|is he legit|real projects|does he write|can he talk|can he troubleshoot|does he write docs|what can he actually do|what does he actually know|what does he actually do|is he the real deal|not just a portfolio|not a portfolio|what is the catch|what.s the catch/.test(lowerQuestion)) {
     const certsList = (certifications || []).slice(0, 2).map(c => c.name || c);
     const topProjects = (projects || []).slice(0, 3).map(p => p.name);
     const shortCerts = certsList.map(c => c.replace('AWS Certified ', 'AWS '));
@@ -1577,7 +1565,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Elevator pitch / 20 seconds / short intro
-  if (/elevator|20 seconds|30 seconds|quick pitch|sell him in|pitch for|give me a pitch|short pitch|one-liner|tl;dr|tl;dr/.test(lowerQuestion)) {
+  if (/elevator|20 second|30 second|quick pitch|sell him in|pitch for|give me a pitch|short pitch|one-liner|tl;dr|tl;dr/.test(lowerQuestion)) {
     const certs = (certifications || []).slice(0, 2).map(c => c.name || c).map(c => c.replace('AWS Certified ', 'AWS '));
     const topProjects = (projects || []).slice(0, 2).map(p => p.name);
     return { reply: `${name} is a ${title} based in ${location.replace(/\s*\(open to relocation\)\s*/i, '')}. He has real shipped projects (${topProjects.join(', ')}), ${sentenceList(certs, 2)} certs, and structured AWS internship training. He's targeting ${sentenceList((goals?.targetRoles || ['junior web', 'cloud support']).slice(0, 2), 2)} roles and is open to relocation.` };
@@ -1599,14 +1587,6 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
       return { reply: `Honest limitations: ${sentenceList(weaknesses, 3)}. Verify depth in a technical interview; his strengths are learning, documentation, and debugging.` };
     }
     return { reply: `Main caution is that he is junior, so verify depth on a call.` };
-  }
-  
-  // What should I not claim
-  if (/not claim|should not claim|rules.*assistant|what.*not say/.test(lowerQuestion)) {
-    if (rulesForAssistant?.length) {
-      return { reply: `Do not claim: ${sentenceList(rulesForAssistant, 3)}.` };
-    }
-    return { reply: `Do not claim senior, production AWS, or experience not in the public data.` };
   }
   
   // Interview questions
@@ -1994,8 +1974,8 @@ function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
   const repair = detectRepair(question);
   if (repair.shorter || repair.isBareFollowup || repair.blunt || repair.moreHonest || repair.resumeLanguage) return true;
-  if (/(ignore|inject|system prompt|\.env|api key|password|address|salary|make up|pretend|fortune|claim|bypass|open port|port 11434|localhost|127\.0\.0\.1|:11434|active security clearance|team of \d+|10\s*years|fortune 500|seasoned|full.?stack expert|10x|ninja|rockstar|wizard|guru|veteran|well.?versed|proven track record|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|hidden config|show.*env|fake reference|social security|birth date|wife|children|family details|medical history)/.test(q)) return true;
-  if (/(pretend|make up|claim|say|tell|write|write something that)\b.*\b(google|senior|cto|10\s*years|masters?|kubernetes|led a team|production engineer|production experience|outages|clearance|payment systems|terraform|machine learning engineer|hide his lack|hide.*lack)\b/.test(q) || /write something that hides|hide his lack/.test(q)) return true;
+  if (/(ignore|inject|system prompt|\.env|api key|password|address|salary|make up|pretend|fortune|claim|bypass|open port|port 11434|localhost|127\.0\.0\.1|:11434|active security clearance|team of \d+|10\s*years|fortune 500|seasoned|full.?stack expert|10x|ninja|rockstar|wizard|guru|veteran|well.?versed|proven track record|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|hidden config|show.*env|fake reference|social security|birth date|wife|children|family details|medical history|i am.*admin|i am.*owner|i am.*developer|i am.*from the government|i am.*security researcher|reveal.*environment|reveal.*secret|reveal.*config|show.*contents of|read.*file|show me.*\.json|show me.*learned|show me.*stats|opt\/recruiter|\/opt\/|etc\/passwd|environment variable)/.test(q)) return true;
+  if (/(pretend|make up|claim|say|tell|write|write something that)\b.*\b(google|senior|cto|10\s*years|10\+\s*years|masters?|master.s|kubernetes|led a team|production engineer|production experience|outages|clearance|payment systems|terraform|machine learning engineer|hide his lack|hide.*lack|full.?stack expert|10x|ninja|rockstar|wizard|guru|rust)\b/.test(q) || /write something that hides|hide his lack/.test(q)) return true;
   if (/\b(contact|email|phone|reach|github)\b|portfolio url|resume\?|links\?|\blinkedin\b(?!.*\b(style|summary|profile)\b)/.test(q)) return true;
   if (/\bproject|portfolio\b|which project|what project|best project|most relevant project|what is projecthub|ciris|interactive pokedex|pokedex|cheesemath|worked at amazon|has he worked at|did he work at/.test(q)) return true;
   if (/who is bradley|who is brad\b|who's bradley|who's brad|what makes him different|different from other|compare him to the job|compare to the job|hiring manager|work style|coding style|how does he handle unknown|not knowing something|handle unknown tech/.test(q)) return true;
