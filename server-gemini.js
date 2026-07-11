@@ -2284,6 +2284,9 @@ function stashQuestion(question, reply, provider) {
   const lower = String(question).toLowerCase();
   const lowerTrim = lower.trim();
   if (/(ignore|inject|system prompt|\.env|api key|password|hack|bypass|social security|birth date)/.test(lower)) return;
+  // Don't stash false-claim requests (same regex as buildGroundedFallbackPayload)
+  if (/(pretend|make up|claim|say|tell|write|describe)\b.*\b(google|senior|cto|10 years|10\+ years|masters?|master.s|kubernetes|led a team|production engineer|production experience|outages|clearance|fortune|payment systems|startup|papers|hackathons|l4|azure|dba|machine learning engineer|rust|full.?stack expert|10x|ninja|rockstar|wizard|guru|glowing review|overselling|world.class)/.test(lower)) return;
+  if (/write something that hides|hide his lack/.test(lower)) return;
   if (question.length < 5 || question.length > 500) return;
   // Don't stash tone/style requests
   if (TONE_REQUEST_RE.test(lower)) return;
