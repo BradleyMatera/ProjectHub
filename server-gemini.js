@@ -1957,6 +1957,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     const dev = posts.filter(p => p.platform === 'DEV Community').length;
     const site = posts.filter(p => p.platform === 'bradleymatera.dev').length;
     const inAwsContext = /aws|lambda|dynamodb|s3\b|cloudfront|amplify|amazon|cloud support/.test(lastAssistantLower) || /aws|lambda|dynamodb|s3\b|cloudfront|amplify|amazon|cloud support/.test(normalized);
+    console.log('[DEBUG blog] inAwsContext:', inAwsContext, 'lastAssistantLower:', lastAssistantLower.substring(0, 80), 'normalized:', normalized);
     let samples = posts.slice(0, 4).map(p => p.title).filter(Boolean);
     if (inAwsContext) {
       const awsPosts = posts.filter(p => /aws|lambda|dynamodb|s3|cloudfront|amplify|amazon|cloud|serverless/i.test(`${p.title || ''} ${p.brief || ''}`));
