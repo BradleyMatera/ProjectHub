@@ -4787,6 +4787,11 @@
       "q": "how does he prefer to receive feedback from managers?",
       "a": "Bradley prefers feedback that is specific, clear, and actionable. He likes to know exactly what he did well and what he can improve on, and he's open to constructive criticism that helps him grow as a junior software engineer.",
       "learnedAt": 1783759358570
+    },
+    {
+      "q": "why is bradley a good junior candidate?",
+      "a": "Bradley is a good junior candidate because he's willing to learn, has a strong foundation in JavaScript and web development, and has hands-on experience with AWS services through training and projects.",
+      "learnedAt": 1783778646086
     }
   ]
 }
