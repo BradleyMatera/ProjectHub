@@ -2364,7 +2364,7 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
         ],
         stream: true,
         keep_alive: '24h',
-        options: { temperature: 0.3, top_p: 0.85, num_predict: 70, repeat_penalty: 1.2 }
+        options: { temperature: 0.3, top_p: 0.85, num_predict: 50, repeat_penalty: 1.2 }
       })
     });
     if (!res.ok) throw new Error(`gen HTTP ${res.status}`);
@@ -3154,7 +3154,7 @@ app.post('/api/chat', async (req, res) => {
     //     to produce a natural, grounded answer rather than a rigid keyword fallback.
     if (!generated && GEN_ENABLED && !isNetworkCircuitOpen() && !mustStayGrounded(userMessage, history)) {
       try {
-        const genReply = await callGenerativeRag(knowledge, userMessage, grounded.reply, history, 6000);
+        const genReply = await callGenerativeRag(knowledge, userMessage, grounded.reply, history, 8000);
         if (genReply && validateGenerative(genReply, grounded.reply)) {
           reply = genReply;
           provider = 'ollama';
