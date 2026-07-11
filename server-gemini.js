@@ -1408,8 +1408,25 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `Which part is meant: his AWS internship, a specific project, or his overall role fit? Point at one and ${agentName} will answer directly.` };
   }
   
+  // Army awards / medals specific question
+  if (/awards|medals|ribbons|what.*earn.*army|what.*get.*army|combat medical badge/.test(lowerQuestion)) {
+    const armyExp = (experience || []).find(e => /army|military/i.test(`${e.role} ${e.company} ${e.summary || ''}`));
+    if (armyExp?.details?.awards?.length) {
+      return { reply: `${name}'s Army awards include ${sentenceList(armyExp.details.awards, 10)}.` };
+    }
+  }
+
+  // Army leadership / did he lead anyone
+  if (/lead.*army|did he lead|supervise|in charge|command|team leader.*army|squad|platoon/.test(lowerQuestion)) {
+    const armyExp = (experience || []).find(e => /army|military/i.test(`${e.role} ${e.company} ${e.summary || ''}`));
+    if (armyExp) {
+      const details = armyExp.details || {};
+      return { reply: `${name} served as a ${details.rank || 'Private First Class, E-3'} and focused on medical support and training soldiers on medical procedures. He was not in a formal leadership position; his rank and role were junior enlisted.` };
+    }
+  }
+
   // Army / military (narrowed 'service' to 'army service' to avoid catching 'customer service')
-  if (/army|military|veteran|army service|military service|deployment|afghanistan|68w|combat medic|dd214|awards|medals/.test(lowerQuestion)) {
+  if (/army|military|veteran|army service|military service|deployment|afghanistan|68w|combat medic|dd214/.test(lowerQuestion)) {
     const armyExp = (experience || []).find(e => /army|military/i.test(`${e.role} ${e.company} ${e.summary || ''}`));
     if (armyExp) {
       const details = armyExp.details || {};
@@ -1434,7 +1451,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   
   // Location / relocation / preferred location
   if (/where located|where is he|where does he live|based in|where is he based|where.*from\b|preferred location|location preference|where does he want to work/.test(lowerQuestion)) {
-    return { reply: `${name} is based in ${location}.` };
+    return { reply: `He's based in ${location}.` };
   }
 
   // Relocation / availability / remote
@@ -1498,14 +1515,20 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   if (/what kind of roles?|what roles.*(target|looking|fit)|fit for what kind|what kind of jobs?|what kind of work|what kind of position/.test(lowerQuestion)) {
     const roles = goals?.targetRoles || [];
     if (roles.length > 0) {
-      return { reply: `${name} is targeting entry-level tech roles. Examples include ${sentenceList(roles.slice(0, 6), 6)}. He learns quickly and does best with mentorship or a structured teaching program.` };
+      return { reply: `He's targeting entry-level tech roles. Examples include ${sentenceList(roles.slice(0, 6), 6)}. He learns quickly and does best with mentorship or a structured teaching program.` };
     }
-    return { reply: `${name} is looking for entry-level tech, IT, support, or software roles where he can learn hands-on.` };
+    return { reply: `He's looking for entry-level tech, IT, support, or software roles where he can learn hands-on.` };
   }
 
   // Role-fit / career-fit questions (broadened to catch natural recruiter phrasing)
   const role = findRoleInQuestion(question);
+  const isNegativeFit = /isn't|is not|not a|not.*fit|why.*not|bad fit|poor fit|wrong|why no/.test(lowerQuestion);
   if (role && /(fit|candidate|what makes|suitable|right for|good for|apply for|how about|what about|role for|job for|would.*fit|should.*fit|bad fit|good fit|strong fit|best fit|is he a|is bradley a|good match|strong match|a match for|perfect for|missing for|gaps for|missing to be|should he apply|jobs should|work as a|work as an|pitch|sell|why hire|why should.*hire|good candidate|would he be a)/.test(lowerQuestion)) {
+    if (isNegativeFit) {
+      const roleAnalysis = analyzeRoleFit(role, knowledge);
+      const gapsPhrase = roleAnalysis.gaps.length > 0 ? sentenceList(roleAnalysis.gaps.slice(0, 2), 2) : 'junior-level experience';
+      return { reply: `${name} is not a strong fit for ${role}. The main gaps are ${gapsPhrase}. He's better suited for entry-level web, cloud support, or IT support roles.` };
+    }
     return handleRoleFit(knowledge, question, role);
   }
   // 'Which is the best fit?' without a specific role
@@ -1634,6 +1657,12 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name} works with ${langs || 'JavaScript, TypeScript, React, Node.js, HTML, CSS, and SQL'}.` };
   }
 
+  // Databases / SQL
+  if (/\bdatabase|databases\b|sql|has he worked with databases/.test(lowerQuestion)) {
+    const dbSkills = (skills?.databases || skills?.languagesAndFrameworks?.filter(s => /sql|mongo|dynamodb|postgres|mysql/i.test(s)) || []).slice(0, 4).join(', ');
+    return { reply: `${name} has database exposure through ${dbSkills || 'SQL and DynamoDB'} from school projects and his AWS internship. It's not production DBA work, but he can read schemas and write basic queries.` };
+  }
+
   // Dynamic skills from knowledge base
   if (/skill|stack|technical|technologies|what does he know|what can he do|what stack/.test(lowerQuestion)) {
     const langs = (skills?.languagesAndFrameworks || []).slice(0, 3).join(', ');
@@ -1646,7 +1675,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Can he code / does he know how to code (broad, not a specific language)
-  if (/\b(can he code|does he code|does he know how to code|is he a coder|can he program|does he program|can he write code)\b/.test(lowerQuestion)) {
+  if (/\b(can he code|can he actually code|does he code|does he know how to code|is he a coder|can he program|does he program|can he write code)\b/.test(lowerQuestion)) {
     const langs = (skills?.languagesAndFrameworks || []).slice(0, 8).join(', ');
     return { reply: `Yes, at a junior level. ${name} can read code, follow logic, make changes, debug problems, and handle basics and level-one work in ${langs || 'the languages he studied in school'}. His honest gap is data structures and algorithms: he has taken courses but never had production mentorship in DSA, and he cannot reliably solve most LeetCode-style problems or build a complete program from a blank file without help. He is aware of it and willing to improve at a company that mentors.` };
   }
@@ -1844,7 +1873,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Weaknesses / concerns / what is not proven
-  if (/weakness|weaknesses|weak at|bad at|not good at|concern|not proven|what is he missing|what is missing|gaps|limitations|bad fit|red flag|what concerns|leetcode|data structures|dsa\b|algorithms?/.test(lowerQuestion)) {
+  if (/weakness|weaknesses|weak at|bad at|not good at|struggle|concern|not proven|what is he missing|what is missing|gaps|limitations|bad fit|red flag|what concerns|leetcode|data structures|dsa\b|algorithms?/.test(lowerQuestion)) {
     const gaps = (summary?.honestGaps || []);
     if (gaps.length > 0) {
       return { reply: `${name}'s honest gaps are data structures and algorithms (he has taken courses but lacks production mentorship and a formal CS degree), turning a brand-new problem into code from a blank file without guidance, and most LeetCode-style problems. He is aware of these gaps and wants to improve at a company that trains and mentors; his strengths are reading code, debugging, documentation, and learning quickly.` };
@@ -1872,7 +1901,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   const isRepairOrTone = repair.shorter || repair.moreHonest || repair.blunt || repair.resumeLanguage || repair.moreTechnical || repair.hrFriendly
     || detectBannedWords(question).length > 0
     || /buzzword|corporate|plain|paragraph|no hype|no marketing|salesy|resume language|passionate|absolutely|certainly/.test(lowerQuestion);
-  if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|languages|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate|kitten|rescue|animal|shelter|volunteer|paid/.test(lowerQuestion)) {
+  if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|languages|databases|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate|kitten|rescue|animal|shelter|volunteer|paid/.test(lowerQuestion)) {
     const outOfScope = [
       `That's outside what ${agentName} covers. Ask about ${name}'s projects, skills, AWS background, role fit, or contact info.`,
       `${agentName} sticks to ${name}'s recruiter profile — projects, skills, AWS work, role fit, and how to contact him. That question isn't in the data.`,
@@ -1960,7 +1989,7 @@ function shouldUseGroundedAnswer(question) {
 function isProbablyRelevant(question) {
   const normalized = normalizeQuestion(question);
   // Very broad relevance check - if it mentions Bradley or any career-related terms, let it through
-  return /\b(bradley|brad|matera|candidate|recruiter|software|engineer|developer|web|aws|cloud|support|skill|stack|languages|project|portfolio|contact|email|phone|role|job|education|cert|resume|ciris|ethical|freelance|contributor|intern|internship|work|experience|debug|troubleshoot|document|learn|communication|army|military|construction|case|manager|managers|approach|style|strength|weakness|feedback|management|kitten|rescue|animal|shelter|volunteer|veteran|deploy|afghanistan|68w|medic)\b/.test(normalized) || normalized.includes('bradley');
+  return /\b(bradley|brad|matera|candidate|recruiter|software|engineer|developer|web|aws|cloud|support|skill|stack|languages|databases|project|portfolio|contact|email|phone|role|job|education|cert|resume|ciris|ethical|freelance|contributor|intern|internship|work|experience|debug|troubleshoot|document|learn|communication|army|military|construction|case|manager|managers|approach|style|strength|weakness|feedback|management|kitten|rescue|animal|shelter|volunteer|veteran|deploy|afghanistan|68w|medic)\b/.test(normalized) || normalized.includes('bradley');
 }
 
 function cleanModelReply(reply, knowledge, question, history) {
