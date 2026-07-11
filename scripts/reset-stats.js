@@ -83,20 +83,22 @@ function backupAndReset(localDir) {
 
 if (isRemote) {
   console.log('Resetting stats on GCP VM...');
-  const remoteCommand = `
-set -e
-sudo cp ${REMOTE_DIR}/stats.json ${REMOTE_DIR}/stats.json.backup.$(date +%Y%m%d_%H%M%S) || true
-sudo cp ${REMOTE_DIR}/learned.json ${REMOTE_DIR}/learned.json.backup.$(date +%Y%m%d_%H%M%S) || true
-node -e 'const fs=require("fs"); const p="${REMOTE_DIR}"; const now=Date.now(); let deploy=0, first=0; try { const s=JSON.parse(fs.readFileSync(p+"/stats.json","utf8")); deploy=s.deployCount||0; first=s.firstDeployAt||0; } catch(e){} const stats={totalRequestsAllTime:0,groundedCount:0,llmCount:0,cachedCount:0,providerBreakdown:{},deployCount:deploy,firstDeployAt:first,recentRequests:[],referrerBreakdown:{},topicBreakdown:{},hourlyRequests:{},lastPipeline:[],sessions:[],providerHealth:{}}; fs.writeFileSync(p+"/stats.json", JSON.stringify(stats,null,2)); fs.writeFileSync(p+"/learned.json", JSON.stringify({stashed:[],learned:[],learnedCount:0,lastThinkAt:0,scoredHistory:[]},null,2)); console.log("Remote stats reset complete");'
-`;
+  // Copy the reset script to the VM and run it there to avoid complex shell escaping.
+  const remoteScriptPath = '/tmp/reset-stats.js';
+  const remoteCommand = `sudo cp ${REMOTE_DIR}/stats.json ${REMOTE_DIR}/stats.json.backup.$(date +%Y%m%d_%H%M%S) || true; sudo cp ${REMOTE_DIR}/learned.json ${REMOTE_DIR}/learned.json.backup.$(date +%Y%m%d_%H%M%S) || true; sudo cp /tmp/reset-stats.js ${REMOTE_DIR}/reset-stats.js && cd ${REMOTE_DIR} && sudo node reset-stats.js`;
   execSync(
-    `gcloud compute ssh ${VM_NAME} --zone=${VM_ZONE} --project=${VM_PROJECT} --command="${remoteCommand.replace(/"/g, '\\"')}"`,
+    `gcloud compute scp ${__filename} ${VM_NAME}:${remoteScriptPath} --zone=${VM_ZONE} --project=${VM_PROJECT}`,
+    { stdio: 'inherit', cwd: repoRoot }
+  );
+  execSync(
+    `gcloud compute ssh ${VM_NAME} --zone=${VM_ZONE} --project=${VM_PROJECT} --command='${remoteCommand}'`,
     { stdio: 'inherit', cwd: repoRoot }
   );
   console.log('Remote reset complete. Restart the service if needed:');
   console.log(`  gcloud compute ssh ${VM_NAME} --zone=${VM_ZONE} --project=${VM_PROJECT} --command="sudo systemctl restart recruiter-chat-api"`);
 } else {
-  console.log('Resetting local stats...');
-  backupAndReset(repoRoot);
-  console.log('Local reset complete.');
+  const targetDir = process.cwd();
+  console.log(`Resetting stats in ${targetDir}...`);
+  backupAndReset(targetDir);
+  console.log('Reset complete.');
 }
