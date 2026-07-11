@@ -2187,6 +2187,22 @@ const GEN_OVERCLAIM = /\b(long history|years of experience|many years|several ye
 // Common capitalized words that don't need to exist in the source facts
 const GEN_ENTITY_ALLOWLIST = new Set(['He', 'His', 'Him', 'The', 'A', 'An', 'In', 'On', 'At', 'As', 'With', 'When', 'If', 'For', 'And', 'But', 'Or', 'So', 'To', 'Of', 'By', 'From', 'This', 'That', 'These', 'Those', 'It', 'Its', 'They', 'While', 'Although', 'Because', 'Overall', 'Currently', 'Recently', 'Bradley', 'Matera', 'Brad', 'B.S', 'B', 'S', 'U']);
 
+// Lightweight validator for the local Ollama generative fallback.
+// Keeps the safety/slop guards but is less strict than the network validator
+// because the fallback source is already grounded RAG facts.
+function validateFallbackReply(text) {
+  const t = String(text || '').trim();
+  if (t.length < 20 || t.length > 600) return false;
+  if (GEN_FALSE_CLAIMS.test(t)) return false;
+  if (GEN_SLOP.test(t)) return false;
+  if (GEN_OVERCLAIM.test(t)) return false;
+  if (!/\b(bradley|brad|he|his)\b/i.test(t)) return false;
+  if (/\b(I|I'm|I've|my|we|our)\b/.test(t)) return false;
+  if (/"|\*|pause|scout here|as scout|hi,|hello,/i.test(t)) return false;
+  if (/^(facts:|q:|question:|answer:|rephrase|text:)/i.test(t)) return false;
+  return true;
+}
+
 function validateGenerative(text, groundedReply) {
   const t = String(text || '').trim();
   if (t.length < 25 || t.length > 600) return false;
@@ -3155,7 +3171,7 @@ app.post('/api/chat', async (req, res) => {
     if (!generated && GEN_ENABLED && !isNetworkCircuitOpen() && !mustStayGrounded(userMessage, history)) {
       try {
         const genReply = await callGenerativeRag(knowledge, userMessage, grounded.reply, history, 8000);
-        if (genReply && validateGenerative(genReply, grounded.reply)) {
+        if (genReply && validateFallbackReply(genReply)) {
           reply = genReply;
           provider = 'ollama';
           model = GEN_MODEL;
