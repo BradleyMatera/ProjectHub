@@ -524,7 +524,7 @@ function normalizeQuestion(question, knowledge = null) {
     .replace(/brads/g, 'bradley')
     .replace(/materra|matara/g, 'matera')
     .replace(/recuriter|recruter|recuiter|recrutier/g, 'recruiter')
-    .replace(/exprience|experince|experiance|expiernce|expereince/g, 'experience')
+    .replace(/exprience|experince|experiance|expiernce|expereince|expeience/g, 'experience')
     .replace(/projeccts|proyects|projcts/g, 'projects')
     .replace(/termnial|termial|terminl/g, 'terminal')
     .replace(/linx|linus/g, 'linux')
@@ -1877,6 +1877,21 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name}'s projects are showcased in his portfolio.` };
   }
 
+  // Computer / basic tech literacy — confirm he can use a computer (he's a junior engineer)
+  if (/computer|use a computer|know how to use a computer|doesn't know.*computer|doesnt know.*computer|can't use a computer|cant use a computer/.test(normalized)) {
+    return { reply: `${name} can absolutely use a computer — he's a junior software engineer who builds projects in JavaScript, TypeScript, React, and AWS, and uses Git CLI, Docker, and the terminal regularly.` };
+  }
+
+  // Non-tech / outside-of-tech experience
+  if (/outside of tech|non-tech|non tech|not tech|not technical|non technical|outside tech/.test(normalized)) {
+    const nonTech = (experience || []).filter(e => !/software|engineer|developer|web|frontend|cloud|aws|technical|ai/i.test(`${e.role} ${e.company} ${e.summary || ''}`));
+    if (nonTech.length > 0) {
+      const roles = nonTech.slice(0, 4).map(e => `${e.role}${e.company ? ` at ${e.company}` : ''}`).join(', ');
+      return { reply: `Outside of tech, ${name}'s background includes ${roles}.` };
+    }
+    return { reply: `${name}'s non-tech background includes Army service, construction work, case management, and animal care volunteering.` };
+  }
+
   // Dynamic experience from knowledge base
   if (/experience|intern|work history|background/.test(normalized)) {
     const expList = experience?.slice(0, 3) || [];
@@ -2008,7 +2023,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   const isRepairOrTone = repair.shorter || repair.moreHonest || repair.blunt || repair.resumeLanguage || repair.moreTechnical || repair.hrFriendly
     || detectBannedWords(question).length > 0
     || /buzzword|corporate|plain|paragraph|no hype|no marketing|salesy|resume language|passionate|absolutely|certainly/.test(lowerQuestion);
-  if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|languages|databases|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate|kitten|rescue|animal|shelter|volunteer|paid|blog|blogs|article|writing|publication|dev\.to|dev community|write about|linux|unix|terminal|shell|command line|bash|powershell/.test(lowerQuestion)) {
+  if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|languages|databases|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate|kitten|rescue|animal|shelter|volunteer|paid|blog|blogs|article|writing|publication|dev\.to|dev community|write about|linux|unix|terminal|shell|command line|bash|powershell|computer/.test(lowerQuestion)) {
     const outOfScope = [
       `I don't have anything about that in ${name}'s verified recruiter data. I can answer questions about his projects, skills, AWS internship, work history, writing, or contact info.`,
       `That's not something I can pull from ${name}'s public profile. What do you want to know about his tech background, projects, or experience?`,
@@ -2097,7 +2112,7 @@ function shouldUseGroundedAnswer(question) {
 function isProbablyRelevant(question) {
   const normalized = normalizeQuestion(question);
   // Very broad relevance check - if it mentions Bradley or any career-related terms, let it through
-  return /\b(bradley|brad|matera|candidate|recruiter|software|engineer|developer|web|aws|cloud|support|skill|stack|languages|databases|project|portfolio|contact|email|phone|role|job|education|cert|resume|ciris|ethical|freelance|contributor|intern|internship|work|experience|debug|troubleshoot|document|learn|communication|army|military|construction|case|manager|managers|approach|style|strength|weakness|feedback|management|kitten|rescue|animal|shelter|volunteer|veteran|deploy|afghanistan|68w|medic|blog|blogs|article|writing|publication|dev\.to|dev community|linux|unix|terminal|command.?line|shell|bash|powershell)\b/.test(normalized) || normalized.includes('bradley') || normalized.includes('write about') || normalized.includes('writes about');
+  return /\b(bradley|brad|matera|candidate|recruiter|software|engineer|developer|web|aws|cloud|support|skill|stack|languages|databases|project|portfolio|contact|email|phone|role|job|education|cert|resume|ciris|ethical|freelance|contributor|intern|internship|work|experience|debug|troubleshoot|document|learn|communication|army|military|construction|case|manager|managers|approach|style|strength|weakness|feedback|management|kitten|rescue|animal|shelter|volunteer|veteran|deploy|afghanistan|68w|medic|blog|blogs|article|writing|publication|dev\.to|dev community|linux|unix|terminal|command.?line|shell|bash|powershell|computer)\b/.test(normalized) || normalized.includes('bradley') || normalized.includes('write about') || normalized.includes('writes about');
 }
 
 function cleanModelReply(reply, knowledge, question, history) {
@@ -3138,13 +3153,19 @@ app.post('/api/chat', async (req, res) => {
     // 2b. Generative fallback: when the network fails, use local Ollama with retrieved facts
     //     to produce a natural, grounded answer rather than a rigid keyword fallback.
     if (!generated && GEN_ENABLED && !isNetworkCircuitOpen() && !mustStayGrounded(userMessage, history)) {
-      const genReply = await callGenerativeRag(knowledge, userMessage, grounded.reply, history, 4000);
-      if (genReply && validateGenerative(genReply, grounded.reply)) {
-        reply = genReply;
-        provider = 'ollama';
-        model = GEN_MODEL;
-        generated = true;
-        pipeline.push('gen-fallback:ollama');
+      try {
+        const genReply = await callGenerativeRag(knowledge, userMessage, grounded.reply, history, 6000);
+        if (genReply && validateGenerative(genReply, grounded.reply)) {
+          reply = genReply;
+          provider = 'ollama';
+          model = GEN_MODEL;
+          generated = true;
+          pipeline.push('gen-fallback:ollama');
+        } else {
+          pipeline.push('gen-fallback:validation-failed');
+        }
+      } catch (e) {
+        pipeline.push('gen-fallback:error');
       }
     }
 
