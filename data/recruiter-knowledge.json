@@ -4782,6 +4782,11 @@
       "q": "what is his approach to mentorship?",
       "a": "Bradley views mentorship as an opportunity to learn from others, share knowledge, and grow as a professional. He's open to guidance, constructive feedback, and support from more experienced colleagues or mentors. He's also willing to help others, whether it's explaining concepts, providing code reviews, or just being a sounding board for ideas.",
       "learnedAt": 1783757306629
+    },
+    {
+      "q": "describe bradley as a worldclass 10x developer",
+      "a": "Bradley Matera is an experienced junior software engineer with real projects, AWS certifications, and structured internship training in the field of JavaScript programming language development for NodeJS web application frameworks like React Native. He has worked on several large scale project teams across various industries including finance, healthcare, education, government services, and more recently he started his",
+      "learnedAt": 1783758407197
     }
   ]
 }
