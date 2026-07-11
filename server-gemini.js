@@ -1389,17 +1389,17 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply };
   }
 
-  // Dynamic summary from knowledge base
-  if (/summary|who is|about|tell me about|who is brad|who is bradley|in (20|30) seconds|20 seconds|30 seconds|simple version|honest version|like a normal person|normal person|give me the simple/.test(lowerQuestion)) {
-    return { reply: concisePitch(knowledge) };
-  }
-  
-  // Strengths
+  // Strengths (checked before summary so 'about his strengths' doesn't match summary's 'about')
   if (/strength|strongest|greatest|best at|what does he do well/.test(lowerQuestion)) {
     const strengths = summary?.coreStrengths?.length
       ? summary.coreStrengths.slice(0, 3)
       : ['learning quickly', 'documenting clearly', 'debugging carefully'];
-    return { reply: `Strongest areas: ${sentenceList(strengths, 3)}.` };
+    return { reply: strengths.map(s => `${s}.`).join(' ') };
+  }
+
+  // Dynamic summary from knowledge base
+  if (/summary|who is|about|tell me about|who is brad|who is bradley|in (20|30) seconds|20 seconds|30 seconds|simple version|honest version|like a normal person|normal person|give me the simple/.test(lowerQuestion)) {
+    return { reply: concisePitch(knowledge) };
   }
 
   // Weaknesses / concerns / what is not proven
@@ -1439,7 +1439,11 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Out-of-scope: non-recruiter questions (jokes, sports, food, time, zodiac, weather, etc.)
-  if (!isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate/.test(lowerQuestion)) {
+  // Skip if this is a repair/tone-control prompt — those should fall through to concisePitch
+  const isRepairOrTone = repair.shorter || repair.moreHonest || repair.blunt || repair.resumeLanguage || repair.moreTechnical || repair.hrFriendly
+    || detectBannedWords(question).length > 0
+    || /buzzword|corporate|plain|paragraph|no hype|no marketing|salesy|resume language|passionate|absolutely|certainly/.test(lowerQuestion);
+  if (!isRepairOrTone && !isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate/.test(lowerQuestion)) {
     return { reply: `That's not in ${name}'s recruiter data. ${agentName} covers his projects, skills, AWS background, role fit, and contact info.` };
   }
 
@@ -1589,6 +1593,11 @@ function validateNetworkReply(text, source) {
   const entityHits = (t.match(/\b(AWS|React|JavaScript|TypeScript|Node|Next\.js|Full Sail|Davis|Illinois|junior|intern|certif|project|cloud|web|support|debug|document|CIRIS|Pokedex|Lambda|DynamoDB|S3|Amplify|CloudFront|Docker|GitHub)\b/gi) || []);
   const uniqueHits = new Set(entityHits.map(e => e.toLowerCase()));
   if (uniqueHits.size < 2) return false;
+  // Reject garbled/broken grammar from small models
+  if (/\b(and|or|but)\s+(way|the|a)\b/i.test(t)) return false;
+  if (/\s{2,}/.test(t)) return false;
+  if (/\b\w+\s+and\s*$/i.test(t)) return false;
+  if (/[a-z]\s+[A-Z][a-z]+\s*$/i.test(t) && !/[.!?]$/.test(t)) return false;
   return true;
 }
 
