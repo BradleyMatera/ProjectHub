@@ -1723,17 +1723,6 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name} has database exposure through ${dbSkills || 'SQL and DynamoDB'} from school projects and his AWS internship. It's not production DBA work, but he can read schemas and write basic queries.` };
   }
 
-  // Linux / terminal / command line / shell
-  if (/\blinux\b|\bunix\b|terminal|command.?line|shell|bash|powershell|cmd\.exe|cli\b|use.*terminal|can he use.*terminal|know.*linux|command prompt/.test(lowerQuestion)) {
-    const tools = (skills?.toolsAndWorkflows || []).filter(s => /linux|terminal|shell|command|git cli/i.test(s));
-    const hasDocker = (skills?.toolsAndWorkflows || []).some(s => /docker/i.test(s));
-    const hasAWS = (skills?.cloudAndInfrastructure || []).some(s => /aws/i.test(s));
-    if (tools.length || hasDocker || hasAWS) {
-      return { reply: `${name} has used the terminal and command line for Docker, Git CLI, AWS CLI workflows, GitHub Actions, and basic shell tasks. He's comfortable at a junior level but is not a Linux administrator.` };
-    }
-    return { reply: `The data doesn't show direct Linux or terminal-heavy experience. His strongest areas are JavaScript/TypeScript, React, Node.js, and AWS support work.` };
-  }
-
   // Dynamic skills from knowledge base
   if (/skill|stack|technical|technologies|what does he know|what can he do|what stack/.test(lowerQuestion)) {
     const langs = (skills?.languagesAndFrameworks || []).slice(0, 3).join(', ');
@@ -1743,6 +1732,17 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
       return { reply: `${name}'s stack: ${[langs, cloud && `cloud: ${cloud}`, tools && `tools: ${tools}`].filter(Boolean).join('; ')}.` };
     }
     return { reply: `${name}'s skills are detailed in his full profile.` };
+  }
+
+  // Linux / terminal / command line / shell (placed before specific-skill yes/no so typo'd terminal questions don't fall through)
+  if (/\blinux\b|\bunix\b|terminal|command.?line|shell|bash|powershell|cmd\.exe|cli\b|use.*terminal|can he use.*terminal|know.*linux|command prompt/.test(lowerQuestion)) {
+    const tools = (skills?.toolsAndWorkflows || []).filter(s => /linux|terminal|shell|command|git cli/i.test(s));
+    const hasDocker = (skills?.toolsAndWorkflows || []).some(s => /docker/i.test(s));
+    const hasAWS = (skills?.cloudAndInfrastructure || []).some(s => /aws/i.test(s));
+    if (tools.length || hasDocker || hasAWS) {
+      return { reply: `${name} has used the terminal and command line for Docker, Git CLI, AWS CLI workflows, GitHub Actions, and basic shell tasks. He's comfortable at a junior level but is not a Linux administrator.` };
+    }
+    return { reply: `The data doesn't show direct Linux or terminal-heavy experience. His strongest areas are JavaScript/TypeScript, React, Node.js, and AWS support work.` };
   }
 
   // Can he code / does he know how to code (broad, not a specific language)
