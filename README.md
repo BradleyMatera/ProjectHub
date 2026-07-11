@@ -52,7 +52,8 @@ ProjectHub has three layers, all running on free infrastructure:
 ┌─────────────────────────────────────────────────────────────────┐
 │  FRONTEND (GitHub Pages)                                        │
 │  index.html · ProjectHub.js · data.js · logic.js · ui.js       │
-│  Vanilla JS · No build step · No framework · No bundler         │
+│  Vanilla JS · No framework · No bundler for widget              │
+│  Analytics dashboard: Vite + Carbon Design System build         │
 └────────────────────────┬────────────────────────────────────────┘
                          │ POST /api/chat
                          ▼
@@ -472,7 +473,26 @@ All tests run against the live API at `https://projecthub-chat.bradleymatera.dev
 
 ## 📈 Analytics & Tracking
 
-The server tracks detailed analytics in `stats.json` on the VM:
+The server tracks detailed analytics in `stats.json` on the VM. These are visualized on the live GitHub Pages site through an embedded analytics dashboard built with Carbon Design System.
+
+### Embedded dashboard (`index.html`)
+
+The dashboard fetches from multiple public data sources and visualizes them with Carbon tiles, charts, and data tables:
+
+| Data source | Endpoint | What is shown |
+|-------------|----------|---------------|
+| Scout chat API health | `GET https://projecthub-chat.bradleymatera.dev/health` | Request totals, reply source mix, provider health, recent sessions, hourly trends, topic breakdown, referrers |
+| GitHub repository | `GET https://api.github.com/repos/BradleyMatera/ProjectHub` | Stars, forks, watchers, open issues |
+| GitHub contributors | `GET https://api.github.com/repos/BradleyMatera/ProjectHub/contributors` | Contributor count |
+
+Sensitive fields are sanitized on the client:
+- Recent request questions are **not** displayed; only counts and aggregates are shown.
+- Referrers are reduced to domain-level only.
+- Session IDs and full request text are excluded from the public view.
+
+The dashboard uses `@carbon/charts` for line, bar, and donut charts, `@carbon/web-components` for UI controls, and `@carbon/styles` for layout and typography. The source lives in `analytics/main.js` and `analytics/style.css`, and the production bundle is built with Vite into `analytics/dist/`.
+
+### Tracked metrics
 
 | Metric | What it tracks |
 |--------|---------------|
@@ -571,7 +591,11 @@ Manually trigger think mode to process stashed questions immediately.
 | `utils.js` | Shared helpers (GitHub API fetching) |
 | `server-gemini.js` | Backend server — chat API, LLM network, learning system, analytics |
 | `data/recruiter-knowledge.json` | Canonical knowledge base (read by server, written by think mode) |
-| `index.html` | Public GitHub Pages landing site + live dashboard |
+| `index.html` | Public GitHub Pages landing site + live dashboard + analytics |
+| `analytics/main.js` | Live analytics dashboard source (multi-source data + Carbon) |
+| `analytics/style.css` | Dashboard-specific Carbon overrides |
+| `analytics/dist/` | Built analytics assets for GitHub Pages |
+| `vite.config.js` | Vite build config for the analytics bundle |
 | `local-test.html` | Local test page for the widget |
 | `live-test.html` | Cache-busting test of the live GitHub Pages script |
 | `deploy-gcp.sh` | Deploy script — copies server-gemini.js to GCP VM and restarts service |
@@ -597,8 +621,8 @@ ProjectHub runs on **zero recurring AI spend** and only free-tier infrastructure
 ### Frontend — free
 
 - **GitHub Pages** hosts all static assets free for public repos
-- No build step, no bundler, no CI/CD needed
-- Widget consumed via one `<script>` tag
+- Chat widget: no build step, no bundler, no CI/CD needed; consumed via one `<script>` tag
+- Live analytics dashboard: built with Vite + Carbon; production bundle (`analytics/dist/`) is committed to the repo
 
 ### Backend — free
 
@@ -636,9 +660,10 @@ ProjectHub runs on **zero recurring AI spend** and only free-tier infrastructure
 
 ### Frontend (GitHub Pages)
 
-1. Commit and push to `master`
-2. GitHub Pages rebuilds automatically from the default branch
-3. Live at `https://bradleymatera.github.io/ProjectHub/`
+1. If you changed the analytics dashboard source, install dependencies and build: `npm install && npm run build`
+2. Commit and push to `master` (include `analytics/dist/` if it changed)
+3. GitHub Pages rebuilds automatically from the default branch
+4. Live at `https://bradleymatera.github.io/ProjectHub/`
 
 ### Backend (GCP VM)
 
