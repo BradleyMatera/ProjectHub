@@ -4937,6 +4937,11 @@
       "q": "okay, back to bradley. what does he do?",
       "a": "He builds and supports web applications, writes documentation, debugs issues, integrates APIs, and works with cloud services in training and project environments.",
       "learnedAt": 1783805078087
+    },
+    {
+      "q": "what is bradleys favorite programming language",
+      "a": "The information doesn't specify Bradley's favorite programming language. However, he has a strong focus on JavaScript and TypeScript, which he uses for web development with React and Node.js. If you have any other questions about his skills or projects, feel free to ask!",
+      "learnedAt": 1783809307796
     }
   ],
   "blogCatalog": {
