@@ -702,12 +702,12 @@ function shapeReply(text, question, knowledge) {
   if (shape.paragraph) {
     out = out.replace(/<br>/g, ' ').replace(/^- /gm, '').replace(/\s{2,}/g, ' ');
     // Keep paragraphs concise even when no explicit word cap is given
-    out = truncateWords(out, 80);
+    out = truncateWords(out, 100);
   }
 
   // Default brevity cap for chat widget answers unless a specific format was requested
   if (!shape.maxWords && !shape.bullets && !shape.oneSentence && !shape.paragraph && !shape.json && !shape.table && !shape.headline) {
-    out = truncateWords(out, 80);
+    out = truncateWords(out, 100);
   }
 
   return out.trim().replace(/\s{2,}/g, ' ');
