@@ -13,11 +13,12 @@
 }
 
 #projecthub-analytics.ph-dark {
-  --ph-analytics-bg: #161616;
+  --ph-analytics-bg: transparent;
   --ph-analytics-surface: #262626;
   --ph-analytics-text: #f4f4f4;
   --ph-analytics-muted: #c6c6c6;
   --ph-analytics-border: #393939;
+  background: transparent;
 }
 
 .ph-analytics__header {
