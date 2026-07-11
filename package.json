@@ -24,7 +24,7 @@
   },
   "homepage": "https://bradleymatera.github.io/ProjectHub/",
   "devDependencies": {
-    "vite": "^5.3.3"
+    "vite": "^6.4.3"
   },
   "dependencies": {
     "@carbon/charts": "^1.22.0",
