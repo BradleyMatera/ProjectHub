@@ -353,7 +353,9 @@ def main():
     total_llm_ratio = 0
     total_avg_latency = 0
 
-    for scenario in SCENARIOS:
+    for idx, scenario in enumerate(SCENARIOS):
+        if idx > 0:
+            time.sleep(2)  # avoid server-side rate limiting between scenarios
         print(f"\n{scenario['name']}: {scenario['description']}")
         result = run_scenario(args.url, scenario, verbose=args.verbose)
         all_results.append(result)
