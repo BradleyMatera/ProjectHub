@@ -4,6 +4,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 
@@ -194,9 +196,20 @@ app.get('/health', async (req, res) => {
     status: 'online',
     deployedAt: DEPLOYED_AT,
     uptimeSeconds: Math.floor(process.uptime()),
+    // This-restart stats
     totalRequestsServed,
     lastReplyProvider,
     totalFreeUsedToday,
+    // Persistent all-time stats
+    allTimeRequests: persistentStats.totalRequestsAllTime,
+    groundedCount: persistentStats.groundedCount,
+    llmCount: persistentStats.llmCount,
+    cachedCount: persistentStats.cachedCount,
+    providerBreakdown: persistentStats.providerBreakdown,
+    deployCount: persistentStats.deployCount,
+    firstDeployAt: persistentStats.firstDeployAt,
+    recentRequests: persistentStats.recentRequests,
+    // Provider table
     providerOrder: PROVIDER_ORDER,
     providers,
     genModel: process.env.GEN_MODEL || 'smollm2:135m',
@@ -971,8 +984,13 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name} has debugging and cloud troubleshooting training from the AWS internship labs and his projects. He's junior, so he still needs mentorship for complex production issues.` };
   }
 
+  // Site purpose / identity (checked before greeting so "hey what is this thing" gets the site answer)
+  if (/what is this site for|what page am i on|what is this thing|what is projecthub|what does this site do|who made this|what is this chatbot/.test(lowerQuestion)) {
+    return { reply: `This is ${name}'s portfolio site with an embedded recruiter assistant. ${agentName} answers questions about his projects, skills, AWS background, education, and role fit.` };
+  }
+
   // Smoke tests / greetings
-  if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b/.test(lowerQuestion.trim()) || /are you online|say hello/.test(lowerQuestion)) {
+  if (/^(hey|hi|hello|yo|sup)\b/.test(lowerQuestion.trim()) || /are you online|say hello/.test(lowerQuestion)) {
     return { reply: `${agentName} here — I answer questions about ${name}'s projects, AWS internship, skills, role fit, and contact info. What do you want to know?` };
   }
   if (/what can (you|this bot) (help|answer|do)/.test(lowerQuestion)) {
@@ -999,8 +1017,8 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   if (/what model|what provider|what llm|what ai|which model|which provider/.test(lowerQuestion)) {
     return { reply: `${agentName} uses a free multi-provider network (Groq, Cloudflare, GitHub Models, Gemini) and falls back to a small local Ollama model on the GCP VM.` };
   }
-  if (/what is this site for|what page am i on|what is this thing|what is projecthub|what does this site do|who made this/.test(lowerQuestion)) {
-    return { reply: `This is ${name}'s portfolio site with an embedded recruiter assistant. ${agentName} answers questions about his projects, skills, AWS background, education, and role fit.` };
+  if (/what is this chatbot using|does this use ollama|is this ai local|is my chat private|what data do you use/.test(lowerQuestion)) {
+    return { reply: `${agentName} is grounded in ${name}'s public recruiter data file. Nothing private is stored beyond short session context.` };
   }
 
   // Repair: shorter / more honest / tone changes using previous answer
@@ -1050,8 +1068,15 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     }
   }
   
-  // Clarifying question for truly ambiguous prompts (test suite section 11)
-  if (/^(can he do it|compare him to the job|what about that project|what happened there|is it relevant|was that real)\??$/.test(lowerQuestion.trim()) && !lastAssistant) {
+  // Compare him to the job / role comparison
+  if (/compare him to the job|compare to the job|how does he compare|how does he stack up|compare him/.test(lowerQuestion)) {
+    const role = findRoleInQuestion(question);
+    if (role) return handleRoleFit(knowledge, question, role);
+    return { reply: `${name} is a junior engineer with real React/Next.js projects, AWS certifications, and structured internship training. He fits junior web, cloud support, or technical support roles. He's not a fit for senior, lead, or architect positions.` };
+  }
+
+  // Clarifying question for truly ambiguous bare follow-ups (test suite section 11)
+  if (/^(can he do it|what about that project|what happened there|is it relevant|was that real)\??$/.test(lowerQuestion.trim()) && !lastAssistant) {
     return { reply: `Which part is meant: his AWS internship, a specific project, or his overall role fit? Point at one and ${agentName} will answer directly.` };
   }
   
@@ -1283,8 +1308,18 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name}'s work history is available in his full profile.` };
   }
   
+  // What makes him different / differentiator (checked before no-bs so it gives a specific answer)
+  if (/what makes him different|different from other|what sets him apart|stands out|why him over/.test(lowerQuestion)) {
+    const certsList = (certifications || []).slice(0, 2).map(c => c.name || c);
+    const shortCerts = certsList.map(c => c.replace('AWS Certified ', 'AWS '));
+    const topProjects = (projects || []).slice(0, 2).map(p => p.name);
+    let reply = `${name} has both real shipped projects (${topProjects.join(', ')}) and ${sentenceList(shortCerts, 2)} certs.`;
+    reply += ` Most juniors have one or the other. He also documents carefully and debugs methodically, which means less hand-holding.`;
+    return { reply };
+  }
+
   // Naturalness / no-bs / why should I care (checked before the generic summary so specific intent wins)
-  if (/no bs|no bullshit|why should i care|worth calling|worth interviewing|is he worth|is he good|is he legit|real projects|does he write|can he talk|can he troubleshoot|does he write docs|what can he actually do|what does he actually know|what does he actually do|what makes him different|different from other|tell me straight|just the facts|give me the simple version|give me the honest version|is he the real deal|not just a portfolio|not a portfolio/.test(lowerQuestion)) {
+  if (/no bs|no bullshit|why should i care|worth calling|worth interviewing|is he worth|is he good|is he legit|real projects|does he write|can he talk|can he troubleshoot|does he write docs|what can he actually do|what does he actually know|what does he actually do|tell me straight|just the facts|give me the simple version|give me the honest version|is he the real deal|not just a portfolio|not a portfolio/.test(lowerQuestion)) {
     const certsList = (certifications || []).slice(0, 2).map(c => c.name || c);
     const topProjects = (projects || []).slice(0, 3).map(p => p.name);
     const shortCerts = certsList.map(c => c.replace('AWS Certified ', 'AWS '));
@@ -1702,8 +1737,64 @@ function mustStayGrounded(question, history) {
 let llmHealthy = LLM_PROVIDER !== 'ollama'; // ollama on the 1GB VM is treated as garnish only
 let llmLastFailAt = 0;
 const LLM_RETRY_AFTER_MS = 10 * 60 * 1000;
-let totalRequestsServed = 0;
+// ============ PERSISTENT STATS ============
+const STATS_FILE = path.join(__dirname, 'stats.json');
+const STATS_FLUSH_MS = 5 * 1000; // flush to disk at most every 5s
+let statsDirty = false;
+let lastStatsFlush = 0;
+
+const defaultStats = {
+  totalRequestsAllTime: 0,
+  groundedCount: 0,
+  llmCount: 0,
+  cachedCount: 0,
+  providerBreakdown: {},
+  deployCount: 0,
+  firstDeployAt: 0,
+  recentRequests: [] // last 25 {q, provider, ts}
+};
+
+let persistentStats;
+try {
+  const raw = fs.readFileSync(STATS_FILE, 'utf8');
+  persistentStats = { ...defaultStats, ...JSON.parse(raw) };
+} catch {
+  persistentStats = { ...defaultStats };
+}
+persistentStats.deployCount = (persistentStats.deployCount || 0) + 1;
+if (!persistentStats.firstDeployAt) persistentStats.firstDeployAt = Date.now();
+let totalRequestsServed = 0; // this-restart counter
 let lastReplyProvider = null;
+
+function recordRequest(question, provider) {
+  totalRequestsServed++;
+  persistentStats.totalRequestsAllTime++;
+  if (provider === 'grounded') persistentStats.groundedCount++;
+  else if (provider === 'cached') persistentStats.cachedCount++;
+  else persistentStats.llmCount++;
+  persistentStats.providerBreakdown[provider] = (persistentStats.providerBreakdown[provider] || 0) + 1;
+  persistentStats.recentRequests.unshift({ q: String(question).slice(0, 80), provider, ts: Date.now() });
+  if (persistentStats.recentRequests.length > 25) persistentStats.recentRequests.pop();
+  statsDirty = true;
+  const now = Date.now();
+  if (statsDirty && now - lastStatsFlush > STATS_FLUSH_MS) {
+    flushStats();
+  }
+}
+
+function flushStats() {
+  try {
+    fs.writeFileSync(STATS_FILE, JSON.stringify(persistentStats, null, 2));
+    statsDirty = false;
+    lastStatsFlush = Date.now();
+  } catch (e) {
+    console.error('Failed to flush stats:', e.message);
+  }
+}
+
+// Flush on graceful shutdown
+process.on('SIGTERM', () => { flushStats(); process.exit(0); });
+process.on('SIGINT', () => { flushStats(); process.exit(0); });
 
 app.post('/api/chat', async (req, res) => {
   let userMessage = '';
@@ -1711,7 +1802,6 @@ app.post('/api/chat', async (req, res) => {
     userMessage = String(req.body.message || '').trim();
     if (!userMessage) return res.status(400).json({ error: 'Missing message.' });
     if (userMessage.length > 600) return res.status(400).json({ error: 'Message is too long.' });
-    totalRequestsServed++;
 
     const history = Array.isArray(req.body.history) ? req.body.history : [];
     const hasHistory = history.length > 0;
@@ -1719,6 +1809,7 @@ app.post('/api/chat', async (req, res) => {
     const cached = !hasHistory ? responseCache.get(cacheKey) : null;
     if (cached && (Date.now() - cached.ts) < RESPONSE_CACHE_MS) {
       lastReplyProvider = cached.payload.provider || 'cached';
+      recordRequest(userMessage, 'cached');
       return res.json({ ...cached.payload, cached: true });
     }
 
@@ -1726,6 +1817,7 @@ app.post('/api/chat', async (req, res) => {
     if (!knowledge) {
       const payload = { ...buildGroundedFallbackPayload({}, userMessage, history), provider: 'grounded', fallback: true };
       lastReplyProvider = 'grounded';
+      recordRequest(userMessage, 'grounded');
       return res.json(payload);
     }
 
@@ -1761,15 +1853,20 @@ app.post('/api/chat', async (req, res) => {
     }
 
     lastReplyProvider = payload.provider;
+    recordRequest(userMessage, payload.provider);
     return res.json(payload);
   } catch (err) {
     console.error('Chat error:', err);
     const knowledge = knowledgeCache || {};
     const grounded = buildGroundedFallbackPayload(knowledge, userMessage, []);
     lastReplyProvider = 'grounded';
+    recordRequest(userMessage, 'grounded');
     return res.json({ reply: grounded.reply, provider: 'grounded', model: 'knowledge-json', fallback: true });
   }
 });
+
+// Flush stats after each request if dirty
+app.use((req, res, next) => { if (statsDirty) flushStats(); next(); });
 
 app.listen(PORT, '127.0.0.1', () => {
   console.log(`Recruiter chat API running on http://127.0.0.1:${PORT} with Ollama backend`);

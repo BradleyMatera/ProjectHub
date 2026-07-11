@@ -552,14 +552,14 @@
             <div class="metric-sub" id="live-uptime">--</div>
           </div>
           <div class="live-metric">
-            <div class="metric-label">Total requests</div>
+            <div class="metric-label">Requests this restart</div>
             <div class="metric-value" id="live-total">--</div>
-            <div class="metric-sub">Served by the chat API</div>
+            <div class="metric-sub" id="live-alltime">All-time: --</div>
           </div>
           <div class="live-metric">
-            <div class="metric-label">Free tier used today</div>
-            <div class="metric-value" id="live-used">--</div>
-            <div class="metric-sub">Across all providers</div>
+            <div class="metric-label">Answer breakdown</div>
+            <div class="metric-value" id="live-breakdown" style="font-size:0.95rem;line-height:1.5">--</div>
+            <div class="metric-sub" id="live-deploys">-- deploys</div>
           </div>
           <div class="live-metric">
             <div class="metric-label">Last provider</div>
@@ -575,13 +575,19 @@
               <th>Model</th>
               <th>Status</th>
               <th>Used today</th>
+              <th>All-time</th>
               <th>Daily limit</th>
             </tr>
           </thead>
           <tbody id="live-providers">
-            <tr><td colspan="5">Loading provider data…</td></tr>
+            <tr><td colspan="6">Loading provider data…</td></tr>
           </tbody>
         </table>
+
+        <h3 style="margin-top:1.5rem;font-size:0.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:0.05em">Recent requests</h3>
+        <div id="live-recent" style="font-size:0.82rem;color:var(--muted);max-height:200px;overflow-y:auto;margin-top:0.5rem">
+          <p style="color:var(--soft)">Loading…</p>
+        </div>
 
         <div class="refresh-bar">
           <span id="live-refresh">Refreshing every 5 seconds…</span>
@@ -661,9 +667,12 @@
       const elStatus = document.getElementById('live-status');
       const elUptime = document.getElementById('live-uptime');
       const elTotal = document.getElementById('live-total');
-      const elUsed = document.getElementById('live-used');
+      const elAllTime = document.getElementById('live-alltime');
+      const elBreakdown = document.getElementById('live-breakdown');
+      const elDeploys = document.getElementById('live-deploys');
       const elLast = document.getElementById('live-last');
       const elProviders = document.getElementById('live-providers');
+      const elRecent = document.getElementById('live-recent');
       const elUpdated = document.getElementById('live-updated');
       const elRefresh = document.getElementById('live-refresh');
 
@@ -698,21 +707,42 @@
           elStatus.textContent = data.ok ? 'Online' : 'Issue';
           elUptime.textContent = 'Uptime: ' + fmtUptime(data.uptimeSeconds);
           elTotal.textContent = typeof data.totalRequestsServed === 'number' ? data.totalRequestsServed.toLocaleString() : '--';
-          elUsed.textContent = typeof data.totalFreeUsedToday === 'number' ? data.totalFreeUsedToday.toLocaleString() : '--';
+          elAllTime.textContent = 'All-time: ' + (typeof data.allTimeRequests === 'number' ? data.allTimeRequests.toLocaleString() : '--');
+
+          const g = data.groundedCount || 0;
+          const l = data.llmCount || 0;
+          const c = data.cachedCount || 0;
+          elBreakdown.innerHTML = `<span style="color:#34d399">Grounded: ${g.toLocaleString()}</span><br><span style="color:#60a5fa">LLM: ${l.toLocaleString()}</span><br><span style="color:#fbbf24">Cached: ${c.toLocaleString()}</span>`;
+          elDeploys.textContent = (data.deployCount || 0) + ' deploys since ' + (data.firstDeployAt ? new Date(data.firstDeployAt).toLocaleDateString() : '--');
+
           elLast.textContent = data.lastReplyProvider ? data.lastReplyProvider : 'None yet';
 
+          const breakdown = data.providerBreakdown || {};
           const rows = (data.providers || []).map(p => {
             const used = typeof p.usedToday === 'number' ? p.usedToday : '--';
             const limit = p.limit ? p.limit.toLocaleString() : '∞';
+            const allTime = breakdown[p.slug] || 0;
             return `<tr>
               <td><strong>${p.slug}</strong></td>
               <td>${p.model || '--'}</td>
               <td><span class="provider-status ${providerClass(p)}">${providerLabel(p)}</span></td>
               <td>${used}</td>
+              <td>${allTime.toLocaleString()}</td>
               <td>${limit}</td>
             </tr>`;
           }).join('');
-          elProviders.innerHTML = rows || '<tr><td colspan="5">No provider data</td></tr>';
+          elProviders.innerHTML = rows || '<tr><td colspan="6">No provider data</td></tr>';
+
+          const recent = data.recentRequests || [];
+          if (recent.length === 0) {
+            elRecent.innerHTML = '<p style="color:var(--soft)">No requests yet.</p>';
+          } else {
+            elRecent.innerHTML = recent.map(r => {
+              const time = new Date(r.ts).toLocaleTimeString();
+              const color = r.provider === 'grounded' ? '#34d399' : r.provider === 'cached' ? '#fbbf24' : '#60a5fa';
+              return `<div style="padding:0.3rem 0;border-bottom:1px solid rgba(148,163,184,0.08)"><span style="color:${color}">${r.provider}</span> · <span style="color:var(--soft)">${time}</span> · ${r.q}</div>`;
+            }).join('');
+          }
 
           elUpdated.textContent = 'Last updated: ' + new Date().toLocaleTimeString();
           elRefresh.textContent = 'Refreshing every 5 seconds…';
