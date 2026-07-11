@@ -121,6 +121,22 @@ python3 /tmp/test-suite-verification.py
 | Edge Cases | `/tmp/test-suite-edge-cases.py` | 28 |
 | Verification | `/tmp/test-suite-verification.py` | 115 |
 
+### Conversation Tests
+
+Repository-level conversation tests exercise multi-turn behavior against the live API:
+
+```bash
+# Short scenario-based conversation test (8 scenarios, ~3-5 minutes)
+python3 test-conversation.py
+
+# Full-length conversation test (10 conversations, 8-15 messages each, ~5-8 minutes)
+# Tests memory, tone adaptation, context retention, repetition, contradictions, and follow-ups.
+python3 test-conversations-full.py
+
+# Run one conversation with verbose output
+python3 test-conversations-full.py --only "Follow-up heavy conversation" -v
+```
+
 ## Update Documentation
 
 1. Find the relevant `docs/` guide.
