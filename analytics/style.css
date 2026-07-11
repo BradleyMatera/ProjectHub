@@ -1,0 +1,170 @@
+/* Carbon styles are imported in main.js; this file holds ProjectHub-specific dashboard overrides. */
+
+#projecthub-analytics {
+  --ph-analytics-bg: #f4f4f4;
+  --ph-analytics-surface: #ffffff;
+  --ph-analytics-text: #161616;
+  --ph-analytics-muted: #525252;
+  --ph-analytics-border: #e0e0e0;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--ph-analytics-bg);
+  color: var(--ph-analytics-text);
+  padding: 1rem;
+}
+
+#projecthub-analytics.ph-dark {
+  --ph-analytics-bg: #161616;
+  --ph-analytics-surface: #262626;
+  --ph-analytics-text: #f4f4f4;
+  --ph-analytics-muted: #c6c6c6;
+  --ph-analytics-border: #393939;
+}
+
+.ph-analytics__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ph-analytics__title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.ph-analytics__subtitle {
+  color: var(--ph-analytics-muted);
+  margin: 0.25rem 0 0;
+}
+
+.ph-analytics__controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ph-analytics__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ph-analytics__tile {
+  background: var(--ph-analytics-surface);
+  border: 1px solid var(--ph-analytics-border);
+  border-radius: 0;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ph-analytics__tile-label {
+  font-size: 0.875rem;
+  color: var(--ph-analytics-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.16px;
+}
+
+.ph-analytics__tile-value {
+  font-size: 2rem;
+  font-weight: 300;
+  line-height: 1.2;
+}
+
+.ph-analytics__tile-comparison {
+  font-size: 0.875rem;
+  color: var(--ph-analytics-muted);
+}
+
+.ph-analytics__section {
+  background: var(--ph-analytics-surface);
+  border: 1px solid var(--ph-analytics-border);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ph-analytics__section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+}
+
+.ph-analytics__charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.ph-analytics__chart {
+  min-height: 300px;
+}
+
+.ph-analytics__table-wrap {
+  overflow-x: auto;
+}
+
+.ph-analytics__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.ph-analytics__table th,
+.ph-analytics__table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--ph-analytics-border);
+}
+
+.ph-analytics__table th {
+  font-weight: 600;
+  background: var(--ph-analytics-bg);
+}
+
+.ph-analytics__status {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--ph-analytics-border);
+  background: var(--ph-analytics-surface);
+}
+
+.ph-analytics__status--loading {
+  border-left: 4px solid #0f62fe;
+}
+
+.ph-analytics__status--error {
+  border-left: 4px solid #da1e28;
+}
+
+.ph-analytics__status--info {
+  border-left: 4px solid #198038;
+}
+
+.ph-analytics__skeleton {
+  background: linear-gradient(90deg, var(--ph-analytics-border) 25%, var(--ph-analytics-surface) 50%, var(--ph-analytics-border) 75%);
+  background-size: 200% 100%;
+  animation: ph-skeleton 1.5s infinite;
+  height: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+@keyframes ph-skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (max-width: 672px) {
+  .ph-analytics__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ph-analytics__charts {
+    grid-template-columns: 1fr;
+  }
+}

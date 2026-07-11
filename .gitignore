@@ -9,6 +9,7 @@ aichat.md
 .netlify/
 build/
 dist/
+!analytics/dist/
 .git.backup/
 
 # AI / agent / test artifacts

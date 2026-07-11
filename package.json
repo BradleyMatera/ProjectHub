@@ -4,6 +4,9 @@
   "description": "Free embeddable AI recruiter assistant widget using a multi-provider LLM network and grounded RAG",
   "main": "ProjectHub.js",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -17,5 +20,12 @@
     "url": "https://github.com/BradleyMatera/ProjectHub/issues"
   },
   "homepage": "https://bradleymatera.github.io/ProjectHub/",
-  "dependencies": {}
+  "devDependencies": {
+    "vite": "^5.3.3"
+  },
+  "dependencies": {
+    "@carbon/charts": "^1.22.0",
+    "@carbon/styles": "^1.67.0",
+    "@carbon/web-components": "^2.18.0"
+  }
 }

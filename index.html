@@ -8,6 +8,7 @@
   <meta http-equiv="Expires" content="0" />
   <meta name="description" content="ProjectHub is a free, embeddable AI recruiter assistant named Scout. It showcases Bradley Matera's projects, skills, and background through a multi-provider LLM network and grounded RAG." />
   <title>ProjectHub · Scout Recruiter Assistant</title>
+  <link rel="stylesheet" href="analytics/dist/analytics.css" />
   <style>
     :root {
       --bg-1: #020617;
@@ -739,14 +740,16 @@
         </ul>
       </section>
 
+      <section id="projecthub-analytics" class="ph-dark" aria-label="ProjectHub live analytics">
+        <!-- Analytics dashboard is injected here by analytics/dist/analytics.iife.js -->
+      </section>
+
       <footer class="card-footer">
         <div class="chip-row">
           <span class="chip">Vanilla JavaScript</span>
-          <span class="chip">No build step</span>
+          <span class="chip">Multi-provider LLM fallback</span>
+          <span class="chip">Grounded RAG</span>
           <span class="chip">GitHub Pages</span>
-          <span class="chip">GCP</span>
-          <span class="chip">Free LLM Network</span>
-          <span class="chip">Ollama Fallback</span>
           <span class="chip">Scout</span>
         </div>
 
@@ -757,6 +760,7 @@
     </main>
   </div>
 
+  <script src="analytics/dist/analytics.iife.js"></script>
   <script>
     (function () {
       const API_HEALTH = 'https://projecthub-chat.bradleymatera.dev/health';
