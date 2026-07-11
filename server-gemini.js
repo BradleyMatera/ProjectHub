@@ -3166,9 +3166,12 @@ app.post('/api/chat', async (req, res) => {
       pipeline.push('mustStayGrounded:true');
     }
 
-    // 2b. Generative fallback: when the network fails, use local Ollama with retrieved facts
-    //     to produce a natural, grounded answer rather than a rigid keyword fallback.
-    if (!generated && GEN_ENABLED && !isNetworkCircuitOpen() && !mustStayGrounded(userMessage, history)) {
+    // 2b. Generative fallback: disabled for now. The local Ollama model (smollm2:135m on the
+    //     1GB VM) frequently contradicts the grounded facts when asked negative or open-ended
+    //     questions, producing answers like "No, Bradley does not have any knowledge of...".
+    //     When the provider network fails we fall through to the deterministic grounded reply,
+    //     which has been widened to handle many more questions naturally.
+    if (false && !generated && GEN_ENABLED && !isNetworkCircuitOpen() && !mustStayGrounded(userMessage, history)) {
       try {
         const genReply = await callGenerativeRag(knowledge, userMessage, grounded.reply, history, 8000);
         if (genReply && validateFallbackReply(genReply)) {
