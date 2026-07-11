@@ -274,25 +274,37 @@
       ]
     },
     {
-      "role": "Animal Care Associate",
+      "role": "Animal Care Associate / Volunteer",
       "company": "Mason County Kitten Rescue",
-      "type": "Part-time",
+      "type": "Part-time paid, then volunteer",
       "location": "Mason County, Washington",
       "dates": "June 2020 - September 2022",
-      "summary": "Cared for abandoned and at-risk kittens alongside a small team of volunteers and staff.",
+      "summary": "Started in a paid, part-time animal care role and continued as a regular volunteer. Provided daily care for abandoned and at-risk kittens, supported intake and adoption efforts, trained newer volunteers, and helped organize fundraising garage sales.",
       "responsibilities": [
-        "Handled daily feeding, cleaning, and basic healthcare tasks.",
-        "Maintained clean kennels and monitored behavior to identify early signs of illness or distress.",
-        "Helped train new volunteers and supported intake, fostering, and adoption efforts."
+        "Daily feeding and care for abandoned and at-risk kittens",
+        "Cleaning kennels and animal-care areas",
+        "Monitoring kittens for illness, distress, and behavior changes",
+        "Helping with basic medical and healthcare needs",
+        "Assisting with kitten intake",
+        "Supporting fostering and adoption efforts",
+        "Working with staff and other volunteers",
+        "Training and helping newer volunteers",
+        "Helping organize donations and fundraising garage sales",
+        "Setting up, cleaning up, and arranging sale items",
+        "Assisting customers during fundraising sales",
+        "Supporting general shelter and rescue logistics"
       ],
       "skills": [
-        "Project management",
+        "Animal care",
         "Compassion",
         "Communication",
         "Organization",
-        "Animal care",
         "Teamwork",
-        "Training"
+        "Training",
+        "Customer service",
+        "Fundraising support",
+        "Project management",
+        "Reliability"
       ]
     },
     {
@@ -341,29 +353,56 @@
       ]
     },
     {
-      "role": "Healthcare Specialist",
-      "company": "US Army",
-      "type": "Full-time",
+      "role": "Health Care Specialist / Combat Medic (68W)",
+      "company": "United States Army",
+      "type": "Full-time active duty",
       "location": "Fort Bragg, North Carolina",
       "dates": "June 2011 - April 2014",
-      "summary": "Provided direct medical support in training environments and combat zones as a U.S. Army combat veteran.",
+      "summary": "Served on active duty as a 68W Health Care Specialist with the 2/508 Infantry at Fort Bragg. Deployed to Afghanistan from February 2012 through September 2012 and completed more than six months of foreign service. Provided medical support, assessed injuries and illnesses, responded to emergencies, maintained medical readiness and supplies, and worked alongside infantry soldiers in training and deployed environments.",
       "responsibilities": [
-        "Supported soldiers with physical exams, medication administration, and emergency response.",
-        "Assisted in procedures, managed supplies, and maintained field medical readiness.",
-        "Gained experience in triage, trauma care, and crisis management."
+        "Provided medical support and assessed injuries and illnesses",
+        "Responded to emergencies and maintained medical readiness and supplies",
+        "Worked alongside infantry soldiers in training and deployed environments",
+        "Trained soldiers on medical and safety procedures",
+        "Completed tactical combat casualty care, combat lifesaving, field sanitation, and first response training"
       ],
       "skills": [
-        "Crisis intervention",
-        "Critical thinking",
         "Emergency response",
         "Triage",
         "Trauma care",
+        "Crisis intervention",
+        "Critical thinking",
         "Medical readiness",
+        "Training",
         "Leadership",
         "Discipline",
         "Adaptability",
         "Attention to detail"
-      ]
+      ],
+      "details": {
+        "rank": "Private First Class, E-3",
+        "characterOfService": "Honorable",
+        "activeService": "2 years, 7 months, and 28 days",
+        "unit": "2/508 Infantry, Fort Bragg",
+        "deployment": "Afghanistan, February 2012 - September 2012",
+        "foreignService": "More than six months",
+        "militaryTraining": [
+          "Health Care Specialist Course, 16 weeks",
+          "Tactical Combat Casualty Care Course",
+          "Combat Lifesaver Course",
+          "Dragon First Responder Course",
+          "Field Sanitation Team Certification"
+        ],
+        "awards": [
+          "Combat Medical Badge",
+          "Army Commendation Medal",
+          "Afghanistan Campaign Medal with two campaign stars",
+          "NATO Medal",
+          "National Defense Service Medal",
+          "Global War on Terrorism Service Medal",
+          "Army Service Ribbon"
+        ]
+      }
     }
   ],
   "projects": [
@@ -477,11 +516,11 @@
   "interviewStories": [
     {
       "prompt": "Tell me about yourself",
-      "answer": "I am a junior software engineer based in Davis, Illinois, open to relocation. My background is web development, AWS support engineering training, troubleshooting, documentation, and AI-assisted development. I finished a B.S. in Web Development at Full Sail, completed an AWS internship focused on cloud support and guided troubleshooting labs, and worked on CIRIS Ethical AI as a freelance junior frontend developer. Before tech, I worked in roles that required communication, pressure, documentation, and reliability, including case management, construction, and the Army."
+      "answer": "I am a junior software engineer based in Davis, Illinois, open to relocation. My background is web development, AWS support engineering training, troubleshooting, documentation, and AI-assisted development. I finished a B.S. in Web Development at Full Sail, completed an AWS internship focused on cloud support and guided troubleshooting labs, and worked on CIRIS Ethical AI as a freelance junior frontend developer. Before tech, I worked in roles that required communication, pressure, documentation, and reliability, including case management, construction, animal care and volunteer work at Mason County Kitten Rescue, and the U.S. Army as a 68W Health Care Specialist / Combat Medic with a deployment to Afghanistan."
     },
     {
       "prompt": "Walk me through your resume",
-      "answer": "I would start with Full Sail, where I built my web development foundation and worked with JavaScript, React, Node.js, SQL, and project-based development. Then I would talk about the AWS internship, where I completed support engineering training, guided cloud troubleshooting labs, Juniper/Junos labs in Jupyter Notebooks, and an AWS capstone using Lambda, DynamoDB, S3, and Amplify. After that I would cover CIRIS Ethical AI, where I worked on local setup, onboarding docs, JWT guidance, small merged code updates, token-verification logging, lint fixes, error messages, and GitHub Issues. I would also mention Mason County, construction/roofing, and the Army as the older work history that built my communication, discipline, pressure, and reliability."
+      "answer": "I would start with Full Sail, where I built my web development foundation and worked with JavaScript, React, Node.js, SQL, and project-based development. Then I would talk about the AWS internship, where I completed support engineering training, guided cloud troubleshooting labs, Juniper/Junos labs in Jupyter Notebooks, and an AWS capstone using Lambda, DynamoDB, S3, and Amplify. After that I would cover CIRIS Ethical AI, where I worked on local setup, onboarding docs, JWT guidance, small merged code updates, token-verification logging, lint fixes, error messages, and GitHub Issues. I would also mention Mason County case management, Mason County Kitten Rescue where I started as a paid animal care associate and continued as a volunteer, construction and roofing, and the U.S. Army where I served as a 68W Health Care Specialist / Combat Medic with a deployment to Afghanistan. Those roles built my communication, discipline, pressure management, and reliability."
     },
     {
       "prompt": "Why software engineering",
@@ -506,6 +545,14 @@
     {
       "prompt": "What is your biggest weakness",
       "answer": "Data structures and algorithms. I have taken Udemy courses and talked through the math with people, but I have never had production mentorship in DSA and I do not have a formal CS degree. I cannot work through most LeetCode problems on my own yet, and I struggle to look at a new problem and turn it into code from a blank file. I am aware of it, I am willing to do the work, and I learn quickly when someone is willing to teach."
+    },
+    {
+      "prompt": "Tell me about your Army service",
+      "answer": "I served on active duty in the U.S. Army as a 68W Health Care Specialist / Combat Medic with the 2/508 Infantry at Fort Bragg from June 2011 to April 2014. I deployed to Afghanistan from February 2012 through September 2012 and completed more than six months of foreign service. I provided medical support, assessed injuries and illnesses, responded to emergencies, maintained medical readiness and supplies, and worked alongside infantry soldiers in training and deployed environments. I also trained soldiers on medical and safety procedures. My rank at discharge was Private First Class, E-3, with an Honorable characterization of service. My awards include the Combat Medical Badge, Army Commendation Medal, Afghanistan Campaign Medal with two campaign stars, NATO Medal, National Defense Service Medal, Global War on Terrorism Service Medal, and Army Service Ribbon."
+    },
+    {
+      "prompt": "What did you do at Mason County Kitten Rescue",
+      "answer": "I worked with Mason County Kitten Rescue in Mason County, Washington from June 2020 to September 2022. I started in a paid, part-time animal care role for the first few months and then continued as a regular volunteer, mainly on Fridays, for roughly the next two years. I provided daily feeding and care for abandoned and at-risk kittens, cleaned kennels and animal-care areas, monitored kittens for illness and behavior changes, helped with basic medical needs, assisted with intake, and supported fostering and adoption efforts. I worked with staff and other volunteers, helped train newer volunteers, organized donations, and helped run fundraising garage sales by moving and arranging items, assisting customers, and cleaning up."
     }
   ],
   "rules": {

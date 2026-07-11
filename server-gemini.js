@@ -29,7 +29,7 @@ const GITHUB_MODELS_MODEL = process.env.GITHUB_MODELS_MODEL || 'openai/gpt-4o-mi
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || '';
 const CLOUDFLARE_MODEL = process.env.CLOUDFLARE_MODEL || '@cf/meta/llama-3.2-3b-instruct';
-const PROVIDER_ORDER = (process.env.PROVIDER_ORDER || 'groq,cloudflare,github,gemini,grok,ollama').split(',').map(s => s.trim()).filter(Boolean);
+const PROVIDER_ORDER = (process.env.PROVIDER_ORDER || 'groq,cloudflare,github,gemini,grok').split(',').map(s => s.trim()).filter(Boolean);
 
 const KNOWLEDGE_URL = process.env.KNOWLEDGE_URL || 'https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter-knowledge.json';
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://bradleymatera.dev,https://www.bradleymatera.dev,https://bradleymatera.github.io').split(',').map(s => s.trim()).filter(Boolean);
@@ -48,7 +48,7 @@ let activeGenerations = 0;
 // When the last several network calls all failed, skip the network for a cooldown
 // and return the fast grounded fallback instead.
 const networkHealth = { failures: [], successes: [], lastSuccessAt: Date.now() };
-const CIRCUIT_BREAKER_WINDOW = 10; // look at last 10 outcomes
+const CIRCUIT_BREAKER_WINDOW = 5; // look at last 5 outcomes
 const CIRCUIT_BREAKER_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
 const CIRCUIT_BREAKER_FAILURE_THRESHOLD = 0.8; // skip if >=80% of recent calls failed
 
@@ -291,6 +291,57 @@ app.get('/health', async (req, res) => {
   });
 });
 
+app.get('/api/diagnose', async (req, res) => {
+  try {
+    const knowledge = await fetchKnowledge();
+    if (!knowledge) return res.json({ ok: false, error: 'Knowledge not loaded' });
+
+    const testQuestion = 'What is Bradley Matera\'s tech stack?';
+    const results = [];
+
+    for (const slug of PROVIDER_ORDER) {
+      const def = PROVIDER_DEFS[slug];
+      if (!def) continue;
+      if (!isProviderEnabled(slug)) {
+        results.push({ slug, enabled: false, available: false, error: 'not configured' });
+        continue;
+      }
+
+      const providerStart = Date.now();
+      let outcome = { slug, enabled: true, available: isProviderAvailable(slug) };
+      try {
+        let raw = '';
+        if (def.type === 'openai') {
+          raw = await callOpenAICompatibleProvider(def.baseUrl, def.apiKey, def.model, knowledge, testQuestion, []);
+        } else if (def.type === 'cloudflare') {
+          raw = await callCloudflareWorkersAI(def.accountId, def.apiToken, def.model, knowledge, testQuestion, []);
+        } else if (def.type === 'gemini') {
+          raw = await callGeminiWithPrompt(buildPrompt(knowledge, testQuestion, [], 'gemini'), def.model);
+        } else if (def.type === 'ollama') {
+          const grounded = buildGroundedFallbackPayload(knowledge, testQuestion, []);
+          raw = await callGenerativeRag(knowledge, testQuestion, grounded.reply, [], Math.min(GEN_TIMEOUT_MS, 8000));
+        }
+
+        const cleaned = removeSlop(String(raw || '').trim().replace(/\s+/g, ' '));
+        const sourceText = buildPrompt(knowledge, testQuestion, [], 'openai').replace(/\s+/g, ' ').toLowerCase();
+        const valid = cleaned && cleaned.length >= 15 && validateNetworkReply(cleaned, sourceText);
+        outcome.latencyMs = Date.now() - providerStart;
+        outcome.validated = valid;
+        outcome.replyPreview = cleaned.slice(0, 160);
+        if (!valid) outcome.error = 'validation failed';
+      } catch (err) {
+        outcome.latencyMs = Date.now() - providerStart;
+        outcome.error = String(err.message || err).slice(0, 200);
+      }
+      results.push(outcome);
+    }
+
+    res.json({ ok: true, testQuestion, results, circuitOpen: isNetworkCircuitOpen() });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 app.get('/api/knowledge-health', async (req, res) => {
   try {
     const knowledge = await fetchKnowledge();
@@ -431,6 +482,11 @@ function warmResponseCache(knowledge) {
     'Is he a fit for a junior frontend role?',
     'What are his weaknesses?',
     'How can I contact him?',
+    'Can he code?',
+    'Is he open to helpdesk roles?',
+    'Does he want mentorship?',
+    'What are his strengths?',
+    'Is he good at algorithms?',
   ];
   let added = 0;
   for (const q of commonQuestions) {
@@ -646,7 +702,7 @@ function shapeReply(text, question, knowledge) {
 
   // Default brevity cap for chat widget answers unless a specific format was requested
   if (!shape.maxWords && !shape.bullets && !shape.oneSentence && !shape.paragraph && !shape.json && !shape.table && !shape.headline) {
-    out = truncateWords(out, 45);
+    out = truncateWords(out, 80);
   }
 
   return out.trim().replace(/\s{2,}/g, ' ');
@@ -1105,6 +1161,7 @@ function buildKnowledgeContext(knowledge) {
   if (summary?.whatIDo) context += `- What he does: ${summary.whatIDo}\n`;
   if (summary?.whatIAmLookingFor) context += `- Looking for: ${summary.whatIAmLookingFor}\n`;
   if (summary?.coreStrengths?.length) context += `- Core strengths: ${summary.coreStrengths.join('; ')}\n`;
+  if (summary?.honestGaps?.length) context += `- Honest gaps: ${summary.honestGaps.join(' ')}\n`;
   if (summary?.workStyle?.length) context += `- Work style: ${summary.workStyle.join('; ')}\n`;
   if (goals?.targetRoles) context += `- Target roles: ${goals.targetRoles.join(', ')}\n`;
   if (goals?.relocation) context += `- Relocation: ${goals.relocation}\n`;
@@ -1121,6 +1178,15 @@ function buildKnowledgeContext(knowledge) {
     experience.slice(0, 5).forEach(e => {
       context += `  - ${e.role} at ${e.company} (${e.dates || 'dates not listed'}): ${e.summary || ''}\n`;
       if (e.responsibilities?.length) context += `    Key work: ${e.responsibilities.slice(0, 3).join('; ')}\n`;
+      if (e.details) {
+        const detailParts = [];
+        if (e.details.rank) detailParts.push(`rank ${e.details.rank}`);
+        if (e.details.characterOfService) detailParts.push(`service ${e.details.characterOfService}`);
+        if (e.details.unit) detailParts.push(`unit ${e.details.unit}`);
+        if (e.details.deployment) detailParts.push(`deployed ${e.details.deployment}`);
+        if (e.details.awards?.length) detailParts.push(`awards: ${e.details.awards.join(', ')}`);
+        if (detailParts.length) context += `    Details: ${detailParts.join('; ')}\n`;
+      }
     });
   }
   if (interviewStories?.length) {
@@ -1338,10 +1404,15 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
   
   // Army / military (narrowed 'service' to 'army service' to avoid catching 'customer service')
-  if (/army|military|veteran|army service|military service/.test(lowerQuestion)) {
+  if (/army|military|veteran|army service|military service|deployment|afghanistan|68w|combat medic|dd214|awards|medals/.test(lowerQuestion)) {
     const armyExp = (experience || []).find(e => /army|military/i.test(`${e.role} ${e.company} ${e.summary || ''}`));
     if (armyExp) {
-      return { reply: `${name} served in the Army (${armyExp.role}${armyExp.dates ? `, ${armyExp.dates}` : ''}). It shows discipline and teamwork, and he's open about how it shaped his work habits.` };
+      const details = armyExp.details || {};
+      const rank = details.rank ? ` as a ${details.rank}` : '';
+      const deployment = details.deployment ? `, deployed ${details.deployment}` : '';
+      const awards = details.awards?.length ? ` Awards include ${sentenceList(details.awards, 5)}.` : '';
+      const unit = details.unit ? ` with ${details.unit}` : '';
+      return { reply: `${name} served in the U.S. Army${rank}${unit}${armyExp.dates ? ` (${armyExp.dates})` : ''}${deployment}. He provided medical support and trained soldiers on medical and safety procedures.${awards}` };
     }
     return { reply: `${name} has Army service in his background. Details are in his resume; ask him directly for specifics.` };
   }
@@ -1389,6 +1460,12 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     if (cloud) picks.push(`${cloud.name} for cloud work`);
     if (picks.length) return { reply: `Strongest demos: ${sentenceList(picks, 2)}. Full portfolio at ${identity?.portfolioUrl || 'https://bradleymatera.dev/'}.` };
     return { reply: `See his full portfolio at ${identity?.portfolioUrl || 'https://bradleymatera.dev/'}.` };
+  }
+
+  // DSA / algorithms / LeetCode specific questions (must come before role-fit so
+  // "Is he good at algorithms?" doesn't get treated as a fit question)
+  if (/\b(data structures|algorithms?|leetcode|dsa)\b/.test(lowerQuestion)) {
+    return { reply: `${name} is honest about his DSA gap. He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in data structures and algorithms and has no formal CS degree. He cannot reliably solve most LeetCode-style problems on his own yet. He is aware of the gap and wants to improve at a company that trains and mentors.` };
   }
 
   // Role-fit / career-fit questions (broadened to catch natural recruiter phrasing)
@@ -1443,25 +1520,31 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name}'s certifications are listed in his full profile.` };
   }
   
+  // Mentorship / teaching / structured learning
+  if (/mentorship|mentor|teaching|teach|structured program|structured learning|willing to teach|on.?the.?job training|learn on the job/.test(lowerQuestion)) {
+    return { reply: `${name} values mentorship and structured teaching programs because he learns quickly and can prove value fast in any entry-level tech, IT, or support role.` };
+  }
+
   // Bad-fit / what roles are a poor match (checked before target-roles so it wins over 'what jobs')
   if (/bad fit|poor fit|not a fit|not a good fit|wrong role|wrong job|jobs to avoid|roles to avoid|would not fit|should not apply|what.*avoid|where.*not fit|what.*poor match|what.*bad match/.test(lowerQuestion)) {
-    return { reply: `${name} is junior, so senior, lead, architect, or production-owner roles are a poor fit. He's best suited for junior web, cloud support, software support, and technical support roles.` };
+    return { reply: `${name} is junior, so senior, lead, architect, or production-owner roles are a poor fit. He's best suited for entry-level tech, IT, software support, cloud support, and helpdesk roles.` };
+  }
+
+  // Helpdesk / IT support / desktop support openness
+  if (/helpdesk|help.?desk|desktop support|IT support|service desk|technical support|support role/.test(lowerQuestion)) {
+    return { reply: `Yes, ${name} is open to helpdesk and IT support roles. He's looking for any entry-level tech role where he can learn hands-on, especially one with mentorship or a structured teaching program.` };
   }
 
   // Dynamic roles / job-suggestions from knowledge base
   if (/role|target|job|looking|work.*looking|what kind of job|what jobs|should.*apply|where.*fit/.test(lowerQuestion)) {
     const roles = goals?.targetRoles || [];
     if (roles.length > 0) {
-      const skillsList = [
-        ...(skills?.languagesAndFrameworks || []).slice(0, 4),
-        ...(skills?.cloudAndInfrastructure || []).slice(0, 3)
-      ].join(', ');
-      let reply = `${name} is targeting ${sentenceList(roles.slice(0, 4), 4)} roles`;
-      if (skillsList) reply += `, which lines up with ${skillsList}`;
-      if (goals?.relocation) reply += `, and he is ${goals.relocation.toLowerCase().replace(/\.$/, '')}`;
-      return { reply: reply + '.' };
+      const examples = sentenceList(roles.slice(0, 6), 6);
+      let reply = `${name} is open to any entry-level tech, IT, or support role. Examples from his target list include ${examples}. He learns quickly and does best with mentorship or a structured teaching program.`;
+      if (goals?.relocation) reply += ` He is ${goals.relocation.toLowerCase().replace(/\.$/, '')}.`;
+      return { reply };
     }
-    return { reply: `${name} is looking for junior software engineering roles.` };
+    return { reply: `${name} is looking for entry-level tech, IT, support, or software roles where he can learn hands-on.` };
   }
 
   // Dynamic AWS/cloud from knowledge base (checked before generic skill matcher so 'does he have AWS experience' gets a detailed answer)
@@ -1490,8 +1573,14 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${name}'s skills are detailed in his full profile.` };
   }
 
-  // Specific-skill yes/no (does he know Python, can he do Go, etc.)
-  const skillAskMatch = lowerQuestion.match(/\b(?:does he know|can he code|can he work with|is he familiar with|does he have)\s+(?:in\s+)?([a-z0-9+#.]+)/);
+  // Can he code / does he know how to code (broad, not a specific language)
+  if (/\b(can he code|does he code|does he know how to code|is he a coder|can he program|does he program|can he write code)\b/.test(lowerQuestion)) {
+    const langs = (skills?.languagesAndFrameworks || []).slice(0, 8).join(', ');
+    return { reply: `Yes, at a junior level. ${name} can read code, follow logic, make changes, debug problems, and handle basics and level-one work in ${langs || 'the languages he studied in school'}. His honest gap is data structures and algorithms: he has taken courses but never had production mentorship in DSA, and he cannot reliably solve most LeetCode-style problems or build a complete program from a blank file without help. He is aware of it and willing to improve at a company that mentors.` };
+  }
+
+  // Specific-skill yes/no (does he know Python, can he use Go, etc.)
+  const skillAskMatch = lowerQuestion.match(/\b(?:does he know|can he use|can he work with|is he familiar with|does he have)\s+(?:in\s+)?([a-z0-9+#.]+)/);
   if (skillAskMatch) {
     const asked = skillAskMatch[1].toLowerCase();
     const allSkills = [
@@ -1549,7 +1638,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
 
   // 'What data do you have' / what is in his data
   if (/what data|what info|what information|what do you (have|know)|what is in (his|the) data|what can you tell me|what do you have on/.test(lowerQuestion)) {
-    return { reply: `${agentName} has verified data on ${name}'s projects, skills (JavaScript, TypeScript, React, AWS), certifications (AWS Solutions Architect, AI Practitioner), education (Full Sail University), work history (AWS internship, CIRIS, case management), target roles, and contact info. Ask about any of those.` };
+    return { reply: `${agentName} has verified data on ${name}'s projects, skills (JavaScript, TypeScript, React, AWS), certifications (AWS Solutions Architect, AI Practitioner), education (Full Sail University), work history (AWS internship, CIRIS, case management, Mason County Kitten Rescue, Army service, construction), target roles, and contact info. Ask about any of those.` };
   }
 
   // Confusion / 'you're not making sense' / clarification
@@ -1664,7 +1753,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     const strengths = summary?.coreStrengths?.length
       ? summary.coreStrengths.slice(0, 3)
       : ['learning quickly', 'documenting clearly', 'debugging carefully'];
-    return { reply: strengths.map(s => `${s}.`).join(' ') };
+    return { reply: `${name}'s core strengths include ${sentenceList(strengths, 3)}. He also learns quickly, works carefully, and communicates clearly.` };
   }
 
   // Elevator pitch / 20 seconds / short intro
@@ -1680,14 +1769,14 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Weaknesses / concerns / what is not proven
-  if (/weakness|weaknesses|weak at|concern|not proven|what is he missing|what is missing|gaps|limitations|bad fit|red flag|what concerns/.test(lowerQuestion)) {
-    const weaknesses = [];
-    if (title.toLowerCase().includes('junior')) weaknesses.push('junior-level with limited production ownership');
-    if (!skills?.cloudAndInfrastructure?.includes('live production support')) weaknesses.push('no live production AWS ownership');
-    const awsExp = experience?.find(e => /aws|amazon/i.test(`${e.company}`));
-    if (!awsExp) weaknesses.push('no AWS internship on record');
-    if (weaknesses.length > 0) {
-      return { reply: `Honest limitations: ${sentenceList(weaknesses, 3)}. Verify depth in a technical interview; his strengths are learning, documentation, and debugging.` };
+  if (/weakness|weaknesses|weak at|concern|not proven|what is he missing|what is missing|gaps|limitations|bad fit|red flag|what concerns|leetcode|data structures|dsa\b|algorithms?/.test(lowerQuestion)) {
+    const gaps = (summary?.honestGaps || []);
+    if (gaps.length > 0) {
+      const topGaps = gaps.slice(0, 3).map(g => {
+        const third = toThirdPerson(g);
+        return third.endsWith('.') ? third.slice(0, -1) : third;
+      });
+      return { reply: `Honest limitations: ${topGaps.join('. ')}. He is aware of these gaps and wants to improve at a company that trains and mentors; his strengths are reading code, debugging, documentation, and learning quickly.` };
     }
     return { reply: `Main caution is that he is junior, so verify depth on a call.` };
   }
@@ -1931,9 +2020,7 @@ function concisePitch(knowledge) {
   const name = identity?.name || 'Bradley Matera';
   const title = identity?.title || 'junior software engineer';
   const location = (identity?.location || 'Davis, Illinois').replace(/\s*\(open to relocation\)\s*/i, '').trim();
-  const roles = (goals?.targetRoles || ['junior software engineering', 'cloud support']).slice(0, 2);
-  const looking = roles.length ? ` He's targeting ${sentenceList(roles, 2)} roles.` : '';
-  return `${name} is a ${title} based in ${location}, open to relocation. He has real projects, AWS certifications, and structured internship training.${looking}`;
+  return `${name} is a ${title} based in ${location}, open to relocation. He has real projects, AWS certifications, and structured internship training. He's open to any entry-level tech, IT, or support role and learns quickly with mentorship.`;
 }
 
 function toThirdPerson(text) {
@@ -1946,11 +2033,21 @@ function toThirdPerson(text) {
     .replace(/\bI learn\b/g, 'he learns')
     .replace(/\bI work\b/g, 'he works')
     .replace(/\bI built\b/g, 'he built')
+    .replace(/\bI need\b/g, 'he needs')
+    .replace(/\bI want\b/g, 'he wants')
+    .replace(/\bI can\b/g, 'he can')
+    .replace(/\bI can't\b/g, "he can't")
+    .replace(/\bI cannot\b/g, 'he cannot')
+    .replace(/\bI do\b/g, 'he does')
+    .replace(/\bI don't\b/g, "he doesn't")
+    .replace(/\bI think\b/g, 'he thinks')
+    .replace(/\bI know\b/g, 'he knows')
+    .replace(/\bI understand\b/g, 'he understands')
     .replace(/\bI \b/g, 'he ')
     .replace(/\bmy\b/g, 'his')
     .replace(/\bMy\b/g, 'His')
     .replace(/\bme\b/g, 'him')
-    .replace(/\b(work|learn|like|build|debug|document)\b(?= carefully| quickly| clearly| useful| building)/g, m => m + 's');
+    .replace(/\b(work|learn|like|build|debug|document|read)\b(?= carefully| quickly| clearly| useful| building)/g, m => m + 's');
   // Fix sentence-start capitalization after replacements
   out = out.replace(/(^|[.!?]\s+)([a-z])/g, (m, p1, p2) => p1 + p2.toUpperCase());
   return out;
@@ -2054,6 +2151,69 @@ Tone and format rules:
   }
 }
 
+// Use local Ollama to rewrite a grounded reply in a more human, conversational way.
+// Facts are preserved because the grounded reply is the source; Ollama only rephrases.
+async function humanizeGroundedReply(knowledge, groundedReply, question, history) {
+  if (!GEN_ENABLED) return null;
+  const agentName = knowledge?.agent?.name || 'Scout';
+  const system = `You are ${agentName}, a helpful recruiter assistant. Rewrite the provided factual answer into 1-3 short, natural sentences that sound like a real person chatting with a recruiter. Keep every fact exactly as given. Do not add, remove, or change facts. Do not use buzzwords. Third person only. If the answer says data is missing, keep that honest.`;
+  const user = `Question: ${question}\nFactual answer: ${groundedReply}\nRewrite naturally:`;
+
+  const controller = new AbortController();
+  const HUMANIZE_TIMEOUT_MS = 5000; // don't let humanization dominate latency
+  const timeout = setTimeout(() => controller.abort(), HUMANIZE_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${OLLAMA_URL}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: GEN_MODEL,
+        messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+        stream: true,
+        keep_alive: '24h',
+        options: { temperature: 0.4, top_p: 0.85, num_predict: 80, repeat_penalty: 1.2 }
+      })
+    });
+    if (!res.ok) throw new Error(`gen HTTP ${res.status}`);
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let accumulated = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        try {
+          const chunk = JSON.parse(trimmed);
+          accumulated += chunk.message?.content || chunk.response || '';
+        } catch { /* ignore malformed JSON */ }
+      }
+    }
+    let cleaned = removeSlop(accumulated.replace(/\s+/g, ' ').trim());
+    cleaned = cleaned.replace(/\b(extensive|extensively)\b/gi, 'solid').replace(/\b(passio(?:n|nate))\b/gi, 'interest');
+    // Basic validation: must be about Bradley, not empty, and not introduce slop/overclaim
+    const valid = cleaned.length >= 15 &&
+      /\b(bradley|brad|he|his|him|scout)\b/i.test(cleaned) &&
+      !GEN_SLOP.test(cleaned) &&
+      !GEN_OVERCLAIM.test(cleaned);
+    if (valid) {
+      return cleaned;
+    }
+  } catch (err) {
+    console.log(`humanize failed: ${String(err.message || err).slice(0, 100)}`);
+  } finally {
+    clearTimeout(timeout);
+  }
+  return null;
+}
+
 async function generateWithNetwork(knowledge, question, history, groundedReply) {
   // Circuit breaker: if the network has been failing consistently, skip it entirely
   // and let the caller fall back to the fast grounded reply.
@@ -2066,7 +2226,17 @@ async function generateWithNetwork(knowledge, question, history, groundedReply) 
   // any fact from the verified context without being rejected for paraphrasing.
   const sourceText = buildPrompt(knowledge, question, history, 'openai').replace(/\s+/g, ' ').toLowerCase();
 
+  // Global budget for the whole provider loop so a slow Ollama cold start doesn't
+  // dominate latency when cloud providers are exhausted.
+  const NETWORK_BUDGET_MS = 5000;
+  const networkStart = Date.now();
+
   for (const slug of PROVIDER_ORDER) {
+    if (Date.now() - networkStart > NETWORK_BUDGET_MS) {
+      console.log('Provider loop exceeded budget; falling back to grounded');
+      recordNetworkOutcome(false);
+      return null;
+    }
     const def = PROVIDER_DEFS[slug];
     if (!def) {
       console.log(`Unknown provider in PROVIDER_ORDER: ${slug}`);
@@ -2085,7 +2255,9 @@ async function generateWithNetwork(knowledge, question, history, groundedReply) 
       } else if (def.type === 'gemini') {
         raw = await callGeminiWithPrompt(buildPrompt(knowledge, question, history, 'gemini'), def.model);
       } else if (def.type === 'ollama') {
-        raw = await callGenerativeRag(knowledge, question, groundedReply, history, Math.min(GEN_TIMEOUT_MS, 8000));
+        // Give Ollama the full timeout; on a small VM the model may take several
+        // seconds to load into memory on the first call after a restart.
+        raw = await callGenerativeRag(knowledge, question, groundedReply, history, GEN_TIMEOUT_MS);
       }
 
       const cleaned = removeSlop(String(raw || '').trim().replace(/\s+/g, ' '));
@@ -2725,6 +2897,25 @@ app.post('/api/chat', async (req, res) => {
       reply = buildContextualGroundedReply(reply, userMessage, history);
     }
 
+    // 2c. Humanize grounded replies with local Ollama so fallback sounds natural.
+    //     DISABLED: the smollm2:135m model on the small VM is currently producing
+    //     off-topic answers (e.g., confusing 'helpdesk role' with 'AI helpdesk').
+    //     We keep the function but don't use it until a more reliable model or
+    //     validation layer is in place.
+    if (false && !generated && provider === 'grounded' && GEN_ENABLED && !isNetworkCircuitOpen() && !mustStayGrounded(userMessage, history)) {
+      const topic = classifyTopic(userMessage);
+      const safeToHumanize = !['out-of-scope', 'salary'].includes(topic);
+      if (safeToHumanize) {
+        const humanized = await humanizeGroundedReply(knowledge, reply, userMessage, history);
+        if (humanized) {
+          reply = humanized;
+          provider = 'ollama';
+          model = GEN_MODEL;
+          pipeline.push('humanized');
+        }
+      }
+    }
+
     // 3. Deterministic format compliance (one sentence, bullets, JSON, word caps, tone controls)
     reply = shapeReply(reply, userMessage, knowledge);
     pipeline.push('shaped');
@@ -2743,7 +2934,7 @@ app.post('/api/chat', async (req, res) => {
       'projects': ['What tech stack does he use?', 'Which project is most relevant to my role?'],
       'aws': ['What about his AWS certifications?', 'Did he do real production work at AWS?'],
       'skills': ['What are his strongest skills?', 'How does he debug issues?'],
-      'experience': ['What did he do at CIRIS?', 'Tell me about his AWS internship'],
+      'experience': ['What did he do at CIRIS?', 'Tell me about his AWS internship', 'What did he do at Mason County Kitten Rescue?', 'Tell me about his Army service'],
       'education': ['What was his GPA?', 'What coursework is relevant?'],
       'contact': ['Does he have a LinkedIn?', 'What roles is he targeting?'],
       'role-fit': ['Is he a fit for a junior web role?', 'What are his honest gaps?'],
@@ -2793,4 +2984,12 @@ app.listen(PORT, '127.0.0.1', () => {
   setTimeout(() => {
     fetchKnowledge().then(() => console.log('Knowledge cache pre-warmed')).catch(e => console.log('Pre-warm failed:', e.message));
   }, 100);
+  // Ping Ollama to start loading the model into memory early
+  if (GEN_ENABLED) {
+    setTimeout(() => {
+      fetch(`${OLLAMA_URL}/api/tags`, { method: 'GET' })
+        .then(r => r.ok ? console.log('Ollama is reachable') : console.log('Ollama ping returned', r.status))
+        .catch(e => console.log('Ollama ping failed:', e.message));
+    }, 2000);
+  }
 });
