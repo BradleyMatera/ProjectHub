@@ -4860,6 +4860,11 @@
       "q": "would you hire him?",
       "a": "Bradley is a junior software engineer with a strong foundation in web development and AWS. His skills are well-rounded, and he's actively learning and improving. He's a great fit for entry-level roles where he can continue to grow and contribute to a team.",
       "learnedAt": 1783780030691
+    },
+    {
+      "q": "was it real production work?",
+      "a": "His AWS internship was a structured training program with guided support rotations and controlled capstone projects, not direct production work with customer data.",
+      "learnedAt": 1783794329179
     }
   ]
 }
