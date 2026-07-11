@@ -232,6 +232,10 @@ app.get('/health', async (req, res) => {
     deployCount: persistentStats.deployCount,
     firstDeployAt: persistentStats.firstDeployAt,
     recentRequests: persistentStats.recentRequests,
+    referrerBreakdown: persistentStats.referrerBreakdown,
+    topicBreakdown: persistentStats.topicBreakdown,
+    hourlyRequests: persistentStats.hourlyRequests,
+    lastPipeline: persistentStats.lastPipeline || [],
     // Provider table
     providerOrder: PROVIDER_ORDER,
     providers,
@@ -1893,7 +1897,11 @@ const defaultStats = {
   providerBreakdown: {},
   deployCount: 0,
   firstDeployAt: 0,
-  recentRequests: [] // last 25 {q, provider, ts}
+  recentRequests: [], // last 40 {q, provider, ts, referrer, topic, latencyMs, pipeline}
+  referrerBreakdown: {}, // { "bradleymatera.dev": 45, "codepen.io": 12 }
+  topicBreakdown: {}, // { "2026-07-10": { projects: 12, aws: 8, ... } }
+  hourlyRequests: {}, // { "2026-07-10T22": { total: 15, grounded: 8, llm: 5, cached: 2 } }
+  lastPipeline: [] // last request's decision path
 };
 
 let persistentStats;
@@ -1908,15 +1916,89 @@ if (!persistentStats.firstDeployAt) persistentStats.firstDeployAt = Date.now();
 let totalRequestsServed = 0; // this-restart counter
 let lastReplyProvider = null;
 
-function recordRequest(question, provider) {
+function classifyTopic(question) {
+  const q = String(question || '').toLowerCase();
+  if (/project|portfolio|codepen|shipped|github repo/.test(q)) return 'projects';
+  if (/aws|cloud|lambda|dynamodb|serverless|certification|cert/.test(q)) return 'aws';
+  if (/skill|stack|tech|javascript|typescript|react|node|sql/.test(q)) return 'skills';
+  if (/experience|intern|work history|background|ciris|freelance/.test(q)) return 'experience';
+  if (/education|degree|school|full sail|gpa|graduat/.test(q)) return 'education';
+  if (/contact|email|phone|reach|linkedin/.test(q)) return 'contact';
+  if (/role|fit|hire|candidate|job|position|devops|sre|support|qa|data/.test(q)) return 'role-fit';
+  if (/strength|strongest|greatest|best at|good at/.test(q)) return 'strengths';
+  if (/weakness|weak at|concern|gap|limitation|red flag/.test(q)) return 'weaknesses';
+  if (/team|people|interpersonal|social|customer service|communication|collaborat/.test(q)) return 'interpersonal';
+  if (/salary|pay|compensation|rate/.test(q)) return 'salary';
+  if (/army|military|veteran/.test(q)) return 'army';
+  if (/work style|coding style|approach|debug|problem/.test(q)) return 'work-style';
+  if (/who is|what is|summary|about|tell me/.test(q)) return 'summary';
+  if (/not in|out of scope|favorite|food|pizza|weather|sports/.test(q)) return 'out-of-scope';
+  return 'other';
+}
+
+function extractReferrer(req) {
+  try {
+    const raw = String(req.headers['referer'] || req.headers['origin'] || req.headers['referrer'] || '').trim();
+    if (!raw) return 'unknown';
+    const url = new URL(raw);
+    return url.hostname || 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+function recordRequest(question, provider, opts = {}) {
   totalRequestsServed++;
   persistentStats.totalRequestsAllTime++;
   if (provider === 'grounded' || provider === 'learned') persistentStats.groundedCount++;
   else if (provider === 'cached') persistentStats.cachedCount++;
   else persistentStats.llmCount++;
   persistentStats.providerBreakdown[provider] = (persistentStats.providerBreakdown[provider] || 0) + 1;
-  persistentStats.recentRequests.unshift({ q: String(question).slice(0, 80), provider, ts: Date.now() });
-  if (persistentStats.recentRequests.length > 25) persistentStats.recentRequests.pop();
+
+  // Topic classification
+  const topic = classifyTopic(question);
+  const today = new Date().toISOString().slice(0, 10);
+  if (!persistentStats.topicBreakdown[today]) persistentStats.topicBreakdown[today] = {};
+  persistentStats.topicBreakdown[today][topic] = (persistentStats.topicBreakdown[today][topic] || 0) + 1;
+
+  // Hourly tracking
+  const hourKey = new Date().toISOString().slice(0, 13); // "2026-07-10T22"
+  if (!persistentStats.hourlyRequests[hourKey]) persistentStats.hourlyRequests[hourKey] = { total: 0, grounded: 0, llm: 0, cached: 0 };
+  persistentStats.hourlyRequests[hourKey].total++;
+  if (provider === 'grounded' || provider === 'learned') persistentStats.hourlyRequests[hourKey].grounded++;
+  else if (provider === 'cached') persistentStats.hourlyRequests[hourKey].cached++;
+  else persistentStats.hourlyRequests[hourKey].llm++;
+
+  // Referrer tracking
+  const referrer = opts.referrer || 'unknown';
+  persistentStats.referrerBreakdown[referrer] = (persistentStats.referrerBreakdown[referrer] || 0) + 1;
+
+  // Pipeline tracking
+  const pipeline = opts.pipeline || [];
+  if (pipeline.length > 0) persistentStats.lastPipeline = pipeline;
+
+  // Enhanced recent requests
+  persistentStats.recentRequests.unshift({
+    q: String(question).slice(0, 80),
+    provider, ts: Date.now(),
+    referrer,
+    topic,
+    latencyMs: opts.latencyMs || null,
+    pipeline: pipeline.length > 0 ? pipeline : undefined
+  });
+  if (persistentStats.recentRequests.length > 40) persistentStats.recentRequests.pop();
+
+  // Clean up old hourly data (keep last 48h)
+  const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString().slice(0, 13);
+  for (const key of Object.keys(persistentStats.hourlyRequests)) {
+    if (key < cutoff) delete persistentStats.hourlyRequests[key];
+  }
+  // Clean old topic data (keep last 30 days)
+  const topicCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  for (const key of Object.keys(persistentStats.topicBreakdown)) {
+    if (key < topicCutoff) delete persistentStats.topicBreakdown[key];
+  }
+
   statsDirty = true;
   const now = Date.now();
   if (statsDirty && now - lastStatsFlush > STATS_FLUSH_MS) {
@@ -2111,6 +2193,9 @@ process.on('SIGINT', () => { flushStats(); process.exit(0); });
 
 app.post('/api/chat', async (req, res) => {
   let userMessage = '';
+  const reqStart = Date.now();
+  const referrer = extractReferrer(req);
+  const pipeline = [];
   try {
     userMessage = String(req.body.message || '').trim();
     if (!userMessage) return res.status(400).json({ error: 'Missing message.' });
@@ -2121,21 +2206,26 @@ app.post('/api/chat', async (req, res) => {
     const cacheKey = normalizeQuestion(userMessage);
     const cached = !hasHistory ? responseCache.get(cacheKey) : null;
     if (cached && (Date.now() - cached.ts) < RESPONSE_CACHE_MS) {
+      pipeline.push('cache-hit');
       lastReplyProvider = cached.payload.provider || 'cached';
-      recordRequest(userMessage, 'cached');
-      return res.json({ ...cached.payload, cached: true });
+      recordRequest(userMessage, 'cached', { referrer, pipeline, latencyMs: Date.now() - reqStart });
+      return res.json({ ...cached.payload, cached: true, pipeline });
     }
+    pipeline.push('cache-miss');
 
     const knowledge = await fetchKnowledge();
     if (!knowledge) {
-      const payload = { ...buildGroundedFallbackPayload({}, userMessage, history), provider: 'grounded', fallback: true };
+      pipeline.push('knowledge-unavailable', 'grounded-fallback');
+      const payload = { ...buildGroundedFallbackPayload({}, userMessage, history), provider: 'grounded', fallback: true, pipeline };
       lastReplyProvider = 'grounded';
-      recordRequest(userMessage, 'grounded');
+      recordRequest(userMessage, 'grounded', { referrer, pipeline, latencyMs: Date.now() - reqStart });
       return res.json(payload);
     }
+    pipeline.push('knowledge-loaded');
 
     // 1. Check learned answers first (from think mode)
     const learnedAns = getLearnedAnswer(userMessage);
+    pipeline.push(`learned-check:${learnedAns ? 'hit' : 'miss'}`);
     // 1b. Grounded deterministic answer is always computed first
     const grounded = buildGroundedFallbackPayload(knowledge, userMessage, history);
     let reply = learnedAns || grounded.reply;
@@ -2147,19 +2237,26 @@ app.post('/api/chat', async (req, res) => {
     //    validating each reply and falling back to the grounded answer if none succeed.
     let generated = false;
     if (!mustStayGrounded(userMessage, history)) {
+      pipeline.push('mustStayGrounded:false');
       const networkResult = await generateWithNetwork(knowledge, userMessage, history, grounded.reply);
       if (networkResult) {
+        pipeline.push(`network:${networkResult.provider}:success`);
         reply = networkResult.reply;
         provider = networkResult.provider;
         model = networkResult.model;
         generated = true;
+      } else {
+        pipeline.push('network:all-failed', 'grounded-fallback');
       }
+    } else {
+      pipeline.push('mustStayGrounded:true');
     }
 
     // 3. Deterministic format compliance (one sentence, bullets, JSON, word caps, tone controls)
     reply = shapeReply(reply, userMessage, knowledge);
+    pipeline.push('shaped');
 
-    const payload = { reply, provider, model, fallback: false, grounded: provider === 'grounded' };
+    const payload = { reply, provider, model, fallback: false, grounded: provider === 'grounded', pipeline };
     if (!hasHistory) {
       responseCache.set(cacheKey, { ts: Date.now(), payload });
       if (responseCache.size > RESPONSE_CACHE_LIMIT) {
@@ -2168,7 +2265,7 @@ app.post('/api/chat', async (req, res) => {
     }
 
     lastReplyProvider = payload.provider;
-    recordRequest(userMessage, payload.provider);
+    recordRequest(userMessage, payload.provider, { referrer, pipeline, latencyMs: Date.now() - reqStart });
     // Stash weak answers for think mode learning
     if (isWeakAnswer(reply, userMessage, provider)) {
       stashQuestion(userMessage, reply, provider);
@@ -2176,11 +2273,12 @@ app.post('/api/chat', async (req, res) => {
     return res.json(payload);
   } catch (err) {
     console.error('Chat error:', err);
+    pipeline.push('error');
     const knowledge = knowledgeCache || {};
     const grounded = buildGroundedFallbackPayload(knowledge, userMessage, []);
     lastReplyProvider = 'grounded';
-    recordRequest(userMessage, 'grounded');
-    return res.json({ reply: grounded.reply, provider: 'grounded', model: 'knowledge-json', fallback: true });
+    recordRequest(userMessage, 'grounded', { referrer, pipeline, latencyMs: Date.now() - reqStart });
+    return res.json({ reply: grounded.reply, provider: 'grounded', model: 'knowledge-json', fallback: true, pipeline });
   }
 });
 

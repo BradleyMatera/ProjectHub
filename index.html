@@ -584,6 +584,36 @@
           </tbody>
         </table>
 
+        <h3 style="margin-top:1.5rem;font-size:0.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:0.05em">Live activity feed</h3>
+        <div id="live-activity" style="font-size:0.82rem;color:var(--muted);max-height:280px;overflow-y:auto;margin-top:0.5rem;font-family:monospace">
+          <p style="color:var(--soft)">Loading…</p>
+        </div>
+
+        <h3 style="margin-top:1.5rem;font-size:0.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:0.05em">Last request pipeline</h3>
+        <div id="live-pipeline" style="font-size:0.78rem;color:var(--muted);margin-top:0.5rem;font-family:monospace;word-break:break-all">
+          <p style="color:var(--soft)">No requests yet.</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.5rem">
+          <div>
+            <h3 style="font-size:0.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:0.05em">Where visitors come from</h3>
+            <div id="live-referrers" style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem">
+              <p style="color:var(--soft)">Loading…</p>
+            </div>
+          </div>
+          <div>
+            <h3 style="font-size:0.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:0.05em">What recruiters ask about</h3>
+            <div id="live-topics" style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem">
+              <p style="color:var(--soft)">Loading…</p>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="margin-top:1.5rem;font-size:0.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:0.05em">Request trend (last 24h)</h3>
+        <div id="live-trend" style="margin-top:0.5rem">
+          <p style="color:var(--soft)">Loading…</p>
+        </div>
+
         <h3 style="margin-top:1.5rem;font-size:0.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:0.05em">Recent requests</h3>
         <div id="live-recent" style="font-size:0.82rem;color:var(--muted);max-height:200px;overflow-y:auto;margin-top:0.5rem">
           <p style="color:var(--soft)">Loading…</p>
@@ -699,6 +729,11 @@
       const elRecent = document.getElementById('live-recent');
       const elUpdated = document.getElementById('live-updated');
       const elRefresh = document.getElementById('live-refresh');
+      const elActivity = document.getElementById('live-activity');
+      const elPipeline = document.getElementById('live-pipeline');
+      const elReferrers = document.getElementById('live-referrers');
+      const elTopics = document.getElementById('live-topics');
+      const elTrend = document.getElementById('live-trend');
       const elLearnStashed = document.getElementById('learn-stashed');
       const elLearnCount = document.getElementById('learn-count');
       const elLearnPending = document.getElementById('learn-pending');
@@ -766,13 +801,96 @@
           const recent = data.recentRequests || [];
           if (recent.length === 0) {
             elRecent.innerHTML = '<p style="color:var(--soft)">No requests yet.</p>';
+            elActivity.innerHTML = '<p style="color:var(--soft)">No activity yet.</p>';
           } else {
-            elRecent.innerHTML = recent.map(r => {
+            // Recent requests table
+            elRecent.innerHTML = recent.slice(0, 20).map(r => {
               const time = new Date(r.ts).toLocaleTimeString();
               const color = r.provider === 'grounded' ? '#34d399' : r.provider === 'cached' ? '#fbbf24' : r.provider === 'learned' ? '#a78bfa' : '#60a5fa';
-              return `<div style="padding:0.3rem 0;border-bottom:1px solid rgba(148,163,184,0.08)"><span style="color:${color}">${r.provider}</span> · <span style="color:var(--soft)">${time}</span> · ${r.q}</div>`;
+              const topicTag = r.topic ? `<span style="color:#64748b;font-size:0.75rem"> [${r.topic}]</span>` : '';
+              const refTag = r.referrer && r.referrer !== 'unknown' ? `<span style="color:#64748b;font-size:0.75rem"> from ${r.referrer}</span>` : '';
+              const latencyTag = r.latencyMs != null ? `<span style="color:#64748b;font-size:0.75rem"> ${r.latencyMs}ms</span>` : '';
+              return `<div style="padding:0.3rem 0;border-bottom:1px solid rgba(148,163,184,0.08)"><span style="color:${color}">${r.provider}</span> · <span style="color:var(--soft)">${time}</span>${latencyTag} · ${r.q}${topicTag}${refTag}</div>`;
+            }).join('');
+
+            // Live activity feed (monospace, pipeline-focused)
+            elActivity.innerHTML = recent.slice(0, 15).map(r => {
+              const time = new Date(r.ts).toLocaleTimeString();
+              const color = r.provider === 'grounded' ? '#34d399' : r.provider === 'cached' ? '#fbbf24' : r.provider === 'learned' ? '#a78bfa' : '#60a5fa';
+              const pipe = r.pipeline && r.pipeline.length > 0 ? r.pipeline.join(' → ') : '';
+              return `<div style="padding:0.25rem 0;border-bottom:1px solid rgba(148,163,184,0.05)"><span style="color:${color}">${r.provider}</span> <span style="color:var(--soft)">${time}</span> ${r.q}<br><span style="color:#475569;font-size:0.72rem">${pipe}</span></div>`;
             }).join('');
           }
+
+          // Pipeline visualization
+          const pipe = data.lastPipeline || [];
+          if (pipe.length > 0) {
+            elPipeline.innerHTML = pipe.map((step, i) => {
+              const isSuccess = /success|hit|shaped/.test(step);
+              const isFail = /fail|error|unavailable/.test(step);
+              const color = isSuccess ? '#34d399' : isFail ? '#f87171' : '#60a5fa';
+              const arrow = i < pipe.length - 1 ? ' <span style="color:#334155">→</span> ' : '';
+              return `<span style="color:${color}">${step}</span>${arrow}`;
+            }).join('');
+          } else {
+            elPipeline.innerHTML = '<p style="color:var(--soft)">No requests yet.</p>';
+          }
+
+          // Referrer breakdown
+          const referrers = data.referrerBreakdown || {};
+          const refEntries = Object.entries(referrers).sort((a, b) => b[1] - a[1]);
+          if (refEntries.length > 0) {
+            const maxCount = refEntries[0][1];
+            elReferrers.innerHTML = refEntries.slice(0, 10).map(([host, count]) => {
+              const pct = Math.round((count / maxCount) * 100);
+              return `<div style="margin-bottom:0.3rem"><span style="color:var(--muted)">${host}</span> <span style="color:var(--soft);font-size:0.75rem">(${count})</span><div style="height:4px;background:rgba(96,165,250,0.15);border-radius:2px;margin-top:2px"><div style="height:4px;background:#60a5fa;border-radius:2px;width:${pct}%"></div></div></div>`;
+            }).join('');
+          } else {
+            elReferrers.innerHTML = '<p style="color:var(--soft)">No referrer data yet.</p>';
+          }
+
+          // Topic breakdown (today + aggregate)
+          const topics = data.topicBreakdown || {};
+          const todayKey = new Date().toISOString().slice(0, 10);
+          const todayTopics = topics[todayKey] || {};
+          const allTopics = {};
+          for (const day of Object.values(topics)) {
+            for (const [t, c] of Object.entries(day)) {
+              allTopics[t] = (allTopics[t] || 0) + c;
+            }
+          }
+          const topicEntries = Object.entries(allTopics).sort((a, b) => b[1] - a[1]);
+          if (topicEntries.length > 0) {
+            const maxTopic = topicEntries[0][1];
+            elTopics.innerHTML = topicEntries.slice(0, 12).map(([topic, count]) => {
+              const pct = Math.round((count / maxTopic) * 100);
+              const isOther = topic === 'other';
+              const color = isOther ? '#f87171' : '#34d399';
+              return `<div style="margin-bottom:0.3rem"><span style="color:${color}">${topic}</span> <span style="color:var(--soft);font-size:0.75rem">(${count})</span><div style="height:4px;background:rgba(52,211,153,0.1);border-radius:2px;margin-top:2px"><div style="height:4px;background:${color};border-radius:2px;width:${pct}%"></div></div></div>`;
+            }).join('');
+          } else {
+            elTopics.innerHTML = '<p style="color:var(--soft)">No topic data yet.</p>';
+          }
+
+          // Request trend (24h sparkline)
+          const hourly = data.hourlyRequests || {};
+          const now = new Date();
+          const hours = [];
+          for (let i = 23; i >= 0; i--) {
+            const h = new Date(now.getTime() - i * 60 * 60 * 1000);
+            const key = h.toISOString().slice(0, 13);
+            const data2 = hourly[key] || { total: 0, grounded: 0, llm: 0, cached: 0 };
+            hours.push({ label: h.getHours() + ':00', ...data2 });
+          }
+          const maxH = Math.max(1, ...hours.map(h => h.total));
+          const barW = Math.max(4, Math.floor(100 / 24));
+          elTrend.innerHTML = `<div style="display:flex;align-items:flex-end;gap:1px;height:60px;margin-top:0.5rem">${hours.map(h => {
+            const totalH = Math.round((h.total / maxH) * 56);
+            const groundedH = Math.round((h.grounded / maxH) * 56);
+            const llmH = Math.round((h.llm / maxH) * 56);
+            const cachedH = Math.round((h.cached / maxH) * 56);
+            return `<div title="${h.label}: ${h.total} total (${h.grounded} grounded, ${h.llm} LLM, ${h.cached} cached)" style="flex:1;display:flex;flex-direction:column-reverse;min-width:${barW}px"><div style="height:${groundedH}px;background:#34d399;border-radius:1px"></div><div style="height:${llmH}px;background:#60a5fa"></div><div style="height:${cachedH}px;background:#fbbf24"></div></div>`;
+          }).join('')}</div><div style="display:flex;justify-content:space-between;margin-top:0.3rem;font-size:0.7rem;color:var(--soft)"><span>24h ago</span><span>now</span></div><div style="margin-top:0.4rem;font-size:0.75rem;color:var(--soft)"><span style="color:#34d399">■</span> grounded <span style="color:#60a5fa;margin-left:0.5rem">■</span> LLM <span style="color:#fbbf24;margin-left:0.5rem">■</span> cached</div>`;
 
           // Learning system stats
           const learn = data.learning || {};
