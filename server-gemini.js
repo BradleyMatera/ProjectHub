@@ -419,7 +419,9 @@ function shapeReply(text, question, knowledge) {
   if (shape.yesNoFirst) {
     const q = String(question || '').toLowerCase();
     const positive = !/senior|architect|staff|lead|principal|10 years|production owner/.test(q);
-    out = `${positive ? 'Yes' : 'No'}. ${out}`;
+    if (!new RegExp(`^${positive ? 'Yes' : 'No'}\.`, 'i').test(out.trim())) {
+      out = `${positive ? 'Yes' : 'No'}. ${out}`;
+    }
   }
 
   if (shape.headline) {
@@ -1280,12 +1282,47 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply };
   }
 
+  // Teamwork / team player / works with others (checked before work style so 'how does he work in a team' doesn't match work-style first)
+  if (/teamwork|team player|works with others|how does he work in a team|how is he on a team|collaborat|how does he work with/.test(lowerQuestion)) {
+    return { reply: `${name} has teamwork experience from Army service, construction crews, and case management work. He communicates clearly with technical and non-technical people, which shows up in his documentation habits.` };
+  }
+
   // Work style (checked before generic project branch so "what is his work style" doesn't return a project list)
   if (/work style|how does he work|how he works|approach to work/.test(lowerQuestion)) {
     const styles = summary?.workStyle?.length
       ? summary.workStyle.slice(0, 3)
       : ['reads nearby code before changing things', 'runs the project locally first', 'documents what he learns'];
     return { reply: `His work style: ${sentenceList(styles, 3)}.` };
+  }
+
+  // Coding style / how does he code
+  if (/coding style|how does he code|code style|how he codes|programming style|how does he program/.test(lowerQuestion)) {
+    const styles = summary?.workStyle?.slice(0, 2) || ['reads nearby code before changing things', 'makes small reviewable changes'];
+    const strengths = summary?.coreStrengths?.slice(0, 1) || ['learning quickly in unfamiliar codebases'];
+    return { reply: `${name} reads existing code before changing anything, makes small reviewable changes, and documents what he learns. His main strength is ${strengths[0].toLowerCase()}.` };
+  }
+
+  // Approach to learning / how does he learn
+  if (/approach to learning|approach.*learning|how does he learn|how he learns|learning style|fast learner|quick learner|how fast does he learn/.test(lowerQuestion)) {
+    const learning = skills?.learningOrAdjacent?.length ? skills.learningOrAdjacent.slice(0, 2) : ['currently learning C#/.NET fundamentals'];
+    return { reply: `${name} learns by running the project locally, reading the code, and documenting what he finds. Right now he's ${learning.join(' and ').toLowerCase()}. He's honest about what he doesn't know yet and asks useful questions after doing his homework.` };
+  }
+
+  // Communication style / how does he communicate
+  if (/communication style|how does he communicate|how he communicates|communication skill|how does he talk to users|how does he talk to/.test(lowerQuestion)) {
+    const comm = summary?.coreStrengths?.find(s => /communicat/i.test(s)) || 'Communicating with technical and non-technical users';
+    return { reply: `${name} communicates directly and clearly. His case manager experience taught him to explain things to non-technical people, and his documentation shows he can write for other developers too.` };
+  }
+
+  // Problem solving / how does he solve problems
+  if (/problem solving|how does he solve|how does he approach.*problem|how does he debug|approach to debug|approach.*debug|troubleshoot.*approach|how does he troubleshoot/.test(lowerQuestion)) {
+    const debug = summary?.coreStrengths?.find(s => /debug/i.test(s)) || 'Debugging carefully and isolating issues';
+    return { reply: `${name} isolates problems methodically: he reproduces the issue, checks logs and docs, narrows down the cause, and documents the fix. He's honest when he doesn't know the answer yet.` };
+  }
+
+  // Reliability / dependable / can I count on him
+  if (/reliab|dependab|can i count on|show up|work ethic|does he show up/.test(lowerQuestion)) {
+    return { reply: `${name} has a track record of showing up: Army service, construction work, and case management all required reliability under pressure. His work style is methodical and he documents what he does so others can pick up where he left off.` };
   }
 
   // Dynamic projects from knowledge base
@@ -1318,8 +1355,31 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply };
   }
 
-  // Naturalness / no-bs / why should I care (checked before the generic summary so specific intent wins)
-  if (/no bs|no bullshit|why should i care|worth calling|worth interviewing|is he worth|is he good|is he legit|real projects|does he write|can he talk|can he troubleshoot|does he write docs|what can he actually do|what does he actually know|what does he actually do|tell me straight|just the facts|give me the simple version|give me the honest version|is he the real deal|not just a portfolio|not a portfolio/.test(lowerQuestion)) {
+  // Naturalness / no-bs — split into angled replies so they don't all sound the same
+  // Angle 1: "worth interviewing / is he worth" — lead with credentials + what to verify
+  if (/worth calling|worth interviewing|is he worth/.test(lowerQuestion)) {
+    const certsList = (certifications || []).slice(0, 2).map(c => c.name || c);
+    const shortCerts = certsList.map(c => c.replace('AWS Certified ', 'AWS '));
+    return { reply: `${name} has real projects and ${sentenceList(shortCerts, 2)} certs. He's junior, so verify technical depth on a call. Worth a screening interview for junior web or cloud support roles.` };
+  }
+
+  // Angle 2: "why should i care" — lead with what's useful day one
+  if (/why should i care/.test(lowerQuestion)) {
+    return { reply: `He can debug methodically, write clear docs, and has AWS fundamentals. That means less hand-holding than most juniors. He's not senior, but he's useful on day one for junior web or support work.` };
+  }
+
+  // Angle 3: "no bs / tell me straight" — lead with honest limitations, then what's real
+  if (/no bs|no bullshit|tell me straight|just the facts/.test(lowerQuestion)) {
+    return { reply: `He's junior with no live production ownership. His AWS internship was labs and a capstone, not real customer tickets. But he has real shipped projects, two AWS certs, and he documents and debugs carefully.` };
+  }
+
+  // Angle 4: "honest version / give me the honest" — the catch, then the upside
+  if (/give me the honest version|give me the simple version|honest version/.test(lowerQuestion)) {
+    return { reply: `The catch: he's junior, and his AWS experience is structured labs, not production. The upside: real React/Next.js projects, AWS Solutions Architect and AI Practitioner certs, and work habits that mean less hand-holding.` };
+  }
+
+  // Remaining naturalness patterns — general catch-all
+  if (/is he good|is he legit|real projects|does he write|can he talk|can he troubleshoot|does he write docs|what can he actually do|what does he actually know|what does he actually do|is he the real deal|not just a portfolio|not a portfolio/.test(lowerQuestion)) {
     const certsList = (certifications || []).slice(0, 2).map(c => c.name || c);
     const topProjects = (projects || []).slice(0, 3).map(p => p.name);
     const shortCerts = certsList.map(c => c.replace('AWS Certified ', 'AWS '));
@@ -1377,7 +1437,12 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   if (/salary|address|home|current salary|pay|compensation/.test(lowerQuestion)) {
     return { reply: `Salary and address details are not in the public data. Check his resume or contact him directly.` };
   }
-  
+
+  // Out-of-scope: non-recruiter questions (jokes, sports, food, time, zodiac, weather, etc.)
+  if (!isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate/.test(lowerQuestion)) {
+    return { reply: `That's not in ${name}'s recruiter data. ${agentName} covers his projects, skills, AWS background, role fit, and contact info.` };
+  }
+
   // Default to basic info
   return { reply: concisePitch(knowledge) };
 }
@@ -1711,7 +1776,7 @@ function mustStayGrounded(question, history) {
   if (/(pretend|make up|claim|say|tell|write|write something that)\b.*\b(google|senior|cto|10\s*years|masters?|kubernetes|led a team|production engineer|production experience|outages|clearance|payment systems|terraform|machine learning engineer|hide his lack|hide.*lack)\b/.test(q) || /write something that hides|hide his lack/.test(q)) return true;
   if (/\b(contact|email|phone|reach|github)\b|portfolio url|resume\?|links\?|\blinkedin\b(?!.*\b(style|summary|profile)\b)/.test(q)) return true;
   if (/\bproject|portfolio\b|which project|what project|best project|most relevant project|what is projecthub|ciris|interactive pokedex|pokedex|cheesemath|worked at amazon|has he worked at|did he work at/.test(q)) return true;
-  if (/who is bradley|who is brad\b|who's bradley|who's brad|what makes him different|different from other|compare him to the job|compare to the job|hiring manager|work style|how does he handle unknown|not knowing something|handle unknown tech/.test(q)) return true;
+  if (/who is bradley|who is brad\b|who's bradley|who's brad|what makes him different|different from other|compare him to the job|compare to the job|hiring manager|how does he handle unknown|not knowing something|handle unknown tech/.test(q)) return true;
   // Smoke tests / greetings / meta questions have deterministic answers and should not burn provider quota/latency
   if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b|are you online|say hello|health status|what can you (help|do) with|what can this bot (help|do)|what model|what provider|what llm|what ai|which model|which provider|what is this chatbot|does this use ollama|is this ai local|is my chat private|what data do you use|who made this|is this bradley'?s site|how is this chat free|how do you stay free|what powers you|what is your stack|what is this site for|what does this site do|daily cap|daily limit|rate limit|cooldown|how.*handle.*limit|run 24|24.?7|24x7|always available|what if.*provider|exhausted|out of quota/.test(q)) return true;
   // Naturalness / no-bs prompts have direct grounded answers
@@ -1722,7 +1787,7 @@ function mustStayGrounded(question, history) {
   // Purely factual / sensitive lookups and common recruiter questions have direct grounded answers
   if (/\b(gpa|salary|address|phone number|current address|home address|education|degree|school|full sail|army|military|veteran|production outage history|security clearance|private family|medical history|references|manager name|customer list|exact availability|preferred pay)\b|internship real|intenship|internship\b|senior dev|is he junior|junior candidate/.test(q)) return true;
   if (/weakness|weaknesses|weak at|strength|strongest|greatest|best at|what does he do well|concerns?|not proven|what is he missing|gaps|limitations|red flag|what concerns/.test(q)) return true;
-  if (/where located|where is he|where does he live|based in|where is he based|can relocate|what job fit|what stack|what role|what kind of work|what jobs|certs\b|certifications\b|exprience|experience\?|work history/.test(q)) return true;
+  if (/where located|where is he|where does he live|based in|where is he based|can relocate|what job fit|what role|certs\b|certifications\b|exprience|internship\b/.test(q)) return true;
   if (/can he work with react|can he troubleshoot|does he write docs|can he talk to users|does he write documentation|does he know react|does he no react|does he know|can he code|can he work with|is he familiar with/.test(q)) return true;
   if (/do not start|don't start|never start|start with/.test(q)) return true;
   if (/good candidate|good fit for|suitable for|is he a fit|would he be a/.test(q)) return true;
