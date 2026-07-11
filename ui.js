@@ -951,6 +951,34 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     return row;
   }
 
+  // Reveal HTML reply word-by-word for a consistent, human-like typing effect.
+  // Tags are emitted whole; text tokens are emitted one at a time.
+  function typeHtml(contentEl, html, wordDelayMs = 32) {
+    return new Promise(resolve => {
+      const tokens = html.match(/<[^>]+>|\S+|\s+/g) || [];
+      let i = 0;
+      let buffer = '';
+      function next() {
+        if (i >= tokens.length) {
+          contentEl.innerHTML = buffer;
+          resolve();
+          return;
+        }
+        const token = tokens[i++];
+        if (token.startsWith('<')) {
+          buffer += token;
+        } else {
+          // Escaping bare ampersands keeps partial HTML valid while typing
+          buffer += token.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+        }
+        contentEl.innerHTML = buffer;
+        chatOutput.scrollTop = chatOutput.scrollHeight;
+        setTimeout(next, wordDelayMs);
+      }
+      next();
+    });
+  }
+
   function appendTypingStatus() {
     const row = appendMessage("bot", "Scout", `<span class="typing-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span><span class="thinking-tip"></span>`, { statusId: "thinking-status" });
     const tips = [
@@ -1060,6 +1088,34 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     submitChat();
   });
 
+  const MIN_TYPING_MS = 700;
+  const WORD_DELAY_MS = 32;
+
+  function clearTypingStatus(row) {
+    const timer = row && row.dataset ? row.dataset.tipTimer : null;
+    if (timer) clearInterval(Number(timer));
+    if (row && row.parentNode) row.remove();
+  }
+
+  async function showBotReply(statusRow, html, typingStart) {
+    const elapsed = Date.now() - typingStart;
+    const wait = Math.max(0, MIN_TYPING_MS - elapsed);
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    const timer = statusRow && statusRow.dataset ? statusRow.dataset.tipTimer : null;
+    if (timer) clearInterval(Number(timer));
+    statusRow.removeAttribute("id");
+    const contentEl = statusRow.querySelector(".message-content");
+    if (contentEl) contentEl.innerHTML = "";
+    await typeHtml(contentEl || statusRow, html, WORD_DELAY_MS);
+    return statusRow;
+  }
+
+  async function typeNewBotMessage(html) {
+    const row = appendMessage("bot", "Scout", "");
+    await typeHtml(row.querySelector(".message-content"), html, WORD_DELAY_MS);
+    return row;
+  }
+
   const submitChat = async () => {
     const now = Date.now();
     if (now - lastRequestTime < requestInterval) {
@@ -1092,18 +1148,21 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       const possibleName = extractVisitorName(userQuery);
       if (possibleName) {
         saveVisitorName(possibleName);
-        appendMessage("bot", "Scout", `Nice to meet you, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask me about his projects, AWS background, role fit, honest gaps, or contact details.`);
+        const greetingHtml = `Nice to meet you, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask me about his projects, AWS background, role fit, honest gaps, or contact details.`;
+        await typeNewBotMessage(greetingHtml);
         rememberTurn("user", userQuery);
         rememberTurn("assistant", `Visitor name captured as ${visitorName}`);
         turnCount += 1;
         chatInput.value = "";
         resizeInput();
         setBusy(false);
+        chatInput.focus();
         return;
       }
     }
 
     const statusRow = appendTypingStatus();
+    const typingStart = Date.now();
 
     try {
       const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData, {
@@ -1122,13 +1181,14 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       const isLocalDuplicate = newTopic !== "ai" && plainReply && plainReply === lastBotReplyText;
       if (isLocalDuplicate) {
         const label = visitorName ? `${escapeHtml(visitorName)}, ` : "";
-        appendMessage("bot", "Scout", `${label}I already covered that locally. The useful part was: “${escapeHtml(plainReply.slice(0, 220))}${plainReply.length > 220 ? "..." : ""}” Ask for proof, tradeoffs, risks, or interview wording and I’ll take a new angle.`);
+        const dupHtml = `${label}I already covered that locally. The useful part was: “${escapeHtml(plainReply.slice(0, 220))}${plainReply.length > 220 ? "..." : ""}” Ask for proof, tradeoffs, risks, or interview wording and I’ll take a new angle.`;
+        await showBotReply(statusRow, dupHtml, typingStart);
         chatInput.value = "";
         resizeInput();
         return;
       }
 
-      appendMessage("bot", "Scout", finalReply);
+      await showBotReply(statusRow, linkifyHtml(finalReply), typingStart);
       rememberTurn("user", userQuery);
       rememberTurn("assistant", finalReply);
       lastBotReplyText = plainReply;
@@ -1137,9 +1197,8 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       resizeInput();
     } catch (error) {
       console.error("ProjectHub chat error:", error);
-      appendMessage("bot", "Scout", "I can still help from Bradley’s verified profile details. Try asking about projects, AWS experience, CIRIS, target roles, skills, or contact links.");
+      if (statusRow) await showBotReply(statusRow, "I can still help from Bradley’s verified profile details. Try asking about projects, AWS experience, CIRIS, target roles, skills, or contact links.", typingStart);
     } finally {
-      statusRow.remove();
       setBusy(false);
       chatInput.placeholder = "Ask Scout about Bradley's work, projects, skills, or roles...";
       chatInput.focus();
@@ -1164,9 +1223,10 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   });
   renderSuggestions();
   const freeNote = `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(57,217,138,0.12);border:1px solid rgba(57,217,138,0.28);color:#b8f5d3;font-size:12px;">🟢 I run entirely on free tiers. If a provider hits its daily cap or rate limit, I automatically switch to another free provider or local Ollama on the GCP VM.</span>`;
-  appendMessage("bot", "Scout", visitorName
+  const welcomeHtml = visitorName
     ? `Welcome back, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask about his projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.${freeNote}`
-    : `Hi, I’m Scout, Bradley’s recruiter assistant. What should I call you for this session? A first name is enough, and then I’ll keep the conversation personal and coherent.${freeNote}`);
+    : `Hi, I’m Scout, Bradley’s recruiter assistant. What should I call you for this session? A first name is enough, and then I’ll keep the conversation personal and coherent.${freeNote}`;
+  typeNewBotMessage(welcomeHtml);
 
   console.log("ProjectHub loaded!");
 }
