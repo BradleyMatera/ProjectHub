@@ -1988,7 +1988,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // User frustration / confusion / pushback — acknowledge and redirect instead of repeating the out-of-scope phrase
-  if (/this isn.t coherent|that doesn.t make sense|what does that even mean|what does that mean|you.?re not helping|this is unhelpful|that.s not helpful|that makes no sense|this is broken|you keep saying that|why do you keep|stop repeating|speak normally|explain yourself/.test(lowerQuestion)) {
+  if (/this isn'?t coherent|that doesn'?t make sense|what does that even mean|what does that mean|you'?re not helping|this is unhelpful|that'?s not helpful|that makes no sense|this is broken|you keep saying that|why do you keep|stop repeating|speak normally|explain yourself/.test(lowerQuestion)) {
     return { reply: `Sorry that wasn't clear. ${agentName} answers from Bradley's verified recruiter data. Ask about his skills, projects, AWS background, target roles, or how to contact him.` };
   }
 
