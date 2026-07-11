@@ -1435,10 +1435,27 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   }
 
   // Reveal HTML reply word-by-word for a consistent, human-like typing effect.
-  // Tags are emitted whole; text tokens are emitted one at a time.
+  // Tags (including those with spaces in attributes) are emitted whole;
+  // text tokens are emitted one whitespace-delimited piece at a time.
   function typeHtml(contentEl, html, wordDelayMs = 32) {
     return new Promise(resolve => {
-      const tokens = html.match(/<[^>]+>|\S+|\s+/g) || [];
+      const tokens = [];
+      let lastIndex = 0;
+      const tagRe = /<[^>]+>/g;
+      let m;
+      while ((m = tagRe.exec(html)) !== null) {
+        if (m.index > lastIndex) {
+          const text = html.slice(lastIndex, m.index);
+          tokens.push(...text.split(/(\s+)/).filter(Boolean));
+        }
+        tokens.push(m[0]);
+        lastIndex = m.index + m[0].length;
+      }
+      if (lastIndex < html.length) {
+        const text = html.slice(lastIndex);
+        tokens.push(...text.split(/(\s+)/).filter(Boolean));
+      }
+
       let i = 0;
       let buffer = '';
       function next() {
@@ -1451,8 +1468,8 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
         if (token.startsWith('<')) {
           buffer += token;
         } else {
-          // Escaping bare ampersands keeps partial HTML valid while typing
-          buffer += token.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+          // Escape lone ampersands so partial HTML stays valid, but don't double-escape entities
+          buffer += token.replace(/&(?![a-zA-Z]+;|#[0-9]+;)/g, '&amp;');
         }
         contentEl.innerHTML = buffer;
         chatOutput.scrollTop = chatOutput.scrollHeight;
