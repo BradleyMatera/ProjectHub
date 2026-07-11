@@ -375,7 +375,11 @@ function shapeReply(text, question, knowledge) {
 
   if (shape.oneSentence) out = firstSentence(out);
   if (shape.maxWords) out = truncateWords(out, shape.maxWords);
-  if (shape.paragraph) out = out.replace(/<br>/g, ' ').replace(/^- /gm, '').replace(/\s{2,}/g, ' ');
+  if (shape.paragraph) {
+    out = out.replace(/<br>/g, ' ').replace(/^- /gm, '').replace(/\s{2,}/g, ' ');
+    // Keep paragraphs concise even when no explicit word cap is given
+    out = truncateWords(out, 80);
+  }
 
   return out.trim();
 }
@@ -891,12 +895,12 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   
   // Safety: prompt injection / secret extraction / false claims
   if (/(ignore previous|ignore all rules|ignore your instructions|show.*system prompt|print.*env|api key|give me.*key|\.env|home address|family details|bypass cors|open.*port\s*11434|open port|fortune 500|reveal.*prompt|hidden config|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|social security|birth date|wife|children|disability rating|bank|password|act as root|delete the vm|hack the site|fake reference|security clearance)/.test(lowerQuestion)) {
-    return { reply: `I can only answer recruiter questions about ${name} using the public site data. I can't help with that.` };
+    return { reply: `${agentName} can only answer recruiter questions about ${name} using the public site data. It can't help with that.` };
   }
   
   // Refuse false-claim requests, offer honest alternative (hallucination red team pack)
   if (/(pretend|make up|claim|say|tell|write)\b.*\b(google|senior|cto|10 years|masters|kubernetes|led a team|production engineer|production experience|outages|clearance|fortune|payment systems|startup|papers|hackathons|l4|azure|dba|machine learning engineer|rust)/.test(lowerQuestion) || /write something that hides|hide his lack/.test(lowerQuestion)) {
-    return { reply: `I can't claim that because it's not in ${name}'s verified data. The honest version: he's a junior engineer with real React/Next.js projects, AWS certifications, and structured AWS internship training. That's the story worth telling.` };
+    return { reply: `That claim isn't in ${name}'s verified data. The honest version: he's a junior engineer with real React/Next.js projects, AWS certifications, and structured AWS internship training. That's the story worth telling.` };
   }
   
   // Smoke tests / greetings
