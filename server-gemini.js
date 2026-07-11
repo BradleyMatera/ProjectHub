@@ -635,7 +635,7 @@ async function callOpenAICompatibleProvider(baseUrl, apiKey, model, knowledge, q
     body: JSON.stringify({
       model,
       messages,
-      max_tokens: 120,
+      max_tokens: 200,
       temperature: 0.7,
       top_p: 0.9
     })
@@ -745,7 +745,7 @@ async function callGeminiWithPrompt(prompt, model) {
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        maxOutputTokens: 120,
+        maxOutputTokens: 200,
         temperature: 0.7,
         topK: 1,
         topP: 0.9
@@ -1033,28 +1033,45 @@ function handleRoleFit(knowledge, question, role) {
 }
 
 function buildPrompt(knowledge, question, history, provider) {
-  const { identity, summary, goals, education, certifications, experience, skills, projects, rules, faq, conversationQualityStandards } = knowledge || {};
+  const { identity, summary, goals, education, certifications, experience, skills, projects, rules, faq, interviewStories, conversationQualityStandards } = knowledge || {};
   const name = identity?.name || 'Bradley Matera';
   const preferredName = identity?.preferredName || 'Brad';
   const title = identity?.title || 'junior software engineer';
   const location = identity?.location || 'Davis, Illinois';
 
-  let context = `You are the assistant for Bradley Matera, an approachable recruiter-side helper named "Scout". You answer questions about Bradley from the verified facts below. You are NOT Bradley, but you represent him in a warm, human, and direct way. You are in a chat widget on his portfolio site.\n\n`;
+  let context = `You are Scout, the assistant for Bradley Matera. You're an approachable recruiter-side helper in a chat widget on his portfolio site. You answer questions about Bradley from verified facts. You are NOT Bradley, but you represent him honestly and warmly.\n\n`;
   context += `Bradley is a ${title} based in ${location}. He goes by ${preferredName}.\n\n`;
 
-  // RAG context
+  // RAG context — rich enough for the LLM to answer naturally without hallucinating
   context += `VERIFIED FACTS ABOUT BRADLEY:\n`;
-  if (summary?.whoIAm) context += `- About: ${summary.whoIAm}\n`;
+  if (summary?.whoIAm) context += `- Who he is: ${summary.whoIAm}\n`;
   if (summary?.whatIDo) context += `- What he does: ${summary.whatIDo}\n`;
   if (summary?.whatIAmLookingFor) context += `- Looking for: ${summary.whatIAmLookingFor}\n`;
+  if (summary?.coreStrengths?.length) context += `- Core strengths: ${summary.coreStrengths.join('; ')}\n`;
+  if (summary?.workStyle?.length) context += `- Work style: ${summary.workStyle.join('; ')}\n`;
   if (goals?.targetRoles) context += `- Target roles: ${goals.targetRoles.join(', ')}\n`;
+  if (goals?.relocation) context += `- Relocation: ${goals.relocation}\n`;
   if (skills?.languagesAndFrameworks) context += `- Frontend stack: ${skills.languagesAndFrameworks.join(', ')}\n`;
   if (skills?.cloudAndInfrastructure) context += `- Cloud: ${skills.cloudAndInfrastructure.join(', ')}\n`;
   if (skills?.toolsAndWorkflows) context += `- Tools: ${skills.toolsAndWorkflows.join(', ')}\n`;
+  if (skills?.aiAndAutomation) context += `- AI workflow: ${skills.aiAndAutomation.join(', ')}\n`;
+  if (skills?.learningOrAdjacent) context += `- Currently learning: ${skills.learningOrAdjacent.join('; ')}\n`;
   if (education?.degree) context += `- Education: ${education.degree} from ${education.school} (GPA ${education.gpa || 'not listed'}, graduated ${education.graduationDate || '2025'})\n`;
   if (certifications?.length) context += `- Certifications: ${certifications.map(c => c.name).join(', ')}\n`;
-  if (projects?.length) context += `- Projects: ${projects.slice(0, 6).map(p => `${p.name} (${p.category})`).join('; ')}\n`;
-  if (experience?.length) context += `- Experience: ${experience.map(e => `${e.role} at ${e.company} (${e.dates})`).join('; ')}\n`;
+  if (projects?.length) context += `- Projects: ${projects.slice(0, 8).map(p => `${p.name} - ${p.description || p.category}`).join('; ')}\n`;
+  if (experience?.length) {
+    context += `- Experience:\n`;
+    experience.slice(0, 5).forEach(e => {
+      context += `  - ${e.role} at ${e.company} (${e.dates || 'dates not listed'}): ${e.summary || ''}\n`;
+      if (e.responsibilities?.length) context += `    Key work: ${e.responsibilities.slice(0, 3).join('; ')}\n`;
+    });
+  }
+  if (interviewStories?.length) {
+    context += `- Interview answers (use these as reference for how Bradley talks about himself):\n`;
+    interviewStories.forEach(s => {
+      context += `  Q: "${s.prompt || s.topic}" -> A: "${s.answer || s.story || ''}"\n`;
+    });
+  }
   if (identity?.shortPitch) context += `- Short pitch: ${identity.shortPitch}\n`;
 
   if (rules?.doNot?.length) {
@@ -1063,8 +1080,8 @@ function buildPrompt(knowledge, question, history, provider) {
   }
 
   context += `\nVOICE AND STYLE:\n`;
-  context += `- Talk like a normal, helpful person. Not a corporate AI, not a resume.\n`;
-  context += `- Answer directly in 1-3 short sentences. Be warm but honest.\n`;
+  context += `- Talk like a normal, helpful person. Not a corporate AI, not a resume, not a sales pitch.\n`;
+  context += `- Answer directly in 1-3 short sentences for simple questions. Give more detail when the question warrants it.\n`;
   context += `- Never start with "Certainly", "Absolutely", "Great question", "Of course", "Sure", or "As an AI".\n`;
   context += `- Never use words like robust, passionate, synergy, leverage, dynamic, extensive, groundbreaking, cutting-edge, innovative, world-class, best-in-class, proven leader, deep mastery, exceptional, seasoned, or guru.\n`;
   context += `- Do not repeat the user's question back at them.\n`;
@@ -1073,18 +1090,24 @@ function buildPrompt(knowledge, question, history, provider) {
   context += `- Do not describe his AWS work as live production ownership; it was structured labs and a controlled capstone.\n`;
   context += `- If the data does not contain the answer, say "I don't see that in the current recruiter data" and suggest checking the resume or contacting him directly.\n`;
   context += `- If the user is vague, ask a brief clarifying question.\n`;
+  context += `\nCONVERSATION RULES:\n`;
+  context += `- This is a real conversation. Reference what was already discussed without repeating it.\n`;
+  context += `- If the recruiter asks a follow-up, build on the previous answer. Don't start from scratch.\n`;
+  context += `- Vary your phrasing. Don't use the same sentence structure or opening words as previous turns.\n`;
+  context += `- When the recruiter seems to be exploring (asking open-ended questions), end with a relevant follow-up question to keep the conversation going.\n`;
+  context += `- When the recruiter asks a direct factual question, just answer it. Don't add unnecessary follow-ups.\n`;
+  context += `- Use the interview answers above as a guide for tone and content, but adapt naturally to the question.\n`;
 
   if (Array.isArray(history) && history.length > 0) {
     context += `\nRECENT CONVERSATION:\n`;
     history.slice(-5).forEach((turn, i) => {
       context += `User: ${turn.user || ''}\nScout: ${turn.assistant || ''}\n`;
     });
-    // Add conversation summary for long conversations
     if (history.length >= 3) {
       const topicsCovered = history.slice(-5).map(t => classifyTopic(t.user || '')).filter(t => t !== 'other');
       const uniqueTopics = [...new Set(topicsCovered)];
       if (uniqueTopics.length > 0) {
-        context += `\n(Topics already covered: ${uniqueTopics.join(', ')}. Do not repeat info from earlier turns unless asked.)\n`;
+        context += `\n(Topics already covered: ${uniqueTopics.join(', ')}. Reference these if relevant, but don't repeat the same info unless asked.)\n`;
       }
     }
   }
@@ -1617,8 +1640,34 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   return { reply: concisePitch(knowledge) };
 }
 
-function buildGroundedFallback(knowledge, question) {
-  return buildGroundedFallbackPayload(knowledge, question).reply;
+function buildGroundedFallback(knowledge, question, history) {
+  return buildGroundedFallbackPayload(knowledge, question, history || []).reply;
+}
+
+// Wrap a grounded reply with conversation context awareness.
+// If the last turn covered the same topic, acknowledge it instead of repeating blindly.
+function buildContextualGroundedReply(groundedReply, question, history) {
+  if (!Array.isArray(history) || history.length === 0) return groundedReply;
+  const lastTurn = history[history.length - 1];
+  if (!lastTurn || !lastTurn.assistant) return groundedReply;
+
+  const currentTopic = classifyTopic(question);
+  const lastTopic = classifyTopic(lastTurn.user || '');
+  if (currentTopic === 'other' || currentTopic !== lastTopic) return groundedReply;
+
+  // Same topic as last turn — check if the grounded reply is nearly identical to the last answer
+  const lastAns = String(lastTurn.assistant || '').toLowerCase().replace(/<[^>]+>/g, '').trim();
+  const groundedNorm = String(groundedReply || '').toLowerCase().replace(/<[^>]+>/g, '').trim();
+  // If the answers share >60% of words, it's a repeat
+  const groundedWords = new Set(groundedNorm.split(/\s+/).filter(w => w.length > 4));
+  const lastWords = new Set(lastAns.split(/\s+/).filter(w => w.length > 4));
+  if (groundedWords.size === 0) return groundedReply;
+  const overlap = [...groundedWords].filter(w => lastWords.has(w)).length / groundedWords.size;
+  if (overlap > 0.6) {
+    // Add a brief acknowledgment prefix instead of repeating the same info
+    return `As I mentioned, ${groundedReply.charAt(0).toLowerCase()}${groundedReply.slice(1)}`;
+  }
+  return groundedReply;
 }
 
 function shouldUseGroundedAnswer(question) {
@@ -1633,11 +1682,11 @@ function isProbablyRelevant(question) {
   return /\b(bradley|brad|matera|candidate|recruiter|software|engineer|developer|web|aws|cloud|support|skill|stack|project|portfolio|contact|email|phone|role|job|education|cert|resume|ciris|ethical|freelance|contributor|intern|internship|work|experience|debug|troubleshoot|document|learn|communication|army|military|construction|case|manager|managers|approach|style|strength|weakness|feedback|management)\b/.test(normalized) || normalized.includes('bradley');
 }
 
-function cleanModelReply(reply, knowledge, question) {
+function cleanModelReply(reply, knowledge, question, history) {
   let cleaned = String(reply || '').trim().replace(/\s+/g, ' ');
   cleaned = removeSlop(cleaned);
   if (!cleaned || cleaned.length < 10) {
-    return { reply: buildGroundedFallback(knowledge, question), fallback: true };
+    return { reply: buildGroundedFallback(knowledge, question, history), fallback: true };
   }
   return { reply: cleaned, fallback: false };
 }
@@ -1969,34 +2018,22 @@ async function generateWithNetwork(knowledge, question, history, groundedReply) 
   return null;
 }
 
-// Queries that must stay deterministic for correctness/safety
+// Queries that must stay deterministic for correctness/safety.
+// Only safety-critical and private-data questions are forced grounded.
+// Everything else flows to the LLM provider network for natural, contextual answers.
 function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
   const repair = detectRepair(question);
   if (repair.shorter || repair.isBareFollowup || repair.blunt || repair.moreHonest || repair.resumeLanguage) return true;
-  if (/(ignore|inject|system prompt|\.env|api key|password|address|salary|make up|pretend|fortune|claim|bypass|open port|port 11434|localhost|127\.0\.0\.1|:11434|active security clearance|team of \d+|10\s*years|fortune 500|seasoned|full.?stack expert|10x|ninja|rockstar|wizard|guru|veteran|well.?versed|proven track record|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|hidden config|show.*env|fake reference|social security|birth date|wife|children|family details|medical history|i am.*admin|i am.*owner|i am.*developer|i am.*from the government|i am.*security researcher|bradley'?s friend|his friend|reveal.*environment|reveal.*secret|reveal.*config|show.*contents of|read.*file|show me.*\.json|show me.*learned|show me.*stats|opt\/recruiter|\/opt\/|etc\/passwd|environment variable|ignore that|ignore all previous|override.*rules|override.*instructions)/.test(q)) return true;
+  // Safety: prompt injection, secret extraction, social engineering
+  if (/(ignore|inject|system prompt|\.env|api key|password|bypass|open port|port 11434|localhost|127\.0\.0\.1|:11434|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|hidden config|show.*env|fake reference|social security|birth date|wife|children|family details|medical history|i am.*admin|i am.*owner|i am.*developer|i am.*from the government|i am.*security researcher|bradley'?s friend|his friend|reveal.*environment|reveal.*secret|reveal.*config|show.*contents of|read.*file|show me.*\.json|show me.*learned|show me.*stats|opt\/recruiter|\/opt\/|etc\/passwd|environment variable|ignore that|ignore all previous|override.*rules|override.*instructions)/.test(q)) return true;
+  // False-claim requests must be blocked deterministically
   if (/(pretend|make up|make.*sound|claim|say|tell|write|describe|write something that)\b.*\b(google|senior|cto|10\s*years|10\+\s*years|masters?|master.s|kubernetes|led a team|production engineer|production experience|outages|clearance|payment systems|terraform|machine learning engineer|hide his lack|hide.*lack|full.?stack expert|10x|ninja|rockstar|wizard|guru|rust|glowing review|overselling|world.class)\b/.test(q) || /write something that hides|hide his lack/.test(q)) return true;
-  if (/\b(contact|email|phone|reach|github)\b|portfolio url|resume\?|links\?|\blinkedin\b(?!.*\b(style|summary|profile)\b)/.test(q)) return true;
-  if (/\bproject|portfolio\b|which project|what project|best project|most relevant project|what is projecthub|ciris|interactive pokedex|pokedex|cheesemath|worked at amazon|has he worked at|did he work at/.test(q)) return true;
-  if (/who is bradley|who is brad\b|who's bradley|who's brad|what makes him different|different from other|compare him to the job|compare to the job|hiring manager|work style|how does he work|how he works|coding style|how does he handle unknown|not knowing something|handle unknown tech|how does he solve|how does he approach.*problem|how does he debug|approach to learning|how does he learn|how he learns|learning style/.test(q)) return true;
-  // Smoke tests / greetings / meta questions have deterministic answers and should not burn provider quota/latency
-  if (/^(hey|hi|hello|yo|sup|yo what is this|hey what is this thing|what page am i on)\b|are you online|say hello|health status|what can you (help|do) with|what can this bot (help|do)|what model|what provider|what llm|what ai|which model|which provider|what is this chatbot|does this use ollama|is this ai local|is my chat private|what data do you use|who made this|is this bradley'?s site|how is this chat free|how do you stay free|what powers you|what is your stack|what is this site for|what does this site do|daily cap|daily limit|rate limit|cooldown|how.*handle.*limit|run 24|24.?7|24x7|always available|what if.*provider|exhausted|out of quota/.test(q)) return true;
-  // Naturalness / no-bs prompts have direct grounded answers
-  if (/why should i care|what can he actually do|what does he actually know|what does he actually do|is he worth|worth calling|worth interviewing|is he good|is he legit|real projects|not just a portfolio|not a portfolio|what is the catch|how about his aws|what happened there|what about that project|what about cloud|cloud stuff|aws thingy|aws work|tell me about aws|give me the honest|give me the simple|just the facts|tell me straight|like a normal person|normal person|no bs|no bull|straight answer|plain english/.test(q)) return true;
-  // Interpersonal / social / customer service / data scope / confusion prompts have grounded answers
-  if (/interpersonal|social skill|works well with|good with people|how is he with people|people person|socially|customer service|customer support|help desk|service desk|what data|what info|what information|what do you (have|know)|what is in (his|the) data|not making sense|makes no sense|confused|dont understand|do not understand/.test(q)) return true;
-  // Interview questions and explicit tone-word bans get the deterministic reply so they are accurate
-  if (/interview question|what.*ask him|what.*verify|what questions|reasons? to interview|why hire|why should.*hire|three reasons/.test(q)) return true;
+  // Private/sensitive data that should never go to the LLM
+  if (/\b(salary|address|home address|current address|phone number|social security|birth date|family details|medical history|security clearance|references|manager name|customer list|preferred pay)\b/.test(q)) return true;
+  // Smoke test / health check patterns — deterministic for monitoring
+  if (/are you online|say hello|health status|daily cap|daily limit|rate limit|cooldown|how.*handle.*limit|run 24|24.?7|24x7|always available|what if.*provider|exhausted|out of quota/.test(q)) return true;
   if (detectBannedWords(question).length > 0) return true;
-  // Purely factual / sensitive lookups and common recruiter questions have direct grounded answers
-  if (/\b(gpa|salary|address|phone number|current address|home address|education|degree|school|full sail|army|military|veteran|production outage history|security clearance|private family|medical history|references|manager name|customer list|exact availability|preferred pay)\b|internship real|intenship|internship\b|senior dev|is he junior|junior candidate/.test(q)) return true;
-  if (/weakness|weaknesses|weak at|strength|strongest|greatest|best at|what does he do well|concerns?|not proven|what is he missing|gaps|limitations|red flag|what concerns/.test(q)) return true;
-  if (/where located|where is he|where does he live|based in|where is he based|can relocate|what job fit|what role|certs\b|certifications\b|experience|work history|background|internship\b/.test(q)) return true;
-  if (/can he work with react|can he troubleshoot|does he write docs|can he talk to users|does he write documentation|does he know react|does he no react|does he know|can he code|can he work with|is he familiar with/.test(q)) return true;
-  if (/do not start|don't start|never start|start with/.test(q)) return true;
-  if (/good candidate|good fit for|suitable for|is he a fit|would he be a/.test(q)) return true;
-  // Recruiter role-fit and capability questions
-  if (/\bfit for\b|\ba fit for\b|\bwould he fit\b|\bshould i consider\b|\bwhy hire\b|\bwhat roles\b|\brole fit\b|\bjob fit\b|\bsuitable for\b|\bgood match\b|\bbad fit\b|\bgood fit\b|\bstrong fit\b|\baws experience\b|\bcloud experience\b|\breact experience\b/.test(q)) return true;
   // Out-of-scope questions should get the grounded "not in recruiter data" reply, not LLM hallucinations
   if (!isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate/.test(q)) return true;
   const shape = detectShape(question);
@@ -2589,6 +2626,11 @@ app.post('/api/chat', async (req, res) => {
       }
     } else {
       pipeline.push('mustStayGrounded:true');
+    }
+
+    // 2b. Apply context-aware wrapping to grounded replies (avoid blind repetition)
+    if (!generated && provider === 'grounded') {
+      reply = buildContextualGroundedReply(reply, userMessage, history);
     }
 
     // 3. Deterministic format compliance (one sentence, bullets, JSON, word caps, tone controls)

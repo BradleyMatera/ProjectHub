@@ -1193,14 +1193,6 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       });
       lastQueryTopic = newTopic;
       const finalReply = reply;
-      // Duplicate-question interception removed — recruiters often ask the same thing in different words and deserve a straight answer
-      if (false) {
-        const label = visitorName ? `${escapeHtml(visitorName)}, ` : "";
-        const dupHtml = `${label}I already covered that locally. The useful part was: “${escapeHtml(plainReply.slice(0, 220))}${plainReply.length > 220 ? "..." : ""}” Ask for proof, tradeoffs, risks, or interview wording and I’ll take a new angle.`;
-        await showBotReply(statusRow, dupHtml, typingStart);
-        chatInput.value = "";
-        resizeInput();
-      }
 
       await showBotReply(statusRow, linkifyHtml(finalReply), typingStart);
       rememberTurn("user", userQuery);
