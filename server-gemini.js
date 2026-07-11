@@ -1737,7 +1737,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Linux / terminal / command line / shell (placed before specific-skill yes/no so typo'd terminal questions don't fall through)
-  if (/\blinux\b|\bunix\b|terminal|command.?line|shell|bash|powershell|cmd\.exe|cli\b|use.*terminal|can he use.*terminal|know.*linux|command prompt/.test(lowerQuestion)) {
+  if (/\blinux\b|\bunix\b|terminal|command.?line|shell|bash|powershell|cmd\.exe|cli\b|use.*terminal|can he use.*terminal|know.*linux|command prompt/.test(normalized)) {
     const tools = (skills?.toolsAndWorkflows || []).filter(s => /linux|terminal|shell|command|git cli/i.test(s));
     const hasDocker = (skills?.toolsAndWorkflows || []).some(s => /docker/i.test(s));
     const hasAWS = (skills?.cloudAndInfrastructure || []).some(s => /aws/i.test(s));
@@ -2582,7 +2582,7 @@ let totalRequestsServed = 0; // this-restart counter
 let lastReplyProvider = null;
 
 function classifyTopic(question) {
-  const q = String(question || '').toLowerCase();
+  const q = normalizeQuestion(question);
   if (/project|portfolio|codepen|shipped|github repo/.test(q)) return 'projects';
   if (/aws|cloud|lambda|dynamodb|serverless|certification|cert/.test(q)) return 'aws';
   if (/skill|stack|tech|javascript|typescript|react|node|sql|linux|terminal|command.?line|shell|bash|powershell/.test(q)) return 'skills';
