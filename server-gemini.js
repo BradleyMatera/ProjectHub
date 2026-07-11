@@ -1282,19 +1282,18 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   // Contextual pronoun follow-ups: 'was that paid?', 'what did he do there?', 'how about that?'
   // Re-execute with the previous topic substituted so the right branch can answer.
   const isBareFollowup = /^\s*(was that|what did he do there|what about that|how about that|tell me more about that|is that|was it|what about it)\b/i.test(question);
-  const lastTopic = classifyTopic(lastUser);
-  if (isBareFollowup && lastTopic !== 'other') {
-    let contextualQuestion = question;
-    if (lastTopic === 'experience' && /kitten|rescue|animal/i.test(lastAssistant)) {
+  if (isBareFollowup && lastAssistant) {
+    let contextualQuestion = null;
+    if (/kitten|rescue|animal/i.test(lastAssistant)) {
       contextualQuestion = 'What did he do at Mason County Kitten Rescue';
-    } else if (lastTopic === 'army') {
+    } else if (/army|military|combat medic|68w|fort bragg|afghanistan/i.test(lastAssistant)) {
       contextualQuestion = 'Tell me about his Army service';
-    } else if (lastTopic === 'aws') {
+    } else if (/aws|lambda|dynamodb|s3|cloud/i.test(lastAssistant)) {
       contextualQuestion = 'Does he have AWS experience';
-    } else if (lastTopic === 'projects') {
+    } else if (/project|pokedex|metadata|ciris/i.test(lastAssistant)) {
       contextualQuestion = 'Tell me about his projects';
     }
-    if (contextualQuestion !== question) {
+    if (contextualQuestion) {
       return buildGroundedFallbackPayload(knowledge, contextualQuestion, history.slice(0, -1));
     }
   }

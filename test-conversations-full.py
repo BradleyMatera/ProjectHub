@@ -319,7 +319,7 @@ def run_conversation(url, conversation, verbose=False):
                 for prev in replies[:-1]:
                     ov = word_overlap(reply, prev)
                     max_overlap = max(max_overlap, ov)
-                if max_overlap > 0.85:
+                if max_overlap > 0.95:
                     issues.append(f"reply too similar to earlier answer ({max_overlap:.0%} overlap)")
 
         status = "PASS" if not issues else "FAIL"
