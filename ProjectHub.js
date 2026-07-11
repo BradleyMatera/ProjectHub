@@ -824,32 +824,39 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     }
 
     .projecthub-suggestions {
-      padding: 0 14px 12px;
+      padding: 0 14px 10px;
       display: flex;
       gap: 7px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+      mask-image: linear-gradient(to right, black 90%, transparent 100%);
+    }
+
+    .projecthub-suggestions::-webkit-scrollbar {
+      height: 5px;
+    }
+    .projecthub-suggestions::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.2);
+      border-radius: 3px;
+    }
+
+    .projecthub-suggestions--collapsed {
+      overflow: hidden;
+      max-height: 38px;
       flex-wrap: wrap;
     }
 
-    @media (max-width: 640px) {
-      .suggestion-chip {
-        white-space: normal;
-        text-align: left;
-      }
-    }
-
-    @media (min-width: 641px) {
-      .projecthub-suggestions {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        scrollbar-width: thin;
-      }
-      .projecthub-suggestions::-webkit-scrollbar {
-        height: 6px;
-      }
-      .projecthub-suggestions::-webkit-scrollbar-thumb {
-        background: rgba(255,255,255,0.2);
-        border-radius: 3px;
-      }
+    .suggestion-toggle {
+      margin: 0 14px 8px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--ph-muted);
+      font-size: 11px;
+      cursor: pointer;
+      text-align: left;
     }
 
     .suggestion-chip,
@@ -1099,6 +1106,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     </div>
     <div class="projecthub-body">
       <div id="chat-output" aria-live="polite"></div>
+      <button class="suggestion-toggle" type="button" data-action="toggle-suggestions" hidden>Show suggestions</button>
       <div class="projecthub-suggestions" aria-label="Suggested questions"></div>
     </div>
     <form class="projecthub-composer">
@@ -1118,6 +1126,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 
   const chatOutput = chatDiv.querySelector("#chat-output");
   const suggestionBar = chatDiv.querySelector(".projecthub-suggestions");
+  const suggestionToggle = chatDiv.querySelector(".suggestion-toggle");
   const chatInput = chatDiv.querySelector("#chat-input");
   const sendButton = chatDiv.querySelector(".send-button");
   const settingsBtn = chatDiv.querySelector(".projecthub-settings-button");
@@ -1305,8 +1314,18 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       "How is this chat free?",
       "How do daily caps and cooldowns work?"
     ];
-    const allSuggestions = [...prioritySuggestions, ...suggestions.filter(item => !prioritySuggestions.includes(item))].slice(0, 12);
+    const isNarrow = window.innerWidth <= 640;
+    const limit = isNarrow ? 6 : 12;
+    const allSuggestions = [...prioritySuggestions, ...suggestions.filter(item => !prioritySuggestions.includes(item))].slice(0, limit);
     suggestionBar.innerHTML = allSuggestions.map(item => `<button class="suggestion-chip" type="button" data-suggestion="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("");
+    updateSuggestionToggle();
+  }
+
+  function updateSuggestionToggle() {
+    if (!suggestionToggle) return;
+    const collapsed = suggestionBar.classList.contains('projecthub-suggestions--collapsed');
+    suggestionToggle.hidden = window.innerWidth > 640;
+    suggestionToggle.textContent = collapsed ? 'Show suggestions' : 'Hide suggestions';
   }
 
   minimizeBtn.addEventListener("click", () => {
@@ -1350,6 +1369,17 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     if (!suggestionButton || isRequestInFlight) return;
     setInputValue(suggestionButton.dataset.suggestion || suggestionButton.textContent || "");
     submitChat();
+  });
+
+  if (suggestionToggle) {
+    suggestionToggle.addEventListener('click', () => {
+      suggestionBar.classList.toggle('projecthub-suggestions--collapsed');
+      updateSuggestionToggle();
+    });
+  }
+
+  window.addEventListener('resize', () => {
+    renderSuggestions();
   });
 
   chatOutput.addEventListener("click", event => {
