@@ -499,14 +499,25 @@
       "category": "Open-source / freelance contributor"
     },
     {
-      "name": "ProjectHub",
+      "name": "ProjectHub (Scout)",
       "url": "https://bradleymatera.github.io/ProjectHub/",
-      "description": "Embeddable AI-powered chat widget that showcases Bradley's web development projects and CodePens. Served from GitHub Pages as a single script.",
+      "description": "Embeddable AI recruiter assistant named Scout. One script tag adds a chat widget to any site. It answers questions about Bradley's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It uses a network of free LLM providers with automatic failover, safety checks, false-claim guards, Think Mode self-improvement with an LLM-as-judge, per-tab session memory, and a live analytics dashboard. Frontend is vanilla JavaScript served from GitHub Pages; backend is a Node.js API on a free GCP e2-micro VM with Caddy HTTPS.",
       "tech": [
         "JavaScript",
-        "GitHub Pages"
+        "Node.js",
+        "Express",
+        "GitHub Pages",
+        "GCP e2-micro",
+        "Caddy",
+        "Vite",
+        "Carbon Design System",
+        "Groq",
+        "Cloudflare Workers AI",
+        "GitHub Models",
+        "Google Gemini",
+        "xAI Grok"
       ],
-      "category": "Portfolio / chat widget"
+      "category": "Portfolio / AI recruiter assistant"
     },
     {
       "name": "Fallen Knight: Requiem of Honor",
@@ -613,6 +624,22 @@
     {
       "question": "How can I contact Bradley?",
       "answer": "Email bradmatera@gmail.com, phone (360) 970-0581, LinkedIn www.linkedin.com/in/bradmatera, or portfolio https://bradleymatera.dev/."
+    },
+    {
+      "question": "What is Scout?",
+      "answer": "Scout is the AI recruiter assistant built into ProjectHub. It is a vanilla JavaScript chat widget that embeds with one script tag and answers questions about Bradley's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base."
+    },
+    {
+      "question": "What is ProjectHub?",
+      "answer": "ProjectHub is Bradley's embeddable AI recruiter assistant project. It serves a chat widget called Scout from GitHub Pages and runs a Node.js backend on a free GCP e2-micro VM. It uses a network of free LLM providers with automatic failover, safety checks, a self-improvement loop called Think Mode, per-tab session memory, and a live analytics dashboard."
+    },
+    {
+      "question": "How does Scout avoid hallucinating resume facts?",
+      "answer": "Scout builds a deterministic grounded answer first for factual questions. Only open-ended questions that do not require exact facts are routed to the free LLM provider network. Every generated answer is validated against the supplied context, false-claim checks run before any answer is returned, and Think Mode only promotes learned answers after an LLM-as-judge confirms they are more faithful, relevant, helpful, and safe than the grounded baseline."
+    },
+    {
+      "question": "How much does ProjectHub cost to run?",
+      "answer": "The goal is zero ongoing cost. The frontend is hosted on GitHub Pages, the backend runs on an Always Free eligible GCP e2-micro VM, Caddy and Let's Encrypt handle HTTPS, and the AI layer uses free provider tiers. There is no paid database or serverless function dependency."
     }
   ],
   "sitesAndProperties": {
