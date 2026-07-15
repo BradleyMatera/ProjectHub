@@ -14,7 +14,10 @@ const isDevHost = typeof window !== 'undefined' && /projecthub-dev/i.test(window
 const API_BASE_URL = isDevHost ? 'https://dev.projecthub-chat.bradleymatera.dev' : 'https://projecthub-chat.bradleymatera.dev';
 const API_HEALTH_URL = `${API_BASE_URL}/health`;
 const API_THINK_URL = `${API_BASE_URL}/api/think`;
-const API_COSTS_URL = `${API_BASE_URL}/api/costs`;
+const PROD_API_BASE = 'https://projecthub-chat.bradleymatera.dev';
+const DEV_API_BASE = 'https://dev.projecthub-chat.bradleymatera.dev';
+const API_COSTS_PROD_URL = `${PROD_API_BASE}/api/costs`;
+const API_COSTS_DEV_URL = `${DEV_API_BASE}/api/costs`;
 const GITHUB_REPO_API = 'https://api.github.com/repos/BradleyMatera/ProjectHub';
 const GITHUB_CONTRIB_API = 'https://api.github.com/repos/BradleyMatera/ProjectHub/contributors';
 const REFRESH_INTERVAL_MS = 5000;
@@ -668,20 +671,22 @@ async function fetchJson(url, options = {}) {
 }
 
 async function loadData() {
-  const [health, repo, contributors, costs] = await Promise.allSettled([
+  const [health, repo, contributors, costsProd, costsDev] = await Promise.allSettled([
     fetchJson(API_HEALTH_URL, { cache: 'no-store' }),
     fetchJson(GITHUB_REPO_API),
     fetchJson(GITHUB_CONTRIB_API),
-    fetchJson(API_COSTS_URL, { cache: 'no-store' }),
+    fetchJson(API_COSTS_PROD_URL, { cache: 'no-store' }),
+    fetchJson(API_COSTS_DEV_URL, { cache: 'no-store' }),
   ]);
 
   return {
     health: health.status === 'fulfilled' ? health.value : null,
     repo: repo.status === 'fulfilled' ? repo.value : null,
     contributors: contributors.status === 'fulfilled' ? contributors.value : null,
-    // Costs endpoint only exists when COST_TRACKER=true on the backend (dev);
-    // absence is silent — the section hides itself on production.
-    costs: costs.status === 'fulfilled' && costs.value?.ok ? costs.value : null,
+    // Cost trackers for BOTH environments. Each endpoint only exists when
+    // COST_TRACKER=true on that backend; an offline backend hides its card.
+    costsProd: costsProd.status === 'fulfilled' && costsProd.value?.ok ? costsProd.value : null,
+    costsDev: costsDev.status === 'fulfilled' && costsDev.value?.ok ? costsDev.value : null,
     errors: [
       health.status === 'rejected' ? `Health: ${health.reason.message}` : null,
       repo.status === 'rejected' ? `GitHub repo: ${repo.reason.message}` : null,
@@ -697,9 +702,12 @@ function costFmtBytes(n) {
   return (n || 0) + ' B';
 }
 
-function renderCostSection(section, costs) {
+function renderCostSection(section, costs, label, apiBase) {
   if (!costs) {
-    section.hidden = true;
+    section.hidden = false;
+    section.innerHTML = `
+      <h3 class="ph-analytics__section-title">Cost &amp; free-tier tracker — ${label}</h3>
+      <p class="ph-muted">Tracker offline or unreachable at <code>${apiBase}/api/costs</code>. If the backend is up, ensure COST_TRACKER=true in its .env.</p>`;
     return;
   }
   section.hidden = false;
@@ -756,8 +764,8 @@ function renderCostSection(section, costs) {
   const caveats = (costs.caveats || []).map(c => `<li>${c}</li>`).join('');
 
   section.innerHTML = `
-    <h3 class="ph-analytics__section-title">Cost &amp; free-tier tracker (dev)</h3>
-    <p class="ph-muted">Every metered event down to integer micro-USD. Proof the stack is actually free.</p>
+    <h3 class="ph-analytics__section-title">Cost &amp; free-tier tracker — ${label}</h3>
+    <p class="ph-muted">Every metered event down to integer micro-USD, live from <code>${apiBase}</code>. Proof the stack is actually free.</p>
     ${hero}
     <h4 class="ph-analytics__section-title" style="margin-top:1rem">Free-tier headroom</h4>
     <div class="ph-bar-list">${gauges || '<p class="ph-muted">No metered usage yet.</p>'}</div>
@@ -892,9 +900,13 @@ function render(container, data) {
     renderLearningSystem(learningContainer, health);
   }
 
-  const costSection = container.querySelector('.ph-analytics__costs');
-  if (costSection) {
-    renderCostSection(costSection, data.costs);
+  const costProdSection = container.querySelector('.ph-analytics__costs-prod');
+  if (costProdSection) {
+    renderCostSection(costProdSection, data.costsProd, 'Production', PROD_API_BASE);
+  }
+  const costDevSection = container.querySelector('.ph-analytics__costs-dev');
+  if (costDevSection) {
+    renderCostSection(costDevSection, data.costsDev, 'Dev / Staging', DEV_API_BASE);
   }
 
   if (meta && health) {
@@ -1062,7 +1074,9 @@ export function mount(selector) {
       <div class="ph-analytics__learning"></div>
     </div>
 
-    <div class="ph-analytics__section ph-analytics__costs" hidden></div>
+    <div class="ph-analytics__section ph-analytics__costs-prod" hidden></div>
+
+    <div class="ph-analytics__section ph-analytics__costs-dev" hidden></div>
 
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Service metadata</h3>
