@@ -42,13 +42,37 @@ jobs:
       - name: Run cost ledger unit tests
         run: npm run test:ledger
 
+      - name: Run retrieval unit tests
+        run: node --test test/bm25.test.js test/query-understanding.test.js test/vector-index.test.js test/hybrid-retrieve.test.js
+
+      - name: Run retrieval evaluation
+        run: node scripts/eval-retrieval.js
+
+      - name: Check embeddings freshness
+        run: |
+          if [ ! -f data/knowledge-vectors.json ]; then
+            echo "No knowledge-vectors.json — skipping freshness check"
+            exit 0
+          fi
+          KNOWLEDGE_HASH=$(node -e "const crypto=require('crypto');const fs=require('fs');const d=fs.readFileSync('data/recruiter-knowledge.json');console.log(crypto.createHash('sha256').update(d).digest('hex'))")
+          VECTORS_HASH=$(node -e "const d=JSON.parse(require('fs').readFileSync('data/knowledge-vectors.json','utf8'));console.log(d.knowledgeHash||'missing')")
+          if [ "$KNOWLEDGE_HASH" != "$VECTORS_HASH" ]; then
+            echo "WARNING: knowledge-vectors.json is stale (knowledge hash mismatch)"
+            echo "  knowledge.json: $KNOWLEDGE_HASH"
+            echo "  vectors.json:   $VECTORS_HASH"
+            echo "  Run: npm run build:embeddings"
+            # Non-blocking warning for now — vectors may not be committed yet
+          else
+            echo "Embeddings are fresh ✓"
+          fi
+
       - name: Check that new fetch call sites are metered
         run: |
           # Allowlist: all fetch() calls in server-gemini.js must either be to a
           # metered function, a provider caller that meters internally, or an
           # explicitly exempt URL. This check is intentionally narrow and will
           # need updating when new unmetered endpoints are intentionally added.
-          UNMETERED=$(grep -nE "fetch\(\`" server-gemini.js | grep -vE "meterEvent|callOpenAICompatibleProvider|callCloudflareWorkersAI|callGeminiWithPrompt|OLLAMA_URL|fetchKnowledge|pushLearnedToGitHub|pushRes = await fetch|metaRes = await fetch|https://api\.github\.com" || true)
+          UNMETERED=$(grep -nE "fetch\(\`" server-gemini.js | grep -vE "meterEvent|callOpenAICompatibleProvider|callCloudflareWorkersAI|callGeminiWithPrompt|OLLAMA_URL|fetchKnowledge|pushLearnedToGitHub|pushRes = await fetch|metaRes = await fetch|https://api\.github\.com|embedQuery" || true)
           if [ -n "$UNMETERED" ]; then
             echo "Found fetch() calls not obviously metered in server-gemini.js:"
             echo "$UNMETERED"

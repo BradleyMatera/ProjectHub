@@ -11,7 +11,10 @@
     "reset-stats:remote": "node scripts/reset-stats.js --remote",
     "judge-poc": "node scripts/think-judge-poc.js",
     "test": "node --test test/**/*.test.js",
-    "test:ledger": "node --test test/cost-ledger.test.js test/cost-insights.test.js"
+    "test:ledger": "node --test test/cost-ledger.test.js test/cost-insights.test.js",
+    "test:retrieval": "node --test test/bm25.test.js test/query-understanding.test.js test/vector-index.test.js test/hybrid-retrieve.test.js",
+    "build:embeddings": "node scripts/build-embeddings.js",
+    "eval-retrieval": "node scripts/eval-retrieval.js"
   },
   "repository": {
     "type": "git",

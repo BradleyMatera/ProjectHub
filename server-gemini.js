@@ -8,6 +8,11 @@ const fs = require('fs');
 const path = require('path');
 
 const { CostLedger } = require('./lib/cost-ledger');
+const { buildRagChunks } = require('./lib/rag-chunks');
+const { BM25Index } = require('./lib/bm25');
+const { understandQuery } = require('./lib/query-understanding');
+const { VectorIndex, embedQuery } = require('./lib/vector-index');
+const { hybridRetrieve } = require('./lib/hybrid-retrieve');
 
 const app = express();
 
@@ -74,7 +79,12 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://bradleymatera.d
 
 let knowledgeCache = null;
 let knowledgeCacheAt = 0;
+let bm25Index = null;
+let ragChunks = null;
+let vectorIndex = null;
 const KNOWLEDGE_CACHE_MS = 5 * 60 * 1000;
+const USE_BM25_RETRIEVAL = process.env.USE_BM25_RETRIEVAL !== 'false';
+const USE_VECTOR_RETRIEVAL = process.env.USE_VECTOR_RETRIEVAL === 'true';
 const RESPONSE_CACHE_MS = 10 * 60 * 1000;
 const RESPONSE_CACHE_LIMIT = 120;
 const GEMINI_TIMEOUT_MS = 7000;
@@ -122,6 +132,9 @@ const GITHUB_REPO_NAME = process.env.THINK_REPO_NAME || 'ProjectHub';
 const GITHUB_KNOWLEDGE_PATH = process.env.THINK_KNOWLEDGE_PATH || 'data/recruiter-knowledge.json';
 const THINK_PUSH_ENABLED = process.env.THINK_PUSH_ENABLED !== 'false';
 
+// Tone/style requests that are NOT knowledge gaps — don't stash these
+const TONE_REQUEST_RE = /no corporate|without buzzwords|just answer|be direct|say it in one|summarize like a normal|answer the question directly|stop avoiding|no bs|straight answer|plain (english|paragraph|language)|like a normal person|in plain|talk like a|normal tone|less formal|more casual|stop being so|tone|buzzword|corporate tone/;
+
 const defaultLearned = { stashed: [], learned: [], learnedCount: 0, lastThinkAt: 0, scoredHistory: [] };
 let learnedData;
 try {
@@ -129,6 +142,19 @@ try {
   learnedData = { ...defaultLearned, ...JSON.parse(raw) };
 } catch {
   learnedData = { ...defaultLearned };
+}
+
+// Startup stash cleanup: remove stale (24h+) and tone/style entries
+{
+  const staleCutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const before = learnedData.stashed.length;
+  learnedData.stashed = learnedData.stashed.filter(s =>
+    s.ts > staleCutoff && !TONE_REQUEST_RE.test(s.q) && (s.retries || 0) < 5
+  );
+  if (learnedData.stashed.length < before) {
+    console.log(`[startup] Cleaned ${before - learnedData.stashed.length} stale/tone stashes`);
+    try { fs.writeFileSync(LEARNED_FILE, JSON.stringify(learnedData, null, 2)); } catch {}
+  }
 }
 
 function saveLearned() {
@@ -325,7 +351,13 @@ app.get('/health', async (req, res) => {
       lastThinkAt: learnedData.lastThinkAt,
       thinkRunning,
       hasGitHubToken: GITHUB_API_TOKEN.length >= 10,
-      nextThinkIn: Math.max(0, THINK_INTERVAL_MS - (Date.now() - (learnedData.lastThinkAt || 0))),
+      nextThinkIn: Math.max(0, THINK_INTERVAL_MS - (Date.now() - (lastThinkAt || learnedData.lastThinkAt || 0))),
+      providersRecentlyRecovered: providersRecentlyRecovered.map(r => ({ slug: r.slug, recoveredAt: r.recoveredAt })),
+      semanticCacheSize: semanticCache.size,
+      stanceStoreSize: stanceStore.size,
+      bm25Chunks: bm25Index ? bm25Index.size : 0,
+      retrievalMode: USE_VECTOR_RETRIEVAL ? 'hybrid' : 'bm25',
+      vectorIndexLoaded: !!(vectorIndex && vectorIndex.size > 0),
       learnedScores: [...(learnedData.learned || []), ...(learnedData.scoredHistory || [])].map(l => ({ q: l.q, score: l.score, groundedScore: l.groundedScore, provider: l.provider })),
       avgLearnedScore: [...(learnedData.learned || []), ...(learnedData.scoredHistory || [])].length > 0 ? Math.round([...learnedData.learned, ...(learnedData.scoredHistory || [])].reduce((s, l) => s + (l.score || 0), 0) / [...learnedData.learned, ...(learnedData.scoredHistory || [])].length) : 0,
       avgGroundedScore: [...(learnedData.learned || []), ...(learnedData.scoredHistory || [])].length > 0 ? Math.round([...learnedData.learned, ...(learnedData.scoredHistory || [])].reduce((s, l) => s + (l.groundedScore || 0), 0) / [...learnedData.learned, ...(learnedData.scoredHistory || [])].length) : 0,
@@ -354,6 +386,47 @@ app.get('/health', async (req, res) => {
         }))
     }
   });
+});
+
+// Dev-only retrieval testing endpoint
+app.get('/api/retrieve', async (req, res) => {
+  try {
+    const q = String(req.query.q || '').trim();
+    if (!q) return res.status(400).json({ error: 'Missing q parameter' });
+    const knowledge = await fetchKnowledge();
+    if (!knowledge) return res.json({ ok: false, error: 'Knowledge not loaded' });
+    const history = req.query.h ? JSON.parse(req.query.h) : [];
+    const understood = understandQuery(q, history, ragChunks || buildRagChunks(knowledge));
+    const bm25Results = bm25Index ? bm25Index.search(understood.rewritten, 6) : [];
+    const legacyResults = retrieveChunks(q, ragChunks || buildRagChunks(knowledge), 6);
+    let denseResults = [];
+    if (USE_VECTOR_RETRIEVAL && vectorIndex && vectorIndex.size > 0) {
+      try {
+        const queryEmbedding = await embedQuery(understood.rewritten);
+        if (queryEmbedding) {
+          denseResults = vectorIndex.search(queryEmbedding, 6).map(r => ({ tag: r.tag, text: r.text.slice(0, 120), score: r.score }));
+        }
+      } catch (e) {}
+    }
+    let fusedResults = [];
+    if (denseResults.length > 0 && bm25Results.length > 0) {
+      fusedResults = hybridRetrieve({ bm25Results, denseResults, intent: understood.intent, k: 6 })
+        .map(r => ({ tag: r.tag, text: r.text.slice(0, 120), score: r.score }));
+    }
+    res.json({
+      ok: true,
+      query: q,
+      rewritten: understood.rewritten,
+      normalized: understood.normalized,
+      intent: understood.intent,
+      bm25: bm25Results.map(r => ({ tag: r.tag, text: r.text.slice(0, 120), score: r.score })),
+      dense: denseResults,
+      fused: fusedResults,
+      legacy: legacyResults.map(r => ({ tag: r.tag, text: r.text.slice(0, 120), score: r.score })),
+    });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
 });
 
 app.get('/api/diagnose', async (req, res) => {
@@ -525,6 +598,22 @@ async function fetchKnowledge() {
     const json = await res.json();
     knowledgeCache = json;
     knowledgeCacheAt = now;
+    // Rebuild BM25 index and RAG chunks when knowledge refreshes
+    try {
+      ragChunks = buildRagChunks(json);
+      bm25Index = new BM25Index(ragChunks);
+      console.log(`[retrieval] BM25 index built: ${ragChunks.length} chunks`);
+      if (USE_VECTOR_RETRIEVAL) {
+        vectorIndex = VectorIndex.load();
+        if (vectorIndex && vectorIndex.size > 0) {
+          console.log(`[retrieval] Vector index loaded: ${vectorIndex.size} vectors`);
+        } else {
+          console.log('[retrieval] Vector index not available — BM25-only mode');
+        }
+      }
+    } catch (e) {
+      console.error('[retrieval] Index build failed:', e.message);
+    }
     // Warm response cache for common questions in the background.
     setTimeout(() => warmResponseCache(json), 10);
     return json;
@@ -1409,6 +1498,9 @@ function buildKnowledgeContext(knowledge) {
   return context;
 }
 
+// Current stance context for prompt injection (set per-request)
+let currentStanceContext = null;
+
 function buildPrompt(knowledge, question, history, provider) {
   const { identity, summary, goals, education, certifications, experience, skills, projects, rules, faq, interviewStories, conversationQualityStandards } = knowledge || {};
   const name = identity?.name || 'Bradley Matera';
@@ -1459,6 +1551,10 @@ function buildPrompt(knowledge, question, history, provider) {
         context += `\n(Topics already covered: ${uniqueTopics.join(', ')}. Reference these if relevant, but don't repeat the same info unless asked.)\n`;
       }
     }
+  }
+
+  if (currentStanceContext) {
+    context += `\nYOUR PRIOR STANCE ON THESE TOPICS (stay consistent, don't contradict):\n${currentStanceContext}\n`;
   }
 
   context += `\nUser: ${question}\nScout:`;
@@ -2272,6 +2368,15 @@ function buildContextualGroundedReply(groundedReply, question, history) {
     return `As I mentioned, ${short.toLowerCase()}`;
   }
 
+  // Anaphora/pronoun follow-up: "what about his time as a medic?", "how about that?"
+  if (/^(what about|how about|and his|also what|tell me about his)\b/.test(qLower) && lastTurn.user) {
+    // The grounded handler already has contextual follow-up logic in buildGroundedFallbackPayload,
+    // so just add a light transition if the answer doesn't already reference the prior topic
+    if (!/building on|to add|also|related|more specifically|to put it/i.test(groundedReply)) {
+      return `Building on what we discussed — ${groundedReply.charAt(0).toLowerCase()}${groundedReply.slice(1)}`;
+    }
+  }
+
   // Same topic as last turn — check if the grounded reply is nearly identical to the last answer
   if (currentTopic === 'other' || currentTopic !== lastTopic) return groundedReply;
 
@@ -2290,7 +2395,9 @@ function buildContextualGroundedReply(groundedReply, question, history) {
       'To put it another way,',
     ];
     const prefix = transitions[history.length % transitions.length];
-    return `${prefix} ${groundedReply}`;
+    // Lowercase the first word after the prefix if it's not a proper noun
+    const rest = groundedReply.charAt(0).toLowerCase() + groundedReply.slice(1);
+    return `${prefix} ${rest}`;
   }
   return groundedReply;
 }
@@ -2324,39 +2431,6 @@ const GEN_MODEL = process.env.GEN_MODEL || 'smollm2:135m';
 const GEN_TIMEOUT_MS = parseInt(process.env.GEN_TIMEOUT_MS || '13000', 10);
 const GEN_ENABLED = process.env.GEN_ENABLED !== 'false';
 
-// Flatten the entire knowledge file into retrievable fact chunks
-function buildRagChunks(knowledge) {
-  const { identity, summary, goals, education, certifications, skills, experience, projects, faq, interviewStories, rules, sourceMaterial, blogCatalog } = knowledge || {};
-  const chunks = [];
-  const add = (tag, text) => { if (text) chunks.push({ tag, text: String(text) }); };
-
-  add('identity', `${identity?.name || 'Bradley Matera'} is a ${identity?.title || 'junior software engineer'} based in ${identity?.location || 'Davis, Illinois'}.`);
-  add('pitch', identity?.shortPitch);
-  add('summary', summary?.whoIAm);
-  add('what-he-does', summary?.whatIDo);
-  add('looking-for', summary?.whatIAmLookingFor);
-  add('target-roles', goals?.targetRoles?.length ? `Target roles: ${goals.targetRoles.join(', ')}.` : null);
-  add('relocation', goals?.relocation);
-  if (education?.degree) add('education', `Education: ${education.degree} from ${education.school}${education.gpa ? ` (GPA ${education.gpa})` : ''}.`);
-  (certifications || []).forEach(c => add('certification', `Certification: ${c.name || c}${c.issued ? `, issued ${c.issued}` : ''}.`));
-  if (skills?.languagesAndFrameworks?.length) add('skills-web', `Web skills: ${skills.languagesAndFrameworks.join(', ')}.`);
-  if (skills?.cloudAndInfrastructure?.length) add('skills-cloud', `Cloud skills: ${skills.cloudAndInfrastructure.join(', ')}.`);
-  if (skills?.toolsAndWorkflows?.length) add('skills-tools', `Tools: ${skills.toolsAndWorkflows.join(', ')}.`);
-  if (skills?.aiAndAutomation?.length) add('skills-ai', `AI workflow: ${skills.aiAndAutomation.join(', ')}.`);
-  (experience || []).forEach(e => add('experience', `${e.role}${e.company ? ` at ${e.company}` : ''}${e.dates ? ` (${e.dates})` : ''}: ${e.summary || ''}`));
-  (projects || []).forEach(p => add('project', `Project ${p.name}: ${p.description || ''}${p.tech?.length ? ` Tech: ${p.tech.join(', ')}.` : ''}`));
-  (faq || []).forEach(f => add('faq', `Q: ${f.question} A: ${f.answer}`));
-  (interviewStories || []).forEach(s => add('story', `${s.title || s.topic || ''}: ${s.story || s.summary || ''}`));
-  if (rules?.doNot?.length) add('boundaries', `Never claim: ${rules.doNot.slice(0, 4).join('; ')}.`);
-  (sourceMaterial || []).forEach((m, i) => { if (m?.content) add('source', `[${m.title || 'source'}-${i}] ${m.content}`); });
-  (blogCatalog?.records || []).forEach((post, i) => {
-    if (post?.title || post?.brief) {
-      add('blog', `[${post.platform || 'blog'}-${i}] ${post.title || 'Post'}: ${post.brief || ''}${post.url ? ` URL: ${post.url}` : ''}`);
-    }
-  });
-  return chunks;
-}
-
 const STOPWORDS = new Set(['the', 'a', 'an', 'is', 'are', 'was', 'were', 'his', 'her', 'he', 'she', 'it', 'and', 'or', 'of', 'to', 'in', 'for', 'with', 'about', 'what', 'who', 'how', 'does', 'do', 'did', 'can', 'me', 'tell', 'you', 'your', 'this', 'that', 'on', 'at', 'i']);
 
 function retrieveChunks(question, chunks, k = 5) {
@@ -2370,6 +2444,50 @@ function retrieveChunks(question, chunks, k = 5) {
     return { ...c, score };
   });
   return scored.sort((a, b) => b.score - a.score).slice(0, k).filter(c => c.score > 0.4);
+}
+
+// Hybrid retrieval: uses query understanding (typo correction, contextual rewrite) + BM25
+// when available, falling back to the naive substring scorer.
+// When USE_VECTOR_RETRIEVAL is enabled and a vector index is loaded, fuses BM25 + dense
+// results via reciprocal rank fusion + MMR for diversity.
+async function retrieveWithBM25(question, history, k = 6) {
+  if (!USE_BM25_RETRIEVAL || !bm25Index || !ragChunks) {
+    return retrieveChunks(question, ragChunks || buildRagChunks(knowledgeCache || {}), k);
+  }
+  // Query understanding: normalize, correct typos, contextual rewrite
+  const understood = understandQuery(question, history, ragChunks);
+
+  // BM25 search using the rewritten query
+  const bm25Results = bm25Index.search(understood.rewritten, k);
+
+  // Dense retrieval if vector index is available
+  let denseResults = null;
+  if (USE_VECTOR_RETRIEVAL && vectorIndex && vectorIndex.size > 0) {
+    try {
+      const queryEmbedding = await embedQuery(understood.rewritten);
+      if (queryEmbedding) {
+        denseResults = vectorIndex.search(queryEmbedding, k);
+      }
+    } catch (e) {
+      console.error('[retrieval] Dense retrieval failed:', e.message);
+    }
+  }
+
+  // If we have both BM25 and dense results, fuse with RRF + MMR
+  if (denseResults && denseResults.length > 0 && bm25Results.length > 0) {
+    return hybridRetrieve({
+      bm25Results,
+      denseResults,
+      intent: understood.intent,
+      k,
+    });
+  }
+
+  // BM25-only fallback
+  if (bm25Results.length === 0) {
+    return retrieveChunks(question, ragChunks, k);
+  }
+  return bm25Results;
 }
 
 const GEN_FALSE_CLAIMS = /\b(senior engineer|senior developer|10\+? years|worked at (google|amazon|meta|microsoft|apple)|fortune 500|production owner|led a team of|cto|principal engineer|master'?s degree|phd|security clearance)\b/i;
@@ -2467,8 +2585,6 @@ function validateThinkReply(text, source) {
   if (GEN_SLOP.test(t)) return { valid: false, reason: 'slop' };
   if (GEN_OVERCLAIM.test(t)) return { valid: false, reason: 'overclaim' };
   if (!/\b(bradley|brad|he|his)\b/i.test(t)) return { valid: false, reason: 'no-subject' };
-  if (/\b(I|I'm|I've|my|we|our)\b/.test(t)) return { valid: false, reason: 'first-person' };
-  if (/"|\*|pause|scout here|as scout|hi,|hello,/i.test(t)) return { valid: false, reason: 'meta' };
   const sourceText = String(source || '').toLowerCase();
   const genNumbers = t.match(/\d[\d.,]*/g) || [];
   if (genNumbers.some(n => !sourceText.includes(n.toLowerCase()))) return { valid: false, reason: 'hallucinated-number' };
@@ -2539,8 +2655,7 @@ function shouldAbortGeneration(text) {
 }
 
 async function callGenerativeRag(knowledge, question, groundedReply, history, timeoutMs) {
-  const chunks = buildRagChunks(knowledge);
-  const retrieved = retrieveChunks(question, chunks, 3);
+  const retrieved = await retrieveWithBM25(question, history, 3);
   const facts = retrieved.map(c => truncateWords(c.text, 30)).join(' ');
   const source = toThirdPerson(`${truncateWords(groundedReply.replace(/<[^>]+>/g, ' '), 55)} ${facts}`);
   callGenerativeRag.lastSource = source;
@@ -2866,6 +2981,110 @@ function detectVisitorIntent(question, history) {
 // In-memory session tracking (not persisted per-request for performance)
 const activeSessions = new Map();
 
+// Stance-consistency store: per-session topic stances to prevent contradictions
+// { sessionId: [{ topic, stanceSummary, ts }] } — cap 8 per session, 30-min TTL
+const stanceStore = new Map();
+const STANCE_MAX_PER_SESSION = 8;
+const STANCE_TTL_MS = 30 * 60 * 1000;
+
+function recordStance(sessionId, question, reply) {
+  if (!sessionId) return;
+  const topic = classifyTopic(question);
+  if (topic === 'other' || topic === 'out-of-scope') return;
+  const stanceSummary = firstSentence(reply).slice(0, 150);
+  if (!stanceSummary || stanceSummary.length < 10) return;
+
+  if (!stanceStore.has(sessionId)) stanceStore.set(sessionId, []);
+  const stances = stanceStore.get(sessionId);
+
+  // Replace existing stance for same topic or add new
+  const existingIdx = stances.findIndex(s => s.topic === topic);
+  if (existingIdx >= 0) {
+    stances[existingIdx] = { topic, stanceSummary, ts: Date.now() };
+  } else {
+    stances.push({ topic, stanceSummary, ts: Date.now() });
+  }
+
+  // Cap and prune stale
+  while (stances.length > STANCE_MAX_PER_SESSION) stances.shift();
+  const cutoff = Date.now() - STANCE_TTL_MS;
+  const fresh = stances.filter(s => s.ts > cutoff);
+  if (fresh.length !== stances.length) stanceStore.set(sessionId, fresh);
+}
+
+function getStanceContext(sessionId) {
+  if (!sessionId || !stanceStore.has(sessionId)) return null;
+  const stances = stanceStore.get(sessionId).filter(s => s.ts > Date.now() - STANCE_TTL_MS);
+  if (stances.length === 0) return null;
+  return stances.map(s => `${s.topic}: ${s.stanceSummary}`).join('; ');
+}
+
+// Semantic cache: keyed by query embedding for paraphrase dedup
+// { embeddingKey: { reply, provider, model, ts, pipeline, followUps } } — LRU, 200 entries, 10-min TTL
+const semanticCache = new Map();
+const SEMANTIC_CACHE_LIMIT = 200;
+const SEMANTIC_CACHE_TTL = 10 * 60 * 1000;
+const SEMANTIC_CACHE_THRESHOLD = parseFloat(process.env.SEMANTIC_CACHE_THRESHOLD || '0.92');
+
+async function semanticCacheGet(question, sessionId) {
+  if (!USE_VECTOR_RETRIEVAL || !vectorIndex || vectorIndex.size === 0) return null;
+  if (sessionId) return null;
+
+  try {
+    const queryEmb = await embedQuery(question);
+    if (!queryEmb) return null;
+    const queryVec = Float32Array.from(queryEmb);
+    const dim = vectorIndex.dim;
+
+    for (const [key, entry] of semanticCache) {
+      if (Date.now() - entry.ts > SEMANTIC_CACHE_TTL) {
+        semanticCache.delete(key);
+        continue;
+      }
+      // Cosine similarity between query and cached query embedding
+      const cachedVec = entry.queryEmbedding;
+      if (!cachedVec || cachedVec.length !== dim) continue;
+      let dot = 0, normA = 0, normB = 0;
+      for (let i = 0; i < dim; i++) {
+        dot += queryVec[i] * cachedVec[i];
+        normA += queryVec[i] * queryVec[i];
+        normB += cachedVec[i] * cachedVec[i];
+      }
+      if (normA === 0 || normB === 0) continue;
+      const sim = dot / (Math.sqrt(normA) * Math.sqrt(normB));
+      if (sim >= SEMANTIC_CACHE_THRESHOLD) {
+        semanticCache.delete(key);
+        semanticCache.set(key, entry);
+        return entry.payload;
+      }
+    }
+  } catch (e) {
+    // Silent fail
+  }
+  return null;
+}
+
+async function semanticCacheSet(question, payload) {
+  if (!USE_VECTOR_RETRIEVAL || !vectorIndex || vectorIndex.size === 0) return;
+  try {
+    const queryEmb = await embedQuery(question);
+    if (!queryEmb) return;
+    const key = `${question.slice(0, 50)}:${Date.now()}`;
+    semanticCache.set(key, {
+      payload: { ...payload, cached: true },
+      ts: Date.now(),
+      queryEmbedding: Float32Array.from(queryEmb),
+    });
+
+    // LRU eviction
+    if (semanticCache.size > SEMANTIC_CACHE_LIMIT) {
+      semanticCache.delete(semanticCache.keys().next().value);
+    }
+  } catch (e) {
+    // Silent fail
+  }
+}
+
 function trackSession(sessionId, question, provider, referrer, intent, reply, groundedReply) {
   if (!sessionId) return;
   if (!activeSessions.has(sessionId)) {
@@ -3058,9 +3277,8 @@ function scoreAnswer(reply, question, knowledge) {
 
 const JUDGE_ORDER = ['groq', 'github', 'grok', 'cloudflare', 'gemini', 'ollama'];
 
-function buildJudgePrompt(learned, grounded, question, knowledge) {
-  const chunks = buildRagChunks(knowledge);
-  const retrieved = retrieveChunks(question, chunks, 3);
+async function buildJudgePrompt(learned, grounded, question, knowledge) {
+  const retrieved = await retrieveWithBM25(question, [], 3);
   const facts = retrieved.map(c => c.text).join('\n\n---\n\n');
   const system = `You are an objective answer-quality evaluator. Compare the GROUNDED answer (deterministic, fact-based) and the LEARNED answer (proposed improvement) for the user's question. Score each dimension 0-100 and return ONLY a JSON object with no markdown or commentary.`;
   const user = `QUESTION: ${question}
@@ -3117,7 +3335,7 @@ function parseJudgeOutput(text) {
 }
 
 async function judgeLearnedAnswer(learned, grounded, question, knowledge) {
-  const { system, user } = buildJudgePrompt(learned, grounded, question, knowledge);
+  const { system, user } = await buildJudgePrompt(learned, grounded, question, knowledge);
   for (const slug of JUDGE_ORDER) {
     if (!isProviderEnabled(slug) || !isProviderAvailable(slug)) continue;
     try {
@@ -3137,9 +3355,6 @@ async function judgeLearnedAnswer(learned, grounded, question, knowledge) {
 }
 
 // ============ LEARNING FUNCTIONS ============
-
-// Tone/style requests that are NOT knowledge gaps — don't stash these
-const TONE_REQUEST_RE = /no corporate|without buzzwords|just answer|be direct|say it in one|summarize like a normal|answer the question directly|stop avoiding|no bs|straight answer|plain (english|paragraph|language)|like a normal person|in plain|talk like a|normal tone|less formal|more casual|stop being so|tone|buzzword|corporate tone/;
 
 function isWeakAnswer(reply, question, provider) {
   if (!reply) return false;
@@ -3184,6 +3399,7 @@ function stashQuestion(question, reply, provider) {
   });
   if (learnedData.stashed.length > 100) learnedData.stashed.shift();
   saveLearned();
+  thinkPending = true;
   console.log(`[learn] Stashed: "${norm}" (${learnedData.stashed.length} pending)`);
 }
 
@@ -3307,6 +3523,8 @@ async function runThinkMode() {
   }
   if (learnedData.stashed.length === 0 && learnedData.learned.length === 0) return { skipped: 'no stashed questions' };
   thinkRunning = true;
+  lastThinkAt = Date.now();
+  learnedData.lastThinkAt = lastThinkAt;
   const results = { processed: 0, learned: 0, failed: 0, pushed: false, rejections: [] };
   console.log(`[think] Processing ${learnedData.stashed.length} stashed questions`);
   try {
@@ -3448,6 +3666,10 @@ async function runThinkMode() {
 
 // Track provider recovery for auto-triggering think mode
 let lastThinkTriggerCheck = 0;
+let providersRecentlyRecovered = [];
+let thinkPending = false;
+let lastThinkAt = 0;
+
 function checkProviderRecoveryAndTriggerThink() {
   const now = Date.now();
   if (now - lastThinkTriggerCheck < 60 * 1000) return; // Check at most once per minute
@@ -3460,8 +3682,20 @@ function checkProviderRecoveryAndTriggerThink() {
       // Provider recovered in the last 2 minutes — trigger think mode
       console.log(`[think] Provider ${slug} recovered, auto-triggering think mode`);
       state.exhaustedUntil = 0; // Clear the flag
+      providersRecentlyRecovered = providersRecentlyRecovered.filter(r => r.slug !== slug);
+      providersRecentlyRecovered.push({ slug, recoveredAt: now });
+      if (providersRecentlyRecovered.length > 10) providersRecentlyRecovered.shift();
       runThinkMode().catch(e => console.error('[think] Auto-trigger error:', e.message));
       return;
+    }
+  }
+  // Smart scheduling: if thinkPending (new questions stashed) and 5+ min since last run
+  if (thinkPending && !thinkRunning && learnedData.stashed.length > 0) {
+    const sinceLast = now - (lastThinkAt || learnedData.lastThinkAt || 0);
+    if (sinceLast >= 5 * 60 * 1000) {
+      thinkPending = false;
+      console.log('[think] Smart trigger: new stashed questions, 5+ min elapsed');
+      runThinkMode().catch(e => console.error('[think] Smart trigger error:', e.message));
     }
   }
 }
@@ -3496,6 +3730,18 @@ app.post('/api/chat', async (req, res) => {
     }
     pipeline.push('cache-miss');
 
+    // Semantic cache check (paraphrase dedup for no-history queries)
+    const sessionId = req.body.sessionId || '';
+    if (!hasHistory) {
+      const semanticHit = await semanticCacheGet(userMessage, sessionId);
+      if (semanticHit) {
+        pipeline.push('semantic-cache-hit');
+        lastReplyProvider = semanticHit.provider || 'cached';
+        recordRequest(userMessage, 'cached', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: semanticHit.reply, groundedReply: semanticHit.reply });
+        return res.json({ ...semanticHit, cached: true, pipeline });
+      }
+    }
+
     const knowledge = await fetchKnowledge();
     if (!knowledge) {
       pipeline.push('knowledge-unavailable', 'grounded-fallback');
@@ -3519,6 +3765,7 @@ app.post('/api/chat', async (req, res) => {
     //    The network walks xAI -> Groq -> Cloudflare -> GitHub -> Gemini -> local Ollama,
     //    validating each reply and falling back to the grounded answer if none succeed.
     let generated = false;
+    currentStanceContext = getStanceContext(sessionId);
     if (!mustStayGrounded(userMessage, history)) {
       pipeline.push('mustStayGrounded:false');
       const networkResult = await generateWithNetwork(knowledge, userMessage, history, grounded.reply);
@@ -3619,12 +3866,16 @@ app.post('/api/chat', async (req, res) => {
 
     lastReplyProvider = payload.provider;
     const intent = detectVisitorIntent(userMessage, history);
-    const sessionId = req.body.sessionId || '';
     trackSession(sessionId, userMessage, payload.provider, referrer, intent, reply, grounded.reply);
+    recordStance(sessionId, userMessage, reply);
     recordRequest(userMessage, payload.provider, { referrer, pipeline, latencyMs: Date.now() - reqStart, reply, groundedReply: grounded.reply });
     // Stash weak answers for think mode learning
     if (isWeakAnswer(reply, userMessage, provider)) {
       stashQuestion(userMessage, reply, provider);
+    }
+    // Store in semantic cache for paraphrase dedup (no-history queries only)
+    if (!hasHistory) {
+      semanticCacheSet(userMessage, payload).catch(() => {});
     }
     return res.json(payload);
   } catch (err) {

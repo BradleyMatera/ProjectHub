@@ -1,0 +1,202 @@
+[
+  {
+    "query": "What is Bradley's tech stack?",
+    "expectedTags": ["skills-web", "skills-cloud", "identity"],
+    "expectedKeywords": ["javascript", "react", "typescript"]
+  },
+  {
+    "query": "Does he have AWS experience?",
+    "expectedTags": ["experience", "certification"],
+    "expectedKeywords": ["aws", "lambda", "dynamodb"]
+  },
+  {
+    "query": "What certifications does he have?",
+    "expectedTags": ["certification"],
+    "expectedKeywords": ["aws", "certified", "cloud"]
+  },
+  {
+    "query": "Tell me about his projects",
+    "expectedTags": ["project"],
+    "expectedKeywords": ["project", "projecthub", "pokedex"]
+  },
+  {
+    "query": "What is his education background?",
+    "expectedTags": ["education"],
+    "expectedKeywords": ["degree", "school", "full sail"]
+  },
+  {
+    "query": "How do I contact him?",
+    "expectedTags": ["identity", "contact"],
+    "expectedKeywords": ["email", "github", "linkedin"]
+  },
+  {
+    "query": "What roles is he targeting?",
+    "expectedTags": ["target-roles", "looking-for"],
+    "expectedKeywords": ["role", "junior", "web"]
+  },
+  {
+    "query": "Tell me about his military experience",
+    "expectedTags": ["experience", "story"],
+    "expectedKeywords": ["army", "military", "medic"]
+  },
+  {
+    "query": "Is he a fit for a junior frontend role?",
+    "expectedTags": ["faq", "experience", "skills-web"],
+    "expectedKeywords": ["frontend", "react", "javascript"]
+  },
+  {
+    "query": "What are his honest gaps?",
+    "expectedTags": ["summary", "faq"],
+    "expectedKeywords": ["gap", "honest", "junior"]
+  },
+  {
+    "query": "What is his work style?",
+    "expectedTags": ["summary", "story"],
+    "expectedKeywords": ["work", "style", "feedback"]
+  },
+  {
+    "query": "Tell me about the CIRIS internship",
+    "expectedTags": ["experience"],
+    "expectedKeywords": ["ciris", "intern", "aws"]
+  },
+  {
+    "query": "What programming languages does he know?",
+    "expectedTags": ["skills-web"],
+    "expectedKeywords": ["javascript", "typescript", "node"]
+  },
+  {
+    "query": "Is he open to relocation?",
+    "expectedTags": ["relocation", "target-roles"],
+    "expectedKeywords": ["relocation", "open"]
+  },
+  {
+    "query": "What tools does he use?",
+    "expectedTags": ["skills-tools"],
+    "expectedKeywords": ["git", "docker", "github"]
+  },
+  {
+    "query": "Does he have any blog posts?",
+    "expectedTags": ["blog"],
+    "expectedKeywords": ["blog", "dev", "post"]
+  },
+  {
+    "query": "What is his GPA?",
+    "expectedTags": ["education"],
+    "expectedKeywords": ["gpa", "degree", "school"]
+  },
+  {
+    "query": "Tell me about his communication skills",
+    "expectedTags": ["story", "summary"],
+    "expectedKeywords": ["communicat", "team", "customer"]
+  },
+  {
+    "query": "What is his GitHub profile?",
+    "expectedTags": ["identity", "blog"],
+    "expectedKeywords": ["github", "profile"]
+  },
+  {
+    "query": "Would you hire him for a cloud support role?",
+    "expectedTags": ["faq", "experience", "certification"],
+    "expectedKeywords": ["cloud", "support", "aws"]
+  },
+  {
+    "query": "What did he do in the Army?",
+    "expectedTags": ["experience", "story"],
+    "expectedKeywords": ["army", "medic", "military"]
+  },
+  {
+    "query": "Tell me about ProjectHub",
+    "expectedTags": ["project"],
+    "expectedKeywords": ["projecthub", "chat", "widget"]
+  },
+  {
+    "query": "What is his target salary?",
+    "expectedTags": ["identity", "summary"],
+    "expectedKeywords": ["salary", "target"]
+  },
+  {
+    "query": "How does he handle unfamiliar technology?",
+    "expectedTags": ["story", "summary"],
+    "expectedKeywords": ["learn", " unfamiliar", "adapt"]
+  },
+  {
+    "query": "What are his strengths?",
+    "expectedTags": ["summary", "story"],
+    "expectedKeywords": ["strength", "reliable", "honest"]
+  },
+  {
+    "query": "Tell me about his debugging approach",
+    "expectedTags": ["story", "summary"],
+    "expectedKeywords": ["debug", "problem", "method"]
+  },
+  {
+    "query": "Is he a senior engineer?",
+    "expectedTags": ["identity", "boundaries"],
+    "expectedKeywords": ["junior", "senior"]
+  },
+  {
+    "query": "What cloud skills does he have?",
+    "expectedTags": ["skills-cloud", "certification"],
+    "expectedKeywords": ["aws", "lambda", "cloud"]
+  },
+  {
+    "query": "Tell me about his internship training",
+    "expectedTags": ["experience"],
+    "expectedKeywords": ["intern", "ciris", "training"]
+  },
+  {
+    "query": "What is his preferred work environment?",
+    "expectedTags": ["summary", "looking-for"],
+    "expectedKeywords": ["work", "environment", "mentor"]
+  },
+  {
+    "query": "Does he have production experience?",
+    "expectedTags": ["faq", "experience"],
+    "expectedKeywords": ["production", "labs", "capstone"]
+  },
+  {
+    "query": "What is his experience with React?",
+    "expectedTags": ["skills-web", "project"],
+    "expectedKeywords": ["react", "frontend", "javascript"]
+  },
+  {
+    "query": "How does he work with teams?",
+    "expectedTags": ["story", "summary"],
+    "expectedKeywords": ["team", "collaborat", "communicat"]
+  },
+  {
+    "query": "What is his experience level?",
+    "expectedTags": ["identity", "experience"],
+    "expectedKeywords": ["junior", "entry", "level"]
+  },
+  {
+    "query": "Tell me about his blog writing",
+    "expectedTags": ["blog"],
+    "expectedKeywords": ["blog", "write", "dev"]
+  },
+  {
+    "query": "What is his availability?",
+    "expectedTags": ["looking-for", "relocation"],
+    "expectedKeywords": ["available", "open", "relocation"]
+  },
+  {
+    "query": "Does he know Docker?",
+    "expectedTags": ["skills-tools"],
+    "expectedKeywords": ["docker", "container"]
+  },
+  {
+    "query": "What is his current job?",
+    "expectedTags": ["identity", "experience"],
+    "expectedKeywords": ["current", "job", "looking"]
+  },
+  {
+    "query": "Tell me about his AWS certification path",
+    "expectedTags": ["certification"],
+    "expectedKeywords": ["aws", "certified", "architect"]
+  },
+  {
+    "query": "What is his biggest project?",
+    "expectedTags": ["project"],
+    "expectedKeywords": ["project", "projecthub", "pokedex"]
+  }
+]

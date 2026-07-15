@@ -13,11 +13,14 @@ ProjectHub is an embeddable, AI-powered chat widget that showcases Bradley Mater
 - **AI backend:** Recruiter chat API at `https://projecthub-chat.bradleymatera.dev/api/chat` on a GCP e2-micro VM with Caddy HTTPS. Uses a free multi-provider LLM network (Groq, Cloudflare Workers AI, GitHub Models, Google Gemini, xAI Grok, OpenAI-compatible). If every provider is unavailable or the reply fails validation, the final fallback is a fast, grounded answer from `data/recruiter-knowledge.json`. Provider order and daily quota guards are configurable. Local Ollama is present in the codebase but currently filtered out of the active provider order.
 - **Session memory:** Browser sends a per-tab session id and recent turns; backend caches a trimmed knowledge JSON and the last 3 turns of each session. Frontend keeps 10 turns of context and sends 5 turns to the server.
 - **Generative usage:** Grounded-first deterministic engine answers factual queries. Safety and false-claim checks run BEFORE learned answers. Open-ended questions are sent through the free provider network in priority order; each reply is validated against slop/false-claim rules and falls back to the grounded answer if no provider succeeds. 15s total latency budget. Out-of-scope questions are forced to grounded replies (not LLM hallucinations).
+- **Retrieval pipeline:** Okapi BM25 index (`lib/bm25.js`) with query understanding (`lib/query-understanding.js` — typo correction, intent classification, contextual rewriting) is the default retrieval mode. Optional dense vector retrieval via Cloudflare Workers AI embeddings (`lib/vector-index.js`) with hybrid RRF+MMR fusion (`lib/hybrid-retrieve.js`). BM25 Recall@6=0.950 on 40-query golden eval set.
+- **Stance consistency:** Per-session topic stances injected into LLM prompts to prevent contradictions across turns. 30-min TTL, cap 8 per session.
+- **Semantic cache:** Paraphrase dedup via embedding cosine similarity (≥0.92 threshold). LRU, 200 entries, 10-min TTL. Only active when vector retrieval is enabled.
 - **Agent name & persona:** The assistant is named **Scout**: helpful, calm, concise, honest, and never over-hype.
 - **Widget UX:** Header shows "Scout" as the assistant title and "Bradley Matera · Recruiter assistant". Placeholder and welcome messages are from Scout. Each session starts by asking the visitor's name.
 - **Data sources:** `data.js` (projects/CodePens), `data/recruiter-knowledge.json` (canonical facts), and `sourceMaterial` (ingested blog posts, pages, and resume guardrails from `scripts/build-knowledge.js`).
-- **Think Mode:** Self-improvement loop runs every 10 minutes. Stashes weak answers, processes them through all LLM providers, validates, and pushes learned answers back to `data/recruiter-knowledge.json` on GitHub via the Contents API. False-claim and safety questions are filtered before stashing.
-- **Test suites:** 6 test suites (adversarial, coverage, load/stress, regression, edge cases, full system verification) — 474+ tests total, 99.8% pass rate. Test files live in `/tmp/test-suite-*.py`.
+- **Think Mode:** Self-improvement loop runs every 10 minutes. Stashes weak answers, processes them through all LLM providers, validates, and pushes learned answers back to `data/recruiter-knowledge.json` on GitHub via the Contents API. False-claim and safety questions are filtered before stashing. Auto-triggers on provider recovery.
+- **Test suites:** 6 test suites (adversarial, coverage, load/stress, regression, edge cases, full system verification) — 474+ tests total, 99.8% pass rate. Test files live in `/tmp/test-suite-*.py`. Plus 36 retrieval unit tests (`test/*.test.js`) and 40-query golden eval (`data/eval-golden.json`).
 - **Current branch/focus:** `master` — free multi-provider LLM network, honest grounded validation, Think Mode self-improvement, safety regex hardening, and AGENTS.md-driven documentation
 
 ---
@@ -62,6 +65,15 @@ cat data.js utils.js logic.js ui.js > ProjectHub.js
 npm install
 npm run build
 
+# Run retrieval unit tests (BM25, query understanding, vector index, hybrid fusion)
+npm run test:retrieval
+
+# Evaluate retrieval quality against golden set (Recall@k, MRR@k)
+npm run eval-retrieval
+
+# Build pre-computed embeddings (requires CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN)
+npm run build:embeddings
+
 # Publish changes to GitHub Pages
 # 1. Commit and push to master (including analytics/dist if it changed)
 # 2. GitHub Pages rebuilds automatically from the default branch
@@ -86,9 +98,25 @@ Live widget URL for embedding:
 | `logic.js` | Query intent detection, response generation, AI fallback orchestration |
 | `ui.js` | DOM creation, event handling, rendering of the floating chat widget |
 | `utils.js` | Shared helpers (GitHub API fetching) |
-| `server-gemini.js` | Backend server — chat API, LLM network, Think Mode, safety regexes, analytics |
+| `server-gemini.js` | Backend server — chat API, LLM network, Think Mode, safety regexes, analytics, hybrid retrieval, stance consistency, semantic cache |
+| `lib/rag-chunks.js` | Shared RAG chunk builder — flattens knowledge JSON into retrievable fact chunks |
+| `lib/bm25.js` | Okapi BM25 retrieval index — TF saturation, IDF weighting, document-length normalization |
+| `lib/query-understanding.js` | Query understanding pipeline — normalization, typo correction, intent classification, contextual rewriting |
+| `lib/vector-index.js` | Dense vector index — loads pre-built embeddings, brute-force cosine similarity search |
+| `lib/hybrid-retrieve.js` | Hybrid fusion — reciprocal rank fusion (RRF) + maximal marginal relevance (MMR) |
+| `lib/cost-ledger.js` | Metering tracker for every billable-adjacent event |
+| `lib/cost-insights.js` | Cost insights builder for the /api/costs dev endpoint |
 | `data/recruiter-knowledge.json` | Canonical knowledge base (read by server, written by Think Mode) |
-| `deploy-gcp.sh` | Deploy script — copies server-gemini.js to GCP VM and restarts service |
+| `data/eval-golden.json` | Golden set of 40 queries for retrieval evaluation |
+| `data/knowledge-vectors.json` | Pre-built chunk embeddings (generated by build-embeddings script) |
+| `data/intent-centroids.json` | Intent centroid embeddings (generated by build-embeddings script) |
+| `scripts/build-embeddings.js` | Build-time embedding generation via Cloudflare Workers AI |
+| `scripts/eval-retrieval.js` | Retrieval evaluation harness — measures Recall@k and MRR@k |
+| `test/bm25.test.js` | BM25 index unit tests (8 tests) |
+| `test/query-understanding.test.js` | Query understanding unit tests (15 tests) |
+| `test/vector-index.test.js` | Vector index unit tests (5 tests) |
+| `test/hybrid-retrieve.test.js` | Hybrid fusion unit tests (8 tests) |
+| `deploy-gcp.sh` | Deploy script — copies server-gemini.js + lib/ to GCP VM and restarts service |
 | `package.json` | Dependency metadata; includes Vite build scripts and Carbon analytics dependencies |
 | `index.html` | Public GitHub Pages landing site for ProjectHub / Scout (includes live analytics dashboard) |
 | `analytics/main.js` | Analytics dashboard source — fetches, sanitizes, and visualizes multi-source data with Carbon |

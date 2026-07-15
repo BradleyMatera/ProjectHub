@@ -81,3 +81,20 @@ The multi-provider router tries each enabled provider in `PROVIDER_ORDER` until 
 - If no provider succeeds, return the grounded answer.
 
 Deterministic/factual questions bypass the network entirely and return the grounded answer immediately to save quota and latency. The `mustStayGrounded` function enforces this for 15+ categories of questions including role fit, experience, work style, interpersonal skills, safety patterns, false-claim patterns, out-of-scope questions, and meta questions about the bot.
+
+---
+
+## Retrieval Pipeline Cost
+
+The retrieval pipeline is designed to add zero recurring cost:
+
+- **BM25 index** (`lib/bm25.js`): Pure in-memory, no external calls. Built once per knowledge cache refresh (~600 chunks, <50ms build, <1ms query). Default mode.
+- **Query understanding** (`lib/query-understanding.js`): Pure JS heuristic — normalization, typo correction via Damerau-Levenshtein, intent classification via regex, contextual rewriting via history. No LLM calls. <1ms CPU.
+- **Dense vector retrieval** (`lib/vector-index.js`, optional): When `USE_VECTOR_RETRIEVAL=true`, query embeddings are fetched from Cloudflare Workers AI free tier (`@cf/baai/bge-small-en-v1.5`, 50-150ms per call). Pre-built chunk embeddings are generated at build time via `npm run build:embeddings` and committed to `data/knowledge-vectors.json`. No runtime cost for chunk embeddings.
+- **Hybrid fusion** (`lib/hybrid-retrieve.js`): Pure in-memory RRF + MMR computation. <2ms CPU.
+- **Semantic cache**: When dense retrieval is enabled, paraphrased queries are deduplicated via embedding cosine similarity (≥0.92). On a cache hit, the entire retrieval + LLM pipeline is skipped, saving both latency and provider quota. LRU, 200 entries, 10-min TTL.
+- **Stance consistency store**: Pure in-memory, no external calls. Per-session topic stances, 30-min TTL.
+
+**Build-time embeddings** via `npm run build:embeddings` use Cloudflare Workers AI free tier to batch-embed ~600 chunks in <10 seconds. The script also embeds intent-centroid example sets. Output: `data/knowledge-vectors.json` and `data/intent-centroids.json` (committed to repo).
+
+**Total added latency per message**: ~0ms (BM25-only mode), ~150ms typical (hybrid mode with embedding call), often less with semantic cache hits.

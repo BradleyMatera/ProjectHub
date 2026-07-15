@@ -602,6 +602,26 @@ function renderLearningSystem(container, data) {
       <div class="ph-analytics__tile-value" style="font-size:1.5rem">${nextThinkIn > 0 ? Math.ceil(nextThinkIn / 1000) + 's' : 'Due now'}</div>
       <div class="ph-muted">Auto-triggers when providers recover</div>
     </div>
+    <div class="ph-learning-tile">
+      <div class="ph-analytics__tile-label">Semantic cache</div>
+      <div class="ph-analytics__tile-value">${formatNumber(learn.semanticCacheSize)}</div>
+      <div class="ph-muted">Paraphrase dedup (≥0.92 similarity)</div>
+    </div>
+    <div class="ph-learning-tile">
+      <div class="ph-analytics__tile-label">Stance tracking</div>
+      <div class="ph-analytics__tile-value">${formatNumber(learn.stanceStoreSize)}</div>
+      <div class="ph-muted">Sessions with consistency context</div>
+    </div>
+    <div class="ph-learning-tile">
+      <div class="ph-analytics__tile-label">Retrieval mode</div>
+      <div class="ph-analytics__tile-value" style="font-size:1.5rem">${learn.retrievalMode || 'bm25'}</div>
+      <div class="ph-muted">${formatNumber(learn.bm25Chunks || 0)} chunks · ${learn.vectorIndexLoaded ? 'vectors loaded' : 'no vectors'}</div>
+    </div>
+    <div class="ph-learning-tile">
+      <div class="ph-analytics__tile-label">Providers recovered</div>
+      <div class="ph-analytics__tile-value">${formatNumber((learn.providersRecentlyRecovered || []).length)}</div>
+      <div class="ph-muted">Recently back online</div>
+    </div>
   `;
   container.innerHTML = '';
   container.appendChild(grid);
@@ -662,6 +682,69 @@ function renderLearningSystem(container, data) {
     empty.textContent = 'No judge evaluations yet — think mode will record verdicts here.';
     container.appendChild(empty);
   }
+}
+
+function renderRetrievalDebugger(container) {
+  container.hidden = false;
+  container.innerHTML = `
+    <h3 class="ph-analytics__section-title">Retrieval debugger</h3>
+    <p class="ph-muted">Test the retrieval pipeline: query understanding, BM25, dense, and hybrid fusion results.</p>
+    <div style="display:flex;gap:0.5rem;margin:0.75rem 0">
+      <input class="cds--text-input" id="ph-retrieve-input" type="text" placeholder="e.g. what is his tech stack" style="flex:1" />
+      <button class="cds--btn cds--btn--primary" id="ph-retrieve-btn" type="button">Retrieve</button>
+    </div>
+    <div class="ph-retrieve-results" style="margin-top:0.75rem"></div>
+  `;
+
+  const input = container.querySelector('#ph-retrieve-input');
+  const btn = container.querySelector('#ph-retrieve-btn');
+  const results = container.querySelector('.ph-retrieve-results');
+
+  async function runRetrieve() {
+    const q = (input.value || '').trim();
+    if (!q) return;
+    btn.disabled = true;
+    results.innerHTML = '<p class="ph-muted">Loading…</p>';
+    try {
+      const url = `${API_BASE_URL}/api/retrieve?q=${encodeURIComponent(q)}`;
+      const data = await fetchJson(url);
+      results.innerHTML = renderRetrieveResults(data);
+    } catch (e) {
+      results.innerHTML = `<p class="ph-text-error">Error: ${escapeHtml(e.message)}</p>`;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  btn.addEventListener('click', runRetrieve);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') runRetrieve(); });
+}
+
+function renderRetrieveResults(data) {
+  const renderChunkList = (label, chunks, color) => {
+    if (!chunks || chunks.length === 0) return `<p class="ph-muted" style="padding-left:1rem">${label}: <em>none</em></p>`;
+    return `<p class="ph-muted" style="padding-left:1rem">${label}:</p>` + chunks.slice(0, 4).map(c => {
+      const tag = escapeHtml(c.tag || '');
+      const score = c.score != null ? c.score.toFixed(2) : '';
+      const text = escapeHtml(String(c.text || '').slice(0, 120));
+      return `<div style="padding:0.25rem 0 0.25rem 2rem;border-left:3px solid ${color};margin-left:1rem">
+        <span class="ph-muted" style="font-size:0.75rem">${tag} · ${score}</span><br>${text}${(c.text || '').length > 120 ? '…' : ''}
+      </div>`;
+    }).join('');
+  };
+
+  return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.75rem">
+      <div><span class="ph-muted">Rewritten:</span> ${escapeHtml(data.rewritten || data.query || '—')}</div>
+      <div><span class="ph-muted">Intent:</span> ${escapeHtml(data.intent || '—')}</div>
+      <div><span class="ph-muted">Normalized:</span> ${escapeHtml(data.normalized || '—')}</div>
+      <div><span class="ph-muted">Query:</span> ${escapeHtml(data.query || '—')}</div>
+    </div>
+    ${renderChunkList('BM25', data.bm25, '#697077')}
+    ${renderChunkList('Dense', data.dense, '#78a9ff')}
+    ${renderChunkList('Fused (RRF+MMR)', data.fused, '#42be65')}
+    ${renderChunkList('Legacy', data.legacy, '#a8a8a8')}
+  `;
 }
 
 async function fetchJson(url, options = {}) {
@@ -935,6 +1018,11 @@ function render(container, data) {
     renderLearningSystem(learningContainer, health);
   }
 
+  const retrievalDebug = container.querySelector('.ph-analytics__retrieval-debug');
+  if (retrievalDebug && isDevHost) {
+    renderRetrievalDebugger(retrievalDebug);
+  }
+
   const costProdSection = container.querySelector('.ph-analytics__costs-prod');
   if (costProdSection) {
     renderCostSection(costProdSection, data.costsProd, 'Production', PROD_API_BASE);
@@ -1126,6 +1214,8 @@ export function mount(selector) {
       <p class="ph-muted">Uses LLM-as-judge: every promoted answer must beat the grounded baseline on faithfulness, relevance, helpfulness, and safety.</p>
       <div class="ph-analytics__learning"></div>
     </div>
+
+    <div class="ph-analytics__section ph-analytics__retrieval-debug" hidden></div>
 
     <div class="ph-analytics__section ph-analytics__costs-prod" hidden></div>
 

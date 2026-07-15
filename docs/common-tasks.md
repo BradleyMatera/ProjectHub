@@ -42,6 +42,31 @@
 5. Test with the local HTML file.
 6. Mirror changes in `ProjectHub.js` if it is the live deployment file.
 
+## Run Retrieval Tests
+
+```bash
+# Run all retrieval unit tests (BM25, query understanding, vector index, hybrid fusion)
+npm run test:retrieval
+
+# Evaluate retrieval quality against the 40-query golden set (Recall@k, MRR@k)
+npm run eval-retrieval
+
+# Build pre-computed embeddings (requires CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN)
+npm run build:embeddings
+```
+
+## Debug Retrieval
+
+```bash
+# Test the retrieval pipeline against the dev backend
+curl 'https://dev.projecthub-chat.bradleymatera.dev/api/retrieve?q=what+is+his+tech+stack'
+
+# With conversation history for contextual rewriting
+curl 'https://dev.projecthub-chat.bradleymatera.dev/api/retrieve?q=tell+me+more+about+that&h=%5B%7B%22user%22%3A%22tell+me+about+his+projects%22%2C%22assistant%22%3A%22...%22%7D%5D'
+```
+
+Returns rewritten query, normalized query, classified intent, and side-by-side BM25 / dense / fused / legacy results.
+
 ## Test the Widget Locally
 
 ```bash
@@ -83,6 +108,7 @@ Check the browser console for errors. Verify:
 1. Edit `server-gemini.js`.
 2. Run `node --check server-gemini.js` to validate syntax.
 3. Run `bash deploy-gcp.sh` to copy the file to the GCP VM and restart the `recruiter-chat-api` service.
+   - The deploy script automatically syncs the `lib/` directory and `data/free-tier-limits.json`.
    - Alternatively, deploy via `gcloud compute ssh`:
    ```bash
    cat server-gemini.js | gcloud compute ssh ollama-api-gate --zone=us-central1-a --project=ollamaapi-501903 --tunnel-through-iap --command="sudo tee /opt/recruiter-chat-api/server.js > /dev/null && sudo chmod 644 /opt/recruiter-chat-api/server.js && sudo systemctl restart recruiter-chat-api && sleep 15 && echo deployed"
@@ -139,6 +165,28 @@ python3 /tmp/test-suite-verification.py
 | Regression | `/tmp/test-suite-regression.py` | 62 |
 | Edge Cases | `/tmp/test-suite-edge-cases.py` | 28 |
 | Verification | `/tmp/test-suite-verification.py` | 115 |
+
+### Retrieval Unit Tests
+
+Repository-level unit tests for the retrieval pipeline modules:
+
+```bash
+# Run all retrieval tests
+npm run test:retrieval
+
+# Or run individually
+node --test test/bm25.test.js
+node --test test/query-understanding.test.js
+node --test test/vector-index.test.js
+node --test test/hybrid-retrieve.test.js
+```
+
+| Module | File | Tests |
+|--------|------|-------|
+| BM25 index | `test/bm25.test.js` | 8 |
+| Query understanding | `test/query-understanding.test.js` | 15 |
+| Vector index | `test/vector-index.test.js` | 5 |
+| Hybrid fusion | `test/hybrid-retrieve.test.js` | 8 |
 
 ### Conversation Tests
 
