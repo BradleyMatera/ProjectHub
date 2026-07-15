@@ -45,6 +45,20 @@ flowchart LR
 
 Current production path: Netlify DNS `A` record for `projecthub-chat.bradleymatera.dev` points to the GCP VM external IP `35.208.20.1`. Caddy terminates HTTPS with Let's Encrypt and proxies to the Node API on `127.0.0.1:3000`. The Node API (`server-gemini.js`) always computes a grounded answer first, then routes open-ended questions through the free provider network in priority order. If no provider succeeds or the reply fails validation, the fast, grounded answer is returned.
 
+### Cost ledger (dev-only, env-flagged)
+
+A metering-grade cost tracker lives in `lib/cost-ledger.js` and is enabled with `COST_TRACKER=true`. It records:
+
+- LLM provider token usage (parsed from each API's `usage` field)
+- Cloudflare Workers AI neuron estimates
+- GCP VM compute seconds and egress bytes
+- GitHub API call counts and payload sizes
+- Disk writes of state files
+
+All prices are kept in integer **micro-USD** to avoid float drift. The dashboard section is only rendered on `https://bradleymatera.github.io/ProjectHub-dev/` because the endpoint is absent in production.
+
+See `data/free-tier-limits.json` for the authoritative free-tier limits, shadow paid rates, and citation URLs. Update `lastVerified` and re-check provider docs when limits change.
+
 ---
 
 ## Step-by-Step Deployment

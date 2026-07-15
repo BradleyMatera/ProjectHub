@@ -26,6 +26,8 @@ stats.json
 learned.json
 stats-dev.json
 learned-dev.json
+costs.json
+costs-dev.json
 *.backup.*
 
 # Screenshots and media clutter

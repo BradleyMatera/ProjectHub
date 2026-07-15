@@ -39,6 +39,22 @@ jobs:
       - name: Check analytics bundle syntax
         run: node --check analytics/dist/analytics.iife.js
 
+      - name: Run cost ledger unit tests
+        run: npm run test:ledger
+
+      - name: Check that new fetch call sites are metered
+        run: |
+          # Allowlist: all fetch() calls in server-gemini.js must either be to a
+          # metered function, a provider caller that meters internally, or an
+          # explicitly exempt URL. This check is intentionally narrow and will
+          # need updating when new unmetered endpoints are intentionally added.
+          UNMETERED=$(grep -nE "fetch\(\`" server-gemini.js | grep -vE "meterEvent|callOpenAICompatibleProvider|callCloudflareWorkersAI|callGeminiWithPrompt|OLLAMA_URL|fetchKnowledge|pushLearnedToGitHub|pushRes = await fetch|metaRes = await fetch|https://api\.github\.com" || true)
+          if [ -n "$UNMETERED" ]; then
+            echo "Found fetch() calls not obviously metered in server-gemini.js:"
+            echo "$UNMETERED"
+            exit 1
+          fi
+
       # Live tests are run manually against the deployed backend.
       # Uncomment the next step only after adding a safe test endpoint or mock.
       # - name: Run local test suites

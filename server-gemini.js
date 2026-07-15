@@ -7,7 +7,41 @@ const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const path = require('path');
 
+const { CostLedger } = require('./lib/cost-ledger');
+
 const app = express();
+
+// ============ COST LEDGER ============
+// Metering-grade tracker for every billable-adjacent event. Dev-first feature:
+// enable with COST_TRACKER=true. Recording is near-free; the /api/costs
+// endpoint is only exposed when the flag is on.
+const COST_TRACKER = process.env.COST_TRACKER === 'true';
+const COST_FILE = path.join(__dirname, process.env.COST_FILE || 'costs.json');
+let costLedger = null;
+try {
+  costLedger = new CostLedger({ stateFile: COST_TRACKER ? COST_FILE : null });
+} catch (e) {
+  console.error('[cost-ledger] init failed, metering disabled:', e.message);
+}
+function meterEvent(event) {
+  if (!costLedger) return;
+  try { costLedger.record(event); } catch { /* metering must never break requests */ }
+}
+
+// Egress metering: count response bytes for every reply the server sends.
+app.use((req, res, next) => {
+  if (!costLedger) return next();
+  const origWrite = res.write.bind(res);
+  const origEnd = res.end.bind(res);
+  let bytes = 0;
+  res.write = (chunk, ...args) => { if (chunk) bytes += Buffer.byteLength(chunk); return origWrite(chunk, ...args); };
+  res.end = (chunk, ...args) => {
+    if (chunk) bytes += Buffer.byteLength(chunk);
+    meterEvent({ source: 'gcp-egress', kind: 'egress', bytes, meta: { route: req.path } });
+    return origEnd(chunk, ...args);
+  };
+  next();
+});
 
 const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
@@ -798,7 +832,31 @@ async function callOpenAICompatibleProvider(baseUrl, apiKey, model, knowledge, q
     throw new Error(`OpenAI-compatible provider failed: ${res.status} ${text.slice(0, 500)}`);
   }
   const data = await res.json();
+  meterLlmUsage(slugFromBaseUrl(baseUrl), model, data.usage?.prompt_tokens, data.usage?.completion_tokens);
   return data.choices?.[0]?.message?.content || '';
+}
+
+// Map an OpenAI-compatible base URL to a registry source slug for metering.
+function slugFromBaseUrl(baseUrl) {
+  const u = String(baseUrl || '');
+  if (u.includes('groq.com')) return 'groq';
+  if (u.includes('github.ai')) return 'github';
+  if (u.includes('x.ai')) return 'grok';
+  return 'openai';
+}
+
+// Record LLM token usage. Falls back to a length estimate (~4 chars/token)
+// when the provider omits usage data, flagged estimated:true.
+function meterLlmUsage(source, model, tokensIn, tokensOut, estimatedText) {
+  const hasUsage = Number.isFinite(tokensIn) || Number.isFinite(tokensOut);
+  meterEvent({
+    source,
+    kind: 'llm',
+    tokensIn: Number.isFinite(tokensIn) ? tokensIn : Math.ceil(String(estimatedText || '').length / 4),
+    tokensOut: Number.isFinite(tokensOut) ? tokensOut : 0,
+    estimated: !hasUsage,
+    meta: { model }
+  });
 }
 
 async function callOpenAICompatible(knowledge, question, history, model) {
@@ -843,6 +901,19 @@ async function callCloudflareWorkersAI(accountId, apiToken, model, knowledge, qu
     throw new Error(`Cloudflare Workers AI error: ${JSON.stringify(data.errors).slice(0, 200)}`);
   }
   const result = data.result || {};
+  // Cloudflare bills in neurons; usage tokens are reported for some models.
+  const cfTokensIn = result.usage?.prompt_tokens ?? data.usage?.prompt_tokens;
+  const cfTokensOut = result.usage?.completion_tokens ?? data.usage?.completion_tokens;
+  const neuronEstimates = (costLedger?.registry?.sources?.cloudflare?.neuronEstimatesPerCall) || {};
+  meterEvent({
+    source: 'cloudflare',
+    kind: 'llm',
+    tokensIn: Number.isFinite(cfTokensIn) ? cfTokensIn : 0,
+    tokensOut: Number.isFinite(cfTokensOut) ? cfTokensOut : 0,
+    neurons: neuronEstimates[model] || 12,
+    estimated: !Number.isFinite(cfTokensIn),
+    meta: { model }
+  });
   return result.response || result.message?.content || '';
 }
 
@@ -911,6 +982,7 @@ async function callGeminiWithPrompt(prompt, model) {
     throw new Error(`Gemini failed: ${res.status} ${text.slice(0, 500)}`);
   }
   const data = await res.json();
+  meterLlmUsage('gemini', model, data.usageMetadata?.promptTokenCount, data.usageMetadata?.candidatesTokenCount, prompt);
   return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
@@ -3142,6 +3214,7 @@ async function pushLearnedToGitHub() {
       `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_KNOWLEDGE_PATH}`,
       { headers: { 'Authorization': `Bearer ${GITHUB_API_TOKEN}`, 'Accept': 'application/vnd.github+json' } }
     );
+    meterEvent({ source: 'github-api', kind: 'api', meta: { op: 'contents-get' } });
     if (!metaRes.ok) { console.error('[think] GitHub API meta failed:', metaRes.status); return false; }
     const meta = await metaRes.json();
     const sha = meta.sha;
@@ -3178,6 +3251,7 @@ async function pushLearnedToGitHub() {
 
     // Push updated content
     const newContent = Buffer.from(JSON.stringify(knowledge, null, 2)).toString('base64');
+    meterEvent({ source: 'github-api', kind: 'api', bytes: newContent.length, meta: { op: 'contents-put' } });
     const pushRes = await fetch(
       `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_KNOWLEDGE_PATH}`,
       {
@@ -3566,6 +3640,33 @@ app.post('/api/chat', async (req, res) => {
 
 // Flush stats after each request if dirty
 app.use((req, res, next) => { if (statsDirty) flushStats(); next(); });
+
+// ============ COST LEDGER ENDPOINT + SAMPLER ============
+// Dev-only endpoint: full ledger snapshot with headroom, trends, and insights.
+if (COST_TRACKER && costLedger) {
+  const { buildInsights } = require('./lib/cost-insights');
+  app.get('/api/costs', (req, res) => {
+    try {
+      const snapshot = costLedger.snapshot();
+      res.json({ ok: true, ...snapshot, insights: buildInsights(snapshot) });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: e.message });
+    }
+  });
+
+  // VM compute sampler: every 60s record uptime seconds + state file disk usage.
+  setInterval(() => {
+    meterEvent({ source: 'gcp-vm', kind: 'compute', seconds: 60 });
+    try {
+      let stateBytes = 0;
+      for (const f of [STATS_FILE, LEARNED_FILE, COST_FILE]) {
+        try { stateBytes += fs.statSync(f).size; } catch { /* file may not exist yet */ }
+      }
+      meterEvent({ source: 'disk-state', kind: 'storage', bytes: stateBytes, estimated: false, meta: { snapshotBytes: true } });
+    } catch { /* sampler must never throw */ }
+    costLedger.flush();
+  }, 60 * 1000).unref();
+}
 
 app.listen(PORT, '127.0.0.1', () => {
   console.log(`Recruiter chat API running on http://127.0.0.1:${PORT} with Ollama backend`);

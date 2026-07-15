@@ -176,9 +176,9 @@ We use a `master`/`develop` model with a public staging repo (`ProjectHub-dev`) 
    ```
    - Staging frontend: `https://bradleymatera.github.io/ProjectHub-dev/`
    - Staging backend: `https://dev.projecthub-chat.bradleymatera.dev/`
-4. **Validate:** run the conversation test suites against the staging backend. Test knowledge-base changes by asking Scout sample questions on the staging widget.
+4. **Validate:** run the conversation test suites against the staging backend. Test knowledge-base changes by asking Scout sample questions on the staging widget. If the cost ledger changed, verify `/api/costs` on the dev backend and confirm the dashboard "Cost & Free-Tier" section loads on `https://bradleymatera.github.io/ProjectHub-dev/`.
 5. **Release:** open a PR from `develop` to `master`. After merge, tag the release and run `bash deploy-gcp.sh`.
-6. **Production verify:** check `/health`, `/api/knowledge-health`, and the live widget.
+6. **Production verify:** check `/health`, `/api/knowledge-health`, the live widget, and — if `COST_TRACKER=true` is enabled there — `/api/costs`.
 
 ### Knowledge-Base Edits
 

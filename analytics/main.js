@@ -14,6 +14,7 @@ const isDevHost = typeof window !== 'undefined' && /projecthub-dev/i.test(window
 const API_BASE_URL = isDevHost ? 'https://dev.projecthub-chat.bradleymatera.dev' : 'https://projecthub-chat.bradleymatera.dev';
 const API_HEALTH_URL = `${API_BASE_URL}/health`;
 const API_THINK_URL = `${API_BASE_URL}/api/think`;
+const API_COSTS_URL = `${API_BASE_URL}/api/costs`;
 const GITHUB_REPO_API = 'https://api.github.com/repos/BradleyMatera/ProjectHub';
 const GITHUB_CONTRIB_API = 'https://api.github.com/repos/BradleyMatera/ProjectHub/contributors';
 const REFRESH_INTERVAL_MS = 5000;
@@ -667,22 +668,109 @@ async function fetchJson(url, options = {}) {
 }
 
 async function loadData() {
-  const [health, repo, contributors] = await Promise.allSettled([
+  const [health, repo, contributors, costs] = await Promise.allSettled([
     fetchJson(API_HEALTH_URL, { cache: 'no-store' }),
     fetchJson(GITHUB_REPO_API),
     fetchJson(GITHUB_CONTRIB_API),
+    fetchJson(API_COSTS_URL, { cache: 'no-store' }),
   ]);
 
   return {
     health: health.status === 'fulfilled' ? health.value : null,
     repo: repo.status === 'fulfilled' ? repo.value : null,
     contributors: contributors.status === 'fulfilled' ? contributors.value : null,
+    // Costs endpoint only exists when COST_TRACKER=true on the backend (dev);
+    // absence is silent — the section hides itself on production.
+    costs: costs.status === 'fulfilled' && costs.value?.ok ? costs.value : null,
     errors: [
       health.status === 'rejected' ? `Health: ${health.reason.message}` : null,
       repo.status === 'rejected' ? `GitHub repo: ${repo.reason.message}` : null,
       contributors.status === 'rejected' ? `Contributors: ${contributors.reason.message}` : null,
     ].filter(Boolean),
   };
+}
+
+function costFmtBytes(n) {
+  if (n >= 1073741824) return (n / 1073741824).toFixed(2) + ' GB';
+  if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB';
+  if (n >= 1024) return (n / 1024).toFixed(1) + ' KB';
+  return (n || 0) + ' B';
+}
+
+function renderCostSection(section, costs) {
+  if (!costs) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  const freeBadge = costs.free
+    ? '<span class="ph-status ph-status--ok">100% FREE — all usage inside free tiers</span>'
+    : '<span class="ph-status ph-status--error">FREE-TIER LIMIT EXCEEDED</span>';
+
+  const hero = `
+    <div class="ph-learning-grid">
+      <div class="ph-learning-tile">
+        <div class="ph-analytics__tile-label">Actual cost this month</div>
+        <div class="ph-analytics__tile-value">${costs.shadowCost?.actualUsd === null ? 'REVIEW' : '$' + (costs.shadowCost?.actualUsd || '0.000000')}</div>
+        <div class="ph-muted">${freeBadge}</div>
+      </div>
+      <div class="ph-learning-tile">
+        <div class="ph-analytics__tile-label">Shadow cost if paid (month)</div>
+        <div class="ph-analytics__tile-value">$${costs.shadowCost?.monthUsd || '0.000000'}</div>
+        <div class="ph-muted">micro-USD precision: ${formatNumber(costs.shadowCost?.monthMicroUsd || 0)} µ$</div>
+      </div>
+      <div class="ph-learning-tile">
+        <div class="ph-analytics__tile-label">Shadow cost today</div>
+        <div class="ph-analytics__tile-value">$${((costs.shadowCost?.dayMicroUsd || 0) / 1e6).toFixed(6)}</div>
+        <div class="ph-muted">Registry v${costs.registryVersion} · verified ${costs.registryLastVerified}</div>
+      </div>
+    </div>`;
+
+  const gauges = (costs.headroom || []).map(h => {
+    const pct = Math.min(100, h.pct);
+    const barClass = h.pct >= 80 ? 'ph-bar-fill--error' : h.pct >= 50 ? 'ph-bar-fill--warn' : '';
+    const usedStr = h.metric.includes('Bytes') ? costFmtBytes(h.used) : formatNumber(h.used);
+    const limitStr = h.metric.includes('Bytes') ? costFmtBytes(h.limit) : formatNumber(h.limit);
+    return `<div class="ph-bar-row">
+      <div class="ph-bar-label" title="${h.source} ${h.metric}">${h.source} · ${h.metric}${h.estimated ? ' (est)' : ''}</div>
+      <div class="ph-bar-count">${usedStr} / ${limitStr} (${h.pct}%)</div>
+      <div class="ph-bar-track"><div class="ph-bar-fill ${barClass}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+
+  const insights = (costs.insights || []).map(i => {
+    const cls = i.severity === 2 ? 'ph-text-error' : i.severity === 1 ? 'ph-text-warn' : 'ph-text-success';
+    return `<li class="${cls}">${i.text}</li>`;
+  }).join('');
+
+  const sources = Object.entries(costs.bySourceMonth || {}).map(([source, a]) => `
+    <tr>
+      <td><strong>${source}</strong></td>
+      <td>${formatNumber(a.calls)}</td>
+      <td>${formatNumber(a.tokensIn)} / ${formatNumber(a.tokensOut)}</td>
+      <td>${formatNumber(a.neurons)}</td>
+      <td>${costFmtBytes(a.bytes)}</td>
+      <td>$${(a.shadowMicroUsd / 1e6).toFixed(6)}${a.estimated ? ' (est)' : ''}</td>
+    </tr>`).join('');
+
+  const caveats = (costs.caveats || []).map(c => `<li>${c}</li>`).join('');
+
+  section.innerHTML = `
+    <h3 class="ph-analytics__section-title">Cost &amp; free-tier tracker (dev)</h3>
+    <p class="ph-muted">Every metered event down to integer micro-USD. Proof the stack is actually free.</p>
+    ${hero}
+    <h4 class="ph-analytics__section-title" style="margin-top:1rem">Free-tier headroom</h4>
+    <div class="ph-bar-list">${gauges || '<p class="ph-muted">No metered usage yet.</p>'}</div>
+    <h4 class="ph-analytics__section-title" style="margin-top:1rem">Insights &amp; forecasts</h4>
+    <ul class="ph-cost-insights">${insights || '<li class="ph-muted">Collecting data…</li>'}</ul>
+    <div class="ph-analytics__table-wrap" style="margin-top:1rem">
+      <table class="ph-analytics__table">
+        <thead><tr><th>Source</th><th>Calls</th><th>Tokens in/out</th><th>Neurons</th><th>Bytes</th><th>Shadow $ (month)</th></tr></thead>
+        <tbody>${sources || '<tr><td colspan="6">No usage this month yet</td></tr>'}</tbody>
+      </table>
+    </div>
+    <details style="margin-top:0.75rem"><summary class="ph-muted">Measurement caveats</summary><ul class="ph-muted">${caveats}</ul></details>
+  `;
 }
 
 function render(container, data) {
@@ -802,6 +890,11 @@ function render(container, data) {
   const learningContainer = container.querySelector('.ph-analytics__learning');
   if (learningContainer && health) {
     renderLearningSystem(learningContainer, health);
+  }
+
+  const costSection = container.querySelector('.ph-analytics__costs');
+  if (costSection) {
+    renderCostSection(costSection, data.costs);
   }
 
   if (meta && health) {
@@ -968,6 +1061,8 @@ export function mount(selector) {
       <p class="ph-muted">Uses LLM-as-judge: every promoted answer must beat the grounded baseline on faithfulness, relevance, helpfulness, and safety.</p>
       <div class="ph-analytics__learning"></div>
     </div>
+
+    <div class="ph-analytics__section ph-analytics__costs" hidden></div>
 
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Service metadata</h3>

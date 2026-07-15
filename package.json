@@ -10,7 +10,8 @@
     "reset-stats": "node scripts/reset-stats.js",
     "reset-stats:remote": "node scripts/reset-stats.js --remote",
     "judge-poc": "node scripts/think-judge-poc.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test test/**/*.test.js",
+    "test:ledger": "node --test test/cost-ledger.test.js test/cost-insights.test.js"
   },
   "repository": {
     "type": "git",
