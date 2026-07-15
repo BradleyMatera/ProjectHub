@@ -1,0 +1,45 @@
+name: Test and Verify
+
+on:
+  pull_request:
+    branches: [master, develop]
+  push:
+    branches: [develop]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+
+      - name: Build analytics bundle
+        run: npm run build
+
+      - name: Verify ProjectHub.js is up to date
+        run: |
+          cp ProjectHub.js ProjectHub.js.committed
+          cat data.js utils.js logic.js ui.js > ProjectHub.js
+          diff -q ProjectHub.js.committed ProjectHub.js || (echo "ProjectHub.js is out of date. Run: cat data.js utils.js logic.js ui.js > ProjectHub.js" && exit 1)
+
+      - name: Check server syntax
+        run: node --check server-gemini.js
+
+      - name: Check analytics bundle syntax
+        run: node --check analytics/dist/analytics.iife.js
+
+      # Live tests are run manually against the deployed backend.
+      # Uncomment the next step only after adding a safe test endpoint or mock.
+      # - name: Run local test suites
+      #   run: python3 test-conversation.py --url http://localhost:3000/api/chat

@@ -2,6 +2,8 @@ node_modules/
 .env
 .env.*
 !.env.example
+!.env.production.example
+!.env.development.example
 .DS_Store
 aichat.md
 *.log
@@ -22,6 +24,8 @@ run-tests.js
 # Runtime data files (generated on the VM)
 stats.json
 learned.json
+stats-dev.json
+learned-dev.json
 *.backup.*
 
 # Screenshots and media clutter

@@ -1,0 +1,37 @@
+name: Sync to Staging Repo
+
+
+on:
+  push:
+    branches: [develop]
+    paths-ignore:
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      sync:
+        description: 'Sync the develop branch to ProjectHub-dev' 
+        required: false
+        default: 'false'
+
+neon:
+  job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      - name: Configure Git for Push
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Push to ProjectHub-dev
+        env:
+          GITHUB_TEN_PROJECTHUB_DEV: ${{ secrets.GITHUB_TEN_PROJECTHUB_DEV }}
+        run: |
+          git remote add projecthub-dev https://x-access:${GITHUB_TEN_PROJECTHUB_DEV}@github.com/BradleyMatera/ProjectHub-dev.git
+          git push projecthub-dev develop:main --force

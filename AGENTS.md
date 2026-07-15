@@ -22,6 +22,28 @@ ProjectHub is an embeddable, AI-powered chat widget that showcases Bradley Mater
 
 ---
 
+## Repositories and Environments
+
+This codebase uses a two-branch release model. `master` is production; `develop` is the integration branch.
+
+- **Production repo:** `BradleyMatera/ProjectHub` on GitHub.
+  - `master` branch -- live widget at `https://bradleymatera.github.io/ProjectHub/`, live backend at `https://projecthub-chat.bradleymatera.dev/`.
+  - `develop` branch -- integration branch where feature work merges first.
+- **Staging repo:** `BradleyMatera/ProjectHub-dev` (private).
+  - Publishes the `develop` branch to `https://bradleymatera.github.io/ProjectHub-dev/`.
+  - Source of truth for code remains `BradleyMatera/ProjectHub`; the staging repo is only a deploy target.
+- **Staging backend:** a separate free GCP e2-micro VM at `https://dev.projecthub-chat.bradleymatera.dev/`.
+
+When making changes:
+
+1. Branch from `develop` in `BradleyMatera/ProjectHub`.
+2. Open a pull request to `develop`.
+3. After merge, push `develop` to `BradleyMatera/ProjectHub-dev:main` to stage.
+4. When validated, open a pull request from `develop` to `master`.
+5. After merging to `master`, tag the release and run bash deploy-gcp.sh for the production VM.
+
+For full details, see `docs/common-tasks.md`.
+
 ## Quick Start
 
 No install step is required to run the chat widget in a browser. Use these commands for repo-level work:

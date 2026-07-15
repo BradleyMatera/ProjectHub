@@ -61,13 +61,24 @@ Check the browser console for errors. Verify:
 
 ## Publish to GitHub Pages
 
+### Production (`master`)
+
 1. Ensure `ProjectHub.js` is up to date with source modules.
 2. Commit all changes.
 3. Push to `master`.
 4. GitHub Pages rebuilds automatically.
 5. Verify the live URL: `https://bradleymatera.github.io/ProjectHub/ProjectHub.js`
 
+### Staging (`develop` -> `ProjectHub-dev`)
+
+1. Make sure `develop` is clean and CI passed.
+2. Push `develop` to the staging repo: `git push projecthub-dev develop:main`
+3. GitHub Pages rebuilds `https://bradleymatera.github.io/ProjectHub-dev/`.
+4. Verify the staging widget before opening a PR to `master`.
+
 ## Deploy the Backend
+
+### Production (`master`)
 
 1. Edit `server-gemini.js`.
 2. Run `node --check server-gemini.js` to validate syntax.
@@ -78,6 +89,14 @@ Check the browser console for errors. Verify:
    ```
 4. Verify: `curl https://projecthub-chat.bradleymatera.dev/health`
 5. Verify knowledge health: `curl https://projecthub-chat.bradleymatera.dev/api/knowledge-health`
+
+### Staging (`develop`)
+
+1. Edit `server-gemini.js` on the `develop` branch.
+2. Run `node --check server-gemini.js`.
+3. Run `bash deploy-gcp-dev.sh` to deploy to the staging VM and restart `recruiter-chat-api-dev`.
+4. Verify: `curl https://dev.projecthub-chat.bradleymatera.dev/health`
+5. Verify knowledge health: `curl https://dev.projecthub-chat.bradleymatera.dev/api/knowledge-health`
 
 ## Test the Live API
 
@@ -143,3 +162,23 @@ python3 test-conversations-full.py --only "Follow-up heavy conversation" -v
 2. Make edits.
 3. If navigation or quick-reference info changed, update `AGENTS.md`.
 4. Keep the README and landing page (`index.html`) in sync with the new docs.
+
+
+## Release Workflow
+
+We use a master/develop model with a private staging repo and a second GCP VM.
+
+1. Feature work: branch from develop in BradleyMatera/ProjectHub.
+2. Pull request: open a PR to develop. GitHub Actions runs npm audit, npm run build, checks ProjectHub.js freshness, and validates server-gemini.js syntax.
+3. Stage: after merging to develop, push to the staging repo:
+   git push projecthub-dev develop:main
+   Staging frontend: https://bradleymatera.github.io/ProjectHub-dev/
+   Staging backend: https://dev.projecthub-chat.bradleymatera.dev/
+4. Validate: run the conversation test suites against the staging backend. Test knowledge-base changes by asking Scout sample questions on the staging widget.
+5. Release: open a PR from develop to master. After merge, tag the release and run bash deploy-gcp.sh.
+6. Production verify: check /health, /api/knowledge-health, and the live widget.
+
+### Knowledge-Base Edits
+
+- Most edits to data/recruiter-knowledge.json should go through develop / ProjectHub-dev first.
+- Small, low-risk edits (typos, one new FAQ, single project line update) may use a PR directly to master if they do not change answer logic or safety behavior.

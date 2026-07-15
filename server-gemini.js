@@ -79,7 +79,7 @@ function isNetworkCircuitOpen() {
 }
 
 // ============ LEARNING SYSTEM ============
-const LEARNED_FILE = path.join(__dirname, 'learned.json');
+const LEARNED_FILE = path.join(__dirname, process.env.LEARNED_FILE || 'learned.json');
 const THINK_INTERVAL_MS = 10 * 60 * 1000;
 let thinkRunning = false;
 const GITHUB_API_TOKEN = process.env.GITHUB_TOKEN || process.env.GITHUB_PAT || GITHUB_MODELS_TOKEN || '';
@@ -2701,7 +2701,7 @@ let llmHealthy = LLM_PROVIDER !== 'ollama'; // ollama on the 1GB VM is treated a
 let llmLastFailAt = 0;
 const LLM_RETRY_AFTER_MS = 10 * 60 * 1000;
 // ============ PERSISTENT STATS ============
-const STATS_FILE = path.join(__dirname, 'stats.json');
+const STATS_FILE = path.join(__dirname, process.env.STATS_FILE || 'stats.json');
 const STATS_FLUSH_MS = 5 * 1000; // flush to disk at most every 5s
 let statsDirty = false;
 let lastStatsFlush = 0;
