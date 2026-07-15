@@ -253,7 +253,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   const fallbackReply = "I'm here to help with Bradley Matera's work as a junior software engineer. Try asking about ProjectHub, the AWS serverless workflow, CIRIS Ethical AI, his GitHub or LinkedIn, target roles, or strongest technical skills.";
   return { reply: fallbackReply, newTopic: "unrelated" };
 }function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData) {
-  const isDevHost = typeof window !== "undefined" && /projecthub-dev/i.test(window.location.hostname);
+  const isDevHost = typeof window !== "undefined" && /projecthub-dev/i.test(window.location.hostname + window.location.pathname);
   const devLabel = isDevHost ? " (dev)" : "";
   const botLabel = "Scout" + devLabel;
   let lastQueryTopic = null;

@@ -35,3 +35,16 @@ jobs:
         run: |
           git remote add projecthub-dev https://x-access:${GITHUB_TOKEN_PROJECTHUB_DEV}@github.com/BradleyMatera/ProjectHub-dev.git
           git push projecthub-dev develop:main --force
+
+      - name: Restore staging AGENTS.md
+        env:
+          GITHUB_TOKEN_PROJECTHUB_DEV: ${{ secrets.GITHUB_TOKEN_PROJECTHUB_DEV }}
+        run: |
+          git fetch projecthub-dev main
+          git checkout -B staging-main FETCH_HEAD
+          if [ -f .github/staging-AGENTS.md ]; then
+            cp .github/staging-AGENTS.md AGENTS.md
+            git add AGENTS.md
+            git commit -m "Apply staging AGENTS.md" || true
+            git push projecthub-dev HEAD:main --force-with-lease
+          fi

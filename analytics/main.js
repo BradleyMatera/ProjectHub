@@ -10,7 +10,7 @@ import {
 } from '@carbon/charts';
 
 const ANALYTICS_CONTAINER_ID = 'projecthub-analytics';
-const isDevHost = typeof window !== 'undefined' && /projecthub-dev/i.test(window.location.hostname);
+const isDevHost = typeof window !== 'undefined' && /projecthub-dev/i.test(window.location.hostname + window.location.pathname);
 const API_BASE_URL = isDevHost ? 'https://dev.projecthub-chat.bradleymatera.dev' : 'https://projecthub-chat.bradleymatera.dev';
 const API_HEALTH_URL = `${API_BASE_URL}/health`;
 const API_THINK_URL = `${API_BASE_URL}/api/think`;

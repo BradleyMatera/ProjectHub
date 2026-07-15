@@ -1,5 +1,5 @@
 function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData) {
-  const isDevHost = typeof window !== "undefined" && /projecthub-dev/i.test(window.location.hostname);
+  const isDevHost = typeof window !== "undefined" && /projecthub-dev/i.test(window.location.hostname + window.location.pathname);
   const devLabel = isDevHost ? " (dev)" : "";
   const botLabel = "Scout" + devLabel;
   let lastQueryTopic = null;

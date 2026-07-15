@@ -29,7 +29,7 @@ This codebase uses a two-branch release model. `master` is production; `develop`
 - **Production repo:** `BradleyMatera/ProjectHub` on GitHub.
   - `master` branch -- live widget at `https://bradleymatera.github.io/ProjectHub/`, live backend at `https://projecthub-chat.bradleymatera.dev/`.
   - `develop` branch -- integration branch where feature work merges first.
-- **Staging repo:** `BradleyMatera/ProjectHub-dev` (private).
+- **Staging repo:** `BradleyMatera/ProjectHub-dev` (public — GitHub Pages is not available for private repos on the free plan).
   - Publishes the `develop` branch to `https://bradleymatera.github.io/ProjectHub-dev/`.
   - Source of truth for code remains `BradleyMatera/ProjectHub`; the staging repo is only a deploy target.
 - **Staging backend:** a separate free GCP e2-micro VM at `https://dev.projecthub-chat.bradleymatera.dev/`.

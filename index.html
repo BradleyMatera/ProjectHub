@@ -10,7 +10,7 @@
   <title>ProjectHub · Scout Recruiter Assistant</title>
   <script>
     (function () {
-      if (!/projecthub-dev/i.test(window.location.hostname)) return;
+      if (!/projecthub-dev/i.test(window.location.hostname + window.location.pathname)) return;
       document.title = document.title.replace("ProjectHub", "ProjectHub (dev)");
       document.documentElement.classList.add("is-dev-site");
       if (document.readyState === "loading") {
@@ -499,10 +499,10 @@
           This is the script tag used to load the floating ProjectHub chat widget:
         </p>
 
-        <pre class="code-block"><code>&lt;script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=11"&gt;&lt;/script&gt;</code></pre>
+        <pre class="code-block"><code>&lt;script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=12"&gt;&lt;/script&gt;</code></pre>
 
         <p class="note">
-          If the script is cached aggressively, bump the version query like <code>?v=11</code>.
+          If the script is cached aggressively, bump the version query like <code>?v=12</code>.
         </p>
       </section>
 
@@ -563,11 +563,11 @@
 
   <script>
     (function () {
-      const isDev = /projecthub-dev/i.test(window.location.hostname);
+      const isDev = /projecthub-dev/i.test(window.location.hostname + window.location.pathname);
       const section = document.getElementById("projecthub-analytics");
       if (isDev) {
         const script = document.createElement("script");
-        script.src = "analytics/dist/analytics.iife.js?v=6";
+        script.src = "analytics/dist/analytics.iife.js?v=7";
         document.body.appendChild(script);
       } else if (section) {
         section.innerHTML = '<div class="card-section"><h2>Live analytics</h2><p>Analytics are available on the <a href="https://bradleymatera.github.io/ProjectHub-dev/" target="_blank" rel="noopener noreferrer">development / staging site</a>.</p></div>';
@@ -576,6 +576,6 @@
   </script>
 
   <!-- ProjectHub chat widget -->
-  <script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=11"></script>
+  <script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=12"></script>
 </body>
 </html>
