@@ -1,6 +1,11 @@
 #!/bin/bash
 # deploy-gcp-dev.sh - Deploy server-gemini.js to the staging GCP VM
 # Run this from your local machine after testing on the develop branch.
+#
+# Prerequisites:
+# 1. Create the staging VM (e.g., gcloud compute instances create projecthub-dev-vm ...)
+# 2. Set up Caddy + systemd service 'recruiter-chat-api-dev'
+# 3. Copy .env.development.example to .env on the VM and fill in provider keys
 
 set -e
 

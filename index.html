@@ -8,6 +8,29 @@
   <meta http-equiv="Expires" content="0" />
   <meta name="description" content="ProjectHub is a free, embeddable AI recruiter assistant named Scout. It showcases Bradley Matera's projects, skills, and background through a multi-provider LLM network and grounded RAG." />
   <title>ProjectHub · Scout Recruiter Assistant</title>
+  <script>
+    (function () {
+      if (!/projecthub-dev/i.test(window.location.hostname)) return;
+      document.title = document.title.replace("ProjectHub", "ProjectHub (dev)");
+      document.documentElement.classList.add("is-dev-site");
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", markDev);
+      } else {
+        markDev();
+      }
+      function markDev() {
+        const title = document.getElementById("page-title");
+        if (title) title.textContent = title.textContent.replace("Meet Scout", "Meet Scout (dev)");
+        const eyebrow = document.querySelector(".eyebrow-row");
+        if (eyebrow && !eyebrow.querySelector(".pill-dev")) {
+          const devPill = document.createElement("span");
+          devPill.className = "pill pill-dev";
+          devPill.textContent = "dev environment";
+          eyebrow.appendChild(devPill);
+        }
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="analytics/dist/analytics.css" />
   <style>
     :root {
@@ -154,6 +177,7 @@
     .pill-primary { color: var(--carbon-blue-40); background: var(--carbon-gray-80); border: 1px solid var(--carbon-blue-60); }
     .pill-live { color: var(--carbon-green-40); background: var(--carbon-gray-80); border: 1px solid var(--carbon-green-50); }
     .pill-free { color: var(--carbon-yellow-30); background: var(--carbon-gray-80); border: 1px solid var(--carbon-yellow-30); }
+    .pill-dev { color: #ffd54f; background: rgba(255, 193, 7, 0.12); border: 1px solid rgba(255, 193, 7, 0.35); }
 
     .card-section {
       margin-top: 1.5rem;
@@ -475,10 +499,10 @@
           This is the script tag used to load the floating ProjectHub chat widget:
         </p>
 
-        <pre class="code-block"><code>&lt;script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=10"&gt;&lt;/script&gt;</code></pre>
+        <pre class="code-block"><code>&lt;script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=11"&gt;&lt;/script&gt;</code></pre>
 
         <p class="note">
-          If the script is cached aggressively, bump the version query like <code>?v=10</code>.
+          If the script is cached aggressively, bump the version query like <code>?v=11</code>.
         </p>
       </section>
 
@@ -537,9 +561,21 @@
     </main>
   </div>
 
-  <script src="analytics/dist/analytics.iife.js?v=5"></script>
+  <script>
+    (function () {
+      const isDev = /projecthub-dev/i.test(window.location.hostname);
+      const section = document.getElementById("projecthub-analytics");
+      if (isDev) {
+        const script = document.createElement("script");
+        script.src = "analytics/dist/analytics.iife.js?v=6";
+        document.body.appendChild(script);
+      } else if (section) {
+        section.innerHTML = '<div class="card-section"><h2>Live analytics</h2><p>Analytics are available on the <a href="https://bradleymatera.github.io/ProjectHub-dev/" target="_blank" rel="noopener noreferrer">development / staging site</a>.</p></div>';
+      }
+    })();
+  </script>
 
   <!-- ProjectHub chat widget -->
-  <script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=10"></script>
+  <script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=11"></script>
 </body>
 </html>

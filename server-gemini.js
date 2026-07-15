@@ -83,9 +83,10 @@ const LEARNED_FILE = path.join(__dirname, process.env.LEARNED_FILE || 'learned.j
 const THINK_INTERVAL_MS = 10 * 60 * 1000;
 let thinkRunning = false;
 const GITHUB_API_TOKEN = process.env.GITHUB_TOKEN || process.env.GITHUB_PAT || GITHUB_MODELS_TOKEN || '';
-const GITHUB_REPO_OWNER = 'BradleyMatera';
-const GITHUB_REPO_NAME = 'ProjectHub';
-const GITHUB_KNOWLEDGE_PATH = 'data/recruiter-knowledge.json';
+const GITHUB_REPO_OWNER = process.env.THINK_REPO_OWNER || 'BradleyMatera';
+const GITHUB_REPO_NAME = process.env.THINK_REPO_NAME || 'ProjectHub';
+const GITHUB_KNOWLEDGE_PATH = process.env.THINK_KNOWLEDGE_PATH || 'data/recruiter-knowledge.json';
+const THINK_PUSH_ENABLED = process.env.THINK_PUSH_ENABLED !== 'false';
 
 const defaultLearned = { stashed: [], learned: [], learnedCount: 0, lastThinkAt: 0, scoredHistory: [] };
 let learnedData;
@@ -3126,6 +3127,10 @@ function getLearnedAnswer(question) {
 }
 
 async function pushLearnedToGitHub() {
+  if (!THINK_PUSH_ENABLED) {
+    console.log('[think] THINK_PUSH_ENABLED is false; learned answers kept in local staging only');
+    return false;
+  }
   if (!GITHUB_API_TOKEN || GITHUB_API_TOKEN.length < 10) {
     console.log('[think] No GitHub token, skipping push');
     return false;

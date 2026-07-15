@@ -10,7 +10,10 @@ import {
 } from '@carbon/charts';
 
 const ANALYTICS_CONTAINER_ID = 'projecthub-analytics';
-const API_HEALTH_URL = 'https://projecthub-chat.bradleymatera.dev/health';
+const isDevHost = typeof window !== 'undefined' && /projecthub-dev/i.test(window.location.hostname);
+const API_BASE_URL = isDevHost ? 'https://dev.projecthub-chat.bradleymatera.dev' : 'https://projecthub-chat.bradleymatera.dev';
+const API_HEALTH_URL = `${API_BASE_URL}/health`;
+const API_THINK_URL = `${API_BASE_URL}/api/think`;
 const GITHUB_REPO_API = 'https://api.github.com/repos/BradleyMatera/ProjectHub';
 const GITHUB_CONTRIB_API = 'https://api.github.com/repos/BradleyMatera/ProjectHub/contributors';
 const REFRESH_INTERVAL_MS = 5000;
@@ -1005,7 +1008,7 @@ export function mount(selector) {
       thinkBtn.disabled = true;
       thinkBtn.textContent = 'Running…';
       try {
-        const res = await fetch('https://projecthub-chat.bradleymatera.dev/api/think', { method: 'POST' });
+        const res = await fetch(API_THINK_URL, { method: 'POST' });
         const data = await res.json();
         setStatus(container, data.ok ? 'Think Mode finished — refreshing…' : `Think Mode failed: ${data.error || 'unknown'}`, data.ok ? 'info' : 'error');
       } catch (e) {

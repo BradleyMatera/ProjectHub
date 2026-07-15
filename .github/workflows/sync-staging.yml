@@ -15,8 +15,8 @@ on:
         required: false
         default: 'false'
 
-neon:
-  job:
+jobs:
+  sync:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout develop
@@ -31,7 +31,7 @@ neon:
 
       - name: Push to ProjectHub-dev
         env:
-          GITHUB_TEN_PROJECTHUB_DEV: ${{ secrets.GITHUB_TEN_PROJECTHUB_DEV }}
+          GITHUB_TOKEN_PROJECTHUB_DEV: ${{ secrets.GITHUB_TOKEN_PROJECTHUB_DEV }}
         run: |
-          git remote add projecthub-dev https://x-access:${GITHUB_TEN_PROJECTHUB_DEV}@github.com/BradleyMatera/ProjectHub-dev.git
+          git remote add projecthub-dev https://x-access:${GITHUB_TOKEN_PROJECTHUB_DEV}@github.com/BradleyMatera/ProjectHub-dev.git
           git push projecthub-dev develop:main --force

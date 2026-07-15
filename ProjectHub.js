@@ -253,6 +253,9 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   const fallbackReply = "I'm here to help with Bradley Matera's work as a junior software engineer. Try asking about ProjectHub, the AWS serverless workflow, CIRIS Ethical AI, his GitHub or LinkedIn, target roles, or strongest technical skills.";
   return { reply: fallbackReply, newTopic: "unrelated" };
 }function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData) {
+  const isDevHost = typeof window !== "undefined" && /projecthub-dev/i.test(window.location.hostname);
+  const devLabel = isDevHost ? " (dev)" : "";
+  const botLabel = "Scout" + devLabel;
   let lastQueryTopic = null;
   let lastRequestTime = 0;
   let isRequestInFlight = false;
@@ -1076,10 +1079,10 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
         <span class="projecthub-status-dot" aria-hidden="true"></span>
       </div>
       <div class="projecthub-title-block">
-        <div class="projecthub-kicker">Bradley Matera · Recruiter assistant</div>
-        <div class="projecthub-title">Scout</div>
+        <div class="projecthub-kicker">Bradley Matera · Recruiter assistant${devLabel}</div>
+        <div class="projecthub-title">Scout${devLabel}</div>
         <div class="projecthub-subtitle-row">
-          <span class="projecthub-subtitle">Ask me about Bradley's projects, skills, fit, or contact info</span>
+          <span class="projecthub-subtitle">Ask me about Bradley's projects, skills, fit, or contact info${devLabel}</span>
           <span class="projecthub-free-badge" title="Scout runs on free GitHub Pages, a GCP free-tier VM, free LLM providers, and a local Ollama fallback — no paid AI required.">100% free</span>
         </div>
       </div>
@@ -1091,8 +1094,8 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     <div class="projecthub-settings-panel" role="dialog" aria-label="ProjectHub chat settings">
       <div class="settings-head">
         <div>
-          <div class="settings-title">Chat Settings</div>
-          <div class="settings-subtitle">Input behavior and session controls.</div>
+          <div class="settings-title">Chat Settings${devLabel}</div>
+          <div class="settings-subtitle">Input behavior and session controls.${devLabel}</div>
         </div>
         <button class="projecthub-icon-button projecthub-settings-close" type="button" aria-label="Close settings" title="Close settings">×</button>
       </div>
@@ -1188,7 +1191,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       window.sessionStorage.setItem(sessionStorageKey, sessionId);
     } catch (error) {}
     chatOutput.innerHTML = "";
-    appendMessage("bot", "Scout", "Memory cleared. What should I call you for this new session?");
+    appendMessage("bot", botLabel, "Memory cleared. What should I call you for this new session?");
   }
 
   function appendMessage(type, label, html, options = {}) {
@@ -1260,7 +1263,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   }
 
   function appendTypingStatus() {
-    const row = appendMessage("bot", "Scout", `<span class="typing-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span><span class="thinking-tip"></span>`, { statusId: "thinking-status" });
+    const row = appendMessage("bot", botLabel, `<span class="typing-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span><span class="thinking-tip"></span>`, { statusId: "thinking-status" });
     const tips = [
       "Reading Bradley's project data…",
       "Checking his AWS background…",
@@ -1357,7 +1360,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 
   renameBtn.addEventListener("click", () => {
     saveVisitorName("");
-    appendMessage("bot", "Scout", "No problem. What should I call you for this session?");
+    appendMessage("bot", botLabel, "No problem. What should I call you for this session?");
     chatDiv.classList.remove("projecthub-settings-open");
     chatInput.focus();
   });
@@ -1412,7 +1415,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   }
 
   async function typeNewBotMessage(html) {
-    const row = appendMessage("bot", "Scout", "");
+    const row = appendMessage("bot", botLabel, "");
     await typeHtml(row.querySelector(".message-content"), html, WORD_DELAY_MS);
     return row;
   }
@@ -1513,9 +1516,10 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   });
   renderSuggestions();
   const freeNote = `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(57,217,138,0.12);border:1px solid rgba(57,217,138,0.28);color:#b8f5d3;font-size:12px;">🟢 I run entirely on free tiers. If a provider hits its daily cap or rate limit, I automatically switch to another free provider or local Ollama on the GCP VM.</span>`;
+  const devNote = isDevHost ? `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(255,193,7,0.12);border:1px solid rgba(255,193,7,0.35);color:#ffd54f;font-size:12px;">⚠️ You are on the dev/staging environment.</span>` : "";
   const welcomeHtml = visitorName
-    ? `Welcome back, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask about his projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.${freeNote}`
-    : `Hi, I’m Scout, Bradley’s recruiter assistant. What should I call you for this session? A first name is enough, and then I’ll keep the conversation personal and coherent.${freeNote}`;
+    ? `Welcome back, ${escapeHtml(visitorName)}. I’m Scout${devLabel}, Bradley’s assistant. Ask about his projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.${freeNote}${devNote}`
+    : `Hi, I’m Scout${devLabel}, Bradley’s recruiter assistant. What should I call you for this session? A first name is enough, and then I’ll keep the conversation personal and coherent.${freeNote}${devNote}`;
   typeNewBotMessage(welcomeHtml);
 
   console.log("ProjectHub loaded!");
