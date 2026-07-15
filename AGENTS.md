@@ -191,6 +191,9 @@ Add an entry to `data.js` `projects` array and mirror it in `ProjectHub.js` if t
 ## Agent Rules
 
 - **AGENTS.md is the single canonical source.** `CLAUDE.md` and `.github/copilot-instructions.md` only redirect here.
+- **Always work on `develop`.** Do not edit `master` directly. Branch from `develop`, open PRs to `develop`, and stage changes in `ProjectHub-dev` before any production promotion.
+- **Never push code straight to production.** Production backend deploys (`deploy-gcp.sh`) and merges to `master` happen only after validation on `https://bradleymatera.github.io/ProjectHub-dev/`.
+- **Knowledge-base edits use the same flow.** Add or change `data/recruiter-knowledge.json` on `develop`, test on the dev backend/site, then promote to `master` via PR. Small typo fixes may be PR'd directly to `master` if they do not change answer logic.
 - Only read the guides relevant to the current task to conserve tokens.
 - When changing features, update this file and the relevant `docs/` guide.
 - Keep the root file lightweight; put detail in `docs/`.

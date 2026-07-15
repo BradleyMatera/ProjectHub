@@ -166,19 +166,22 @@ python3 test-conversations-full.py --only "Follow-up heavy conversation" -v
 
 ## Release Workflow
 
-We use a master/develop model with a private staging repo and a second GCP VM.
+We use a `master`/`develop` model with a public staging repo (`ProjectHub-dev`) and a second GCP VM. **All changes start on `develop`.**
 
-1. Feature work: branch from develop in BradleyMatera/ProjectHub.
-2. Pull request: open a PR to develop. GitHub Actions runs npm audit, npm run build, checks ProjectHub.js freshness, and validates server-gemini.js syntax.
-3. Stage: after merging to develop, push to the staging repo:
+1. **Feature work:** branch from `develop` in `BradleyMatera/ProjectHub`.
+2. **Pull request:** open a PR to `develop`. GitHub Actions runs `npm audit`, `npm run build`, checks `ProjectHub.js` freshness, and validates `server-gemini.js` syntax.
+3. **Stage:** after merging to `develop`, push to the staging repo:
+   ```bash
    git push projecthub-dev develop:main
-   Staging frontend: https://bradleymatera.github.io/ProjectHub-dev/
-   Staging backend: https://dev.projecthub-chat.bradleymatera.dev/
-4. Validate: run the conversation test suites against the staging backend. Test knowledge-base changes by asking Scout sample questions on the staging widget.
-5. Release: open a PR from develop to master. After merge, tag the release and run bash deploy-gcp.sh.
-6. Production verify: check /health, /api/knowledge-health, and the live widget.
+   ```
+   - Staging frontend: `https://bradleymatera.github.io/ProjectHub-dev/`
+   - Staging backend: `https://dev.projecthub-chat.bradleymatera.dev/`
+4. **Validate:** run the conversation test suites against the staging backend. Test knowledge-base changes by asking Scout sample questions on the staging widget.
+5. **Release:** open a PR from `develop` to `master`. After merge, tag the release and run `bash deploy-gcp.sh`.
+6. **Production verify:** check `/health`, `/api/knowledge-health`, and the live widget.
 
 ### Knowledge-Base Edits
 
-- Most edits to data/recruiter-knowledge.json should go through develop / ProjectHub-dev first.
-- Small, low-risk edits (typos, one new FAQ, single project line update) may use a PR directly to master if they do not change answer logic or safety behavior.
+- **All knowledge-base changes go through `develop` / `ProjectHub-dev` first.** This is especially important for new answers, role-fit wording, safety rules, and prompt changes.
+- Small, low-risk edits (single typo fixes, date updates, URL corrections) may use a PR directly to `master` if they do not change answer logic or safety behavior.
+- Never edit `data/recruiter-knowledge.json` on `master` and then immediately deploy the production backend without staging.
