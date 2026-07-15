@@ -563,15 +563,9 @@
 
   <script>
     (function () {
-      const isDev = /projecthub-dev/i.test(window.location.hostname + window.location.pathname);
-      const section = document.getElementById("projecthub-analytics");
-      if (isDev) {
-        const script = document.createElement("script");
-        script.src = "analytics/dist/analytics.iife.js?v=7";
-        document.body.appendChild(script);
-      } else if (section) {
-        section.innerHTML = '<div class="card-section"><h2>Live analytics</h2><p>Analytics are available on the <a href="https://bradleymatera.github.io/ProjectHub-dev/" target="_blank" rel="noopener noreferrer">development / staging site</a>.</p></div>';
-      }
+      const script = document.createElement("script");
+      script.src = "analytics/dist/analytics.iife.js?v=8";
+      document.body.appendChild(script);
     })();
   </script>
 
