@@ -671,13 +671,18 @@ async function fetchJson(url, options = {}) {
 }
 
 async function loadData() {
-  const [health, repo, contributors, costsProd, costsDev] = await Promise.allSettled([
+  // Full mode (dev site): pull everything from every source — both backends'
+  // health and cost ledgers plus GitHub. Showcase mode (prod site): only the
+  // local backend's health, GitHub, and the production cost tracker.
+  const requests = [
     fetchJson(API_HEALTH_URL, { cache: 'no-store' }),
     fetchJson(GITHUB_REPO_API),
     fetchJson(GITHUB_CONTRIB_API),
     fetchJson(API_COSTS_PROD_URL, { cache: 'no-store' }),
-    fetchJson(API_COSTS_DEV_URL, { cache: 'no-store' }),
-  ]);
+    isDevHost ? fetchJson(API_COSTS_DEV_URL, { cache: 'no-store' }) : Promise.reject(new Error('showcase mode')),
+    isDevHost ? fetchJson(`${PROD_API_BASE}/health`, { cache: 'no-store' }) : Promise.reject(new Error('showcase mode')),
+  ];
+  const [health, repo, contributors, costsProd, costsDev, healthProd] = await Promise.allSettled(requests);
 
   return {
     health: health.status === 'fulfilled' ? health.value : null,
@@ -687,12 +692,42 @@ async function loadData() {
     // COST_TRACKER=true on that backend; an offline backend hides its card.
     costsProd: costsProd.status === 'fulfilled' && costsProd.value?.ok ? costsProd.value : null,
     costsDev: costsDev.status === 'fulfilled' && costsDev.value?.ok ? costsDev.value : null,
+    // Production backend health, fetched separately on the dev site so the
+    // Environments section can compare both stacks side by side.
+    healthProd: healthProd.status === 'fulfilled' ? healthProd.value : null,
     errors: [
       health.status === 'rejected' ? `Health: ${health.reason.message}` : null,
       repo.status === 'rejected' ? `GitHub repo: ${repo.reason.message}` : null,
       contributors.status === 'rejected' ? `Contributors: ${contributors.reason.message}` : null,
     ].filter(Boolean),
   };
+}
+
+function renderEnvironmentsSection(section, devHealth, prodHealth) {
+  const envTile = (label, base, h) => {
+    if (!h) {
+      return `<div class="ph-learning-tile">
+        <div class="ph-analytics__tile-label">${label}</div>
+        <div class="ph-analytics__tile-value"><span class="ph-status ph-status--error">OFFLINE</span></div>
+        <div class="ph-muted">${base}</div>
+      </div>`;
+    }
+    return `<div class="ph-learning-tile">
+      <div class="ph-analytics__tile-label">${label}</div>
+      <div class="ph-analytics__tile-value"><span class="ph-status ph-status--ok">${(h.status || 'online').toUpperCase()}</span></div>
+      <div class="ph-muted">${base}</div>
+      <div class="ph-muted">Uptime: ${fmtUptime(h.uptimeSeconds)} · All-time requests: ${formatNumber(h.allTimeRequests)}</div>
+      <div class="ph-muted">Today: grounded ${formatNumber(h.groundedCount)} · LLM ${formatNumber(h.llmCount)} · cached ${formatNumber(h.cachedCount)}</div>
+      <div class="ph-muted">Last provider: ${h.lastReplyProvider || '—'} · Deploys: ${formatNumber(h.deployCount)}</div>
+    </div>`;
+  };
+  section.innerHTML = `
+    <h3 class="ph-analytics__section-title">Environments — all stacks at a glance</h3>
+    <p class="ph-muted">ProjectHub runs two isolated stacks: <strong>Production</strong> (master branch, main GitHub Pages, prod GCP VM) serves real visitors; <strong>Dev / Staging</strong> (develop branch, this site, dev GCP VM) is where every change is validated first. Each stack has its own knowledge state, stats, learned answers, and cost ledger.</p>
+    <div class="ph-learning-grid">
+      ${envTile('Production backend', PROD_API_BASE, prodHealth)}
+      ${envTile('Dev / Staging backend', DEV_API_BASE, devHealth)}
+    </div>`;
 }
 
 function costFmtBytes(n) {
@@ -908,6 +943,10 @@ function render(container, data) {
   if (costDevSection) {
     renderCostSection(costDevSection, data.costsDev, 'Dev / Staging', DEV_API_BASE);
   }
+  const envSection = container.querySelector('.ph-analytics__environments');
+  if (envSection) {
+    renderEnvironmentsSection(envSection, isDevHost ? health : null, data.healthProd);
+  }
 
   if (meta && health) {
     meta.innerHTML = `
@@ -972,14 +1011,16 @@ export function mount(selector) {
     return;
   }
 
-  container.innerHTML = `
+  const headerHtml = `
     <div class="ph-analytics__status ph-analytics__status--loading" role="status" aria-live="polite">
       Loading live analytics…
     </div>
     <div class="ph-analytics__header">
       <div>
-        <h2 class="ph-analytics__title">ProjectHub live analytics</h2>
-        <p class="ph-analytics__subtitle">Real-time numbers from the running backend, refreshed every 5 seconds</p>
+        <h2 class="ph-analytics__title">${isDevHost ? 'ProjectHub full analytics (dev)' : 'ProjectHub live analytics'}</h2>
+        <p class="ph-analytics__subtitle">${isDevHost
+          ? 'Complete operational view: every metric from every source — both backends, both cost ledgers, GitHub — refreshed every 5 seconds'
+          : 'Live highlights from the production backend, refreshed every 5 seconds'}</p>
       </div>
       <div class="ph-analytics__controls">
         <button class="cds--btn cds--btn--secondary" id="ph-analytics-pause" type="button">Pause updates</button>
@@ -993,6 +1034,7 @@ export function mount(selector) {
 
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Provider status</h3>
+      ${isDevHost ? '<p class="ph-muted">Scout routes each open-ended question through this free-tier LLM network in priority order. "Used today" counts against each provider\'s self-imposed daily budget; when one is exhausted the router falls through to the next.</p>' : ''}
       <div class="ph-analytics__table-wrap">
         <table class="ph-analytics__table ph-analytics__provider-table" aria-label="Provider status">
           <thead>
@@ -1005,16 +1047,22 @@ export function mount(selector) {
 
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Trends & breakdowns</h3>
+      ${isDevHost ? '<p class="ph-muted">Hourly request volume and provider mix. Grounded answers come straight from the knowledge base; LLM answers passed validation; cached answers were served from the semantic cache.</p>' : ''}
       <div class="ph-analytics__charts"></div>
-    </div>
+    </div>`;
+
+  const fullOnlyHtml = `
+    <div class="ph-analytics__section ph-analytics__environments"></div>
 
     <div class="ph-analytics__two-col">
       <div class="ph-analytics__section">
         <h3 class="ph-analytics__section-title">Live activity feed</h3>
+        <p class="ph-muted">Rolling stream of the latest chat requests handled by this backend.</p>
         <div class="ph-analytics__activity-feed"></div>
       </div>
       <div class="ph-analytics__section">
         <h3 class="ph-analytics__section-title">Last request pipeline</h3>
+        <p class="ph-muted">How the most recent question moved through the answer pipeline: grounding, provider routing, validation, and final source.</p>
         <div class="ph-analytics__last-pipeline"></div>
       </div>
     </div>
@@ -1022,21 +1070,25 @@ export function mount(selector) {
     <div class="ph-analytics__two-col">
       <div class="ph-analytics__section">
         <h3 class="ph-analytics__section-title">Where visitors come from</h3>
+        <p class="ph-muted">Referrer breakdown across all embeds of the widget (GitHub Pages, bradleymatera.dev, CodePen).</p>
         <div class="ph-analytics__referrers"></div>
       </div>
       <div class="ph-analytics__section">
         <h3 class="ph-analytics__section-title">What recruiters ask about</h3>
+        <p class="ph-muted">Question topics classified by the intent engine. "Out-of-scope" and "uncategorized" are highlighted because they feed the knowledge-gap list below.</p>
         <div class="ph-analytics__topics"></div>
       </div>
     </div>
 
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Knowledge coverage gaps</h3>
+      <p class="ph-muted">Questions Scout could not answer well from verified facts. These are the raw inputs to Think Mode's self-improvement loop.</p>
       <div class="ph-analytics__gaps"></div>
     </div>
 
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Provider health history</h3>
+      <p class="ph-muted">Success rate and latency per provider since the last deploy. A failing provider is skipped automatically by the router.</p>
       <div class="ph-analytics__table-wrap">
         <table class="ph-analytics__table ph-analytics__provider-health-table" aria-label="Provider health history">
           <thead>
@@ -1049,6 +1101,7 @@ export function mount(selector) {
 
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Recent sessions</h3>
+      <p class="ph-muted">Conversation-level view: each row is one visitor session with its inferred intent, turn count, and topics discussed.</p>
       <div class="ph-analytics__table-wrap">
         <table class="ph-analytics__table ph-analytics__sessions-table" aria-label="Recent sessions">
           <thead>
@@ -1076,13 +1129,24 @@ export function mount(selector) {
 
     <div class="ph-analytics__section ph-analytics__costs-prod" hidden></div>
 
-    <div class="ph-analytics__section ph-analytics__costs-dev" hidden></div>
+    <div class="ph-analytics__section ph-analytics__costs-dev" hidden></div>`;
 
+  const showcaseOnlyHtml = `
+    <div class="ph-analytics__section ph-analytics__costs-prod" hidden></div>
+
+    <div class="ph-analytics__section">
+      <h3 class="ph-analytics__section-title">Want the full picture?</h3>
+      <p class="ph-muted">The <a href="https://bradleymatera.github.io/ProjectHub-dev/" target="_blank" rel="noopener noreferrer">development site</a> shows the complete operational dashboard: both environments, live activity, session analytics, knowledge gaps, the Think Mode learning system, and per-event cost ledgers for every stack.</p>
+    </div>`;
+
+  const footerHtml = `
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Service metadata</h3>
       <div class="ph-analytics__meta"></div>
     </div>
   `;
+
+  container.innerHTML = headerHtml + (isDevHost ? fullOnlyHtml : showcaseOnlyHtml) + footerHtml;
 
   const refreshBtn = container.querySelector('#ph-analytics-refresh');
   if (refreshBtn) refreshBtn.addEventListener('click', () => refresh(container));
