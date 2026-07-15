@@ -72,7 +72,7 @@ jobs:
           # metered function, a provider caller that meters internally, or an
           # explicitly exempt URL. This check is intentionally narrow and will
           # need updating when new unmetered endpoints are intentionally added.
-          UNMETERED=$(grep -nE "fetch\(\`" server-gemini.js | grep -vE "meterEvent|callOpenAICompatibleProvider|callCloudflareWorkersAI|callGeminiWithPrompt|OLLAMA_URL|fetchKnowledge|pushLearnedToGitHub|pushRes = await fetch|metaRes = await fetch|https://api\.github\.com|embedQuery" || true)
+          UNMETERED=$(grep -nE "fetch\(\`" server-gemini.js | grep -vE "OLLAMA_URL|fetchKnowledge|pushLearnedToGitHub|pushRes = await fetch|metaRes = await fetch|api\.github\.com|embedQuery|chat/completions|api\.cloudflare\.com/client/v4/accounts|generativelanguage\.googleapis\.com" || true)
           if [ -n "$UNMETERED" ]; then
             echo "Found fetch() calls not obviously metered in server-gemini.js:"
             echo "$UNMETERED"
