@@ -841,12 +841,12 @@ function renderCostSection(section, costs, label, apiBase) {
         <div class="ph-muted">${freeBadge}</div>
       </div>
       <div class="ph-learning-tile">
-        <div class="ph-analytics__tile-label">Shadow cost if paid (month)</div>
+        <div class="ph-analytics__tile-label">If these weren't free (month)</div>
         <div class="ph-analytics__tile-value">$${costs.shadowCost?.monthUsd || '0.000000'}</div>
-        <div class="ph-muted">micro-USD precision: ${formatNumber(costs.shadowCost?.monthMicroUsd || 0)} µ$</div>
+        <div class="ph-muted">What you'd pay on paid tiers · ${formatNumber(costs.shadowCost?.monthMicroUsd || 0)} µ$</div>
       </div>
       <div class="ph-learning-tile">
-        <div class="ph-analytics__tile-label">Shadow cost today</div>
+        <div class="ph-analytics__tile-label">If these weren't free (today)</div>
         <div class="ph-analytics__tile-value">$${((costs.shadowCost?.dayMicroUsd || 0) / 1e6).toFixed(6)}</div>
         <div class="ph-muted">Registry v${costs.registryVersion} · verified ${costs.registryLastVerified}</div>
       </div>

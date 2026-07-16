@@ -278,12 +278,12 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
         <div class="ph-muted">${i}</div>
       </div>
       <div class="ph-learning-tile">
-        <div class="ph-analytics__tile-label">Shadow cost if paid (month)</div>
+        <div class="ph-analytics__tile-label">If these weren't free (month)</div>
         <div class="ph-analytics__tile-value">$${t.shadowCost?.monthUsd||`0.000000`}</div>
-        <div class="ph-muted">micro-USD precision: ${$(t.shadowCost?.monthMicroUsd||0)} µ$</div>
+        <div class="ph-muted">What you'd pay on paid tiers · ${$(t.shadowCost?.monthMicroUsd||0)} µ$</div>
       </div>
       <div class="ph-learning-tile">
-        <div class="ph-analytics__tile-label">Shadow cost today</div>
+        <div class="ph-analytics__tile-label">If these weren't free (today)</div>
         <div class="ph-analytics__tile-value">$${((t.shadowCost?.dayMicroUsd||0)/1e6).toFixed(6)}</div>
         <div class="ph-muted">Registry v${t.registryVersion} · verified ${t.registryLastVerified}</div>
       </div>
