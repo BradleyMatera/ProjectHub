@@ -2913,7 +2913,7 @@ function mustStayGrounded(question, history) {
   // Contact info must always come from the knowledge base, not LLM
   if (/\b(contact|email|phone|reach|linkedin|github profile|portfolio url)\b/.test(q)) return true;
   // Meta questions about Scout's capabilities should stay grounded
-  if (/what limits|what can.*this chatbot|limits are in place|what can you not do|what mcp|what connections|what systems do you have|do you have access to.*systems|how do you know.*(bradley|brad|him)|are you his friend|can you tell me.*(your|you.?re).*model name|what.?s your model name|what model are you/.test(q)) return true;
+  if (/what limits|what can.*this chatbot|limits are in place|what can you not do|what mcp|what connections|what systems do you have|do you have access to.*systems|how do you know.*(bradley|brad|him)|are you his friend|can you tell me.*(your|you.?re).*model name|what.?s your model name|what model are you|who is on first|what.?s on first|do you have a (mom|mother|family|feelings)|are you (alive|sentient|conscious)/.test(q)) return true;
   // Out-of-scope questions should get deterministic redirect, not LLM hallucinations
   if (classifyTopic(question) === 'out-of-scope') return true;
   return false;
@@ -2984,7 +2984,7 @@ function classifyTopic(question) {
   if (/army|military|veteran/.test(q)) return 'army';
   if (/work style|coding style|management style|feedback|preferred|work ethic|organized/.test(q)) return 'work-style';
   if (/who is brad|tell me about|summary|bio|about brad|overview|elevator|pitch/.test(q)) return 'summary';
-  if (/not in|out of scope|favorite|food|pizza|weather|sports|politic|religion|hobby|personal|joke|write me (a|some)|who won|sky blue|world series|video game|python script|code for me|translate|recipe|movie|music|song|dance|horoscope|zodiac|dream|astrology/.test(q)) return 'out-of-scope';
+  if (/not in|out of scope|favorite|food|pizza|weather|sports|politic|religion|hobby|personal|joke|write me (a|some)|who won|sky blue|world series|video game|python script|code for me|translate|recipe|movie|music|song|dance|horoscope|zodiac|dream|astrology|who is on first|what.?s on first|who.?s on first|tell me a (joke|story|poem)|do you have a (mom|mother|family|feelings)|are you (alive|sentient|conscious)/.test(q)) return 'out-of-scope';
   return 'uncategorized';
 }
 
