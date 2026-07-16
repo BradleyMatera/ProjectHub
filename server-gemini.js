@@ -929,7 +929,7 @@ async function callOpenAICompatibleProvider(baseUrl, apiKey, model, knowledge, q
     body: JSON.stringify({
       model,
       messages,
-      max_tokens: 300,
+      max_tokens: 200,
       temperature: 0.7,
       top_p: 0.9
     })
@@ -1076,7 +1076,7 @@ async function callGeminiWithPrompt(prompt, model) {
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        maxOutputTokens: 300,
+        maxOutputTokens: 200,
         temperature: 0.7,
         topK: 1,
         topP: 0.9
@@ -1123,7 +1123,7 @@ async function callProviderRaw(slug, systemPrompt, userPrompt) {
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
-          max_tokens: 300,
+          max_tokens: 200,
           temperature: 0.2,
           top_p: 0.9
         })
@@ -1173,7 +1173,7 @@ async function callProviderRaw(slug, systemPrompt, userPrompt) {
             { role: 'user', content: userPrompt }
           ],
           stream: false,
-          options: { temperature: 0.2, top_p: 0.9, num_predict: 300 }
+          options: { temperature: 0.2, top_p: 0.9, num_predict: 200 }
         })
       });
       clearTimeout(timeout);
@@ -1497,9 +1497,10 @@ function buildKnowledgeContext(knowledge) {
     });
   }
   if (interviewStories?.length) {
-    context += `- Interview answers (use these as reference for how Bradley talks about himself):\n`;
-    interviewStories.forEach(s => {
-      context += `  Q: "${s.prompt || s.topic}" -> A: "${s.answer || s.story || ''}"\n`;
+    context += `- Interview answers (reference for tone and content):\n`;
+    interviewStories.slice(0, 4).forEach(s => {
+      const a = (s.answer || s.story || '').slice(0, 300);
+      context += `  Q: "${s.prompt || s.topic}" -> A: "${a}"\n`;
     });
   }
   if (blogCatalog?.records?.length) {
@@ -1535,37 +1536,27 @@ function buildPrompt(knowledge, question, history, provider) {
   context += buildKnowledgeContext(knowledge);
 
   context += `\nVOICE AND STYLE:\n`;
-  context += `- You are Scout, a generative AI assistant, not a keyword-based FAQ bot. Answer the recruiter's actual question in a direct, natural way.\n`;
-  context += `- Talk like a normal, helpful person. Not a corporate AI, not a resume, not a sales pitch.\n`;
-  context += `- Answer directly in 1-3 short sentences for simple questions. Give more detail when the question warrants it.\n`;
-  context += `- USE the verified facts above as grounding. You may make reasonable, careful inferences when the facts support it, but label the inference clearly (e.g., "That's not directly stated, but based on...").\n`;
-  context += `- Never present an inference as a confirmed fact.\n`;
+  context += `- Answer directly in 1-3 short sentences. More detail only when warranted.\n`;
+  context += `- Talk like a normal, helpful person. Not corporate, not a resume, not a sales pitch.\n`;
+  context += `- Use verified facts as grounding. Label inferences clearly ("That's not directly stated, but based on...").\n`;
   context += `- Never start with "Certainly", "Absolutely", "Great question", "Of course", "Sure", or "As an AI".\n`;
-  context += `- Vary sentence openers across turns. Don't start every reply with "Bradley is a..." or "Bradley has..."; alternate with "He...", "His...", "From the data...", "In terms of...", "When it comes to...", "Based on...".\n`;
-  context += `- Never use words like robust, passionate, synergy, leverage, dynamic, extensive, groundbreaking, cutting-edge, innovative, world-class, best-in-class, proven leader, deep mastery, exceptional, seasoned, or guru.\n`;
-  context += `- Do not repeat the user's question back at them.\n`;
-  context += `- Do not end with a sales pitch, vague offer to help, or long disclaimer.\n`;
-  context += `- Do not oversell Bradley. He is junior. If something is from a project, an internship, or school, say so.\n`;
-  context += `- Do not describe his AWS work as live production ownership; it was structured labs and a controlled capstone.\n`;
-  context += `- If the data does not contain the answer and no reasonable inference is possible, explain what is known, what is not known, and ask one focused follow-up question only when the missing information prevents a meaningful answer.\n`;
-  context += `- Do not default to "That's outside what Scout covers" or any generic scope warning. Address the actual question.\n`;
+  context += `- Vary sentence openers. Alternate "He...", "His...", "From the data...", "Based on...".\n`;
+  context += `- Never use: robust, passionate, synergy, leverage, dynamic, extensive, groundbreaking, cutting-edge, innovative, world-class, seasoned, guru.\n`;
+  context += `- Don't oversell Bradley. He is junior. AWS work was structured labs, not production ownership.\n`;
+  context += `- Don't repeat the user's question. Don't end with a sales pitch or vague disclaimer.\n`;
   context += `\nCONVERSATION RULES:\n`;
-  context += `- This is a real conversation. Reference what was already discussed without repeating it.\n`;
-  context += `- Treat follow-ups as part of the same conversation. Resolve pronouns like "that", "it", and "he" from the preceding context.\n`;
-  context += `- If the recruiter asks a follow-up, build on the previous answer. Don't start from scratch.\n`;
-  context += `- Vary your phrasing. Don't use the same sentence structure or opening words as previous turns.\n`;
-  context += `- When the recruiter seems to be exploring (asking open-ended questions), end with a relevant follow-up question to keep the conversation going.\n`;
-  context += `- When the recruiter asks a direct factual question, just answer it. Don't add unnecessary follow-ups.\n`;
-  context += `- Use the interview answers above as a guide for tone and content, but adapt naturally to the question.\n`;
-  context += `- Include useful project, blog, résumé, recruiter, or contact links when relevant.\n`;
+  context += `- Reference prior context. Resolve pronouns from preceding turns.\n`;
+  context += `- Vary phrasing. Don't repeat sentence structure from previous turns.\n`;
+  context += `- Add a follow-up question only for open-ended exploration, not direct factual questions.\n`;
+  context += `- Include relevant links when useful.\n`;
 
   if (Array.isArray(history) && history.length > 0) {
     context += `\nRECENT CONVERSATION:\n`;
-    history.slice(-5).forEach((turn, i) => {
+    history.slice(-3).forEach((turn, i) => {
       context += `User: ${turn.user || ''}\nScout: ${turn.assistant || ''}\n`;
     });
     if (history.length >= 3) {
-      const topicsCovered = history.slice(-5).map(t => classifyTopic(t.user || '')).filter(t => t !== 'other');
+      const topicsCovered = history.slice(-3).map(t => classifyTopic(t.user || '')).filter(t => t !== 'other');
       const uniqueTopics = [...new Set(topicsCovered)];
       if (uniqueTopics.length > 0) {
         context += `\n(Topics already covered: ${uniqueTopics.join(', ')}. Reference these if relevant, but don't repeat the same info unless asked.)\n`;
