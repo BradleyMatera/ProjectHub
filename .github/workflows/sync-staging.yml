@@ -33,6 +33,10 @@ jobs:
         env:
           GITHUB_TOKEN_PROJECTHUB_DEV: ${{ secrets.GITHUB_TOKEN_PROJECTHUB_DEV }}
         run: |
+          if [ -z "$GITHUB_TOKEN_PROJECTHUB_DEV" ]; then
+            echo "GITHUB_TOKEN_PROJECTHUB_DEV secret not set — skipping staging sync (push manually if needed)"
+            exit 0
+          fi
           git remote add projecthub-dev https://x-access:${GITHUB_TOKEN_PROJECTHUB_DEV}@github.com/BradleyMatera/ProjectHub-dev.git
           git push projecthub-dev develop:main --force
 
@@ -40,6 +44,9 @@ jobs:
         env:
           GITHUB_TOKEN_PROJECTHUB_DEV: ${{ secrets.GITHUB_TOKEN_PROJECTHUB_DEV }}
         run: |
+          if [ -z "$GITHUB_TOKEN_PROJECTHUB_DEV" ]; then
+            exit 0
+          fi
           git fetch projecthub-dev main
           git checkout -B staging-main FETCH_HEAD
           if [ -f .github/staging-AGENTS.md ]; then
