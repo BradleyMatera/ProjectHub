@@ -1680,6 +1680,18 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   if (/what is this chatbot using|does this use ollama|is this ai local|is my chat private|what data do you use/.test(lowerQuestion)) {
     return { reply: `${agentName} is grounded in ${name}'s public recruiter data file. Nothing private is stored beyond short session context.` };
   }
+  if (/how do you know.*(bradley|brad|him)|are you his friend|who are you|what are you/.test(lowerQuestion)) {
+    return { reply: `${agentName} is an AI assistant on ${name}'s portfolio site. I answer recruiter questions using his public data — projects, skills, AWS background, education, and contact info. I'm not a person, just a helper bot.` };
+  }
+  if (/what mcp|what connections|what systems do you have|do you have access to.*systems/.test(lowerQuestion)) {
+    return { reply: `${agentName} doesn't connect to external systems or databases. I answer from ${name}'s public recruiter data file — his projects, skills, AWS training, education, and contact info. I can't make changes, send emails, or access repos.` };
+  }
+  if (/can you tell me.*(your|you.?re).*model name|what.?s your model name|what model are you/.test(lowerQuestion)) {
+    return { reply: `${agentName} doesn't share model names. I answer recruiter questions about ${name} using his verified data — projects, skills, AWS background, and contact info. What would you like to know?` };
+  }
+  if (/what limits|what can.*this chatbot|limits are in place|what can you not do/.test(lowerQuestion)) {
+    return { reply: `${agentName} only answers recruiter questions about ${name}. I can't access external systems, make changes to repos, send messages, or answer questions unrelated to his background. I stick to his verified public data.` };
+  }
   if (/who made this|is this bradley'?s site/.test(lowerQuestion)) {
     return { reply: `Yes, this is ${name}'s portfolio. He built the site and ${agentName} himself.` };
   }
@@ -1837,7 +1849,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     const picks = [];
     if (frontend) picks.push(`${frontend.name} for frontend/contributor work`);
     if (cloud) picks.push(`${cloud.name} for cloud work`);
-    if (picks.length) return { reply: `Strongest demos: ${sentenceList(picks, 2)}. Full portfolio at ${identity?.portfolioUrl || 'https://bradleymatera.dev/'}.` };
+    if (picks.length) return { reply: `His strongest demos: ${sentenceList(picks, 2)}. Full portfolio at ${identity?.portfolioUrl || 'https://bradleymatera.dev/'}.` };
     return { reply: `See his full portfolio at ${identity?.portfolioUrl || 'https://bradleymatera.dev/'}.` };
   }
 
@@ -2106,7 +2118,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
 
   // 'What data do you have' / what is in his data
   if (/what data|what info|what information|what do you (have|know)|what is in (his|the) data|what can you tell me|what do you have on/.test(lowerQuestion)) {
-    return { reply: `${agentName} has verified data on ${name}'s projects, skills (JavaScript, TypeScript, React, AWS), certifications (AWS Solutions Architect, AI Practitioner), education (Full Sail University), work history (AWS internship, CIRIS, case management, Mason County Kitten Rescue, Army service, construction), target roles, and contact info. Ask about any of those.` };
+    return { reply: `Here's what I can tell you about ${name}: his projects (Interactive Pokedex, CheeseMath, ProjectHub, and more), skills (JavaScript, TypeScript, React, AWS), certifications (AWS Solutions Architect, AI Practitioner), education (Full Sail University), work history (AWS internship, CIRIS, case management, Army service), target roles, and contact info. What would you like to know more about?` };
   }
 
   // Confusion / 'you're not making sense' / clarification
@@ -2281,6 +2293,11 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
       return { reply: `${name}'s honest gaps are data structures and algorithms (he has taken courses but lacks production mentorship and a formal CS degree), turning a brand-new problem into code from a blank file without guidance, and most LeetCode-style problems. He is aware of these gaps and wants to improve at a company that trains and mentors; his strengths are reading code, debugging, documentation, and learning quickly.` };
     }
     return { reply: `Main caution is that he is junior, so verify depth on a call.` };
+  }
+
+  // Follow-up: "is he working on it?" / "how is he improving?" after weaknesses discussion
+  if (/working on it|how.*improv|what.*doing about|addressing.*(gap|weakness)|fixing.*(gap|weakness)|overcoming|plan to improve|how.*get better/.test(lowerQuestion)) {
+    return { reply: `Yes — he's actively taking Udemy courses on JavaScript algorithms and data structures, practicing problems, and discussing the math with others to close the gap. He's also refreshing C#/.NET fundamentals and exploring ERP concepts. He learns fastest when he has mentorship and a structured teaching program.` };
   }
   
   // Interview questions
@@ -2881,6 +2898,12 @@ function mustStayGrounded(question, history) {
   // Structured output requests stay grounded for consistent formatting
   const shape = detectShape(question);
   if (shape.json || shape.bullets || shape.table || shape.maxWords || shape.paragraph || shape.oneSentence) return true;
+  // Contact info must always come from the knowledge base, not LLM
+  if (/\b(contact|email|phone|reach|linkedin|github profile|portfolio url)\b/.test(q)) return true;
+  // Meta questions about Scout's capabilities should stay grounded
+  if (/what limits|what can.*this chatbot|limits are in place|what can you not do|what mcp|what connections|what systems do you have|do you have access to.*systems|how do you know.*(bradley|brad|him)|are you his friend|can you tell me.*(your|you.?re).*model name|what.?s your model name|what model are you/.test(q)) return true;
+  // Out-of-scope questions should get deterministic redirect, not LLM hallucinations
+  if (classifyTopic(question) === 'out-of-scope') return true;
   return false;
 }
 
@@ -2949,7 +2972,7 @@ function classifyTopic(question) {
   if (/army|military|veteran/.test(q)) return 'army';
   if (/work style|coding style|management style|feedback|preferred|work ethic|organized/.test(q)) return 'work-style';
   if (/who is brad|tell me about|summary|bio|about brad|overview|elevator|pitch/.test(q)) return 'summary';
-  if (/not in|out of scope|favorite|food|pizza|weather|sports|politic|religion|hobby|personal/.test(q)) return 'out-of-scope';
+  if (/not in|out of scope|favorite|food|pizza|weather|sports|politic|religion|hobby|personal|joke|write me (a|some)|who won|sky blue|world series|video game|python script|code for me|translate|recipe|movie|music|song|dance|horoscope|zodiac|dream|astrology/.test(q)) return 'out-of-scope';
   return 'uncategorized';
 }
 
@@ -3239,6 +3262,14 @@ function scoreAnswer(reply, question, knowledge) {
   // Penalize slop
   if (GEN_SLOP.test(r)) score -= 15;
   if (GEN_OVERCLAIM.test(r)) score -= 25;
+  // Penalize AI self-revelation
+  if (/i'?m a generative ai|i am a generative ai|i don't have a mom|i'?m an ai assistant/i.test(r)) score -= 30;
+  // Penalize model name leaks
+  if (/\b(llama|grok|gemini|gpt|claude|mistral|qwen|deepseek|smollm)\b/i.test(r)) score -= 25;
+  // Penalize off-topic answers for out-of-scope questions that don't redirect
+  if (classifyTopic(question) === 'out-of-scope' && !/not in.*recruiter data|can'?t help|recruiter question/i.test(r)) score -= 40;
+  // Reward specific project name citations
+  if (/\b(pokedex|cheesemath|projecthub|smokebuddy|secrets|environment variables|ciris)\b/i.test(r)) score += 10;
   // Reward answering the specific question
   const topic = classifyTopic(question);
   const topicKeywords = {
@@ -3367,6 +3398,8 @@ function isWeakAnswer(reply, question, provider) {
   if (/\b(json|table|bullet|words?|characters?|one sentence|yes or no)\b/i.test(q)) return false;
   const topic = classifyTopic(question);
   if (topic === 'summary' || topic === 'strengths' || topic === 'contact' || topic === 'education') return false;
+  if (topic === 'out-of-scope' || topic === 'other') return false;
+  if (/who is on first|whats on second|south park|cartoon|sky blue|weather|joke|video game|fav(orite)?|model name|what model|what mcp|what connections|what systems do you have|are you his friend|how do you know|who are you|what can you do|what are you|test your/.test(q)) return false;
   if (r.includes("not in") && r.includes("recruiter data") && isProbablyRelevant(question)) return true;
   if (provider === 'grounded' && /is a junior software engineer based in davis/.test(r)
       && !/strength|weakness|cert|project|experience|contact|role|fit|aws|cloud|react|debug|learn|team|reliab|communicat|coding|problem|work style|different|legit|worth|honest|no bs|straight|summar|bio|who is|elevator|pitch|20 second/i.test(question)) return true;
@@ -3393,6 +3426,9 @@ function stashQuestion(question, reply, provider) {
   if (!isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate/.test(lower)) return;
   // Don't stash format/shape requests
   if (/\b(json|table|bullet|words?|characters?|one sentence|yes or no)\b/i.test(lower)) return;
+  // Don't stash out-of-scope or meta questions about the bot
+  if (classifyTopic(question) === 'out-of-scope' || classifyTopic(question) === 'other') return;
+  if (/who is on first|whats on second|south park|cartoon|sky blue|weather|joke|video game|fav(orite)?|model name|what model|what mcp|what connections|what systems do you have|are you his friend|how do you know|who are you|what can you do|what are you|test your|fix my|camera|mechanic/.test(lower)) return;
   learnedData.stashed.push({
     q: norm, original: String(question).slice(0, 200),
     badReply: String(reply).slice(0, 300), provider, ts: Date.now(), retries: 0
