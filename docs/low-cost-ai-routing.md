@@ -60,11 +60,11 @@ Safer options:
 
 ## Think Mode Cost
 
-Think Mode runs every 10 minutes and processes stashed questions through the same free provider network. It adds zero cost because:
+Think Mode runs every 20 minutes and processes up to 3 stashed questions per cycle through the same free provider network. It adds zero cost because:
 - It uses the same free LLM providers (no additional API calls beyond what the daily quota allows)
 - The grounded knowledge base is the final fallback (no LLM charges)
 - It pushes learned answers back to GitHub via the Contents API (free, no database)
-- False-claim and safety questions are filtered before stashing (no wasted LLM calls)
+- False-claim, safety, out-of-scope, and meta questions are filtered before stashing (no wasted LLM calls)
 - The `learned.json` file on the VM is tiny (a few KB)
 
 ---

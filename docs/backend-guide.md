@@ -62,7 +62,7 @@ A metering-grade cost tracker lives in `lib/cost-ledger.js` and is enabled with 
 
 All prices are kept in integer **micro-USD** to avoid float drift. The analytics dashboard (including the Cost & Free-Tier section) renders on both the production and staging Pages sites; each site fetches its matching backend's `/api/costs`.
 
-See `data/free-tier-limits.json` for the authoritative free-tier limits, shadow paid rates, and citation URLs. Update `lastVerified` and re-check provider docs when limits change.
+See `data/free-tier-limits.json` for the authoritative free-tier limits, hypothetical paid rates (what it would cost if not free), and citation URLs. Update `lastVerified` and re-check provider docs when limits change.
 
 ---
 
@@ -149,13 +149,13 @@ GITHUB_TOKEN=ghp_...  # Used for both GitHub Models LLM AND knowledge JSON push
 The server includes:
 - CORS configuration for allowed origins (rejects non-allowed origins with `callback(null, false)`)
 - Rate limiting (20 requests/minute)
-- Knowledge caching (5 minutes)
-- Response caching (10 minutes)
+- Knowledge caching (15 minutes)
+- Response caching (30 minutes)
 - Grounded-first routing with safety and false-claim checks BEFORE learned answers
 - Free multi-provider LLM network with daily quota guards and cooldown
 - Fast grounded fallback from `data/recruiter-knowledge.json`
 - Timeout handling (15 seconds total, 8 seconds per provider)
-- Think Mode self-improvement loop (every 10 minutes)
+- Think Mode self-improvement loop (every 20 minutes, 3 questions per cycle)
 - Safety regex system (injection, XSS, social engineering, secret extraction)
 - False-claim regex system (exaggerated claims, buzzwords, tone manipulation)
 - `mustStayGrounded` function to force deterministic answers for critical queries

@@ -61,7 +61,7 @@ ProjectHub has three layers, all running on free infrastructure:
 │  BACKEND (GCP e2-micro VM · Caddy HTTPS)                        │
 │  server-gemini.js · Node.js / Express                           │
 │                                                                 │
-│  1. Fetch knowledge JSON from GitHub (cached 5 min)             │
+│  1. Fetch knowledge JSON from GitHub (cached 15 min)            │
 │  2. Safety check — block injection, XSS, social engineering      │
 │  3. False-claim check — refuse exaggerated/untrue claims         │
 │  4. Check learned answers (from think mode)                      │
@@ -71,7 +71,7 @@ ProjectHub has three layers, all running on free infrastructure:
 │  8. Shape reply (tone, length, format)                           │
 │  9. Return reply + pipeline + follow-ups                         │
 │                                                                 │
-│  Background: Think mode runs every 10 min                      │
+│  Background: Think mode runs every 20 min                      │
 │  → Processes stashed questions through LLM providers           │
 │  → Validates and stores learned answers                        │
 │  → Pushes learned answers back to GitHub knowledge JSON        │
@@ -82,7 +82,7 @@ ProjectHub has three layers, all running on free infrastructure:
 │  GITHUB REPO (BradleyMatera/ProjectHub)                         │
 │  data/recruiter-knowledge.json ← canonical knowledge base       │
 │                                                                 │
-│  FETCH: Server pulls this JSON every 5 min (cache)              │
+│  FETCH: Server pulls this JSON every 15 min (cache)             │
 │  PUSH:  Think mode writes learned answers back to this file     │
 │         via GitHub Contents API (PUT request with SHA)          │
 └─────────────────────────────────────────────────────────────────┘
@@ -108,7 +108,7 @@ Server → fetch(KNOWLEDGE_URL) → raw.githubusercontent.com → data/recruiter
 ```
 
 - **URL**: `https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter-knowledge.json`
-- **Cache**: 5 minutes in memory (`KNOWLEDGE_CACHE_MS = 5 * 60 * 1000`)
+- **Cache**: 15 minutes in memory (`KNOWLEDGE_CACHE_MS = 15 * 60 * 1000`)
 - **Fallback**: If the fetch fails, the server uses the last cached copy
 - **Purpose**: This is the canonical source of truth for all of Scout's knowledge — identity, skills, projects, experience, education, certifications, target roles, rules, FAQ, and learned answers
 
@@ -154,7 +154,7 @@ Server → GitHub Contents API (PUT) → data/recruiter-knowledge.json
 
 - **The knowledge JSON on GitHub is the single source of truth.**
 - The server reads it, caches it, and writes learned answers back to it.
-- Anyone who edits `data/recruiter-knowledge.json` on GitHub changes what Scout knows — the server picks up changes within 5 minutes.
+- Anyone who edits `data/recruiter-knowledge.json` on GitHub changes what Scout knows — the server picks up changes within 15 minutes.
 - Think mode's learned answers become permanent — they survive server restarts because they're in the repo.
 - The `learnedAnswers` array in the JSON grows over time as Scout learns more.
 
@@ -170,7 +170,7 @@ Server → GitHub Contents API (PUT) → data/recruiter-knowledge.json
 
 ## 🧠 Learning System (Think Mode)
 
-Scout has a self-improvement loop called **think mode** that runs automatically every 10 minutes on the VM.
+Scout has a self-improvement loop called **think mode** that runs automatically every 20 minutes on the VM.
 
 ### How it works
 
@@ -181,10 +181,10 @@ Recruiter asks question
 Scout gives weak answer? ──yes──→ Stash question in learned.json
         │ no                              │
         ▼                                 ▼
-Return good answer              Think mode runs (every 10 min)
+Return good answer              Think mode runs (every 20 min)
                                         │
                                         ▼
-                                Process up to 5 stashed questions
+                                Process up to 3 stashed questions
                                         │
                                         ▼
                                 Try ALL LLM providers (not just first)

@@ -83,14 +83,14 @@ The backend lives in this repo as `server-gemini.js` and is deployed to a GCP VM
 - **Generative layer:** Free multi-provider LLM network (Groq, Cloudflare Workers AI, GitHub Models, Google Gemini, xAI Grok). If every provider is unavailable or the reply fails validation, the final fallback is a fast, grounded answer from `data/recruiter-knowledge.json`.
 - **Retrieval pipeline:** Okapi BM25 index (`lib/bm25.js`) with query understanding (`lib/query-understanding.js`) is the default retrieval mode. When `USE_VECTOR_RETRIEVAL=true`, dense vector retrieval via Cloudflare Workers AI embeddings (`lib/vector-index.js`) is fused with BM25 via reciprocal rank fusion + MMR (`lib/hybrid-retrieve.js`). BM25 Recall@6=0.950 on 40-query golden eval set.
 - **Stance consistency:** Per-session topic stances injected into LLM prompts to prevent contradictions across turns.
-- **Semantic cache:** Paraphrase dedup via embedding cosine similarity (≥0.92), LRU 200 entries, 10-min TTL.
-- **Think Mode:** Self-improvement loop runs every 10 minutes. Stashes weak answers, processes through all LLM providers, validates, and pushes learned answers back to GitHub. False-claim and safety questions are filtered before stashing. Auto-triggers on provider recovery.
+- **Semantic cache:** Paraphrase dedup via embedding cosine similarity (≥0.92), LRU 200 entries, 30-min TTL.
+- **Think Mode:** Self-improvement loop runs every 20 minutes. Stashes weak answers, processes up to 3 per cycle through all LLM providers, validates, and pushes learned answers back to GitHub. False-claim, safety, out-of-scope, and meta questions are filtered before stashing. Auto-triggers on provider recovery.
 - **Safety system:** Safety regex blocks injection/XSS/social engineering. False-claim regex blocks exaggerated claims. Both run BEFORE learned answers in `buildGroundedFallbackPayload`.
 - **Knowledge base:** `data/recruiter-knowledge.json` in this repo, fetched raw from GitHub. Includes canonical facts, `learnedAnswers` (pushed by Think Mode), and `sourceMaterial` chunks ingested by `scripts/build-knowledge.js`.
 - **Session memory:** In-memory process cache of the last 3 turns per session.
 - **Cost:** GCP Always Free e2-micro VM + free LLM tiers. No paid LLM credits are required.
 - **Agent:** The assistant is named **Scout** and uses the persona in `knowledge.agent`.
-- **Test suites:** 6 test suites (adversarial, coverage, load/stress, regression, edge cases, verification) — 474+ tests total, 99.8% pass rate. Plus 36 retrieval unit tests (BM25, query understanding, vector index, hybrid fusion) and 40-query golden eval.
+- **Test suites:** 6 test suites (adversarial, coverage, load/stress, regression, edge cases, verification) — 474+ tests total, 99.8% pass rate. Plus 2 quality suites (real conversation replay with 40 visitor questions, quality regression with 60+ targeted tests) and 36 retrieval unit tests (BM25, query understanding, vector index, hybrid fusion) and 40-query golden eval.
 
 ---
 
