@@ -34,6 +34,24 @@ function meterEvent(event) {
 }
 
 // Egress metering: count response bytes for every reply the server sends.
+// Also tracks outbound call count per hour for abuse/scraping detection.
+const egressTracker = { hourKey: '', count: 0, hourlyLog: [] };
+function trackEgressCall() {
+  const now = new Date();
+  const key = `${now.getUTCFullYear()}-${String(now.getUTCMonth()+1).padStart(2,'0')}-${String(now.getUTCDate()).padStart(2,'0')}T${String(now.getUTCHours()).padStart(2,'0')}`;
+  if (egressTracker.hourKey !== key) {
+    if (egressTracker.hourKey && egressTracker.count > 0) {
+      egressTracker.hourlyLog.push({ hour: egressTracker.hourKey, calls: egressTracker.count });
+      if (egressTracker.hourlyLog.length > 24) egressTracker.hourlyLog.shift();
+      if (egressTracker.count > 200) {
+        console.warn(`[egress] High outbound call volume: ${egressTracker.count} calls in hour ${egressTracker.hourKey}`);
+      }
+    }
+    egressTracker.hourKey = key;
+    egressTracker.count = 0;
+  }
+  egressTracker.count++;
+}
 app.use((req, res, next) => {
   if (!costLedger) return next();
   const origWrite = res.write.bind(res);
@@ -82,11 +100,11 @@ let knowledgeCacheAt = 0;
 let bm25Index = null;
 let ragChunks = null;
 let vectorIndex = null;
-const KNOWLEDGE_CACHE_MS = 5 * 60 * 1000;
+const KNOWLEDGE_CACHE_MS = 15 * 60 * 1000; // 15 min — reduces GitHub raw fetch egress
 const USE_BM25_RETRIEVAL = process.env.USE_BM25_RETRIEVAL !== 'false';
 const USE_VECTOR_RETRIEVAL = process.env.USE_VECTOR_RETRIEVAL === 'true';
-const RESPONSE_CACHE_MS = 10 * 60 * 1000;
-const RESPONSE_CACHE_LIMIT = 120;
+const RESPONSE_CACHE_MS = 30 * 60 * 1000; // 30 min — more cache hits = fewer LLM calls
+const RESPONSE_CACHE_LIMIT = 200;
 const GEMINI_TIMEOUT_MS = 7000;
 const MAX_ACTIVE_GENERATIONS = 1;
 const responseCache = new Map();
@@ -124,7 +142,7 @@ function isNetworkCircuitOpen() {
 
 // ============ LEARNING SYSTEM ============
 const LEARNED_FILE = path.join(__dirname, process.env.LEARNED_FILE || 'learned.json');
-const THINK_INTERVAL_MS = 10 * 60 * 1000;
+const THINK_INTERVAL_MS = 20 * 60 * 1000; // 20 min — reduces outbound LLM calls from think mode
 let thinkRunning = false;
 const GITHUB_API_TOKEN = process.env.GITHUB_TOKEN || process.env.GITHUB_PAT || GITHUB_MODELS_TOKEN || '';
 const GITHUB_REPO_OWNER = process.env.THINK_REPO_OWNER || 'BradleyMatera';
@@ -591,6 +609,7 @@ async function fetchKnowledge() {
     return knowledgeCache;
   }
   try {
+    trackEgressCall();
     const fetchPromise = fetch(KNOWLEDGE_URL);
     const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Knowledge fetch timeout')), 25000));
     const res = await Promise.race([fetchPromise, timeoutPromise]);
@@ -1085,6 +1104,7 @@ async function callProviderRaw(slug, systemPrompt, userPrompt) {
   if (!def) throw new Error(`Unknown provider: ${slug}`);
   if (!isProviderEnabled(slug) || !isProviderAvailable(slug)) throw new Error(`Provider ${slug} not enabled or available`);
 
+  trackEgressCall();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
 
@@ -2841,6 +2861,7 @@ async function generateWithNetwork(knowledge, question, history, groundedReply) 
     if (!isProviderEnabled(slug) || !isProviderAvailable(slug)) continue;
 
     recordProviderAttempt(slug);
+    trackEgressCall();
     const providerStart = Date.now();
     try {
       let raw = '';
@@ -3462,6 +3483,7 @@ async function pushLearnedToGitHub() {
   if (learnedData.learned.length === 0) return false;
   try {
     // Get current file SHA
+    trackEgressCall();
     const metaRes = await fetch(
       `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_KNOWLEDGE_PATH}`,
       { headers: { 'Authorization': `Bearer ${GITHUB_API_TOKEN}`, 'Accept': 'application/vnd.github+json' } }
@@ -3504,6 +3526,7 @@ async function pushLearnedToGitHub() {
     // Push updated content
     const newContent = Buffer.from(JSON.stringify(knowledge, null, 2)).toString('base64');
     meterEvent({ source: 'github-api', kind: 'api', bytes: newContent.length, meta: { op: 'contents-put' } });
+    trackEgressCall();
     const pushRes = await fetch(
       `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_KNOWLEDGE_PATH}`,
       {
@@ -3566,7 +3589,7 @@ async function runThinkMode() {
   try {
     const knowledge = await fetchKnowledge();
     if (!knowledge) { return { ...results, skipped: 'no knowledge' }; }
-    const batch = learnedData.stashed.splice(0, 5);
+    const batch = learnedData.stashed.splice(0, 3); // 3 per cycle — fewer outbound calls per think run
     results.processed = batch.length;
     for (const item of batch) {
       try {
@@ -3585,6 +3608,7 @@ async function runThinkMode() {
           if (!def) continue;
           if (!isProviderEnabled(slug) || !isProviderAvailable(slug)) { exhaustedProviders++; continue; }
           availableProviders++;
+          trackEgressCall();
           try {
             let raw = '';
             if (def.type === 'openai') {
