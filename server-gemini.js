@@ -1697,7 +1697,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   if (/what mcp|what connections|what systems do you have|do you have access to.*systems/.test(lowerQuestion)) {
     return { reply: `${agentName} doesn't connect to external systems or databases. I answer from ${name}'s public recruiter data file — his projects, skills, AWS training, education, and contact info. I can't make changes, send emails, or access repos.` };
   }
-  if (/can you tell me.*(your|you.?re).*model name|what.?s your model name|what model are you/.test(lowerQuestion)) {
+  if (/can you tell me.*(your|you.?re).*model name|what.?s your model name|what is your model name|what model are you/.test(lowerQuestion)) {
     return { reply: `${agentName} doesn't share model names. I answer recruiter questions about ${name} using his verified data — projects, skills, AWS background, and contact info. What would you like to know?` };
   }
   if (/what limits|what can.*this chatbot|limits are in place|what can you not do/.test(lowerQuestion)) {
