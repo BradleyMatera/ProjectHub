@@ -2948,6 +2948,7 @@ const defaultStats = {
   deployCount: 0,
   firstDeployAt: 0,
   recentRequests: [], // last 40 {q, provider, ts, referrer, topic, latencyMs, pipeline}
+  chatLog: [], // last 500 full conversations {sessionId, q, reply, provider, ts, referrer, topic, latencyMs}
   referrerBreakdown: {}, // { "bradleymatera.dev": 45, "codepen.io": 12 }
   topicBreakdown: {}, // { "2026-07-10": { projects: 12, aws: 8, ... } }
   hourlyRequests: {}, // { "2026-07-10T22": { total: 15, grounded: 8, llm: 5, cached: 2 } }
@@ -3234,6 +3235,19 @@ function recordRequest(question, provider, opts = {}) {
     groundedReply: opts.groundedReply ? String(opts.groundedReply).slice(0, 400) : undefined
   });
   if (persistentStats.recentRequests.length > 40) persistentStats.recentRequests.pop();
+
+  // Full chat log for history viewing (last 500)
+  persistentStats.chatLog.unshift({
+    sessionId: opts.sessionId ? String(opts.sessionId).slice(0, 16) : 'unknown',
+    q: String(question).slice(0, 200),
+    reply: opts.reply ? String(opts.reply).slice(0, 600) : '',
+    provider,
+    ts: Date.now(),
+    referrer: referrer || '',
+    topic,
+    latencyMs: opts.latencyMs || null
+  });
+  if (persistentStats.chatLog.length > 500) persistentStats.chatLog.pop();
 
   // Clean up old hourly data (keep last 48h)
   const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString().slice(0, 13);
@@ -3781,24 +3795,24 @@ app.post('/api/chat', async (req, res) => {
 
     const history = Array.isArray(req.body.history) ? req.body.history : [];
     const hasHistory = history.length > 0;
+    const sessionId = req.body.sessionId || '';
     const cacheKey = normalizeQuestion(userMessage);
     const cached = !hasHistory ? responseCache.get(cacheKey) : null;
     if (cached && (Date.now() - cached.ts) < RESPONSE_CACHE_MS) {
       pipeline.push('cache-hit');
       lastReplyProvider = cached.payload.provider || 'cached';
-      recordRequest(userMessage, 'cached', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: cached.payload.reply, groundedReply: cached.payload.reply });
+      recordRequest(userMessage, 'cached', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: cached.payload.reply, groundedReply: cached.payload.reply, sessionId });
       return res.json({ ...cached.payload, cached: true, pipeline });
     }
     pipeline.push('cache-miss');
 
     // Semantic cache check (paraphrase dedup for no-history queries)
-    const sessionId = req.body.sessionId || '';
     if (!hasHistory) {
       const semanticHit = await semanticCacheGet(userMessage, sessionId);
       if (semanticHit) {
         pipeline.push('semantic-cache-hit');
         lastReplyProvider = semanticHit.provider || 'cached';
-        recordRequest(userMessage, 'cached', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: semanticHit.reply, groundedReply: semanticHit.reply });
+        recordRequest(userMessage, 'cached', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: semanticHit.reply, groundedReply: semanticHit.reply, sessionId });
         return res.json({ ...semanticHit, cached: true, pipeline });
       }
     }
@@ -3808,7 +3822,7 @@ app.post('/api/chat', async (req, res) => {
       pipeline.push('knowledge-unavailable', 'grounded-fallback');
       const payload = { ...buildGroundedFallbackPayload({}, userMessage, history), provider: 'grounded', fallback: true, pipeline };
       lastReplyProvider = 'grounded';
-      recordRequest(userMessage, 'grounded', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: payload.reply, groundedReply: payload.reply });
+      recordRequest(userMessage, 'grounded', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: payload.reply, groundedReply: payload.reply, sessionId });
       return res.json(payload);
     }
     pipeline.push('knowledge-loaded');
@@ -3936,7 +3950,7 @@ app.post('/api/chat', async (req, res) => {
     const intent = detectVisitorIntent(userMessage, history);
     trackSession(sessionId, userMessage, payload.provider, referrer, intent, reply, grounded.reply);
     recordStance(sessionId, userMessage, reply);
-    recordRequest(userMessage, payload.provider, { referrer, pipeline, latencyMs: Date.now() - reqStart, reply, groundedReply: grounded.reply });
+    recordRequest(userMessage, payload.provider, { referrer, pipeline, latencyMs: Date.now() - reqStart, reply, groundedReply: grounded.reply, sessionId });
     // Stash weak answers for think mode learning
     if (isWeakAnswer(reply, userMessage, provider)) {
       stashQuestion(userMessage, reply, provider);
@@ -3952,13 +3966,53 @@ app.post('/api/chat', async (req, res) => {
     const knowledge = knowledgeCache || {};
     const grounded = buildGroundedFallbackPayload(knowledge, userMessage, []);
     lastReplyProvider = 'grounded';
-    recordRequest(userMessage, 'grounded', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: grounded.reply, groundedReply: grounded.reply });
+    recordRequest(userMessage, 'grounded', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: grounded.reply, groundedReply: grounded.reply, sessionId });
     return res.json({ reply: grounded.reply, provider: 'grounded', model: 'knowledge-json', fallback: true, pipeline });
   }
 });
 
 // Flush stats after each request if dirty
 app.use((req, res, next) => { if (statsDirty) flushStats(); next(); });
+
+// ============ CHAT LOG ENDPOINT ============
+app.get('/api/chat-log', (req, res) => {
+  res.set('Cache-Control', 'no-store, max-age=0');
+  try {
+    const logs = persistentStats.chatLog || [];
+    const grouped = {};
+    for (const entry of logs) {
+      const sid = entry.sessionId || 'unknown';
+      if (!grouped[sid]) grouped[sid] = [];
+      grouped[sid].push(entry);
+    }
+    const sessions = Object.entries(grouped).map(([sid, entries]) => ({
+      sessionId: sid,
+      messageCount: entries.length,
+      startedAt: entries[entries.length - 1].ts,
+      lastActiveAt: entries[0].ts,
+      referrer: entries[0].referrer || '',
+      topics: [...new Set(entries.map(e => e.topic).filter(Boolean))],
+      providerMix: entries.reduce((m, e) => { m[e.provider] = (m[e.provider] || 0) + 1; return m; }, {}),
+      messages: entries.map(e => ({
+        q: e.q,
+        reply: e.reply,
+        provider: e.provider,
+        ts: e.ts,
+        topic: e.topic,
+        latencyMs: e.latencyMs
+      }))
+    })).sort((a, b) => b.lastActiveAt - a.lastActiveAt);
+
+    res.json({
+      ok: true,
+      totalMessages: logs.length,
+      totalSessions: sessions.length,
+      sessions: sessions.slice(0, 100)
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
 
 // ============ COST LEDGER ENDPOINT + SAMPLER ============
 // Dev-only endpoint: full ledger snapshot with headroom, trends, and insights.

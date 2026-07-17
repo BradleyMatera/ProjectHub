@@ -18,6 +18,7 @@ const PROD_API_BASE = 'https://projecthub-chat.bradleymatera.dev';
 const DEV_API_BASE = 'https://dev.projecthub-chat.bradleymatera.dev';
 const API_COSTS_PROD_URL = `${PROD_API_BASE}/api/costs`;
 const API_COSTS_DEV_URL = `${DEV_API_BASE}/api/costs`;
+const API_CHAT_LOG_URL = `${API_BASE_URL}/api/chat-log`;
 const GITHUB_REPO_API = 'https://api.github.com/repos/BradleyMatera/ProjectHub';
 const GITHUB_CONTRIB_API = 'https://api.github.com/repos/BradleyMatera/ProjectHub/contributors';
 const REFRESH_INTERVAL_MS = 5000;
@@ -764,13 +765,15 @@ async function loadData() {
     fetchJson(`${API_COSTS_PROD_URL}?_=${Date.now()}`, { cache: 'no-store' }),
     isDevHost ? fetchJson(`${API_COSTS_DEV_URL}?_=${Date.now()}`, { cache: 'no-store' }) : Promise.reject(new Error('showcase mode')),
     isDevHost ? fetchJson(`${PROD_API_BASE}/health`, { cache: 'no-store' }) : Promise.reject(new Error('showcase mode')),
+    fetchJson(`${API_CHAT_LOG_URL}?_=${Date.now()}`, { cache: 'no-store' }),
   ];
-  const [health, repo, contributors, costsProd, costsDev, healthProd] = await Promise.allSettled(requests);
+  const [health, repo, contributors, costsProd, costsDev, healthProd, chatLog] = await Promise.allSettled(requests);
 
   return {
     health: health.status === 'fulfilled' ? health.value : null,
     repo: repo.status === 'fulfilled' ? repo.value : null,
     contributors: contributors.status === 'fulfilled' ? contributors.value : null,
+    chatLog: chatLog.status === 'fulfilled' && chatLog.value?.ok ? chatLog.value : null,
     // Cost trackers for BOTH environments. Each endpoint only exists when
     // COST_TRACKER=true on that backend; an offline backend hides its card.
     costsProd: costsProd.status === 'fulfilled' && costsProd.value?.ok ? costsProd.value : null,
@@ -818,6 +821,65 @@ function costFmtBytes(n) {
   if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB';
   if (n >= 1024) return (n / 1024).toFixed(1) + ' KB';
   return (n || 0) + ' B';
+}
+
+function renderChatHistory(section, chatLog) {
+  if (!chatLog || !chatLog.sessions || chatLog.sessions.length === 0) {
+    section.innerHTML = '<p class="ph-muted">No chat history yet. Conversations will appear here as visitors interact with Scout.</p>';
+    return;
+  }
+
+  const sessions = chatLog.sessions;
+  const providerColors = {
+    grounded: 'ph-text-success',
+    groq: 'ph-text-info',
+    cloudflare: 'ph-text-info',
+    github: 'ph-text-info',
+    gemini: 'ph-text-info',
+    grok: 'ph-text-info',
+    cached: 'ph-text-warn',
+    learned: 'ph-text-success',
+  };
+
+  const html = `
+    <div class="ph-analytics__chat-summary" style="margin-bottom:0.75rem;font-size:0.875rem;color:var(--cds-text-secondary,#525252)">
+      <strong>${chatLog.totalMessages}</strong> messages across <strong>${chatLog.totalSessions}</strong> sessions
+    </div>
+    <div class="ph-analytics__chat-sessions">
+      ${sessions.map((s, i) => {
+        const duration = s.lastActiveAt - s.startedAt;
+        const durStr = duration > 60000 ? `${Math.round(duration / 60000)}m` : `${Math.round(duration / 1000)}s`;
+        const providerBadges = Object.entries(s.providerMix).map(([p, c]) =>
+          `<span class="${providerColors[p] || ''}" style="font-size:0.75rem;margin-right:0.5rem">${p}:${c}</span>`
+        ).join('');
+        return `
+          <details class="ph-analytics__chat-session" style="border:1px solid var(--cds-border-subtle,#e0e0e0);border-radius:4px;margin-bottom:0.5rem;padding:0.5rem">
+            <summary style="cursor:pointer;font-size:0.875rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+              <span>
+                <strong>Session ${s.sessionId.slice(0, 8)}</strong>
+                <span style="color:var(--cds-text-secondary,#525252);margin-left:0.5rem">${s.messageCount} msgs</span>
+                <span style="color:var(--cds-text-secondary,#525252);margin-left:0.5rem">${durStr}</span>
+                ${s.referrer ? `<span style="color:var(--cds-text-secondary,#525252);margin-left:0.5rem">from ${s.referrer}</span>` : ''}
+              </span>
+              <span>${providerBadges}</span>
+            </summary>
+            <div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--cds-border-subtle,#e0e0e0)">
+              ${s.messages.map(m => `
+                <div style="margin-bottom:0.75rem;padding:0.5rem;background:var(--cds-layer-1,#f4f4f4);border-radius:4px">
+                  <div style="font-size:0.75rem;color:var(--cds-text-secondary,#525252);margin-bottom:0.25rem">
+                    ${new Date(m.ts).toLocaleString()} · <span class="${providerColors[m.provider] || ''}">${m.provider}</span>${m.latencyMs ? ` · ${m.latencyMs}ms` : ''}${m.topic ? ` · ${m.topic}` : ''}
+                  </div>
+                  <div style="font-size:0.8125rem;margin-bottom:0.25rem"><strong>Q:</strong> ${escapeHtml(m.q)}</div>
+                  <div style="font-size:0.8125rem;color:var(--cds-text-secondary,#525252)"><strong>A:</strong> ${escapeHtml(m.reply ? m.reply.slice(0, 300) : '')}${m.reply && m.reply.length > 300 ? '…' : ''}</div>
+                </div>
+              `).join('')}
+            </div>
+          </details>
+        `;
+      }).join('')}
+    </div>
+  `;
+  section.innerHTML = html;
 }
 
 function renderCostSection(section, costs, label, apiBase) {
@@ -1036,6 +1098,11 @@ function render(container, data) {
     renderEnvironmentsSection(envSection, isDevHost ? health : null, data.healthProd);
   }
 
+  const chatHistorySection = container.querySelector('.ph-analytics__chat-history');
+  if (chatHistorySection) {
+    renderChatHistory(chatHistorySection, data.chatLog);
+  }
+
   if (meta && health) {
     meta.innerHTML = `
       <p><strong>Service:</strong> ${health.service || 'ProjectHub Chat API'}</p>
@@ -1207,6 +1274,12 @@ export function mount(selector) {
     </div>
 
     <div class="ph-analytics__section">
+      <h3 class="ph-analytics__section-title">Chat history</h3>
+      <p class="ph-muted">Full conversation logs organized by session. Click a session to expand all messages.</p>
+      <div class="ph-analytics__chat-history"></div>
+    </div>
+
+    <div class="ph-analytics__section">
       <div class="ph-analytics__header" style="margin-bottom:0.5rem">
         <h3 class="ph-analytics__section-title">Learning system (Scout think mode)</h3>
         <button class="cds--btn cds--btn--secondary" id="ph-analytics-think" type="button">Run Think Mode now</button>
@@ -1223,6 +1296,12 @@ export function mount(selector) {
 
   const showcaseOnlyHtml = `
     <div class="ph-analytics__section ph-analytics__costs-prod" hidden></div>
+
+    <div class="ph-analytics__section">
+      <h3 class="ph-analytics__section-title">Chat history</h3>
+      <p class="ph-muted">Full conversation logs organized by session. Click a session to expand all messages.</p>
+      <div class="ph-analytics__chat-history"></div>
+    </div>
 
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Want the full picture?</h3>
