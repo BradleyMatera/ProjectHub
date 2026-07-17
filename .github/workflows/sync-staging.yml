@@ -56,12 +56,12 @@ jobs:
 
       - name: Push to ProjectHub-dev
         env:
-          GITHUB_TOKEN_PROJECTHUB_DEV: ${{ secrets.GITHUB_TOKEN_PROJECTHUB_DEV }}
+          PROJECTHUB_DEV_TOKEN: ${{ secrets.PROJECTHUB_DEV_TOKEN }}
         run: |
-          if [ -z "$GITHUB_TOKEN_PROJECTHUB_DEV" ]; then
-            echo "GITHUB_TOKEN_PROJECTHUB_DEV secret not set — skipping staging sync"
+          if [ -z "$PROJECTHUB_DEV_TOKEN" ]; then
+            echo "PROJECTHUB_DEV_TOKEN secret not set — skipping staging sync"
             echo "To sync manually: git push projecthub-dev develop:main --force"
             exit 0
           fi
-          git remote add projecthub-dev https://x-access:${GITHUB_TOKEN_PROJECTHUB_DEV}@github.com/BradleyMatera/ProjectHub-dev.git
+          git remote add projecthub-dev https://x-access:${PROJECTHUB_DEV_TOKEN}@github.com/BradleyMatera/ProjectHub-dev.git
           git push projecthub-dev HEAD:main --force
