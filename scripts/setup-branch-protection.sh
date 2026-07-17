@@ -70,10 +70,7 @@ echo "Creating staging environment..."
 gh api -X PUT "repos/$REPO/environments/staging" \
   --input - << 'EOF'
 {
-  "deployment_branch_policy": {
-    "protected_branches": false,
-    "custom_branch_policies": true
-  }
+  "wait_timer": 0
 }
 EOF
 echo "staging environment created"
@@ -83,9 +80,7 @@ echo "Creating production environment..."
 gh api -X PUT "repos/$REPO/environments/production" \
   --input - << 'EOF'
 {
-  "deployment_branch_policy": {
-    "protected_branches": true
-  }
+  "wait_timer": 0
 }
 EOF
 echo "production environment created"
