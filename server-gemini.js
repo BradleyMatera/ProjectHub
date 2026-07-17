@@ -3948,6 +3948,7 @@ app.use((req, res, next) => { if (statsDirty) flushStats(); next(); });
 if (COST_TRACKER && costLedger) {
   const { buildInsights } = require('./lib/cost-insights');
   app.get('/api/costs', (req, res) => {
+    res.set('Cache-Control', 'no-store, max-age=0');
     try {
       const snapshot = costLedger.snapshot();
       res.json({ ok: true, ...snapshot, insights: buildInsights(snapshot) });
