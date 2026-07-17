@@ -761,8 +761,8 @@ async function loadData() {
     fetchJson(API_HEALTH_URL, { cache: 'no-store' }),
     fetchJson(GITHUB_REPO_API),
     fetchJson(GITHUB_CONTRIB_API),
-    fetchJson(API_COSTS_PROD_URL, { cache: 'no-store' }),
-    isDevHost ? fetchJson(API_COSTS_DEV_URL, { cache: 'no-store' }) : Promise.reject(new Error('showcase mode')),
+    fetchJson(`${API_COSTS_PROD_URL}?_=${Date.now()}`, { cache: 'no-store' }),
+    isDevHost ? fetchJson(`${API_COSTS_DEV_URL}?_=${Date.now()}`, { cache: 'no-store' }) : Promise.reject(new Error('showcase mode')),
     isDevHost ? fetchJson(`${PROD_API_BASE}/health`, { cache: 'no-store' }) : Promise.reject(new Error('showcase mode')),
   ];
   const [health, repo, contributors, costsProd, costsDev, healthProd] = await Promise.allSettled(requests);
