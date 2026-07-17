@@ -477,6 +477,56 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
     <div class="ph-analytics__section ph-analytics__costs-prod" hidden></div>
 
     <div class="ph-analytics__section">
+      <h3 class="ph-analytics__section-title">Live activity feed</h3>
+      <div class="ph-analytics__activity-feed"></div>
+    </div>
+
+    <div class="ph-analytics__two-col">
+      <div class="ph-analytics__section">
+        <h3 class="ph-analytics__section-title">Where visitors come from</h3>
+        <div class="ph-analytics__referrers"></div>
+      </div>
+      <div class="ph-analytics__section">
+        <h3 class="ph-analytics__section-title">What recruiters ask about</h3>
+        <div class="ph-analytics__topics"></div>
+      </div>
+    </div>
+
+    <div class="ph-analytics__section">
+      <h3 class="ph-analytics__section-title">Knowledge coverage gaps</h3>
+      <div class="ph-analytics__gaps"></div>
+    </div>
+
+    <div class="ph-analytics__section">
+      <h3 class="ph-analytics__section-title">Provider health history</h3>
+      <div class="ph-analytics__table-wrap">
+        <table class="ph-analytics__table ph-analytics__provider-health-table" aria-label="Provider health history">
+          <thead>
+            <tr><th>Provider</th><th>Success rate</th><th>Success / Fail</th><th>Avg latency</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="ph-analytics__section">
+      <h3 class="ph-analytics__section-title">Recent sessions</h3>
+      <div class="ph-analytics__table-wrap">
+        <table class="ph-analytics__table ph-analytics__sessions-table" aria-label="Recent sessions">
+          <thead>
+            <tr><th>Intent</th><th>Started</th><th>Turns</th><th>Topics</th><th>Duration / Referrer</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="ph-analytics__section">
+      <h3 class="ph-analytics__section-title">Recent requests</h3>
+      <div class="ph-analytics__recent-requests"></div>
+    </div>
+
+    <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Chat history</h3>
       <p class="ph-muted">Full conversation logs organized by session. Click a session to expand all messages.</p>
       <div class="ph-analytics__chat-history"></div>
@@ -484,7 +534,7 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
 
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Want the full picture?</h3>
-      <p class="ph-muted">The <a href="https://bradleymatera.github.io/ProjectHub-dev/" target="_blank" rel="noopener noreferrer">development site</a> shows the complete operational dashboard: both environments, live activity, session analytics, knowledge gaps, the Think Mode learning system, and per-event cost ledgers for every stack.</p>
+      <p class="ph-muted">The <a href="https://bradleymatera.github.io/ProjectHub-dev/" target="_blank" rel="noopener noreferrer">development site</a> shows the complete operational dashboard: both environments side by side, the Think Mode learning system, retrieval debugging, and per-event cost ledgers for every stack.</p>
     </div>`)+`
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Service metadata</h3>
