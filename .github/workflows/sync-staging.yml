@@ -1,6 +1,5 @@
 name: Sync to Staging Repo
 
-
 on:
   push:
     branches: [develop]
@@ -8,12 +7,8 @@ on:
       - 'README.md'
       - 'AGENTS.md'
       - 'docs/**'
+      - 'PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md'
   workflow_dispatch:
-    inputs:
-      sync:
-        description: 'Sync the develop branch to ProjectHub-dev' 
-        required: false
-        default: 'false'
 
 jobs:
   sync:
@@ -23,35 +18,50 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: develop
+          fetch-depth: 0
 
-      - name: Configure Git for Push
+      - name: Configure Git
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
+
+      - name: Prepare staging tree
+        run: |
+          # Replace AGENTS.md with staging-specific version
+          if [ -f .github/staging-AGENTS.md ]; then
+            cp .github/staging-AGENTS.md AGENTS.md
+          fi
+
+          # Install staging Pages workflow (triggers on main, not master)
+          mkdir -p .github/workflows
+          if [ -f .github/staging-pages.yml ]; then
+            cp .github/staging-pages.yml .github/workflows/pages.yml
+          fi
+
+          # Generate source marker
+          COMMIT_SHA=$(git rev-parse HEAD)
+          cat > STAGING-SOURCE.json << 'ENDJSON'
+          {
+            "sourceRepository": "BradleyMatera/ProjectHub",
+            "sourceBranch": "develop",
+            "sourceCommit": "COMMIT_SHA_PLACEHOLDER",
+            "generatedBy": "sync-staging.yml"
+          }
+          ENDJSON
+          sed -i "s/COMMIT_SHA_PLACEHOLDER/$COMMIT_SHA/" STAGING-SOURCE.json
+
+          # Stage all changes
+          git add -A
+          git commit -m "Staging sync from develop@${COMMIT_SHA:0:7}" || true
 
       - name: Push to ProjectHub-dev
         env:
           GITHUB_TOKEN_PROJECTHUB_DEV: ${{ secrets.GITHUB_TOKEN_PROJECTHUB_DEV }}
         run: |
           if [ -z "$GITHUB_TOKEN_PROJECTHUB_DEV" ]; then
-            echo "GITHUB_TOKEN_PROJECTHUB_DEV secret not set — skipping staging sync (push manually if needed)"
+            echo "GITHUB_TOKEN_PROJECTHUB_DEV secret not set — skipping staging sync"
+            echo "To sync manually: git push projecthub-dev develop:main --force"
             exit 0
           fi
           git remote add projecthub-dev https://x-access:${GITHUB_TOKEN_PROJECTHUB_DEV}@github.com/BradleyMatera/ProjectHub-dev.git
-          git push projecthub-dev develop:main --force
-
-      - name: Restore staging AGENTS.md
-        env:
-          GITHUB_TOKEN_PROJECTHUB_DEV: ${{ secrets.GITHUB_TOKEN_PROJECTHUB_DEV }}
-        run: |
-          if [ -z "$GITHUB_TOKEN_PROJECTHUB_DEV" ]; then
-            exit 0
-          fi
-          git fetch projecthub-dev main
-          git checkout -B staging-main FETCH_HEAD
-          if [ -f .github/staging-AGENTS.md ]; then
-            cp .github/staging-AGENTS.md AGENTS.md
-            git add AGENTS.md
-            git commit -m "Apply staging AGENTS.md" || true
-            git push projecthub-dev HEAD:main --force-with-lease
-          fi
+          git push projecthub-dev HEAD:main --force

@@ -570,6 +570,20 @@
   </script>
 
   <!-- ProjectHub chat widget -->
-  <script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=12"></script>
+  <script>
+    (function () {
+      var isDev = /projecthub-dev/i.test(window.location.hostname + window.location.pathname);
+      if (isDev) {
+        window.__PROJECTHUB_CHAT_API__ = "https://dev.projecthub-chat.bradleymatera.dev/api/chat";
+        var s = document.createElement("script");
+        s.src = "./ProjectHub.js?v=12";
+        document.body.appendChild(s);
+      } else {
+        var s = document.createElement("script");
+        s.src = "https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=12";
+        document.body.appendChild(s);
+      }
+    })();
+  </script>
 </body>
 </html>
