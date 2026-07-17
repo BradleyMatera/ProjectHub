@@ -22,10 +22,15 @@ jobs:
         run: npm ci
 
       - name: Run npm audit
-        run: npm audit --audit-level=moderate
+        run: npm audit --audit-level=high
 
       - name: Build analytics bundle
         run: npm run build
+
+      - name: Verify analytics/dist is fresh
+        run: |
+          git diff --exit-code -- analytics/dist || \
+            (echo "analytics/dist is stale. Run: npm run build" && exit 1)
 
       - name: Verify ProjectHub.js is up to date
         run: |
@@ -47,6 +52,56 @@ jobs:
 
       - name: Run retrieval evaluation
         run: node scripts/eval-retrieval.js
+
+      - name: Verify retrieval quality threshold
+        run: |
+          OUTPUT=$(node scripts/eval-retrieval.js 2>&1)
+          echo "$OUTPUT"
+          RECALL=$(echo "$OUTPUT" | grep -oP 'Recall@6=\K[0-9.]+' | head -1)
+          if [ -z "$RECALL" ]; then
+            echo "Could not parse Recall@6 from eval output"
+            exit 1
+          fi
+          PASS=$(node -e "console.log(parseFloat('$RECALL') >= 0.90 ? 'true' : 'false')")
+          if [ "$PASS" != "true" ]; then
+            echo "Retrieval quality regression: Recall@6=$RECALL (threshold: 0.90)"
+            exit 1
+          fi
+          echo "Retrieval quality OK: Recall@6=$RECALL"
+
+      - name: Validate knowledge JSON
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('data/recruiter-knowledge.json','utf8'))" || \
+            (echo "data/recruiter-knowledge.json is invalid JSON" && exit 1)
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('data/recruiter-knowledge.json','utf8'));
+            const required = ['bio','skills','projects','experience'];
+            const keys = Object.keys(d);
+            const missing = required.filter(k => !keys.includes(k));
+            if (missing.length > 0) { console.error('Missing required keys:', missing); process.exit(1); }
+            console.log('Knowledge JSON schema OK');
+          "
+
+      - name: Check for committed secrets
+        run: |
+          SECRETS=$(grep -rnE "(sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|AIza[a-zA-Z0-9_-]{35})" \
+            --include="*.js" --include="*.json" --include="*.yml" --include="*.yaml" --include="*.env" \
+            --exclude-dir=node_modules --exclude-dir=.git . || true)
+          if [ -n "$SECRETS" ]; then
+            echo "Found potential secrets in committed files:"
+            echo "$SECRETS"
+            exit 1
+          fi
+
+      - name: Check staging does not point at production
+        run: |
+          # index.html must not hardcode the production widget URL for dev host
+          if grep -q 'src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js' index.html && \
+             ! grep -q 'projecthub-dev' index.html; then
+            echo "index.html hardcodes production widget URL without dev fallback"
+            exit 1
+          fi
+          echo "Staging routing check passed"
 
       - name: Check embeddings freshness
         run: |
