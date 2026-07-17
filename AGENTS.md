@@ -11,11 +11,11 @@ ProjectHub is an embeddable, AI-powered chat widget that showcases Bradley Mater
 - **Tech stack:** Vanilla JavaScript (ES6 modules via IIFE), HTML/CSS-in-JS, GitHub Pages; live analytics uses Vite + @carbon/charts + @carbon/web-components + @carbon/styles
 - **Runtime:** Browser only; chat widget has no frontend framework or bundler; analytics section is bundled with Vite
 - **AI backend:** Recruiter chat API at `https://projecthub-chat.bradleymatera.dev/api/chat` on a GCP e2-micro VM with Caddy HTTPS. Uses a free multi-provider LLM network (Groq, Cloudflare Workers AI, GitHub Models, Google Gemini, xAI Grok, OpenAI-compatible). If every provider is unavailable or the reply fails validation, the final fallback is a fast, grounded answer from `data/recruiter-knowledge.json`. Provider order and daily quota guards are configurable. Local Ollama is present in the codebase but currently filtered out of the active provider order.
-- **Session memory:** Browser sends a per-tab session id and recent turns; backend caches a trimmed knowledge JSON and the last 3 turns of each session. Frontend keeps 10 turns of context and sends 5 turns to the server.
+- **Session memory:** Browser sends a per-tab session id and recent turns; backend caches a trimmed knowledge JSON and the last 3 turns of each session. Frontend keeps 10 turns of context and sends all to the server; server uses the last 3.
 - **Generative usage:** Grounded-first deterministic engine answers factual queries. Safety and false-claim checks run BEFORE learned answers. Open-ended questions are sent through the free provider network in priority order; each reply is validated against slop/false-claim rules and falls back to the grounded answer if no provider succeeds. 15s total latency budget. Out-of-scope questions are forced to grounded replies (not LLM hallucinations).
 - **Retrieval pipeline:** Okapi BM25 index (`lib/bm25.js`) with query understanding (`lib/query-understanding.js` — typo correction, intent classification, contextual rewriting) is the default retrieval mode. Optional dense vector retrieval via Cloudflare Workers AI embeddings (`lib/vector-index.js`) with hybrid RRF+MMR fusion (`lib/hybrid-retrieve.js`). BM25 Recall@6=0.950 on 40-query golden eval set.
 - **Stance consistency:** Per-session topic stances injected into LLM prompts to prevent contradictions across turns. 30-min TTL, cap 8 per session.
-- **Semantic cache:** Paraphrase dedup via embedding cosine similarity (≥0.92 threshold). LRU, 200 entries, 30-min TTL. Only active when vector retrieval is enabled.
+- **Semantic cache:** Paraphrase dedup via embedding cosine similarity (≥0.92 threshold). LRU, 200 entries, 10-min TTL. Only active when vector retrieval is enabled.
 - **Agent name & persona:** The assistant is named **Scout**: helpful, calm, concise, honest, and never over-hype.
 - **Widget UX:** Header shows "Scout" as the assistant title and "Bradley Matera · Recruiter assistant". Placeholder and welcome messages are from Scout. Each session starts by asking the visitor's name.
 - **Data sources:** `data.js` (projects/CodePens), `data/recruiter-knowledge.json` (canonical facts), and `sourceMaterial` (ingested blog posts, pages, and resume guardrails from `scripts/build-knowledge.js`).
@@ -116,7 +116,11 @@ Live widget URL for embedding:
 | `test/query-understanding.test.js` | Query understanding unit tests (15 tests) |
 | `test/vector-index.test.js` | Vector index unit tests (5 tests) |
 | `test/hybrid-retrieve.test.js` | Hybrid fusion unit tests (8 tests) |
-| `deploy-gcp.sh` | Deploy script — copies server-gemini.js + lib/ to GCP VM and restarts service |
+| `deploy-gcp.sh` | Deploy script — copies server-gemini.js + lib/ to prod GCP VM and restarts service |
+| `deploy-gcp-dev.sh` | Deploy script — copies server-gemini.js + lib/ to dev GCP VM and restarts service |
+| `.github/workflows/test.yml` | CI — runs unit tests, retrieval eval, syntax checks on develop |
+| `.github/workflows/sync-staging.yml` | CI — syncs develop to ProjectHub-dev staging repo |
+| `.github/workflows/pages.yml` | CI — deploys master to GitHub Pages |
 | `package.json` | Dependency metadata; includes Vite build scripts and Carbon analytics dependencies |
 | `index.html` | Public GitHub Pages landing site for ProjectHub / Scout (includes live analytics dashboard) |
 | `analytics/main.js` | Analytics dashboard source — fetches, sanitizes, and visualizes multi-source data with Carbon |
