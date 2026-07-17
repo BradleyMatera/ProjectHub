@@ -23,7 +23,9 @@ This is the **staging repository** for ProjectHub/Scout. It publishes to `https:
 ## Dev Environment Differences
 
 - Widget and page title show `(dev)` branding.
-- Analytics dashboard is available only on the dev site.
+- **Widget loads locally** from `./ProjectHub.js` (not from the production CDN).
+- **API calls go to** `https://dev.projecthub-chat.bradleymatera.dev` (set via `window.__PROJECTHUB_CHAT_API__`).
+- Analytics dashboard is available on both sites, but the dev site shows the full operational view.
 - The dev backend uses `stats-dev.json` and `learned-dev.json`, isolated from production.
 - Think Mode runs on dev but does **not** push learned answers to the production knowledge base (`THINK_PUSH_ENABLED=false`).
 
