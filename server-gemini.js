@@ -1698,7 +1698,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${agentName} doesn't connect to external systems or databases. I answer from ${name}'s public recruiter data file — his projects, skills, AWS training, education, and contact info. I can't make changes, send emails, or access repos.` };
   }
   if (/can you tell me.*(your|you.?re).*model name|what.?s your model name|what is your model name|what model are you/.test(lowerQuestion)) {
-    return { reply: `${agentName} doesn't share model names. I answer recruiter questions about ${name} using his verified data — projects, skills, AWS background, and contact info. What would you like to know?` };
+    return { reply: `${agentName} routes open-ended questions through free LLM providers in priority order: Groq (Llama), Cloudflare Workers AI, GitHub Models, Google Gemini, and xAI Grok. If all providers are unavailable, the fallback is a deterministic answer from ${name}'s verified recruiter data. The full provider config is public in the GitHub repo.` };
   }
   if (/what limits|what can.*this chatbot|limits are in place|what can you not do/.test(lowerQuestion)) {
     return { reply: `${agentName} only answers recruiter questions about ${name}. I can't access external systems, make changes to repos, send messages, or answer questions unrelated to his background. I stick to his verified public data.` };
@@ -2014,11 +2014,14 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   if (/aws|cloud|lambda|dynamo|s3|amplify|amazon/.test(lowerQuestion)) {
     const cloudSkills = skills?.cloudAndInfrastructure || [];
     if (cloudSkills.length > 0) {
-      let reply = `${name} has AWS experience with ${sentenceList(cloudSkills, 5)}.`;
+      let reply = `${name} has hands-on AWS experience with ${sentenceList(cloudSkills, 5)}.`;
       const awsExp = experience?.find(e => e.role?.toLowerCase().includes('aws') || e.company?.toLowerCase().includes('aws') || e.company?.toLowerCase().includes('amazon'));
       if (awsExp) {
         const article = /^[aeiou]/i.test(awsExp.role) ? 'an' : 'a';
-        reply += ` He completed ${article} ${awsExp.role} at ${awsExp.company}, built around structured labs and a capstone rather than live production ownership.`;
+        const resp = (awsExp.responsibilities || []).slice(0, 3).join('; ');
+        reply += ` He completed ${article} ${awsExp.role} at ${awsExp.company} — ${awsExp.summary || ''}`;
+        if (resp) reply += ` Key work: ${resp}.`;
+        reply += ` It was structured labs and a capstone, not live production ownership, but the skills are real and backed by his AWS Solutions Architect and AI Practitioner certifications.`;
       }
       return { reply: reply };
     }
@@ -3895,7 +3898,7 @@ app.post('/api/chat', async (req, res) => {
     const topic = classifyTopic(userMessage);
     const followUpMap = {
       'projects': ['What tech stack does he use?', 'Which project is most relevant to my role?'],
-      'aws': ['What about his AWS certifications?', 'Did he do real production work at AWS?'],
+      'aws': ['What certifications does he have?', 'What projects use AWS serverless?'],
       'skills': ['What are his strongest skills?', 'How does he debug issues?'],
       'experience': ['What did he do at CIRIS?', 'Tell me about his AWS internship', 'What did he do at Mason County Kitten Rescue?', 'Tell me about his Army service'],
       'education': ['What was his GPA?', 'What coursework is relevant?'],
@@ -3908,7 +3911,14 @@ app.post('/api/chat', async (req, res) => {
       'writing': ['What topics does he write about?', 'Where does he publish?', 'Has he written about AWS?'],
       'summary': ['What are his strongest skills?', 'What projects should I look at first?']
     };
-    const followUps = followUpMap[topic] || [];
+    const questionWords = new Set(userMessage.toLowerCase().split(/\W+/).filter(w => w.length > 4));
+    let followUps = (followUpMap[topic] || []).filter(s => {
+      const sWords = s.toLowerCase().split(/\W+/);
+      return !sWords.some(w => questionWords.has(w));
+    });
+    if (followUps.length === 0 && followUpMap[topic]) {
+      followUps = followUpMap[topic].slice(0, 1);
+    }
 
     const payload = { reply, provider, model, fallback: false, grounded: provider === 'grounded', pipeline, followUps };
     if (!hasHistory) {
