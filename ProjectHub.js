@@ -1162,7 +1162,9 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     const cleaned = String(value || "").trim();
     const match = cleaned.match(/(?:my name is|i am|i'm|im|this is|call me)\s+([a-z][a-z .'-]{1,32})/i);
     const rawName = (match ? match[1] : cleaned).split(/[,.!?]/)[0].trim();
-    if (!rawName || rawName.length > 32 || /\b(what|why|how|tell|about|project|bradley|aws|contact|github|linkedin)\b/i.test(rawName)) return "";
+    if (!rawName || rawName.length > 32) return "";
+    if (/\b(what|why|how|tell|about|project|bradley|aws|contact|github|linkedin|can|could|you|give|show|example|explain|describe|do|does|is|are|was|were|will|would|should|who|when|where|which|please|hey|hi|hello|test|help|question|yes|no|maybe|sure|ok|okay)\b/i.test(rawName)) return "";
+    if (rawName.split(/\s+/).length > 2 && !match) return "";
     return rawName.split(/\s+/).slice(0, 2).map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join(" ");
   }
 
