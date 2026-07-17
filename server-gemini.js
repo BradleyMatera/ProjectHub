@@ -3574,11 +3574,18 @@ async function pushLearnedToGitHub() {
       knowledgeCacheAt = 0;
       return true;
     } else {
-      console.error('[think] GitHub push failed:', pushRes.status);
+      const errBody = await pushRes.text().catch(() => '');
+      if (pushRes.status === 403) {
+        console.error('[think] GitHub push rejected (403) — branch protection may be blocking direct commits. Learned answers preserved in local queue.');
+      } else if (pushRes.status === 409) {
+        console.error('[think] GitHub push rejected (409) — SHA conflict, knowledge file was updated remotely. Learned answers preserved in local queue. Will retry on next cycle.');
+      } else {
+        console.error('[think] GitHub push failed:', pushRes.status, errBody.slice(0, 200));
+      }
       return false;
     }
   } catch (e) {
-    console.error('[think] pushLearnedToGitHub error:', e.message);
+    console.error('[think] pushLearnedToGitHub error:', e.message, '— learned answers preserved in local queue');
     return false;
   }
 }
