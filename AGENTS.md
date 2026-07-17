@@ -41,11 +41,12 @@ When making changes:
 
 1. Branch from `develop` in `BradleyMatera/ProjectHub`.
 2. Open a pull request to `develop`.
-3. After merge, push `develop` to `BradleyMatera/ProjectHub-dev:main` to stage.
-4. When validated, open a pull request from `develop` to `master`.
-5. After merging to `master`, tag the release and run bash deploy-gcp.sh for the production VM.
+3. After merge, the sync-staging workflow automatically mirrors to `BradleyMatera/ProjectHub-dev:main`.
+4. When validated on staging, open a pull request from `develop` to `master`.
+5. After merging to `master`, run `bash deploy-gcp.sh` for the production backend, verify health, then manually trigger the Pages workflow.
 
-For full details, see `docs/common-tasks.md`.
+**For the full release process, see `PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md` (canonical release spec).**
+For common task details, see `docs/common-tasks.md`.
 
 ## Quick Start
 
@@ -74,9 +75,11 @@ npm run eval-retrieval
 # Build pre-computed embeddings (requires CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN)
 npm run build:embeddings
 
-# Publish changes to GitHub Pages
-# 1. Commit and push to master (including analytics/dist if it changed)
-# 2. GitHub Pages rebuilds automatically from the default branch
+# Publish changes to GitHub Pages (PRODUCTION)
+# 1. Merge release PR to master
+# 2. Run: bash deploy-gcp.sh  (deploy + verify backend)
+# 3. Manually trigger the "Deploy to GitHub Pages" workflow in GitHub Actions
+# 4. Verify the live widget at https://bradleymatera.github.io/ProjectHub/
 ```
 
 Live widget URL for embedding:
@@ -198,6 +201,9 @@ Add an entry to `data.js` `projects` array and mirror it in `ProjectHub.js` if t
 
 | Task type | Read this guide |
 |-----------|-----------------|
+| **Release, staging, branching, or rollback** | **`PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md`** |
+| **Branch protection or environment setup** | **`docs/branch-protection-setup.md`** |
+| **Think Mode migration plan** | **`docs/think-mode-migration-plan.md`** |
 | Understand data flow, hosting, or backend migration | `docs/architecture-overview.md` |
 | Add a project, CodePen, suggestion, or update data | `docs/data-guide.md` |
 | Add/modify intents, AI fallback, response logic | `docs/api-guide.md` |
@@ -210,13 +216,16 @@ Add an entry to `data.js` `projects` array and mirror it in `ProjectHub.js` if t
 
 ## Table of Contents
 
-1. `docs/architecture-overview.md` — System design, component relationships, data flow.
-2. `docs/coding-standards.md` — Naming conventions, file organization, style rules, and no-build constraints.
-3. `docs/common-tasks.md` — Step-by-step workflows for routine development (add project, test locally, publish to GitHub Pages).
-4. `docs/data-guide.md` — Schema and update workflow for projects, CodePens, and suggestions.
-5. `docs/api-guide.md` — Chat endpoint contract, GitHub API usage, and fallback proxy behavior.
-6. `docs/backend-guide.md` — GCP VM deployment, Caddy HTTPS, systemd, environment variables, cost checklist.
-7. `docs/low-cost-ai-routing.md` — Free-tier LLM routing policy, provider order, validation, and cost optimization.
+1. `PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md` — Canonical release spec: staging isolation, CI/CD, branch rules, rollback, acceptance tests.
+2. `docs/architecture-overview.md` — System design, component relationships, data flow.
+3. `docs/coding-standards.md` — Naming conventions, file organization, style rules, and no-build constraints.
+4. `docs/common-tasks.md` — Step-by-step workflows for routine development (add project, test locally, publish to GitHub Pages).
+5. `docs/data-guide.md` — Schema and update workflow for projects, CodePens, and suggestions.
+6. `docs/api-guide.md` — Chat endpoint contract, GitHub API usage, and fallback proxy behavior.
+7. `docs/backend-guide.md` — GCP VM deployment, Caddy HTTPS, systemd, environment variables, cost checklist.
+8. `docs/low-cost-ai-routing.md` — Free-tier LLM routing policy, provider order, validation, and cost optimization.
+9. `docs/branch-protection-setup.md` — Branch protection rules and GitHub environment configuration.
+10. `docs/think-mode-migration-plan.md` — Think Mode transition from direct commits to PR-based proposal workflow.
 
 ---
 
