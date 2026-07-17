@@ -2913,7 +2913,7 @@ function mustStayGrounded(question, history) {
   // Contact info must always come from the knowledge base, not LLM
   if (/\b(contact|email|phone|reach|linkedin|github profile|portfolio url)\b/.test(q)) return true;
   // Meta questions about Scout's capabilities should stay grounded
-  if (/what limits|what can.*this chatbot|limits are in place|what can you not do|what mcp|what connections|what systems do you have|do you have access to.*systems|how do you know.*(bradley|brad|him)|are you his friend|can you tell me.*(your|you.?re).*model name|what.?s your model name|what model are you|who is on first|what.?s on first|do you have a (mom|mother|family|feelings)|are you (alive|sentient|conscious)/.test(q)) return true;
+  if (/what limits|what can.*this chatbot|limits are in place|what can you not do|what mcp|what connections|what systems do you have|do you have access to.*systems|how do you know.*(bradley|brad|him)|are you his friend|can you tell me.*(your|you.?re).*model name|what.?s your model name|what is your model name|what model are you|who is on first|what.?s on first|do you have a (mom|mother|family|feelings)|are you (alive|sentient|conscious)/.test(q)) return true;
   // Out-of-scope questions should get deterministic redirect, not LLM hallucinations
   if (classifyTopic(question) === 'out-of-scope') return true;
   return false;
