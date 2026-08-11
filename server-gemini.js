@@ -406,7 +406,7 @@ app.get('/health', async (req, res) => {
       mode: LOCAL_ONLY_MODE ? 'local-only-rag-tools-memory' : 'bounded-read-only-tools'
     },
     genModel: process.env.GEN_MODEL || 'qwen2.5:0.5b',
-    genTimeoutMs: parseInt(process.env.GEN_TIMEOUT_MS || '15000', 10),
+    genTimeoutMs: parseInt(process.env.GEN_TIMEOUT_MS || '13000', 10),
     knowledgeUrl: LOCAL_ONLY_MODE ? null : KNOWLEDGE_URL,
     knowledgeSource: LOCAL_ONLY_MODE ? 'bundled-local-json' : 'remote-json',
     memory: { recentTurns: 5, stanceTopics: STANCE_MAX_PER_SESSION, stanceTtlMinutes: STANCE_TTL_MS / 60000 },
@@ -2653,7 +2653,7 @@ function cleanModelReply(reply, knowledge, question, history) {
 // warm local model, hard-capped at GEN_TIMEOUT_MS so answers stay
 // inside the 15-second budget. Grounded answer is the guaranteed fallback.
 const GEN_MODEL = process.env.GEN_MODEL || 'qwen2.5:0.5b';
-const GEN_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.GEN_TIMEOUT_MS || '15000', 10), 15000));
+const GEN_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.GEN_TIMEOUT_MS || '13000', 10), 13000));
 const GEN_ENABLED = process.env.GEN_ENABLED !== 'false';
 
 const STOPWORDS = new Set(['the', 'a', 'an', 'is', 'are', 'was', 'were', 'his', 'her', 'he', 'she', 'it', 'and', 'or', 'of', 'to', 'in', 'for', 'with', 'about', 'what', 'who', 'how', 'does', 'do', 'did', 'can', 'me', 'tell', 'you', 'your', 'this', 'that', 'on', 'at', 'i']);
@@ -4170,7 +4170,7 @@ app.post('/api/chat', async (req, res) => {
     if (LOCAL_ONLY_MODE && !generated && GEN_ENABLED && !mustStayGrounded(userMessage, history)) {
       try {
         const genReply = await callGenerativeRag(knowledge, userMessage, grounded.reply, history, GEN_TIMEOUT_MS);
-        if (genReply && validateFallbackReply(genReply) && validateLocalConversationReply(genReply, callGenerativeRag.lastSource)) {
+        if (genReply && validateFallbackReply(genReply) && validateLocalConversationReply(genReply, callGenerativeRag.lastSource, userMessage)) {
           reply = genReply;
           provider = 'ollama';
           model = GEN_MODEL;
