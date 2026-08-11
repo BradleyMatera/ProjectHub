@@ -83,7 +83,7 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
     'USE_VECTOR_RETRIEVAL=false' \
     'STATS_FILE=stats-feature.json' \
     'LEARNED_FILE=learned-feature.json' \
-    'COST_FILE=costs-feature.json' | sudo tee -a /tmp/projecthub-agent-preview.env >/dev/null
+    'COST_FILE=costs-feature.json' >> /tmp/projecthub-agent-preview.env
   sudo install -m 600 /tmp/projecthub-agent-preview.env '$REMOTE_DIR/.env'
   rm -f /tmp/projecthub-agent-preview.env
 
