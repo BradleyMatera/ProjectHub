@@ -1354,7 +1354,7 @@ async function applyLocalAgentStyleWithOllama(question, localResult) {
         },
         stream: false,
         keep_alive: OLLAMA_AGENT_KEEP_ALIVE,
-        options: { temperature: 0, num_ctx: OLLAMA_AGENT_CONTEXT, num_predict: 16 }
+        options: { temperature: 0, num_ctx: OLLAMA_AGENT_CONTEXT, num_predict: 16, num_thread: 2 }
       })
     });
     if (!res.ok) throw new Error(`Ollama agent style controller failed: ${res.status}`);
@@ -2912,7 +2912,7 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
         ],
         stream: true,
         keep_alive: OLLAMA_AGENT_KEEP_ALIVE,
-        options: { temperature: 0.2, top_p: 0.8, num_ctx: OLLAMA_AGENT_CONTEXT, num_predict: 48, repeat_penalty: 1.2 }
+        options: { temperature: 0.2, top_p: 0.8, num_ctx: OLLAMA_AGENT_CONTEXT, num_predict: 32, repeat_penalty: 1.2, num_thread: 2 }
       })
     });
     if (!res.ok) throw new Error(`gen HTTP ${res.status}`);

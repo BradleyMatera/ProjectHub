@@ -20,7 +20,7 @@ This separates factual reasoning from language generation: Ollama makes open-end
 
 An 8B local model is not appropriate for the current GCP `e2-micro` machines. `gemma3:1b` was still generating after roughly 90 seconds and pushed almost 1 GB into swap. The selected middle ground is `qwen2.5:0.5b`: its first cold load measured 77.5 seconds, but a fixed-context warm multi-turn request completed in 3.71 seconds. The deployment therefore pre-warms it before starting the preview and retains it indefinitely.
 
-To keep memory bounded, ProjectHub uses a 1,536-token context, at most five sanitized recent turns, up to 48 generated tokens, one generation at a time, and a 15-second request ceiling. Stance memory retains up to 12 topic positions for 60 minutes. The model stays loaded (`keep_alive=-1`); after a VM/Ollama restart, the prewarm step absorbs the slow load before the preview starts. Timeouts and invalid replies fail safely to the deterministic answer.
+To keep memory bounded, ProjectHub uses a 1,536-token context, at most five sanitized recent turns, up to 32 generated tokens, two CPU threads, one generation at a time, and a 15-second request ceiling. Stance memory retains up to 12 topic positions for 60 minutes. The model stays loaded (`keep_alive=-1`); after a VM/Ollama restart, the prewarm step absorbs the slow load before the preview starts. Timeouts and invalid replies fail safely to the deterministic answer.
 
 Before enabling Ollama on a host, confirm available RAM, swap, disk, installed model capabilities, and latency. Do not enable it merely because an Ollama daemon exists.
 

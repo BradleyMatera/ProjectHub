@@ -18,7 +18,7 @@ ProjectHub has zero recurring AI spend. It does not require Groq, Cloudflare Wor
 6. A deterministic grounded answer is computed before generation.
 7. Open-ended questions may be phrased by pre-warmed `qwen2.5:0.5b` through loopback-only Ollama.
 8. The prompt includes the five newest sanitized turns and the stored stance for the current topic.
-9. Generated output is capped at 48 tokens and 15 seconds, then checked for unsupported numbers, new entities, overclaims, slop, safety problems, source overlap, and a two-sentence maximum.
+9. Generated output is capped at 32 tokens and 13 seconds, then checked for unsupported numbers, new entities, overclaims, slop, safety problems, source overlap, and a two-sentence maximum.
 10. Timeout or any failed check returns the deterministic grounded answer.
 
 `LOCAL_ONLY_MODE=true` forces `PROVIDER_ORDER` to an empty list and forces dense vector retrieval off even when a stale environment variable enables it. Legacy hosted-provider adapters remain for backward compatibility outside local-only mode, but they are unreachable in the deployed local configuration.
@@ -40,7 +40,7 @@ The small model is the conversational layer, not the source of truth. Retrieval,
 
 ## Latency and Failure Policy
 
-The user-facing budget is 15 seconds. The model is pre-warmed during setup and deployment, uses a 1536-token context, produces at most 48 tokens, and stays loaded indefinitely. If Ollama is cold, overloaded, unavailable, or produces invalid text, the already-computed grounded answer is returned. This keeps availability independent of model quality.
+The user-facing budget is 15 seconds. The model is pre-warmed with the same two-thread configuration used at runtime, uses a 1536-token context, produces at most 32 tokens, and stays loaded indefinitely. If Ollama is cold, overloaded, unavailable, or produces invalid text, the already-computed grounded answer is returned. This keeps availability independent of model quality.
 
 ## Think Mode
 
