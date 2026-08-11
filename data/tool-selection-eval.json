@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "description": "Tool-selection evaluation for Scout agent engine. Each question has the expected correct first tool and acceptable tools.",
+  "questions": [
+    { "id": "ts01", "question": "What cloud work has Bradley done?", "correctTool": "search_portfolio", "acceptableTools": ["search_portfolio", "get_skill_evidence"] },
+    { "id": "ts02", "question": "What projects involve backend development?", "correctTool": "search_portfolio", "acceptableTools": ["search_portfolio"] },
+    { "id": "ts03", "question": "Show me things he built involving APIs.", "correctTool": "search_portfolio", "acceptableTools": ["search_portfolio"] },
+    { "id": "ts04", "question": "Tell me about ProjectHub.", "correctTool": "get_project", "acceptableTools": ["get_project", "search_portfolio"] },
+    { "id": "ts05", "question": "What did he build in Voice Ops Platform?", "correctTool": "get_project", "acceptableTools": ["get_project", "search_portfolio"] },
+    { "id": "ts06", "question": "Explain the Interactive Pokedex project.", "correctTool": "get_project", "acceptableTools": ["get_project", "search_portfolio"] },
+    { "id": "ts07", "question": "Compare ProjectHub to Voice Ops Platform.", "correctTool": "compare_projects", "acceptableTools": ["compare_projects"] },
+    { "id": "ts08", "question": "Which is more technically complex, ProjectHub or the Pokedex?", "correctTool": "compare_projects", "acceptableTools": ["compare_projects"] },
+    { "id": "ts09", "question": "Compare his two strongest backend projects.", "correctTool": "compare_projects", "acceptableTools": ["compare_projects", "search_portfolio"] },
+    { "id": "ts10", "question": "Does Bradley fit this position?", "correctTool": "match_role", "acceptableTools": ["match_role", "search_portfolio"] },
+    { "id": "ts11", "question": "How does his experience match this job description?", "correctTool": "match_role", "acceptableTools": ["match_role", "search_portfolio"] },
+    { "id": "ts12", "question": "What requirements is he missing from this role?", "correctTool": "match_role", "acceptableTools": ["match_role", "search_portfolio"] },
+    { "id": "ts13", "question": "Has Bradley used DynamoDB?", "correctTool": "get_skill_evidence", "acceptableTools": ["get_skill_evidence", "search_portfolio"] },
+    { "id": "ts14", "question": "Show me evidence he knows React.", "correctTool": "get_skill_evidence", "acceptableTools": ["get_skill_evidence", "search_portfolio"] },
+    { "id": "ts15", "question": "What has he actually done with AWS?", "correctTool": "get_skill_evidence", "acceptableTools": ["get_skill_evidence", "search_portfolio"] },
+    { "id": "ts16", "question": "Does he know JavaScript?", "correctTool": "get_skill_evidence", "acceptableTools": ["get_skill_evidence", "search_portfolio"] },
+    { "id": "ts17", "question": "Give me a recruiter summary of Bradley.", "correctTool": "build_recruiter_brief", "acceptableTools": ["build_recruiter_brief", "get_candidate_profile"] },
+    { "id": "ts18", "question": "Summarize this candidate for a hiring manager.", "correctTool": "build_recruiter_brief", "acceptableTools": ["build_recruiter_brief", "get_candidate_profile"] },
+    { "id": "ts19", "question": "Give me a quick brief before I interview him.", "correctTool": "build_recruiter_brief", "acceptableTools": ["build_recruiter_brief", "get_candidate_profile"] },
+    { "id": "ts20", "question": "What are Bradley's skills?", "correctTool": "get_candidate_profile", "acceptableTools": ["get_candidate_profile", "search_portfolio"] },
+    { "id": "ts21", "question": "What is his educational background?", "correctTool": "get_candidate_profile", "acceptableTools": ["get_candidate_profile", "search_portfolio"] },
+    { "id": "ts22", "question": "List his certifications.", "correctTool": "get_candidate_profile", "acceptableTools": ["get_candidate_profile", "search_portfolio"] }
+  ]
+}

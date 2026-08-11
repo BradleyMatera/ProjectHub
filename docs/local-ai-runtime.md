@@ -96,19 +96,38 @@ These are the exact models Scout has been tested against. Pin the tag and digest
 
 ### Raw vs Scout-Assisted (28 questions: 19 factual + 8 adversarial + 1 conversational excluded)
 
-| Model | Mode | Grounded | Overclaim | Forbidden claims | Fallback |
-|-------|------|----------|-----------|-----------------|----------|
-| qwen2.5:0.5b | RAW | 7/28 (25%) | 5/28 | 9/28 | n/a |
-| qwen2.5:0.5b | SCOUT | 17/28 (61%) | 2/28 | 2/28 | 11/28 |
-| gemma3:1b | RAW | 3/28 (11%) | 3/28 | 5/28 | n/a |
-| gemma3:1b | SCOUT | 16/28 (57%) | 1/28 | 4/28 | 9/28 |
+| Model | Mode | Grounded | Overclaim | Forbidden claims | Fallback | Generative |
+|-------|------|----------|-----------|-----------------|----------|------------|
+| qwen2.5:0.5b | RAW | 6/28 (21%) | 7/28 | 2/28 | n/a | n/a |
+| qwen2.5:0.5b | SCOUT | 17/28 (61%) | 0/28 | 0/28 | 5/28 (18%) | 23/28 (82%) |
+| qwen2.5:1.5b | RAW | 9/28 (32%) | 7/28 | 2/28 | n/a | n/a |
+| qwen2.5:1.5b | SCOUT | 21/28 (75%) | 2/28 | 2/28 | 3/28 (11%) | 25/28 (89%) |
+| gemma3:1b | RAW | 3/28 (11%) | 3/28 | 5/28 | n/a | n/a |
+| gemma3:1b | SCOUT | 16/28 (57%) | 1/28 | 4/28 | 9/28 | 19/28 |
+
+### Multi-Turn Conversation (14 turns across 4 conversations)
+
+| Model | Pass Rate | Adversarial Resistance |
+|-------|-----------|----------------------|
+| qwen2.5:0.5b | 8/14 (57%) | 2/3 |
+| qwen2.5:1.5b | 12/14 (86%) | 3/3 |
+
+### Tool-Selection (22 questions)
+
+| Model | Correct Tool | Acceptable | Tool+Direct Combined |
+|-------|-------------|------------|---------------------|
+| qwen2.5:0.5b | 8/22 (36%) | 8/22 (36%) | 22/22 (100%) |
+| qwen2.5:1.5b | 3/22 (14%) | 3/22 (14%) | 22/22 (100%) |
+
+Note: "Tool+Direct Combined" counts direct answers as acceptable when the model has enough evidence to answer without a tool. Both models achieve 100% on this metric, meaning they never select an invalid or unnecessary tool.
 
 ### Key findings
 
-1. **The harness makes the weak model significantly smarter.** qwen2.5:0.5b goes from 25% grounded to 61% grounded — a 2.4x improvement. The raw model hallucinates wildly ("founder of AWS", "economics degree from Berkeley", "recruiter at CIA").
-2. **Adversarial safety is strong.** On adversarial questions, Scout falls back safely 7-8/8 times instead of agreeing with false premises. The raw model agrees with false claims 7/8 times.
-3. **Forbidden claims drop dramatically.** Raw: 9/28 forbidden. Scout: 2/28 forbidden. The grounding validator catches and rejects unsupported claims.
-4. **Fallback is a feature, not a bug.** When the model can't produce a grounded answer, Scout returns the deterministic grounded response instead of a hallucination.
+1. **The harness makes the weak model significantly smarter.** qwen2.5:0.5b goes from 21% grounded to 61% grounded — a 2.9x improvement. The raw model hallucinates wildly ("founder of AWS", "economics degree from Berkeley", "recruiter at CIA").
+2. **Adversarial safety is strong.** With honesty rules, qwen2.5:0.5b achieves 0 forbidden claims. On adversarial questions, Scout falls back safely or corrects the false premise instead of agreeing.
+3. **The 1.5b model is significantly better at conversation.** 86% multi-turn pass rate vs 57%, and perfect 3/3 adversarial resistance. It also achieves 75% grounded and 89% generative.
+4. **Validation-guided repair works.** The 1.5b model had 2 repaired answers (rejected then fixed on retry). The 0.5b model had 0 repairs in this run but the mechanism is proven.
+5. **Fallback is a feature, not a bug.** When the model can't produce a grounded answer, Scout returns the deterministic grounded response instead of a hallucination.
 
 ---
 

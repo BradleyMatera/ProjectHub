@@ -53,9 +53,11 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 52px); letter-spacing: -.04em; }
 .trace-events { margin-top: 4px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: #0a1410; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; line-height: 1.6; max-height: 300px; overflow-y: auto; }
 .trace-event { padding: 1px 0; }
 .trace-event.reasoning_call, .trace-event.synthesis_call { color: var(--blue); }
+.trace-event.repair_call { color: #f7c948; }
+.trace-event.repair_result { color: var(--muted); }
 .trace-event.tool_execute, .trace-event.tool_result { color: var(--green); }
 .trace-event.agent_complete { color: var(--green); font-weight: 700; }
-.trace-event.agent_fallback, .trace-event.reasoning_failed, .trace-event.synthesis_failed, .trace-event.synthesis_rejected, .trace-event.duplicate_tool_rejected { color: #ff9b9b; }
+.trace-event.agent_fallback, .trace-event.reasoning_failed, .trace-event.synthesis_failed, .trace-event.synthesis_rejected, .trace-event.duplicate_tool_rejected, .trace-event.repair_failed { color: #ff9b9b; }
 .trace-event.validation { color: var(--muted); }
 .hint { font-size: 12px; color: var(--muted); margin: 8px 0; }
 .probe-result { margin-top: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: #0a1410; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; max-height: 200px; overflow: auto; white-space: pre-wrap; color: var(--muted); }

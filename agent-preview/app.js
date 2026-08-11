@@ -56,7 +56,8 @@ function addMessage(role, text, trace) {
     // Agent meta
     if (trace.agent) {
       const agentLine = document.createElement('div');
-      agentLine.innerHTML = `<strong>Agent</strong>: engine=${trace.agent.engine || 'legacy'} · tools=[${(trace.agent.tools || []).join(',')}] · steps=${trace.agent.steps || 0} · validation=${trace.agent.validation || 'n/a'}`;
+      const outcome = trace.agent.outcome ? ` · outcome=${trace.agent.outcome}` : '';
+      agentLine.innerHTML = `<strong>Agent</strong>: engine=${trace.agent.engine || 'legacy'} · tools=[${(trace.agent.tools || []).join(',')}] · steps=${trace.agent.steps || 0} · validation=${trace.agent.validation || 'n/a'}${outcome}`;
       traceDiv.append(agentLine);
     }
 
@@ -81,6 +82,8 @@ function addMessage(role, text, trace) {
         if (evt.decision) text += ` → ${evt.decision.action}`;
         if (evt.verdict) text += ` verdict=${evt.verdict}`;
         if (evt.reason) text += ` reason=${evt.reason}`;
+        if (evt.outcome) text += ` outcome=${evt.outcome}`;
+        if (evt.rejectionDetails) text += ` rejection=[${evt.rejectionDetails.map(r=>r.reason).join(',')}]`;
         evtLine.textContent = text;
         eventList.append(evtLine);
       }

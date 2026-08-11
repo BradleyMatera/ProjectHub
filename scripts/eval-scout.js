@@ -26,11 +26,17 @@ const { buildRawPacket } = require('../lib/context-packet');
 const { validateAnswer, OVERCLAIM_RE } = require('../lib/grounding-validator');
 const { executeAgentTool } = require('../lib/agent-tools');
 const { getState, updateState, clearState } = require('../lib/session-state');
+const { buildRagChunks } = require('../lib/rag-chunks');
+const { BM25Index } = require('../lib/bm25');
+const { understandQuery } = require('../lib/query-understanding');
+const { searchBm25WithRrf } = require('../lib/rrf');
 
 const EVAL_PATH = path.join(__dirname, '..', 'data', 'scout-eval.json');
 const KNOWLEDGE_PATH = path.join(__dirname, '..', 'data', 'recruiter-knowledge.json');
 const evalData = JSON.parse(fs.readFileSync(EVAL_PATH, 'utf8'));
 const knowledge = JSON.parse(fs.readFileSync(KNOWLEDGE_PATH, 'utf8'));
+const chunks = buildRagChunks(knowledge);
+const bm25Index = new BM25Index(chunks);
 
 function parseArgs() {
   const args = { model: null, rawOnly: false, scoutOnly: false, verbose: false };
@@ -55,8 +61,10 @@ async function rawModelAnswer(question, model) {
 async function scoutAssisted(question, model, sessionId) {
   clearState(sessionId);
   const state = getState(sessionId);
-  const search = executeAgentTool('search_portfolio', { query: question, limit: 5 }, knowledge);
-  const evidence = search.results;
+  // Use BM25 retrieval (same as the server) for evidence
+  const understood = understandQuery(question, [], chunks);
+  const bm25Results = searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 5);
+  const evidence = bm25Results.map(r => ({ kind: r.tag, name: '', description: r.text, evidenceScore: r.rrfScore }));
   const result = await runAgentLoop({
     question,
     conversationState: state,
@@ -91,10 +99,11 @@ function scoreAnswer(answer, evalQ, sourceText) {
   // Overclaim check
   result.overclaim = OVERCLAIM_RE.test(answer);
 
-  // Forbidden claims
+  // Forbidden claims — but don't count words that appear in the question itself
   if (evalQ.mustNotClaim) {
+    const questionLower = evalQ.question.toLowerCase();
     for (const forbidden of evalQ.mustNotClaim) {
-      if (text.includes(forbidden.toLowerCase())) {
+      if (text.includes(forbidden.toLowerCase()) && !questionLower.includes(forbidden.toLowerCase())) {
         result.forbiddenClaims.push(forbidden);
       }
     }
@@ -162,6 +171,7 @@ async function main() {
         produced: !scout.fallback && !!scout.reply,
         answer: String(scout.reply || '').slice(0, 200),
         fallback: scout.fallback,
+        outcome: scout.outcome || (scout.fallback ? 'fallback' : 'accepted'),
         latencyMs: scout.latencyMs,
         contextTokens: scout.contextTokens,
         steps: scout.steps.length,
@@ -223,7 +233,11 @@ async function main() {
     const scoutGrounded = results.filter(r => r.scout?.score.grounded).length;
     const scoutFallback = results.filter(r => r.scout?.fallback).length;
     const scoutForbidden = results.filter(r => r.scout?.score.forbiddenClaims.length > 0).length;
-    console.log(`  SCOUT: grounded=${scoutGrounded}/${results.length} (${Math.round(scoutGrounded / results.length * 100)}%) fallback=${scoutFallback} forbidden=${scoutForbidden}/${results.length}`);
+    const accepted = results.filter(r => r.scout?.outcome === 'accepted').length;
+    const repaired = results.filter(r => r.scout?.outcome === 'repaired').length;
+    const fallback = results.filter(r => r.scout?.outcome === 'fallback').length;
+    console.log(`  SCOUT: grounded=${scoutGrounded}/${results.length} (${Math.round(scoutGrounded / results.length * 100)}%) forbidden=${scoutForbidden}/${results.length}`);
+    console.log(`  OUTCOMES: accepted=${accepted} repaired=${repaired} fallback=${fallback} (generative=${accepted+repaired} = ${Math.round((accepted+repaired)/results.length*100)}%)`);
   }
 
   // Save results

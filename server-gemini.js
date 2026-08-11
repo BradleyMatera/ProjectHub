@@ -3641,17 +3641,18 @@ app.post('/api/chat', async (req, res) => {
         }
 
         if (!agentResult.fallback && agentResult.reply) {
-          pipeline.push(`scout-agent-engine:ollama-agent:success`);
+          pipeline.push(`scout-agent-engine:ollama-agent:${agentResult.outcome || 'success'}`);
           reply = agentResult.reply;
           provider = 'ollama-agent';
           model = agentResult.model;
           agentMeta = {
             used: true,
             engine: 'scout-agent',
-            tools: agentResult.toolResults.map(t => t.tool),
+            tools: (agentResult.toolResults || []).map(t => t.tool),
             steps: agentResult.steps.length,
             contextTokens: agentResult.contextTokens,
             validation: agentResult.validation?.verdict || null,
+            outcome: agentResult.outcome || 'accepted',
             languageLayer: 'ollama',
             languageModel: agentResult.model
           };

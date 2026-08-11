@@ -117,7 +117,7 @@ test('buildSynthesisPacket includes tool observations', () => {
     toolObservations: [{ tool: 'compare_projects', result: { projects: [{ name: 'ProjectHub' }, { name: 'Voice Ops' }] } }],
     rules: null
   });
-  assert.ok(packet.systemPrompt.includes('TOOL_OBSERVATIONS'));
+  assert.ok(packet.systemPrompt.includes('TOOL_RESULTS'));
   assert.ok(packet.systemPrompt.includes('compare_projects'));
 });
 
@@ -219,13 +219,58 @@ test('clampObservation truncates large results', () => {
   assert.ok(clamped.truncated);
 });
 
-test('allToolNames returns the five tools', () => {
+test('allToolNames returns the seven tools', () => {
   const names = allToolNames();
   assert.ok(names.includes('search_portfolio'));
   assert.ok(names.includes('get_project'));
   assert.ok(names.includes('compare_projects'));
   assert.ok(names.includes('match_role'));
   assert.ok(names.includes('get_candidate_profile'));
+  assert.ok(names.includes('get_skill_evidence'));
+  assert.ok(names.includes('build_recruiter_brief'));
+  assert.strictEqual(names.length, 7);
+});
+
+// New tools
+const { executeAgentTool } = require('../lib/agent-tools');
+const fs = require('fs');
+const path = require('path');
+const KNOWLEDGE = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'recruiter-knowledge.json'), 'utf8'));
+
+test('get_skill_evidence finds AWS evidence', () => {
+  const result = executeAgentTool('get_skill_evidence', { skill: 'AWS' }, KNOWLEDGE);
+  assert.ok(result.evidence !== 'unknown');
+  assert.ok(result.details.length > 0);
+  assert.ok(result.details.some(d => d.type === 'direct' || d.type === 'project' || d.type === 'certification'));
+});
+
+test('get_skill_evidence returns unknown for unsupported skill', () => {
+  const result = executeAgentTool('get_skill_evidence', { skill: 'Kubernetes' }, KNOWLEDGE);
+  assert.equal(result.evidence, 'unknown');
+});
+
+test('get_skill_evidence finds React evidence', () => {
+  const result = executeAgentTool('get_skill_evidence', { skill: 'React' }, KNOWLEDGE);
+  assert.ok(result.evidence !== 'unknown');
+  assert.ok(result.details.length > 0);
+});
+
+test('build_recruiter_brief returns structured brief', () => {
+  const result = executeAgentTool('build_recruiter_brief', {}, KNOWLEDGE);
+  assert.ok(result.candidateName);
+  assert.ok(Array.isArray(result.topProjects));
+  assert.ok(Array.isArray(result.topSkills));
+  assert.ok(result.assessmentRule);
+});
+
+test('build_recruiter_brief with focus filters projects', () => {
+  const result = executeAgentTool('build_recruiter_brief', { focus: 'AWS' }, KNOWLEDGE);
+  assert.ok(result.focus === 'aws');
+});
+
+test('unknown tool fails closed', () => {
+  const result = executeAgentTool('hack_the_mainframe', {}, KNOWLEDGE);
+  assert.ok(result.error);
 });
 
 // Local model router
