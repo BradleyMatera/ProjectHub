@@ -299,7 +299,7 @@ Every chat request goes through a deterministic pipeline. The `pipeline` field i
 
 Scout does not need any hosted AI API. `qwen2.5:0.5b` runs on Ollama on the same free-tier VM as the Node API. `PROVIDER_ORDER` is empty in local-only mode, cloud models are disabled, and the bundled knowledge JSON avoids a runtime GitHub fetch.
 
-The model receives BM25-retrieved facts, the five newest verified turns, and a per-topic stance. Output is limited to three short sentences and 64 tokens, then rejected if it invents numbers or entities, overstates Bradley's experience, or drifts from the retrieved source. A deterministic answer is always ready if the model exceeds the 15-second budget.
+The model receives BM25-retrieved facts, the five newest verified turns, and a per-topic stance. Output is limited to two short sentences and 48 tokens, then rejected if it invents numbers or entities, overstates Bradley's experience, or drifts from the retrieved source. A deterministic answer is always ready if the model exceeds the 15-second budget.
 
 The server tracks success/failure/avg latency per provider in `stats.json` and exposes it on the dashboard:
 

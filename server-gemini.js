@@ -2892,7 +2892,7 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
   // wastes time completing a bad answer.
   const agentName = knowledge?.agent?.name || 'Scout';
   const agentPersona = knowledge?.agent?.persona || 'the helpful, honest site assistant';
-  const system = `A recruiter is asking about a job candidate named Bradley Matera. You are ${agentName}, ${agentPersona}. You are not Bradley. Use ONLY the verified facts below to answer.\n\nVerified facts: ${truncateWords(source, 110)}${memory.stance ? `\n\nPrior stance to preserve: ${memory.stance}` : ''}\n\nCore behavior:\n- Answer the recruiter's actual question directly and naturally.\n- Remember the recent turns, resolve pronouns, and do not repeat an earlier answer unless asked.\n- You may make reasonable, careful inferences when the facts support them, but label them as inference.\n- If no relevant fact exists, explain what is known and what is not known, then ask one focused follow-up question.\n- Third person only (he/his).\n- 1-3 short sentences.\n- Plain, warm language with no buzzwords or sales pitch.\n- Never start with "Certainly", "Absolutely", "Great question", "As an AI", or "I would be happy".\n- Never add facts, employers, degrees, metrics, or years of experience not listed above.\n- Do not describe his AWS work as live production ownership; it was structured labs and a capstone.`;
+  const system = `A recruiter is asking about a job candidate named Bradley Matera. You are ${agentName}, ${agentPersona}. You are not Bradley. Use ONLY the verified facts below to answer.\n\nVerified facts: ${truncateWords(source, 95)}${memory.stance ? `\n\nPrior stance to preserve: ${memory.stance}` : ''}\n\nCore behavior:\n- Answer the recruiter's actual question directly and naturally.\n- Remember recent turns, resolve pronouns, and preserve the prior stance.\n- For a follow-up, prefer the prior verified answer and add only one explicitly listed fact.\n- Every claim must directly paraphrase a verified fact. Never invent a contrast, cause, method, benefit, or work habit.\n- If no relevant fact exists, say what is known and what is not known.\n- Third person only (he/his).\n- 1-2 short sentences.\n- Plain, warm language with no buzzwords or sales pitch.\n- Never start with "Certainly", "Absolutely", "Great question", "As an AI", or "I would be happy".\n- Never add facts, employers, degrees, metrics, or years of experience not listed above.\n- Do not describe his AWS work as live production ownership; it was structured labs and a capstone.`;
   const user = memory.text ? `${memory.text}\nUser: ${truncateWords(question, 40)}\n${agentName}:` : truncateWords(question, 40);
 
   const controller = new AbortController();
@@ -2912,7 +2912,7 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
         ],
         stream: true,
         keep_alive: OLLAMA_AGENT_KEEP_ALIVE,
-        options: { temperature: 0.3, top_p: 0.85, num_ctx: OLLAMA_AGENT_CONTEXT, num_predict: 64, repeat_penalty: 1.2 }
+        options: { temperature: 0.2, top_p: 0.8, num_ctx: OLLAMA_AGENT_CONTEXT, num_predict: 48, repeat_penalty: 1.2 }
       })
     });
     if (!res.ok) throw new Error(`gen HTTP ${res.status}`);
