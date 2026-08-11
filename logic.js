@@ -1,3 +1,14 @@
+function buildServerHistory(context) {
+  return (Array.isArray(context) ? context : []).reduce((turns, turn) => {
+    if (turn.role === 'user') {
+      turns.push({ user: turn.content, assistant: '' });
+    } else if ((turn.role === 'bot' || turn.role === 'assistant') && turns.length > 0) {
+      turns[turns.length - 1].assistant = turn.content;
+    }
+    return turns;
+  }, []).slice(-5);
+}
+
 // Function to handle user queries
 // The client is a thin pass-through: all routing, grounded answers, and LLM
 // generation happen on the server. This keeps answers consistent, contextual,
@@ -23,14 +34,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
-        const history = (Array.isArray(chatSession.context) ? chatSession.context : []).reduce((acc, turn) => {
-          if (turn.role === 'user') {
-            acc.push({ user: turn.content, assistant: '' });
-          } else if (turn.role === 'bot' && acc.length > 0) {
-            acc[acc.length - 1].assistant = turn.content;
-          }
-          return acc;
-        }, []).slice(-5);
+        const history = buildServerHistory(chatSession.context);
 
         const res = await fetch(CHAT_API_URL, {
           method: "POST",
@@ -72,7 +76,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   // - Safety/injection blocking
   // - False-claim refusal
   // - Grounded deterministic answers (contact, projects, role-fit, etc.)
-  // - LLM provider network for conversational questions
+  // - Local Ollama RAG for conversational questions
   // - Follow-up suggestions
   // - Session memory and conversation context
   const aiResult = await askAIBackend();
@@ -84,4 +88,8 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   // Fallback if the server is unreachable
   const fallbackReply = "I'm here to help with Bradley Matera's work as a junior software engineer. Try asking about ProjectHub, the AWS serverless workflow, CIRIS Ethical AI, his GitHub or LinkedIn, target roles, or strongest technical skills.";
   return { reply: fallbackReply, newTopic: "unrelated" };
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { buildServerHistory };
 }

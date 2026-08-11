@@ -3889,286 +3889,6 @@
       "content": "goal is to show how you think, what broke, and how you fixed it. If a case study does not have a specific problem and a specific proof link, I rewrite it."
     },
     {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "I built a chat widget for my portfolio. One script tag, drop it on a page, and recruiters can ask questions about my projects, my AWS internship, what I actually know, and what kind of roles I'm looking for. I named the assistant Scout. html That's the whole pitch from the outside. What it took to get there is a lot messier than one script tag suggests. The current version has a vanilla JS frontend, a Node backend on a Google Cloud e2 micro VM (GCP Always Free tier), a knowledge base pulled from GitHub, a network of free LLM providers, a response cache, per tab memory, safety checks, a self improvement loop, and an analytics dashboard. It also has six test suites and more documentation than I expected. The one rule I kept coming back to: it had to stay useful without me paying for AI"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "traffic. Why I built this in the first place My portfolio is scattered. Projects live on GitHub, demos live on various subdomains, blog posts are on the site, certifications are listed somewhere (AWS AI Practitioner badge, AWS Solutions Architect badge), and my actual AWS internship experience is explained in a few different places. A motivated recruiter could piece it all together, but most recruiters are not motivated. They are busy. I realized I was asking them to do homework. That seemed backwards. So I thought, what if they could just ask? Scout is supposed to answer straight questions like \"What is Bradley's strongest project?\" or \"Does he actually have production AWS experience?\" or \"What does he want to be paid?\" It doesn't pretend to be me, doesn't inflate my title, and doesn't"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "try to sell me as a senior engineer when I'm not one. It just answers from verified stuff. The architecture Three layers. Site loads one script. The script hits the backend. The backend either answers from the knowledge base or falls through to free LLM providers. mermaid flowchart TD A[Website or portfolio] loads one script B[ProjectHub widget on GitHub Pages] B POST /api/chat C[Node.js API on a GCP e2 micro VM] C D[Grounded knowledge base] C E[Free LLM provider network] C F[Session memory, caching, safety, analytics] C G[GitHub knowledge sync and Think Mode] Frontend is GitHub Pages (GitHub Pages documentation). Backend is a tiny GCP VM. Knowledge is a JSON file in the repo. The important part is that if every AI provider fails, Scout still has a real answer from the knowledge base. The"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "fallback isn't a sorry message. It actually works. Architecture layer comparison Layer Technology Cost Why this choice Frontend hosting GitHub Pages Free Serves static JS widget with no build step Backend hosting GCP e2 micro VM Free (Always Free tier) Runs Node.js API with persistent process Knowledge base JSON file in GitHub repo Free Versioned, no database to maintain AI providers Groq, Cloudflare, GitHub Models, Gemini, Grok Free tiers Failover network; no single paid dependency HTTPS Caddy + Let's Encrypt Free Automatic TLS certificate renewal Analytics Vite + Carbon Charts Free Built assets committed to GitHub Pages Why vanilla JavaScript I didn't want to force anyone to install a React component or deal with npm just to embed a chat widget. Some portfolio sites are just static HTML."
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "Some are WordPress. Some are whatever the person already has. If the widget needs a build step, most people won't use it. Vanilla JavaScript runs in every browser without a bundler (MDN: JavaScript). So the whole widget is vanilla JS. I split it into data.js , utils.js , logic.js , and ui.js for my own sanity, then concatenate them into one ProjectHub.js file for deployment: bash cat data.js utils.js logic.js ui.js ProjectHub.js data.js holds project and CodePen data. utils.js has GitHub API helpers. logic.js does intent detection. ui.js draws the chat box. The modules use IIFEs and globals so the concatenated file runs straight in a browser without any build tooling. It feels old school, but it works everywhere. How the frontend handles sessions Each tab gets its own session ID. The"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "widget keeps around ten recent turns in memory and sends the last five to the server. Scout asks for the visitor's name once per tab and stores it in sessionStorage . I didn't want permanent identity tracking. This is a recruiter assistant, not a surveillance tool. When someone hits Clear Memory, the transcript, session ID, name, and local context all reset. The backend doesn't keep a database of conversations either. Memory lives in process and can disappear on restart. That is fine for this use case, and it keeps the VM small. Mobile UX On desktop the suggestion chips sit in a horizontal row that scrolls. On mobile they originally wrapped vertically and ended up covering most of the chat window. I fixed that by making them horizontally scrollable on all screen sizes, showing only the"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "first six chips on narrow screens, and adding a Hide/Show suggestions toggle. The result is a chat interface that stays readable on a phone without losing the starter questions. The backend The production server is in a file called server gemini.js . The name is misleading. It is a leftover from when the backend only used Gemini. Now it supports Groq (Groq API), Cloudflare Workers AI (Cloudflare Workers AI docs), GitHub Models (GitHub Models docs), Google Gemini (Gemini API), xAI Grok (xAI API), and an optional OpenAI compatible endpoint. The main endpoints are / , /health , /api/knowledge health , /api/chat , and /api/think . A chat request looks like this: json ] } And the response carries more than just the reply text: json The pipeline field is the part I look at most. It tells me"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "exactly how the answer got produced. That matters when you're trying to figure out whether something went wrong or whether the model made it up. The knowledge base is everything Everything Scout knows lives in data/recruiter knowledge.json . Identity, contact info, education, certs, the AWS internship, projects, skills, target roles, strengths, honest gaps, recruiter FAQs, behavior rules, learned answers, and source material from my site. The rule is simple: if a fact isn't in there, Scout doesn't present it as a fact. Both the LLM and the deterministic fallback get the same context, so they can't disagree about who I am. I didn't want one path saying I worked on production systems while another path said I only did training. That kind of inconsistency is exactly what makes AI assistants"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "untrustworthy. Why I didn't just pipe every question to an LLM Because LLMs hallucinate resume facts. They will confidently say you have production experience you don't have. They will smooth over gaps. They will make you sound more senior than you are. For a recruiter assistant, that is dangerous. Research on LLM hallucinations shows that models can fabricate plausible sounding but incorrect details with high confidence (Google Research: Hallucinations in LLMs). So the system computes a deterministic answer first. Only open ended questions that don't need exact facts go to the provider network. Many important questions never touch an LLM at all. That grounded first approach is what keeps Scout honest. The pipeline Every message walks through a sequence of checks. Here is the full pipeline"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "in order: 1. Cache check — Return immediately if the same question was recently answered. 2. Load knowledge — Pull the knowledge base JSON into memory. 3. Safety checks — Block prompt injection, secret extraction, XSS, and social engineering. 4. False claim checks — Reject requests that try to inflate titles or experience. 5. Learned answers — Check if Think Mode already produced a verified answer for this question. 6. Grounded answer — Run through 40+ deterministic handlers for factual questions. 7. mustStayGrounded decision — Determine whether the question is safe for LLM generation. 8. LLM provider network — If open ended, route to free providers with failover. 9. Validation — Clean, check length, strip filler, reject unsupported facts. 10. Shaping and follow ups — Format the response"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "and generate suggested next questions. 11. Weak answer check — If the answer was weak, stash it for Think Mode. Safety checks run before any LLM call. They catch prompt injection attempts, secret extraction, XSS, social engineering, data exfiltration, and requests to reveal internal instructions. There is no reason to burn provider quota deciding whether someone should get my API key. False claim checks block requests that try to make Scout describe me as a senior engineer, rockstar, ninja, guru, 10x developer, or anything similarly inflated. This check runs before learned answers too, which means even if a bad answer somehow got learned, it still gets blocked. The grounded answer path has more than 40 handlers covering projects, CodePens, AWS, certs, skills, education, work experience,"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "contact details, role fit, strengths, weaknesses, army experience, work style, salary, and out of scope questions. Those are the questions where I want zero creativity. Provider routing and quota management Open ended questions can hit the free provider network. The order is configurable via PROVIDER ORDER : PROVIDER ORDER=groq,cloudflare,github,gemini,grok The router tries each provider until one returns a valid answer. Free APIs are unreliable. They rate limit, cap daily usage, run out of credits, change models, or just go down. The router tracks each provider independently and skips one if its quota is gone, it's in cooldown, it's disabled, credentials are missing, or a circuit breaker opened because of repeated failures. Free LLM provider comparison Provider Free tier limits Strengths"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "Weaknesses Groq Rate limited requests/day Extremely fast inference Strict rate limits; can hit caps quickly Cloudflare Workers AI Neurons/day quota Global edge network Limited model selection GitHub Models Requests/day per model Easy token auth with GitHub Rate limits per model; models rotate Google Gemini Requests/min and/day Strong reasoning quality Free tier quotas can shift xAI Grok Limited free credits Good for open ended questions Newest provider; least stable Different errors get different cooldowns. A rate limit might mean 60 seconds. A credit or spending limit error might mean 24 hours. Each provider call has a bounded timeout. The whole chat request has a 15 second budget, so one slow provider can't freeze the pipeline. RAG without a vector database I didn't add a vector database"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "because the knowledge base is small enough to just include the relevant context directly in the prompt. For each generative request, the server builds a prompt with verified facts, behavior rules, the grounded answer, recent session context, the current question, and strict instructions not to use outside facts or exaggerate. This is a lightweight form of Retrieval Augmented Generation (RAG) that skips vector embeddings entirely (Retrieval Augmented Generation — original paper). The LLM isn't doing research. It's phrasing an answer from supplied information. A vector database would add hosting, indexing, and synchronization overhead that this project does not need. Validating every generated response A 200 status doesn't mean the answer is good. Every generated response gets cleaned and"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "validated. Here is what the validation layer checks: Preamble removal : Strip introductory filler like \"Sure!\" or \"Great question.\" Corporate filler stripping : Remove phrases like \"leverages cutting edge technologies.\" Minimum length check : Reject answers that are too short to be useful. Out of scope rejection : Block responses that wander into topics Scout shouldn't cover. Unsupported number flagging : Catch statistics or figures not present in the knowledge base. False claim detection : Block any response that inflates titles or experience. Context bound fact checking : Reject answers that introduce facts not in the supplied context. I have a cleanup function called removeSlop() because I got tired of Scout saying things like \"Absolutely!\" or \"Bradley is a dynamic and passionate"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "professional who leverages cutting edge technologies.\" That is not how I talk. It also doesn't help a recruiter make a decision. If a provider fails validation, the router tries the next one. If all of them fail, the grounded answer is already waiting. Graceful degradation My rule was: degrade, don't break. If Groq fails, try Cloudflare. If Cloudflare fails, try GitHub Models. If that fails, try Gemini. If everything fails, return the grounded answer. The fallback isn't a generic error message. It's a real answer. I wanted it to sound natural enough that a visitor wouldn't notice whether an LLM produced it or not. During outages, grounded answers can also be faster than waiting through several failing external requests. Memory and repeated questions The backend keeps the last three turns"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "per session. The browser keeps more but only sends the recent part. That lets Scout handle follow ups like \"What did he use for the backend?\" after a project was already mentioned. When someone asks the same thing twice in a session, Scout notices and handles it differently. It might acknowledge that the topic was already covered, pull out the most useful part, and suggest a better direction. That is different from the global cache, which just optimizes repeated requests across visitors. Each response can also include up to two suggested follow ups. An AWS answer might suggest asking about certifications or production work. A project answer might suggest asking about relevance or tech stack. These are returned as structured data and rendered as clickable buttons. Frustration detection If"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "the visitor says something like \"Just answer the question\" or \"That is not what I asked,\" Scout shortens the response, removes preambles, drops unnecessary follow ups, and gets straight to the point. A technically correct chatbot can still be annoying if it keeps adding introductions. I added this because I had been that annoyed visitor before. Think Mode Scout has a self improvement loop called Think Mode. It runs every 10 minutes on the VM. When the pipeline detects a weak answer, it stashes the question in learned.json . A weak answer might mean the provider network failed, the grounded handler was too generic, the answer was too short, or the question exposed a gap in the knowledge base. mermaid flowchart TD A[Weak answer detected] B[Question stored in learned.json] B C[Think Mode"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "runs] C D[Question is sent through available providers] D E[Candidate answers are cleaned and validated] E F[Best valid answer is selected] F G[Answer is added to learnedAnswers] G H[Updated knowledge JSON is pushed to GitHub] Think Mode doesn't accept the first response it gets. It tries multiple providers and picks the strongest valid answer. The answer still has to pass the same safety and factual checks. I filter out safety requests, false claim requests, tone manipulation, and out of scope questions before they ever get stashed. I do not want Scout learning how to leak secrets or exaggerate. The judge inside Think Mode Early versions of Think Mode promoted a learned answer if it scored a few points higher than the grounded answer. That works, but a heuristic score isn't the same as a"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "real quality judgment. A learned answer could be longer, more natural, and still drift from the facts. Now every candidate answer is sent to an LLM as judge. The judge scores the learned answer against the grounded answer on four axes: faithfulness, relevance, helpfulness, and safety. A promotion only happens when the judge returns a learned wins verdict, faithfulness is at least 70, and safety is at least 70. The full verdict is stored with the learned answer and exposed in the analytics dashboard. mermaid flowchart TD A[Weak answer detected] B[Question stored in learned.json] B C[Think Mode runs] C D[Question is sent through available providers] D E[Candidate answers are cleaned and validated] E F[Heuristic score + entity check] F G[LLM as judge compares learned vs grounded] G verdict:"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "learned wins H[Answer promoted to learnedAnswers] G verdict: grounded wins I[Answer dropped or re stashed] H J[Updated knowledge JSON pushed to GitHub] This means the knowledge base only grows when there is genuine evidence that a new answer is better, not just different. The judge verdicts are visible in /health and the dashboard so the self improvement loop is transparent and auditable. CORS and deployment The backend uses Express (Express.js documentation) with the cors package and validates the Origin header manually. Allowed origins come from the .env file. I don't add CORS headers in Caddy (Caddy documentation) because duplicating them can cause browsers to reject the response. For rejected origins, the server returns the response without CORS permission, so the browser blocks it"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "(MDN: CORS). Frontend deployment is just pushing to GitHub. The widget gets rebuilt with cat data.js utils.js logic.js ui.js ProjectHub.js , committed, and pushed to master. GitHub Pages handles the rest. For cache testing I add a query string like ?v=2 . Backend deployment is a single script: bash deploy gcp.sh . It copies the server file to the VM, restarts the systemd service, and checks that the service is running. API keys and provider config live in the VM's .env file, not the repo. A simplified config looks like this: PORT=3000 KNOWLEDGE URL=https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter knowledge.json ALLOWED ORIGINS=https://bradleymatera.dev,https://www.bradleymatera.dev,https://bradleymatera.github.io GROQ API KEY=... CLOUDFLARE ACCOUNT ID=..."
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "CLOUDFLARE API TOKEN=... GITHUB MODELS TOKEN=... GEMINI API KEY=... XAI API KEY=... PROVIDER ORDER=groq,cloudflare,github,gemini,grok GEN TIMEOUT MS=8000 Maintenance tooling A running system needs a way to clean up tainted data. I added a scripts/reset stats.js CLI that can reset the backend stats and learned stash either locally or on the live VM. The remote version stops the systemd service, backs up the existing stats.json and learned.json , clears them, and restarts the service so the running process cannot flush old data back to disk. bash npm run reset stats reset local files npm run reset stats:remote reset files on the GCP VM with backups There is also a scripts/think judge poc.js script that runs the LLM as judge prompt against a sample question offline. It is useful for iterating"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "on the judge prompt without waiting for Think Mode to trigger on the VM. bash npm run judge poc The analytics dashboard The analytics section is the only part of the project that uses a build step. It runs on Vite (Vite documentation) with Carbon Charts (Carbon Charts), Carbon Web Components, and Carbon Styles. Source files are analytics/main.js and analytics/style.css , and the production bundle lives in analytics/dist/ . Those built assets are committed so GitHub Pages can serve them. I keep the build toolchain up to date; a recent dependency upgrade moved Vite to 8.1.4 and cleared the active npm audit advisories. The dashboard pulls from Scout's /health endpoint, the GitHub repository API, and the GitHub contributors API. It shows API status, uptime, total requests, grounded versus"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "generated replies, cache usage, learned answer usage, provider success rates, provider latency, cooldown states, daily quota usage, recent pipelines, referrers, topic breakdowns, requests by hour, knowledge gaps, recent sessions, Think Mode status, and repo stats. Recent sessions and requests are rendered as expandable rows. The default view shows provider, time, topic, and referrer domain. Clicking a row expands the full backend record, including sanitized question previews, reply previews, provider mix, and the pipeline that produced the answer. Because the dashboard refreshes every five seconds, it also preserves which rows you have expanded and adds a Pause updates button so you can read without interruption. The learning system section exposes the full pipeline: stashed questions,"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "scored candidates, promoted answers, and pushed knowledge updates. A table of recent judge verdicts shows faithfulness, relevance, helpfulness, safety, the winning provider, and the judge's reason, so it is possible to verify that Think Mode is actually improving answers rather than just changing them. The dashboard sanitizes data before displaying it. Session IDs and request bodies are not exposed. Referrers are reduced to domain level. I want to see patterns and system health, not a public transcript of what someone asked. Topic classification and testing Every request gets classified into a topic. The current set includes projects, aws, skills, experience, education, writing, contact, resume, role fit, strengths, weaknesses, interpersonal, salary, benefits, remote, availability,"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "interview, methodology, motivation, references, army, work style, summary, out of scope, and uncategorized. The uncategorized category is the most useful one. If a lot of questions land there, it means Scout doesn't understand something people actually want to know. That becomes a candidate for a new handler, a knowledge update, or a Think Mode improvement. The dashboard lists the most common uncategorized question stems so I can see exactly what phrasing is missing. That turns the catch all bucket into a prioritized todo list instead of a black hole. ProjectHub has six test suites: adversarial, coverage, load and stress, regression, edge cases, and full verification. Together they cover more than 474 checks. Some tests run against the live API because I care about the real deployed"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "behavior, not just local functions. Provider failover, HTTPS, CORS, caching, and latency are the kinds of things you only learn about by hitting the live system. Documentation for agents and humans As the project grew, I wrote an AGENTS.md file that acts as the canonical source of truth for coding agents. It explains the architecture, production behavior, canonical file locations, rebuild commands, provider strategy, testing expectations, and which detailed guide to read for a specific task. More detailed docs live in docs/architecture overview.md , docs/api guide.md , docs/backend guide.md , docs/low cost ai routing.md , and docs/design principles.md . This matters because AI agents make bad assumptions. One might see server gemini.js and think Gemini is the only provider. Another might"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "try to replace the vanilla JS widget with a React component because that feels modern. The docs are there to stop those mistakes before they happen. What keeps it free GitHub Pages hosts the frontend. The backend runs on an Always Free eligible GCP VM (GCP Always Free tier). Caddy (Caddy) and Let's Encrypt (Let's Encrypt) handle HTTPS. The knowledge base is in GitHub. Runtime stats are small local JSON files. The AI layer uses free provider tiers. There is no hosted database, no paid serverless functions, and no permanent OpenAI or Anthropic dependency. Here is the full cost breakdown: Frontend hosting : GitHub Pages — $0 Backend VM : GCP e2 micro (Always Free tier) — $0 HTTPS certificates : Let's Encrypt via Caddy — $0 Knowledge base storage : GitHub repository — $0 AI inference : Free"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "tiers of Groq, Cloudflare, GitHub Models, Gemini, Grok — $0 Analytics : Vite + Carbon Charts, built assets on GitHub Pages — $0 Total monthly cost : $0 The grounded answer system doesn't need an LLM call at all. That means Scout still answers factual recruiter questions even when every external provider is exhausted. I still use budget alerts because free tiers change, and cloud resources should never be assumed free forever. What I'd change at scale This architecture is built around one portfolio and low recruiter traffic. It is not a universal architecture for a high traffic commercial assistant. At scale I would move analytics to a managed store, use a real job queue for Think Mode, add distributed caching, stronger identity and abuse controls, structured logs, centralized monitoring, a"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "real deployment pipeline, smaller backend services, schema validation for knowledge updates, and a proper retrieval index if the source material grew. I'd also add concurrency controls around GitHub knowledge updates. For the current workload, all of that would be overkill. The point wasn't to build the most complicated architecture possible. The point was to build something useful I could afford to leave online. What I learned The biggest lesson is that adding an LLM is not the same as building a reliable AI feature. The model call is the easy part. The hard parts are deciding which answers should never be generated, keeping every fallback honest, handling provider failures gracefully, managing free quotas, preventing the model from overstating your background, preserving useful"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "conversation context, making the fallback sound natural, tracking how every answer was produced, testing adversarial inputs, and keeping documentation in sync with the code. I also learned that a deterministic answer doesn't have to feel like a worse answer. For a recruiter assistant, fast and honest is usually better than creative. The LLM helps with phrasing and open ended discussion, but the grounded system is what makes Scout dependable. Final thoughts ProjectHub started as a chat widget for my portfolio. It turned into an experiment in building an AI system around real constraints. I had no budget for paid AI traffic, so I built provider failover. I didn't want hallucinated resume claims, so I built a grounded first pipeline. I didn't want the assistant to fail during outages, so I"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "made the fallback a complete answer system. I didn't want a database bill, so I used GitHub as a versioned knowledge store. I didn't want to force framework integrations on every host site, so I kept the widget embeddable through one JavaScript file. Scout is still a work in progress, but it's more than a chatbot now. It's frontend work, backend APIs, cloud deployment, AI routing, RAG, security, observability, testing, analytics, documentation, and cost management all in one project. You can see it live at ProjectHub and Scout. The repo is at ProjectHub on GitHub. And if you want to drop it on a page, it's just: html Proof ProjectHub live demo ProjectHub source code on GitHub GitHub profile — all repos and deployments LinkedIn profile — AWS internship and work history AWS Certified AI"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "Practitioner — Credly badge AWS Certified Solutions Architect Associate — Credly badge References GCP Always Free tier — Google Cloud Platform free tier documentation including e2 micro VM eligibility. GitHub Pages documentation — Official guide to hosting static sites on GitHub Pages. GitHub Models documentation — Free LLM inference through GitHub Models. Groq API documentation — Groq cloud API for fast LLM inference. Cloudflare Workers AI — Cloudflare's edge AI inference platform. Google Gemini API — Official Gemini API documentation. xAI API documentation — Grok LLM API documentation. Express.js documentation — Node.js web framework used for the backend. Caddy documentation — Caddy web server with automatic HTTPS. Let's Encrypt — Free TLS certificate authority. MDN: CORS — Cross Origin"
-    },
-    {
-      "title": "projecthub embeddable ai recruiter free tiers",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/projecthub-embeddable-ai-recruiter-free-tiers/index.mdx",
-      "tags": [
-        "blog"
-      ],
-      "content": "Resource Sharing specification. MDN: JavaScript — JavaScript language reference. Vite documentation — Frontend build tool used for the analytics dashboard. Carbon Charts — IBM Carbon Design System data visualization components. Retrieval Augmented Generation paper (Lewis et al., 2020) — Original RAG research paper. Google Research: Reducing Hallucinations in LLMs — Research on LLM hallucination mitigation."
-    },
-    {
       "title": "rebuilt webgpu triangle demo",
       "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/posts/rebuilt-webgpu-triangle-demo/index.mdx",
       "tags": [
@@ -7561,38 +7281,6 @@
       "content": "Commits: 2 commits Code size: 21KB of Zig code Created: January 18, 2025 License: MIT Repo structure: src/main.zig (entry point), src/root.zig (parser logic), examples/cube.obj , examples/cube.mtl , build.zig Honest limitations: This is a very small project — 2 commits, 21KB of Zig code, no GitHub Pages deployment. It's a learning exercise, not a production tool. Focuses on 2D models (not full 3D). It's small but it taught me Zig's memory model. Zig Wavefront OBJ MTL Binary format build.zig"
     },
     {
-      "title": "projecthub",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/pages/projects/projecthub.mdx",
-      "tags": [
-        "website"
-      ],
-      "content": "I wanted a way for recruiters visiting my portfolio to ask questions about my projects and experience without me being on the other end of a contact form. The widget needed to be embeddable with a single script tag, cost nothing to run, and keep working even if one AI provider went down or hit a rate limit. ProjectHub is an embeddable AI chat widget powered by \"Scout\", a free multi provider recruiter assistant. The frontend is vanilla JavaScript served from GitHub Pages, embedded with a single script tag. The backend is a Node.js server on a Google Cloud e2 micro VM, with Caddy and Let's Encrypt handling HTTPS. A JSON knowledge base lives in the GitHub repo with bidirectional sync, and Scout rotates across five AI providers — Groq, Cloudflare Workers AI, GitHub Models, Google Gemini, and"
-    },
-    {
-      "title": "projecthub",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/pages/projects/projecthub.mdx",
-      "tags": [
-        "website"
-      ],
-      "content": "xAI Grok — with automatic failover. Widget & backend One script embed: &lt;script src=\"https://bradleymatera.github.io/ProjectHub/ProjectHub.js\"&gt;&lt;/script&gt; Response cache with 5 minute in memory cache Per tab memory so conversations stay contextual within a session Safety checks and a self improvement loop (Think mode) Analytics dashboard for tracking widget usage API endpoints: / , /health , /api/knowledge health , /api/chat , /api/think AI providers & infra Multi provider failover: Groq, Cloudflare Workers AI, GitHub Models, Google Gemini, xAI Grok JSON knowledge base in GitHub repo with bidirectional sync Fallback to knowledge base if all AI providers fail Caddy + Let's Encrypt for automatic HTTPS Build process: cat data.js utils.js logic.js ui.js &gt; ProjectHub.js 6"
-    },
-    {
-      "title": "projecthub",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/pages/projects/projecthub.mdx",
-      "tags": [
-        "website"
-      ],
-      "content": "comprehensive test suites — 474+ tests total Solo developer — designed and built the widget, backend, and knowledge base Built the vanilla JS frontend with a single script tag embed model Implemented multi provider failover across five AI services Set up the Node.js backend on a Google Cloud e2 micro VM with Caddy and Let's Encrypt Built the response cache, per tab memory, and Think mode self improvement loop Wrote 6 test suites totaling 474+ tests Built the analytics dashboard for tracking widget interactions GitHub repo: github.com/BradleyMatera/ProjectHub Live demo: bradleymatera.github.io/ProjectHub Created: April 11, 2025 Contributions: 246 contributions on the main branch Embed snippet: &lt;script src=\"https://bradleymatera.github.io/ProjectHub/ProjectHub.js\"&gt;&lt;/script&gt; API"
-    },
-    {
-      "title": "projecthub",
-      "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/pages/projects/projecthub.mdx",
-      "tags": [
-        "website"
-      ],
-      "content": "endpoints: / , /health , /api/knowledge health , /api/chat , /api/think Test coverage: 6 test suites, 474+ tests total Build process: cat data.js utils.js logic.js ui.js &gt; ProjectHub.js Honest limitations: Runs entirely on free tiers (may have rate limits). Fallback to knowledge base if all AI providers fail. Not a production enterprise solution — designed for personal portfolio use. Vanilla JavaScript Node.js Google Cloud Compute Caddy Let's Encrypt Groq Cloudflare Workers AI GitHub Models Google Gemini xAI Grok GitHub Pages"
-    },
-    {
       "title": "securelearn lms",
       "source": "file:///Users/bradleymatera/Desktop/gatsby-starter-minimal-blog/content/pages/projects/securelearn-lms.mdx",
       "tags": [
@@ -8646,7 +8334,7 @@
       "tags": [
         "project"
       ],
-      "content": "details, see docs/common tasks.md . Quick Start No install step is required to run the chat widget in a browser. Use these commands for repo level work: bash Local test of the split modules (uses local ProjectHub.js build) open local test.html Local test of the live GitHub Pages script with cache busting open live test.html Rebuild the single file CDN entry point after editing data.js / utils.js / logic.js / ui.js cat data.js utils.js logic.js ui.js ProjectHub.js Install dependencies and build the live analytics dashboard npm install npm run build Run retrieval unit tests (BM25, query understanding, vector index, hybrid fusion) npm run test:retrieval Evaluate retrieval quality against golden set (Recall@k, MRR@k) npm run eval retrieval Build pre computed embeddings (requires CLOUDFLARE"
+      "content": "details, see docs/common tasks.md . Quick Start No install step is required to run the chat widget in a browser. Use these commands for repo level work: bash Local test of the split modules (uses local ProjectHub.js build) open local test.html Local test of the live GitHub Pages script with cache busting open live test.html Rebuild the single file CDN entry point after editing data.js / utils.js / logic.js / ui.js cat data.js utils.js logic.js ui.js ProjectHub.js Install dependencies and build the live analytics dashboard npm install npm run build Run local retrieval tests (BM25 and query understanding) npm run test:retrieval Evaluate retrieval quality against golden set (Recall@k, MRR@k) npm run eval retrieval Publish changes to GitHub Pages (PRODUCTION) 1. Merge release PR to master 2."
     },
     {
       "title": "AGENTS",
@@ -8654,7 +8342,7 @@
       "tags": [
         "project"
       ],
-      "content": "ACCOUNT ID + CLOUDFLARE API TOKEN) npm run build:embeddings Publish changes to GitHub Pages (PRODUCTION) 1. Merge release PR to master 2. Run: bash deploy gcp.sh (deploy + verify backend) 3. Manually trigger the \"Deploy to GitHub Pages\" workflow in GitHub Actions 4. Verify the live widget at https://bradleymatera.github.io/ProjectHub/ Live widget URL for embedding: html If a consumer (like CodePen) caches the script aggressively, append a cache busting query string, e.g. ?v=2 . ProjectHub.js Entry point; orchestrates imports, sets up chat UI, wires data→logic→UI data.js Canonical project/CodePen/suggestion data arrays logic.js Query intent detection, response generation, AI fallback orchestration ui.js DOM creation, event handling, rendering of the floating chat widget utils.js Shared"
+      "content": "Run: bash deploy gcp.sh (deploy + verify backend) 3. Manually trigger the \"Deploy to GitHub Pages\" workflow in GitHub Actions 4. Verify the live widget at https://bradleymatera.github.io/ProjectHub/ Live widget URL for embedding: html If a consumer (like CodePen) caches the script aggressively, append a cache busting query string, e.g. ?v=2 . ProjectHub.js Entry point; orchestrates imports, sets up chat UI, wires data→logic→UI data.js Canonical project/CodePen/suggestion data arrays logic.js Query intent detection, response generation, AI fallback orchestration ui.js DOM creation, event handling, rendering of the floating chat widget utils.js Shared helpers (GitHub API fetching) server gemini.js Backend server — local Ollama chat, Think Mode, safety, analytics, BM25 retrieval, and memory"
     },
     {
       "title": "AGENTS",
@@ -8662,7 +8350,7 @@
       "tags": [
         "project"
       ],
-      "content": "helpers (GitHub API fetching) server gemini.js Backend server — chat API, LLM network, Think Mode, safety regexes, analytics, hybrid retrieval, stance consistency, semantic cache lib/rag chunks.js Shared RAG chunk builder — flattens knowledge JSON into retrievable fact chunks lib/bm25.js Okapi BM25 retrieval index — TF saturation, IDF weighting, document length normalization lib/query understanding.js Query understanding pipeline — normalization, typo correction, intent classification, contextual rewriting lib/vector index.js Dense vector index — loads pre built embeddings, brute force cosine similarity search lib/hybrid retrieve.js Hybrid fusion — reciprocal rank fusion (RRF) + maximal marginal relevance (MMR) lib/model policy.js Runtime retirement policy that blocks deprecated Groq model"
+      "content": "lib/rag chunks.js Shared RAG chunk builder — flattens knowledge JSON into retrievable fact chunks lib/bm25.js Okapi BM25 retrieval index — TF saturation, IDF weighting, document length normalization lib/query understanding.js Query understanding pipeline — normalization, typo correction, intent classification, contextual rewriting lib/agent tools.js Allowlisted read only agent tools for portfolio search, project comparison, role matching, and public profile evidence lib/agent fallback.js Deterministic local agent planning and evidence based answers lib/local conversation.js Five turn local memory shaping and strict Ollama RAG output validation lib/cost ledger.js Metering tracker for every billable adjacent event lib/cost insights.js Cost insights builder for the /api/costs dev endpoint"
     },
     {
       "title": "AGENTS",
@@ -8670,7 +8358,7 @@
       "tags": [
         "project"
       ],
-      "content": "IDs and retired inference providers lib/agent tools.js Allowlisted read only agent tools for portfolio search, project comparison, role matching, and public profile evidence lib/agent fallback.js Provider independent deterministic agent planning and evidence based answers when Groq tool calling is unavailable lib/agent runtime.js Provider neutral bounded tool call loop with argument validation, call caps, and fail closed execution lib/local conversation.js Five turn local memory shaping and strict Ollama RAG output validation lib/cost ledger.js Metering tracker for every billable adjacent event lib/cost insights.js Cost insights builder for the /api/costs dev endpoint data/recruiter knowledge.json Canonical knowledge base (read by server, written by Think Mode) data/eval golden.json Golden"
+      "content": "data/recruiter knowledge.json Canonical bundled knowledge base data/eval golden.json Golden set of 40 queries for retrieval evaluation scripts/eval retrieval.js Retrieval evaluation harness — measures Recall@k and MRR@k scripts/eval local api.js Local API acceptance harness — 38 scenarios plus a server memory follow up test/bm25.test.js BM25 index unit tests (8 tests) test/query understanding.test.js Query understanding unit tests (15 tests) test/agent tools.test.js Read only agent tool selection, evidence, privacy, and fail closed tests test/agent fallback.test.js Local project comparison, role evidence, and interview workflow tests deploy gcp.sh Deploy script — copies server gemini.js + lib/ to prod GCP VM and restarts service deploy gcp dev.sh Deploy script — copies server gemini.js +"
     },
     {
       "title": "AGENTS",
@@ -8678,7 +8366,7 @@
       "tags": [
         "project"
       ],
-      "content": "set of 40 queries for retrieval evaluation data/knowledge vectors.json Pre built chunk embeddings (generated by build embeddings script) data/intent centroids.json Intent centroid embeddings (generated by build embeddings script) scripts/build embeddings.js Build time embedding generation via Cloudflare Workers AI scripts/eval retrieval.js Retrieval evaluation harness — measures Recall@k and MRR@k test/bm25.test.js BM25 index unit tests (8 tests) test/query understanding.test.js Query understanding unit tests (15 tests) test/vector index.test.js Vector index unit tests (5 tests) test/hybrid retrieve.test.js Hybrid fusion unit tests (8 tests) test/model policy.test.js Retired model blocking and explicit Groq model policy tests test/agent tools.test.js Read only agent tool selection,"
+      "content": "lib/ to dev GCP VM and restarts service .github/workflows/test.yml CI — runs unit tests, retrieval eval, syntax checks on develop .github/workflows/sync staging.yml CI — syncs develop to ProjectHub dev staging repo .github/workflows/pages.yml CI — deploys master to GitHub Pages package.json Dependency metadata; includes Vite build scripts and Carbon analytics dependencies index.html Public GitHub Pages landing site for ProjectHub / Scout (includes live analytics dashboard) analytics/main.js Analytics dashboard source — fetches, sanitizes, and visualizes multi source data with Carbon analytics/style.css Analytics specific dashboard overrides analytics/dist/ Built analytics assets committed for GitHub Pages vite.config.js Vite build configuration for the analytics bundle local test.html"
     },
     {
       "title": "AGENTS",
@@ -8686,7 +8374,7 @@
       "tags": [
         "project"
       ],
-      "content": "evidence, privacy, and fail closed tests test/agent fallback.test.js Groq independent project comparison, role evidence, and interview workflow tests test/agent runtime.test.js Agent orchestration, tool validation, output bounding, and denial tests deploy gcp.sh Deploy script — copies server gemini.js + lib/ to prod GCP VM and restarts service deploy gcp dev.sh Deploy script — copies server gemini.js + lib/ to dev GCP VM and restarts service .github/workflows/test.yml CI — runs unit tests, retrieval eval, syntax checks on develop .github/workflows/sync staging.yml CI — syncs develop to ProjectHub dev staging repo .github/workflows/pages.yml CI — deploys master to GitHub Pages package.json Dependency metadata; includes Vite build scripts and Carbon analytics dependencies index.html Public"
+      "content": "Local manual test page for the widget (uses local ProjectHub.js ) live test.html Cache busting test of the live GitHub Pages ProjectHub.js docs/ Detailed on demand guides .github/copilot instructions.md Redirect to this file CLAUDE.md Redirect to this file Quick Reference for Frequently Used Patterns Logging javascript console.error(\"GitHub fetch error:\", error); console.log(\"ProjectHub loaded!\"); Fetching GitHub metadata javascript const githubData = await fetchGitHubRepoData(repoUrl); const allData = await fetchAllGitHubData(projects); Calling the recruiter chat API javascript // From any allowed origin (bradleymatera.github.io, bradleymatera.dev, CodePen) const res = await fetch(\"https://projecthub chat.bradleymatera.dev/api/chat\", , body: JSON.stringify( ) }); Rendering HTML in bot"
     },
     {
       "title": "AGENTS",
@@ -8694,7 +8382,7 @@
       "tags": [
         "project"
       ],
-      "content": "GitHub Pages landing site for ProjectHub / Scout (includes live analytics dashboard) analytics/main.js Analytics dashboard source — fetches, sanitizes, and visualizes multi source data with Carbon analytics/style.css Analytics specific dashboard overrides analytics/dist/ Built analytics assets committed for GitHub Pages vite.config.js Vite build configuration for the analytics bundle local test.html Local manual test page for the widget (uses local ProjectHub.js ) live test.html Cache busting test of the live GitHub Pages ProjectHub.js docs/ Detailed on demand guides .github/copilot instructions.md Redirect to this file CLAUDE.md Redirect to this file Quick Reference for Frequently Used Patterns Logging javascript console.error(\"GitHub fetch error:\", error); console.log(\"ProjectHub"
+      "content": "messages Bot replies may contain , , etc. Insert them with innerHTML inside a messageDiv , never raw innerHTML on the whole output. Adding a new project Add an entry to data.js projects array and mirror it in ProjectHub.js if the inlined copy is still in use. See docs/data guide.md . Table of Contents 1. PROJECTHUB DEVELOPMENT AND RELEASE SPEC.md — Canonical release spec: staging isolation, CI/CD, branch rules, rollback, acceptance tests. 2. docs/architecture overview.md — System design, component relationships, data flow. 3. docs/coding standards.md — Naming conventions, file organization, style rules, and no build constraints. 4. docs/common tasks.md — Step by step workflows for routine development (add project, test locally, publish to GitHub Pages). 5. docs/data guide.md — Schema and"
     },
     {
       "title": "AGENTS",
@@ -8702,7 +8390,7 @@
       "tags": [
         "project"
       ],
-      "content": "loaded!\"); Fetching GitHub metadata javascript const githubData = await fetchGitHubRepoData(repoUrl); const allData = await fetchAllGitHubData(projects); Calling the recruiter chat API javascript // From any allowed origin (bradleymatera.github.io, bradleymatera.dev, CodePen) const res = await fetch(\"https://projecthub chat.bradleymatera.dev/api/chat\", , body: JSON.stringify( ) }); Rendering HTML in bot messages Bot replies may contain , , etc. Insert them with innerHTML inside a messageDiv , never raw innerHTML on the whole output. Adding a new project Add an entry to data.js projects array and mirror it in ProjectHub.js if the inlined copy is still in use. See docs/data guide.md . Table of Contents 1. PROJECTHUB DEVELOPMENT AND RELEASE SPEC.md — Canonical release spec: staging isolation,"
+      "content": "update workflow for projects, CodePens, and suggestions. 6. docs/api guide.md — Chat endpoint contract, GitHub API usage, and fallback proxy behavior. 7. docs/backend guide.md — GCP VM deployment, Caddy HTTPS, systemd, environment variables, cost checklist. 8. docs/local ai runtime.md — Ollama runtime, retrieval, memory, validation, and local learning. 9. docs/branch protection setup.md — Branch protection rules and GitHub environment configuration. 10. docs/agent systems.md — Local agent tools, constrained Ollama control, and the private SSH tunneled feature preview. Agent Rules AGENTS.md is the single canonical source. CLAUDE.md and .github/copilot instructions.md only redirect here. Always work on develop . Do not edit master directly. Branch from develop , open PRs to develop , and"
     },
     {
       "title": "AGENTS",
@@ -8710,7 +8398,7 @@
       "tags": [
         "project"
       ],
-      "content": "CI/CD, branch rules, rollback, acceptance tests. 2. docs/architecture overview.md — System design, component relationships, data flow. 3. docs/coding standards.md — Naming conventions, file organization, style rules, and no build constraints. 4. docs/common tasks.md — Step by step workflows for routine development (add project, test locally, publish to GitHub Pages). 5. docs/data guide.md — Schema and update workflow for projects, CodePens, and suggestions. 6. docs/api guide.md — Chat endpoint contract, GitHub API usage, and fallback proxy behavior. 7. docs/backend guide.md — GCP VM deployment, Caddy HTTPS, systemd, environment variables, cost checklist. 8. docs/low cost ai routing.md — Free tier LLM routing policy, provider order, validation, and cost optimization. 9. docs/branch"
+      "content": "stage changes in ProjectHub dev before any production promotion. Never push code straight to production. Production backend deploys ( deploy gcp.sh ) and merges to master happen only after validation on https://bradleymatera.github.io/ProjectHub dev/ . Knowledge base edits use the same flow. Add or change data/recruiter knowledge.json on develop , test on the dev backend/site, then promote to master via PR. Small typo fixes may be PR'd directly to master if they do not change answer logic. Every new external call or metered resource must go through lib/cost ledger.js . If you add a new fetch() to an external API or a new persistent write in server gemini.js , call meterEvent() with the event details. CI checks for unmetered fetch() call sites. Only read the guides relevant to the current"
     },
     {
       "title": "AGENTS",
@@ -8718,15 +8406,7 @@
       "tags": [
         "project"
       ],
-      "content": "protection setup.md — Branch protection rules and GitHub environment configuration. 10. docs/think mode migration plan.md — Think Mode transition from direct commits to PR based proposal workflow. 11. docs/agent systems.md — Provider independent agent tools, constrained Ollama control, and the private SSH tunneled feature preview. Agent Rules AGENTS.md is the single canonical source. CLAUDE.md and .github/copilot instructions.md only redirect here. Always work on develop . Do not edit master directly. Branch from develop , open PRs to develop , and stage changes in ProjectHub dev before any production promotion. Never push code straight to production. Production backend deploys ( deploy gcp.sh ) and merges to master happen only after validation on https://bradleymatera.github.io/ProjectHub"
-    },
-    {
-      "title": "AGENTS",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/AGENTS.md",
-      "tags": [
-        "project"
-      ],
-      "content": "dev/ . Knowledge base edits use the same flow. Add or change data/recruiter knowledge.json on develop , test on the dev backend/site, then promote to master via PR. Small typo fixes may be PR'd directly to master if they do not change answer logic. Every new external call or metered resource must go through lib/cost ledger.js . If you add a new fetch() to an external API or a new persistent write in server gemini.js , call meterEvent() with the event details. CI checks for unmetered fetch() call sites. Only read the guides relevant to the current task to conserve tokens. When changing features, update this file and the relevant docs/ guide. Keep the root file lightweight; put detail in docs/ ."
+      "content": "task to conserve tokens. When changing features, update this file and the relevant docs/ guide. Keep the root file lightweight; put detail in docs/ ."
     },
     {
       "title": "CLAUDE",
@@ -8742,7 +8422,7 @@
       "tags": [
         "project"
       ],
-      "content": "💬 ProjectHub 🤖 — Scout [](https://developer.mozilla.org/en US/docs/Web/JavaScript) []() [](https://bradleymatera.github.io/ProjectHub/) []() ProjectHub is an embeddable AI chat widget powered by Scout , a local only Ollama recruiter assistant. It showcases my projects, CodePens, skills, and background , and answers recruiter questions from verified data — running entirely on free tiers. 🚀 Quick Start Add the ProjectHub chat widget to any site with one script tag: html This injects a floating chat widget in the bottom right corner. Visitors can ask about projects, skills, AWS experience, role fit, and more. Each session starts by asking the visitor's name. If a consumer caches the script aggressively, append ?v=2 for cache busting. 🔄 GitHub Knowledge Base Sync This is the bidirectional"
+      "content": "ProjectHub ProjectHub is Bradley Matera's embeddable portfolio and recruiter assistant. The browser widget is vanilla JavaScript and GitHub Pages friendly; Scout's backend runs local Ollama inference with grounded retrieval, memory, and read only evidence tools. html What Scout does Answers questions about Bradley's projects, skills, experience, education, and target roles. Corrects common typos and rewrites short follow ups using recent conversation context. Retrieves verified facts with local BM25 search. Retains five recent turns plus topic stances for coherent multi turn conversation. Uses deterministic local tools for project comparison, role evidence, recruiter briefs, and interview questions. Uses qwen2.5:0.5b through local Ollama for natural open ended phrasing. Rejects unsupported"
     },
     {
       "title": "README",
@@ -8750,7 +8430,7 @@
       "tags": [
         "project"
       ],
-      "content": "sync between the GCP VM server and the GitHub repo. It is not a one way pull — the server both reads from and writes to the knowledge JSON on GitHub. Direction 1: Server FETCHES from GitHub (read) Server → fetch(KNOWLEDGE URL) → raw.githubusercontent.com → data/recruiter knowledge.json URL : https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter knowledge.json Cache : 15 minutes in memory ( KNOWLEDGE CACHE MS = 15 60 1000 ) Fallback : If the fetch fails, the server uses the last cached copy Purpose : This is the canonical source of truth for all of Scout's knowledge — identity, skills, projects, experience, education, certifications, target roles, rules, FAQ, and learned answers The knowledge JSON contains: agent — Scout's name and persona identity — Bradley's"
+      "content": "generations and returns a useful grounded answer instead. Learns locally from weak answers, retaining only validated improvements on disk. There are no hosted model APIs or model routing switches in this codebase. Architecture text GitHub Pages widget v ProjectHub Express API on free VM + query understanding + BM25 over bundled recruiter knowledge + five turn memory and stance retention + deterministic read only tools + local Ollama qwen2.5:0.5b + safety and grounded output validators + deterministic fallback The model is intentionally small enough for the free VM. Retrieval, memory, tools, validation, caching, and deterministic fallbacks provide the reliability that raw model size cannot. Local development bash npm install npm test npm run eval retrieval npm run build node check server"
     },
     {
       "title": "README",
@@ -8758,7 +8438,7 @@
       "tags": [
         "project"
       ],
-      "content": "name, title, location, contact info, short pitch summary — Who I am, what I do, what I'm looking for, core strengths skills — Languages, frameworks, cloud, tools projects — Project array with names, descriptions, tech stacks, links experience — Work history array education — Degree, school, GPA, graduation date certifications — AWS certs, AI Practitioner, etc. goals — Target roles rules — What Scout must not do (no hallucination, no overselling) learnedAnswers — Array of Q&A pairs learned by think mode and pushed back to this file Direction 2: Server PUSHES to GitHub (write) Server → GitHub Contents API (PUT) → data/recruiter knowledge.json API : https://api.github.com/repos/BradleyMatera/ProjectHub/contents/data/recruiter knowledge.json Auth : GITHUB TOKEN environment variable on the VM"
+      "content": "gemini.js Run Ollama separately with the configured model, copy .env.development.example to .env , then: bash node server gemini.js Useful diagnostics: bash curl http://127.0.0.1:3000/health curl http://127.0.0.1:3000/api/diagnose curl \"http://127.0.0.1:3000/api/retrieve?q=what%20did%20he%20build\" Main files Path Purpose ProjectHub.js Single file embeddable widget artifact data.js , logic.js , ui.js , utils.js Widget source modules server gemini.js Local AI API, memory, validation, analytics, and learning data/recruiter knowledge.json Bundled verified recruiter facts lib/query understanding.js Normalization, typo correction, intent, and contextual rewrite lib/bm25.js Offline lexical retrieval lib/local conversation.js Prompt memory and generated answer validation lib/agent tools.js Read"
     },
     {
       "title": "README",
@@ -8766,7 +8446,7 @@
       "tags": [
         "project"
       ],
-      "content": "Method : PUT with the file's current SHA (to avoid conflicts) Trigger : Think mode pushes after successfully learning new answers What gets pushed : New learnedAnswers entries are appended to the existing JSON Push flow (step by step) 1. Think mode processes stashed questions through LLM providers 2. For each successfully learned answer, it stores it in learned.json on the VM 3. After the batch, pushLearnedToGitHub() is called: GET the current file from GitHub API → retrieves SHA + content Parse the existing JSON, add new answers to learnedAnswers[] (dedup by question) PUT the updated JSON back to GitHub with the SHA (atomic update) Commit message: \"Scout learned N new answer(s) via think mode\" 4. If push succeeds, the local learned.json queue is cleared 5. The knowledge cache is force"
+      "content": "only evidence tools lib/agent fallback.js Deterministic local agent planner agent preview/ Private feature preview frontend analytics/ Carbon analytics dashboard source docs/local ai runtime.md Runtime design and verification PROJECTHUB DEVELOPMENT AND RELEASE SPEC.md Canonical release process Private feature preview Feature branches can be deployed as a loopback only service on the staging VM: bash bash deploy agent preview.sh bash scripts/open agent preview.sh The deploy script requires a clean feat/ branch, runs the automated tests, prewarms Ollama, verifies health, and leaves the preview inaccessible without the SSH tunnel. Release flow 1. Branch from develop . 2. Open a pull request to develop . 3. Validate the mirrored staging frontend and dev backend. 4. Open a pull request from"
     },
     {
       "title": "README",
@@ -8774,119 +8454,7 @@
       "tags": [
         "project"
       ],
-      "content": "refreshed ( knowledgeCacheAt = 0 ) so the next request picks up the new answers 6. If push fails (no token, API error, conflict), learned answers stay in learned.json and will be retried next think cycle What this means The knowledge JSON on GitHub is the single source of truth. The server reads it, caches it, and writes learned answers back to it. Anyone who edits data/recruiter knowledge.json on GitHub changes what Scout knows — the server picks up changes within 15 minutes. Think mode's learned answers become permanent — they survive server restarts because they're in the repo. The learnedAnswers array in the JSON grows over time as Scout learns more. Why not a database? The knowledge base is small (one JSON file, 5KB) GitHub provides free hosting, versioning, and an API for"
-    },
-    {
-      "title": "README",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/README.md",
-      "tags": [
-        "project"
-      ],
-      "content": "reading/writing No database hosting cost, no connection management, no schema migrations Changes are tracked in git history — you can see exactly when Scout learned something The GitHub Contents API handles concurrent access via SHA based conflict detection 🧭 Chat Pipeline (Step by Step) Every chat request goes through a deterministic pipeline. The pipeline field in the API response shows exactly which steps were taken: 1. Cache check ├── Cache hit → return cached reply (pipeline: [\"cache hit\"]) └── Cache miss → continue 2. Knowledge load ├── Fetch from GitHub (or use 5 min cache) └── If unavailable → grounded fallback (pipeline: [\"knowledge unavailable\"]) 3. Safety check (in buildGroundedFallbackPayload ) ├── Injection/XSS/social engineering → blocked (pipeline: [\"grounded\"]) └── Pass →"
-    },
-    {
-      "title": "README",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/README.md",
-      "tags": [
-        "project"
-      ],
-      "content": "continue 4. False claim check ├── Exaggerated/untrue claims → refused with honest alternative └── Pass → continue 5. Learned answer check ├── Hit → return learned answer (pipeline: [\"learned check:hit\"]) └── Miss → continue 6. Grounded answer computation └── Always computed — deterministic reply from knowledge JSON 7. mustStayGrounded check ├── true → use grounded answer (saves LLM quota) └── false → try LLM network 8. LLM network (if needed) ├── Try free overflow providers: cloudflare → github → gemini → grok ├── Qwen output passes grounded validation → use it └── Timeout or invalid output → use deterministic grounded answer 9. Reply shaping └── Apply tone, length, format rules (pipeline: [\"shaped\"]) 10. Frustration detection └── If user seems frustrated → strip preambles, be ultra direct"
-    },
-    {
-      "title": "README",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/README.md",
-      "tags": [
-        "project"
-      ],
-      "content": "11. Follow up generation └── Generate 2 contextual follow up suggestions based on topic 12. Weak answer check └── If answer is weak → stash for think mode learning 13. Return response └── Example pipeline values [\"cache hit\"] — served from response cache [\"cache miss\", \"knowledge loaded\", \"learned check:miss\", \"mustStayGrounded:true\", \"shaped\"] — grounded answer, no LLM needed [\"cache miss\", \"knowledge loaded\", \"mustStayGrounded:false\", \"network:disabled local only\", \"local rag:ollama:validated\", \"shaped\"] — validated local Qwen answer [\"cache miss\", \"knowledge loaded\", \"learned check:hit\"] — answered from learned answers 📊 Dashboard & Live Monitoring The dashboard at bradleymatera.github.io/ProjectHub shows real time stats from the running backend. It refreshes every 5 seconds. Dashboard"
-    },
-    {
-      "title": "README",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/README.md",
-      "tags": [
-        "project"
-      ],
-      "content": "sections Section What it shows API status Online/offline, uptime, requests this restart, all time requests Answer breakdown Grounded vs LLM vs cached vs learned counts Last provider Which provider answered the most recent request Provider table Per provider status, used today, daily limit, all time usage Live activity feed Real time stream of requests with provider, latency, topic, and full pipeline path Last request pipeline Visual breakdown of the decision path for the most recent request Where visitors come from Referrer domain breakdown (which sites embed the widget) What recruiters ask about Topic analytics — most asked topics with bar charts Request trend (24h) Stacked bar chart showing requests per hour, split by grounded/LLM/cached Knowledge coverage gaps Stashed questions and"
-    },
-    {
-      "title": "README",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/README.md",
-      "tags": [
-        "project"
-      ],
-      "content": "\"other\" topic questions that lack dedicated handlers Provider health history Success rate, avg latency, and failure count per provider Recent sessions Active chat sessions with visitor intent, turn count, topics, duration Learning system Stashed count, learned count, think mode status, GitHub sync status Recent requests Last 40 requests with provider, time, latency, topic, referrer Visitor intent classification Every visitor is classified based on their question patterns: Intent Trigger Color on dashboard 🧠 Scout Intelligence Conversation memory 5 turns of history sent to the server (increased from 3) 10 turns kept in the frontend conversation context (increased from 8) Conversation summary — after 3+ turns, the LLM prompt includes a summary of topics already covered to avoid repetition"
-    },
-    {
-      "title": "README",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/README.md",
-      "tags": [
-        "project"
-      ],
-      "content": "Follow up suggestions Every response includes 0 2 contextual follow up questions based on the topic: Topic Example follow ups AWS \"What about his AWS certifications?\", \"Did he do real production work at AWS?\" Projects \"What tech stack does he use?\", \"Which project is most relevant?\" Skills \"What are his strongest skills?\", \"How does he debug issues?\" Role fit \"Is he a fit for a junior web role?\", \"What are his honest gaps?\" Frustration detection When Scout detects frustration patterns (\"just answer\", \"not making sense\", \"stop avoiding\"), it: Strips all preambles and apologies Removes follow up suggestions Returns only the direct answer Logs the frustration event in the pipeline Grounded handlers Scout has 40+ deterministic handlers for common recruiter questions: Projects, CodePens,"
-    },
-    {
-      "title": "README",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/README.md",
-      "tags": [
-        "project"
-      ],
-      "content": "portfolio AWS experience, certifications, internship reality check Skills, tech stack, strongest skills Education, GPA, coursework Experience, work history, CIRIS Contact info, LinkedIn, email Role fit (junior web, cloud support, DevOps, SRE, data science, QA) Strengths, weaknesses, honest gaps Interpersonal skills, customer service, teamwork Army/military service Salary (honest: not in the data) Summary (short, full, web dev focused) \"What data do you have\" — lists available topics Confusion/clarification — apologetic redirect Out of scope — honest refusal for non recruiter questions Prompt injection / security — refuses to reveal system info mustStayGrounded function Certain question patterns are forced to use grounded answers (no LLM) to save quota and ensure accuracy: Role fit"
-    },
-    {
-      "title": "README",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/README.md",
-      "tags": [
-        "project"
-      ],
-      "content": "questions (\"is he a good fit for...\") Honest assessment questions (\"is he worth interviewing\") AWS reality checks (\"what happened there\") Interpersonal/social skills Customer service / help desk Work style, coding style, problem solving Learning style, mentorship Experience, work history, background \"What data do you have\" Confusion/clarification prompts Out of scope questions (not recruiter related) Safety/injection attempts (always blocked) False claim requests (always refused with honest alternative) Smoke tests, greetings, meta questions about the bot Interview questions, banned buzzwords Think Mode safety Think Mode filters questions before stashing to prevent learning false claims: Safety regex blocks injection, XSS, social engineering, secret extraction False claim regex blocks"
-    },
-    {
-      "title": "README",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/README.md",
-      "tags": [
-        "project"
-      ],
-      "content": "requests to describe Bradley as senior/10x/rockstar/etc. Tone/style requests are not stashed Out of scope questions are not stashed Format/shape requests (JSON, table, bullet) are not stashed In buildGroundedFallbackPayload , the check order is: 1. Safety regex (injection, secrets, social engineering) 2. False claim regex (exaggerated claims, buzzwords) — runs BEFORE learned answers 3. Learned answers (from GitHub knowledge) 4. Grounded handlers (40+ deterministic handlers) This ensures that even if a false claim answer was accidentally learned, it is always blocked. Adversarial 67 Prompt injection, XSS, social engineering, false claims, data exfiltration Coverage 162 Every grounded handler path returns expected reply Load/Stress 41 Concurrency, rapid fire, session continuity, cache, rate"
-    },
-    {
-      "title": "README",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/README.md",
-      "tags": [
-        "project"
-      ],
-      "content": "limits Regression 62 Topic classification, provider routing, gap questions, banned words Edge Cases 28 Empty input, long input, special chars, unicode, rapid session Verification 115 ETL pipeline, cost, infrastructure, data integrity, Think Mode safety All tests run against the live API at https://projecthub chat.bradleymatera.dev . recentRequests Last 40 requests with question, provider, timestamp, referrer, topic, latency, pipeline referrerBreakdown Count per referrer domain (which sites embed the widget) topicBreakdown Daily counts per topic category (projects, aws, skills, etc.) hourlyRequests Per hour counts split by grounded/LLM/cached (last 48h) providerHealth Per provider success count, failure count, avg latency lastPipeline Full decision path of the most recent request"
-    },
-    {
-      "title": "README",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/README.md",
-      "tags": [
-        "project"
-      ],
-      "content": "recentSessions Active chat sessions with intent, turns, topics, duration providerBreakdown All time count per provider deployCount Number of server deployments totalRequestsAllTime Total requests across all restarts Topic classification Every incoming question is classified into one of 16 topics: projects · aws · skills · experience · education · contact · role fit · strengths · weaknesses · interpersonal · salary · army · work style · summary · out of scope · other The other topic is highlighted on the dashboard as a potential knowledge gap. 📁 File Structure File Purpose 💸 How Is This Free? ProjectHub runs on zero recurring AI spend and only free tier infrastructure. Frontend — free GitHub Pages hosts all static assets free for public repos Chat widget: no build step, no bundler, no"
-    },
-    {
-      "title": "README",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/README.md",
-      "tags": [
-        "project"
-      ],
-      "content": "CI/CD needed; consumed via one tag Live analytics dashboard: built with Vite + Carbon; production bundle ( analytics/dist/ ) is committed to the repo Backend — free GCP e2 micro VM in Always Free region ( us central1 ) 720 free instance hours/month = 24/7 operation 30 GB standard persistent disk included Caddy handles HTTPS with free Let's Encrypt certificates No database — knowledge JSON on GitHub, stats in local files No paid Node dependencies AI / LLM — free Local Ollama with qwen2.5:0.5b ; no AI API keys BM25 retrieval, typo correction, contextual rewriting, and bounded tools Five turn memory plus 60 minute topic stances Every generated reply validated against source facts What this avoids No OpenAI, Anthropic, or paid API subscriptions No database hosting No paid serverless functions"
-    },
-    {
-      "title": "README",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/README.md",
-      "tags": [
-        "project"
-      ],
-      "content": "No paid DNS or domain transfer Honest caveats qwen2.5:0.5b is deliberately small enough for the 1 GB VM and is less capable than a hosted large model A cold model load can exceed the latency budget, so deploys pre warm it and keep it resident Under memory pressure or invalid output, Scout degrades to grounded answers, not errors The widget is designed to degrade, not break 💡 Example Queries Try asking Scout: Project Inquiry → \"Tell me about Interactive Pokedex\" AWS Experience → \"What AWS experience does Bradley have?\" Role Fit → \"Would Bradley be a good fit for a junior web role?\" Honest Assessment → \"What are his honest gaps?\" Interpersonal → \"How is Brad with people?\" Customer Service → \"What about customer service experience?\" Strengths → \"What are his strongest skills?\" Contact → \"How"
-    },
-    {
-      "title": "README",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/README.md",
-      "tags": [
-        "project"
-      ],
-      "content": "can I reach Bradley?\" Summary → \"Summarize Bradley as a web developer\" 🤝 Contributions Contributions welcome! Fork the repo, open issues, or submit PRs."
+      "content": "develop to master . 5. Deploy and verify the production backend. 6. Trigger the GitHub Pages workflow. Do not publish feature work directly to production. See the canonical release specification for acceptance and rollback details. Honest capability boundary Scout is designed to always return a useful response, but no local model can correctly know every fact or perform every task. When verified information is unavailable, Scout says so and redirects to what it can support. It never invents a fact merely to avoid saying “unknown.”"
     },
     {
       "title": "agent systems",
@@ -8895,7 +8463,7 @@
         "project",
         "docs"
       ],
-      "content": "Agent Systems Network Read when: You are changing Scout's bounded tool workflows, Ollama agent support, or the private feature branch preview. Architecture Scout's production agent path is local only and grounded: 1. shouldUseAgent() limits agent execution to comparison, role fit, recruiter brief, evidence, and interview question workflows. 2. lib/agent tools.js exposes five read only tools over the verified recruiter knowledge cache. The tools cannot browse arbitrary URLs, modify data, send messages, or access identity/contact fields. 3. lib/agent fallback.js selects and executes the tools deterministically, so tool choice never depends on a remote provider. 4. Pre warmed local Ollama may choose an allowlisted style for tool answers, but it never rewrites their facts. 5. Open ended"
+      "content": "Scout Local Agent System Scout is a local first recruiter assistant. Model inference runs exclusively through Ollama with qwen2.5:0.5b . Request flow 1. Normalize, typo correct, classify, and contextually rewrite the question. 2. Load verified facts from the bundled knowledge file through BM25. 3. Recall up to five recent turns and retained topic stances. 4. Use deterministic read only tools for comparisons, role evidence, briefs, and interview workflows. 5. Ask Ollama to phrase eligible open ended answers. 6. Validate facts, entities, numbers, safety, scope, length, and tone. 7. Return the grounded deterministic answer when the generated draft is weak, unsupported, or slow. The tools cannot write files, send messages, browse arbitrary websites, or execute commands. The private preview"
     },
     {
       "title": "agent systems",
@@ -8904,34 +8472,7 @@
         "project",
         "docs"
       ],
-      "content": "recruiter conversation uses local Ollama RAG with up to five recent turns and the session's prior topic stances. 6. LOCAL ONLY MODE=true empties the cloud provider order, disables cloud provider health eligibility, reads the bundled local knowledge JSON, and forces Think Mode pushes off. 7. Every local free text reply must pass strict source overlap, entity, number, length, safety, and overclaim checks. Any failure returns the deterministic grounded answer. This separates factual reasoning from language generation: Ollama makes open ended answers more conversational, while ProjectHub owns memory, retrieval, tools, facts, and validation. Resource boundary An 8B local model is not appropriate for the current GCP e2 micro machines. gemma3:1b was still generating after roughly 90 seconds and"
-    },
-    {
-      "title": "agent systems",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/agent-systems.md",
-      "tags": [
-        "project",
-        "docs"
-      ],
-      "content": "pushed almost 1 GB into swap. The selected middle ground is qwen2.5:0.5b : its first cold load measured 77.5 seconds, but a fixed context warm multi turn request completed in 3.71 seconds. The deployment therefore pre warms it before starting the preview and retains it indefinitely. To keep memory bounded, ProjectHub uses a 1,536 token context, at most five sanitized recent turns, up to 64 generated tokens, one generation at a time, and a 15 second request ceiling. Stance memory retains up to 12 topic positions for 60 minutes. The model stays loaded ( keep alive= 1 ); after a VM/Ollama restart, the prewarm step absorbs the slow load before the preview starts. Timeouts and invalid replies fail safely to the deterministic answer. Before enabling Ollama on a host, confirm available RAM, swap,"
-    },
-    {
-      "title": "agent systems",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/agent-systems.md",
-      "tags": [
-        "project",
-        "docs"
-      ],
-      "content": "disk, installed model capabilities, and latency. Do not enable it merely because an Ollama daemon exists. Private feature preview deploy agent preview.sh deploys a committed feat/ branch to a separate directory and service on the staging VM: directory: /opt/recruiter chat api feature service: projecthub agent preview listener: 127.0.0.1:3200 public Caddy route: none Think Mode pushes: disabled cloud inference: disabled by LOCAL ONLY MODE=true Ollama conversation and style control: enabled with pre warmed qwen2.5:0.5b knowledge: bundled local data/recruiter knowledge.json state files: isolated from staging and production Deploy and open it with: bash bash scripts/setup ollama preview.sh bash deploy agent preview.sh bash scripts/open agent preview.sh The second command creates an"
-    },
-    {
-      "title": "agent systems",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/agent-systems.md",
-      "tags": [
-        "project",
-        "docs"
-      ],
-      "content": "authenticated SSH port forward and opens http://127.0.0.1:3200/preview/ . Anyone without GCP SSH access cannot reach the service. No shared password, browser stored secret, or macOS Keychain command is involved. To stop access, press Ctrl C in the tunnel terminal. The remote service remains loopback only. Promotion boundary The private preview is not a production release. Validate its workflows, automated tests, provider status, and grounded output before merging to develop . After staging validation, follow PROJECTHUB DEVELOPMENT AND RELEASE SPEC.md for promotion to master ."
+      "content": "binds to loopback and is accessed through scripts/open agent preview.sh . Local learning Think Mode stores weak relevant answers in the local learned file. It generates and judges proposed improvements locally, promotes only validated candidates, retains at most 100 learned answers, and performs no external writes."
     },
     {
       "title": "api guide",
@@ -8940,7 +8481,7 @@
         "project",
         "docs"
       ],
-      "content": "api guide.md Read when: You need to understand or change the chat API contract, local only Ollama RAG, memory, or fallback behavior. LOCAL ONLY MODE Disable every cloud inference provider and runtime knowledge fetch (default true ) KNOWLEDGE FILE Bundled local knowledge path (default data/recruiter knowledge.json ) GROQ ENABLED Opt in to Groq after explicitly choosing a current model (default false ) GROQ MODEL Explicit Groq model ID; empty by default and rejected when retired GROQ API KEY Groq API key; ignored while Groq is disabled AGENT ENABLED Enable bounded read only agent workflows (default true ) AGENT GROQ ENABLED Allow an opted in Groq provider to plan bounded tool calls (default false ) GROQ AGENT MODEL Groq tool calling model; defaults to GROQ MODEL AGENT TIMEOUT MS Timeout for"
+      "content": "Chat API Guide The Express backend in server gemini.js runs on the ProjectHub VM and performs inference only through local Ollama. Endpoints POST /api/chat — answer a visitor message. GET /health — runtime, memory, retrieval, learning, and local model status. GET /api/diagnose — live Ollama generation and validation probe. GET /api/retrieve?q=... — local query understanding and BM25 diagnostic. POST /api/think — run one bounded local learning cycle. GET /api/knowledge health — coverage and learning diagnostics. GET /api/stats , /api/chat log , and /api/costs — operational telemetry. Chat request json ] } History is trimmed and sanitized. The frontend may send ten turns; the answer prompt uses the five most recent turns. Chat response json } For evidence heavy requests, provider is local"
     },
     {
       "title": "api guide",
@@ -8949,43 +8490,7 @@
         "project",
         "docs"
       ],
-      "content": "each Groq agent model request, clamped to 1 10 seconds (default 6000 ) OLLAMA AGENT ENABLED Allow local Ollama to choose an allowlisted presentation style; never required for correctness (enabled on prepared hosts) OLLAMA AGENT MODEL Local conversation/style model (prepared hosts use qwen2.5:0.5b ) OLLAMA AGENT TIMEOUT MS Local controller timeout, clamped to 1 15 seconds (default 15000 ) OLLAMA AGENT CONTEXT Shared local context window, clamped to 512 4096 tokens (default 1536 ) OLLAMA AGENT KEEP ALIVE Model retention; local only deployment uses 1 after boot time prewarm CLOUDFLARE API TOKEN Cloudflare Workers AI token CLOUDFLARE ACCOUNT ID Cloudflare account ID GEMINI API KEY Google Gemini API key GEMINI MODEL Current Gemini model; default gemini 3.6 flash XAI API KEY xAI Grok API key"
-    },
-    {
-      "title": "api guide",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/api-guide.md",
-      "tags": [
-        "project",
-        "docs"
-      ],
-      "content": "OPENAI API KEY OpenAI compatible API key (optional) OPENAI BASE URL OpenAI compatible base URL (optional) OPENAI MODEL OpenAI compatible model name (optional) PROVIDER ORDER Empty and ignored in local only deployments GEN MODEL Local Ollama conversation model, default qwen2.5:0.5b GEN TIMEOUT MS Local generation ceiling in ms, clamped to 15 seconds (default 15000 ) USE BM25 RETRIEVAL Enable BM25 + query understanding retrieval (default true ) USE VECTOR RETRIEVAL Legacy dense retrieval switch; forced off in local only mode EMBEDDING MODEL Cloudflare Workers AI embedding model (default @cf/baai/bge small en v1.5 ) SEMANTIC CACHE THRESHOLD Cosine similarity threshold for semantic cache hits (default 0.92 ) Session Memory The browser creates a per tab sessionId and keeps 10 turns of"
-    },
-    {
-      "title": "api guide",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/api-guide.md",
-      "tags": [
-        "project",
-        "docs"
-      ],
-      "content": "conversation context. The local RAG prompt uses the five newest sanitized turns. The backend separately retains up to 12 topic stances for 60 minutes so follow ups remain consistent; there is no external database dependency. Context dependent messages such as “tell me more,” “what about that project,” or “same for AWS” bypass the global response cache so the router can use recent session context. Stance Consistency The server maintains a per session stance store ( stanceStore ) that records the first sentence of each reply keyed by topic. On subsequent turns, prior stances are injected into the local prompt. This prevents Scout from contradicting itself across turns. The store has a 60 minute TTL and caps at 12 stances per session. Semantic Cache When vector retrieval is enabled, the"
-    },
-    {
-      "title": "api guide",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/api-guide.md",
-      "tags": [
-        "project",
-        "docs"
-      ],
-      "content": "server maintains a semantic cache ( semanticCache ) that deduplicates paraphrased queries. Query embeddings are compared via cosine similarity (≥ SEMANTIC CACHE THRESHOLD , default 0.92). On a cache hit, the cached reply is served immediately without running the retrieval pipeline or LLM network. LRU, 200 entries, 10 min TTL. Only active for no history queries (paraphrase dedup doesn't work mid conversation). The widget asks for the visitor's name at the start of each browser tab session and stores it in sessionStorage . Clear Memory resets the local transcript, session id, captured name, and recent browser context. Repeated or semantically repeated questions should not return the same answer verbatim. The backend checks recent session memory; if the same core question has already been"
-    },
-    {
-      "title": "api guide",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/api-guide.md",
-      "tags": [
-        "project",
-        "docs"
-      ],
-      "content": "answered, it politely says so, quotes the useful part of the earlier answer, and offers follow ups. Forced choice recruiter questions such as “if you had to pick one strongest role” resolve to one answer instead of cycling through target role lists. Profile adjacent personal questions that are not in verified data, such as favorite food or hobbies, are forced to the grounded \"not in recruiter data\" reply by mustStayGrounded , preventing LLM hallucinations on out of scope topics. Security Requirements Accept requests only from allowed origins via CORS. Run HTTPS. Do not expose localhost:11434 to the internet. Keep all API keys in the VM .env file; never commit them to the repo."
+      "content": "agent . When a generated draft fails, provider is grounded . Correctness contract Safety and false claim checks run before generation. BM25 retrieval, bounded memory, stance retention, read only tools, and generated output validators all operate locally. A deterministic grounded answer is always ready, so an Ollama timeout does not become an empty response."
     },
     {
       "title": "architecture overview",
@@ -9003,7 +8508,7 @@
         "project",
         "docs"
       ],
-      "content": "safety, and overclaim validation. Retrieval pipeline lib/rag chunks.js flattens knowledge into chunks. lib/bm25.js scores them locally. lib/query understanding.js corrects typos, classifies intent, and rewrites contextual follow ups. Dense retrieval is forced off in local only mode because it needs an external embedding service. Stance consistency The first answer sentence is recorded per topic and injected into later prompts to prevent contradictions. 60 minute TTL, cap 12 per session. Session memory The five newest sanitized user/assistant turns are injected into local prompts. The frontend also sends the five latest turns. Recruiter knowledge Bundled data/recruiter knowledge.json ; local only mode makes no runtime knowledge fetch. Backend Runtime The backend lives in this repo as server"
+      "content": "safety, and overclaim validation. Retrieval pipeline lib/rag chunks.js flattens knowledge into chunks. lib/bm25.js scores them locally. lib/query understanding.js corrects typos, classifies intent, and rewrites contextual follow ups. Stance consistency The first answer sentence is recorded per topic and injected into later prompts to prevent contradictions. 60 minute TTL, cap 12 per session. Session memory The five newest sanitized user/assistant turns are injected into local prompts. The frontend also sends the five latest turns. Recruiter knowledge Bundled data/recruiter knowledge.json ; local only mode makes no runtime knowledge fetch. Backend Runtime The backend lives in this repo as server gemini.js and is deployed to a GCP VM. Server: server gemini.js — Express API serving local"
     },
     {
       "title": "architecture overview",
@@ -9012,7 +8517,7 @@
         "project",
         "docs"
       ],
-      "content": "gemini.js and is deployed to a GCP VM. Server: server gemini.js — Express API serving local retrieval, local inference, memory, tools, and validation. Generative layer: Pre warmed qwen2.5:0.5b through loopback only Ollama, with a 15 second cap and 64 token output limit. No cloud AI provider is called. Retrieval pipeline: Local Okapi BM25 with query understanding. BM25 Recall@6=0.950 on the 40 query golden eval set. Stance consistency: Per session topic stances injected into LLM prompts to prevent contradictions across turns. Think Mode: May evaluate weak answers with local Ollama, but GitHub knowledge pushes are disabled in local only mode. Safety system: Safety regex blocks injection/XSS/social engineering. False claim regex blocks exaggerated claims. Both run BEFORE learned answers in"
+      "content": "retrieval, local inference, memory, tools, and validation. Generative layer: Pre warmed qwen2.5:0.5b through loopback only Ollama, with a 12.5 second model cap and 64 token output limit so the full request stays inside 15 seconds. Retrieval pipeline: Local Okapi BM25 with query understanding. BM25 Recall@6=1.000 on the current 40 query golden eval set. Stance consistency: Per session topic stances injected into LLM prompts to prevent contradictions across turns. Think Mode: Evaluates weak answers with local Ollama and stores validated improvements in the local learned file; it performs no external writes. Safety system: Safety regex blocks injection/XSS/social engineering. False claim regex blocks exaggerated claims. Both run BEFORE learned answers in buildGroundedFallbackPayload ."
     },
     {
       "title": "architecture overview",
@@ -9021,16 +8526,7 @@
         "project",
         "docs"
       ],
-      "content": "buildGroundedFallbackPayload . Knowledge base: Bundled data/recruiter knowledge.json , including canonical facts and sourceMaterial chunks. Session memory: Five sanitized turns plus up to 12 topic stances per session. Cost: GCP Always Free e2 micro VM; no hosted LLM account or AI credits. Agent: The assistant is named Scout and uses the persona in knowledge.agent . Test suites: 6 test suites (adversarial, coverage, load/stress, regression, edge cases, verification) — 474+ tests total, 99.8% pass rate. Plus 2 quality suites (real conversation replay with 40 visitor questions, quality regression with 60+ targeted tests) and 36 retrieval unit tests (BM25, query understanding, vector index, hybrid fusion) and 40 query golden eval. Constraints No build step / no bundler. Must remain embeddable"
-    },
-    {
-      "title": "architecture overview",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/architecture-overview.md",
-      "tags": [
-        "project",
-        "docs"
-      ],
-      "content": "via one tag. Files should stay readable in the browser without transpilation. Backend must fit within GCP Always Free limits. AI layer must remain local only and free, with grounded knowledge as the final fallback."
+      "content": "Knowledge base: Bundled data/recruiter knowledge.json , including canonical facts and sourceMaterial chunks. Session memory: Five sanitized turns plus up to 12 topic stances per session. Cost: GCP Always Free e2 micro VM; no hosted LLM account or AI credits. Agent: The assistant is named Scout and uses the persona in knowledge.agent . Test suites: 6 legacy API suites plus 57 checked in Node unit tests, a 39 case local API evaluation, and a 40 query BM25 golden eval. Constraints No build step / no bundler. Must remain embeddable via one tag. Files should stay readable in the browser without transpilation. Backend must fit within GCP Always Free limits. AI layer must remain local only and free, with grounded knowledge as the final fallback."
     },
     {
       "title": "backend guide",
@@ -9039,7 +8535,7 @@
         "project",
         "docs"
       ],
-      "content": "backend guide.md Read when: You need to deploy, migrate, or secure the local only Ollama chat backend on Google Cloud. Always Free Constraints Resource Allowance Compute Engine 1 f1 micro or 1 e2 micro instance, up to 720 hours/month Regions us west1 , us central1 , us east1 Disk 30 GB standard persistent disk Snapshot 5 GB Firestore 1 GiB storage, 50k reads/day, 20k writes/day, 20k deletes/day Same region egress Free Use an e2 micro with standard persistent disk to stay within Always Free. Step by Step Deployment 1. Create the VM Region: us west1 , us central1 , or us east1 Machine type: e2 micro Boot disk: Ubuntu 22.04 LTS, 30 GB standard persistent disk Allow HTTP/HTTPS traffic (we will narrow this later) 2. Install and Pre warm Ollama No AI provider keys are required. Run bash"
+      "content": "Backend Guide ProjectHub's backend is server gemini.js , deployed as server.js on a free GCP e2 micro VM. Caddy terminates HTTPS; Ollama listens only on loopback. Runtime files server gemini.js — API, memory, retrieval, validation, and learning. lib/ — BM25, query understanding, local tools, conversation memory, and cost tracking. data/recruiter knowledge.json — bundled verified facts. learned.json — locally retained validated improvements. stats.json and costs.json — operational state. Required environment env PORT=3000 OLLAMA URL=http://127.0.0.1:11434 GEN MODEL=qwen2.5:0.5b GEN TIMEOUT MS=12500 GEN ENABLED=true OLLAMA AGENT ENABLED=true OLLAMA AGENT MODEL=qwen2.5:0.5b OLLAMA AGENT TIMEOUT MS=2500 OLLAMA AGENT CONTEXT=1536 OLLAMA AGENT KEEP ALIVE= 1 AGENT ENABLED=true USE BM25"
     },
     {
       "title": "backend guide",
@@ -9048,61 +8544,7 @@
         "project",
         "docs"
       ],
-      "content": "scripts/setup ollama preview.sh for the private preview VM, or apply the equivalent loopback only service settings in production. The script installs bounded swap, pulls qwen2.5:0.5b , fixes the context at 1536, restricts parallelism to one, and pre warms the model. 3. Build the Node.js API The API is in server gemini.js . It is deployed to the VM as server.js . Key files: server gemini.js — Express server with local Ollama conversation and deterministic fallback lib/rag chunks.js — Shared RAG chunk builder (flattens knowledge JSON into retrievable chunks) lib/bm25.js — Okapi BM25 retrieval index (TF saturation, IDF, length normalization) lib/query understanding.js — Query normalization, typo correction, intent classification, contextual rewriting lib/local conversation.js — five turn"
-    },
-    {
-      "title": "backend guide",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/backend-guide.md",
-      "tags": [
-        "project",
-        "docs"
-      ],
-      "content": "memory builder and strict local reply validator lib/cost ledger.js — Metering tracker for every billable adjacent event .env — local runtime configuration data/recruiter knowledge.json — bundled knowledge read by the API Example .env : env PORT=3000 LOCAL ONLY MODE=true KNOWLEDGE FILE=data/recruiter knowledge.json ALLOWED ORIGINS=https://bradleymatera.dev,https://www.bradleymatera.dev,https://bradleymatera.github.io,https:// .codepen.io PROVIDER ORDER= GROQ ENABLED=false AGENT GROQ ENABLED=false OLLAMA URL=http://127.0.0.1:11434 OLLAMA AGENT ENABLED=true OLLAMA AGENT MODEL=qwen2.5:0.5b OLLAMA AGENT CONTEXT=1536 OLLAMA AGENT KEEP ALIVE= 1 GEN MODEL=qwen2.5:0.5b GEN TIMEOUT MS=15000 Retrieval pipeline USE BM25 RETRIEVAL=true USE VECTOR RETRIEVAL=false THINK PUSH ENABLED=false The server"
-    },
-    {
-      "title": "backend guide",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/backend-guide.md",
-      "tags": [
-        "project",
-        "docs"
-      ],
-      "content": "includes: CORS configuration for allowed origins (rejects non allowed origins with callback(null, false) ) Rate limiting (20 requests/minute) Knowledge caching (15 minutes) Response caching (30 minutes) Grounded first routing with safety and false claim checks BEFORE learned answers Local Qwen conversation through loopback only Ollama Fast grounded fallback from data/recruiter knowledge.json Timeout handling (15 seconds for local generation) Local Think Mode analysis with remote pushes disabled Safety regex system (injection, XSS, social engineering, secret extraction) False claim regex system (exaggerated claims, buzzwords, tone manipulation) mustStayGrounded function to force deterministic answers for critical queries Out of scope question guard (prevents LLM hallucinations on non"
-    },
-    {
-      "title": "backend guide",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/backend-guide.md",
-      "tags": [
-        "project",
-        "docs"
-      ],
-      "content": "recruiter topics) BM25 retrieval index with query understanding (typo correction, intent classification, contextual rewriting) Five turn memory and a 12 topic, 60 minute stance store Source/entity/number/overclaim validation for every local generation 4. Run the API as a Service Use systemd or pm2 so the proxy starts on boot and restarts on failure. Example systemd service at /etc/systemd/system/recruiter chat api.service : ini [Unit] Description=ProjectHub Recruiter Chat API After=network.target [Service] Type=simple User=ubuntu WorkingDirectory=/opt/recruiter chat api ExecStart=/usr/bin/node server.js Restart=always [Install] WantedBy=multi user.target Then: bash sudo systemctl daemon reload sudo systemctl enable now recruiter chat api 5. Secure the Network Create a firewall rule"
-    },
-    {
-      "title": "backend guide",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/backend-guide.md",
-      "tags": [
-        "project",
-        "docs"
-      ],
-      "content": "allowing inbound TCP 80 and 443 only from your website’s IP ranges or CDN ranges (e.g., GitHub Pages IPs). The Node API listens on 127.0.0.1:3000 and is not exposed directly to the internet. Caddy handles HTTPS termination and reverse proxy. 6. HTTPS with Caddy Install Caddy on the VM and proxy the public hostname to the private Node API: caddyfile projecthub chat.bradleymatera.dev Caddy obtains and renews the Let's Encrypt certificate automatically. Do not add CORS headers in Caddy; the Express API owns CORS so browsers do not see duplicate Access Control Allow Origin values. 7. CORS Configuration The Node API sets CORS with callback(null, false) for non allowed origins (returns response without CORS headers, which browsers block). Caddy should not add CORS headers. Keep"
-    },
-    {
-      "title": "backend guide",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/backend-guide.md",
-      "tags": [
-        "project",
-        "docs"
-      ],
-      "content": "https://bradleymatera.github.io , https://bradleymatera.dev , and https://www.bradleymatera.dev in ALLOWED ORIGINS ; include https:// .codepen.io only when CodePen embedding needs to call the API. 8. Static IP and DNS Keep the VM external IP attached while the service is public. Netlify DNS should have an A record for projecthub chat.bradleymatera.dev pointing to 35.208.20.1 . Update the widget fallback URL in logic.js to https://projecthub chat.bradleymatera.dev/api/chat . 9. Frontend Integration In logic.js , replace the fallback URL: javascript const res = await fetch(\"https://projecthub chat.bradleymatera.dev/api/chat\", , body: JSON.stringify( ) }); 10. Optional: Firestore Chat History Enable Firestore in Native mode. Use the Firebase Admin SDK in the proxy to write messages to a"
-    },
-    {
-      "title": "backend guide",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/backend-guide.md",
-      "tags": [
-        "project",
-        "docs"
-      ],
-      "content": "messages collection. Stay under the free daily quotas. Cost Checklist [ ] e2 micro in an Always Free region [ ] 30 GB standard persistent disk [ ] Static regional IP attached to running VM [ ] Same region traffic only [ ] HTTPS certificate free (Let's Encrypt via Caddy) [ ] LOCAL ONLY MODE=true , PROVIDER ORDER= and USE VECTOR RETRIEVAL=false [ ] Ollama listens only on 127.0.0.1:11434 [ ] qwen2.5:0.5b is pre warmed at context 1536 and kept loaded [ ] No AI provider key or paid subscription is required [ ] Bundled data/recruiter knowledge.json is deployed beside the server [ ] lib/ directory synced to VM by deploy script"
+      "content": "RETRIEVAL=true KNOWLEDGE FILE=data/recruiter knowledge.json STATS FILE=stats.json LEARNED FILE=learned.json COST TRACKER=true COST FILE=costs.json Safe verification bash node check server gemini.js npm test npm run eval retrieval curl http://127.0.0.1:3000/health curl http://127.0.0.1:3000/api/diagnose For feature work, use deploy agent preview.sh and scripts/open agent preview.sh . The preview service binds to 127.0.0.1:3200 and has no public route. Production deployment still follows PROJECTHUB DEVELOPMENT AND RELEASE SPEC.md ."
     },
     {
       "title": "branch protection setup",
@@ -9147,7 +8589,7 @@
         "project",
         "docs"
       ],
-      "content": "coding standards.md Read when: You need naming conventions, file organization, style rules, or constraints for this repository. File Organization Keep the root flat for the CDN entry point: ProjectHub.js must be at repo root so GitHub Pages serves it at the expected URL. Put detailed documentation in docs/ . Put shared source modules at root: data.js , logic.js , ui.js , utils.js . Put shared backend modules in lib/ — these are require() d by server gemini.js and scripts/ . Put unit tests in test/ — one test/ .test.js file per lib/ module. Put build time and evaluation tools in scripts/ — not loaded at runtime. Put generated data artifacts in data/ — knowledge vectors.json , intent centroids.json , eval golden.json . ProjectHub.js is the inlined/concatenated deployment artifact. When you"
+      "content": "coding standards.md Read when: You need naming conventions, file organization, style rules, or constraints for this repository. File Organization Keep the root flat for the CDN entry point: ProjectHub.js must be at repo root so GitHub Pages serves it at the expected URL. Put detailed documentation in docs/ . Put shared source modules at root: data.js , logic.js , ui.js , utils.js . Put shared backend modules in lib/ — these are require() d by server gemini.js and scripts/ . Put unit tests in test/ — one test/ .test.js file per lib/ module. Put build time and evaluation tools in scripts/ — not loaded at runtime. Put evaluation data artifacts in data/ , including eval golden.json . ProjectHub.js is the inlined/concatenated deployment artifact. When you edit a source module, mirror the change"
     },
     {
       "title": "coding standards",
@@ -9156,7 +8598,7 @@
         "project",
         "docs"
       ],
-      "content": "edit a source module, mirror the change in ProjectHub.js if it is still the live distribution file. server gemini.js is the backend server. It is deployed to the VM as server.js . Edit server gemini.js in the repo, then deploy. Test suites live in /tmp/test suite .py and run against the live API. Run them sequentially with delays to avoid 429 rate limits. Naming Conventions Files: kebab case for docs ( architecture overview.md ), camelCase for JS modules ( ProjectHub.js , data.js ). Functions: camelCase, descriptive verbs ( handleQuery , fetchGitHubRepoData , setupChatUI ). Variables: camelCase; use const by default, let when reassignment is needed. DOM ids: kebab case ( chat output , chat input , loading icon ). Style Rules Vanilla JavaScript only. No frameworks, no TypeScript, no build"
+      "content": "in ProjectHub.js if it is still the live distribution file. server gemini.js is the backend server. It is deployed to the VM as server.js . Edit server gemini.js in the repo, then deploy. Test suites live in /tmp/test suite .py and run against the live API. Run them sequentially with delays to avoid 429 rate limits. Naming Conventions Files: kebab case for docs ( architecture overview.md ), camelCase for JS modules ( ProjectHub.js , data.js ). Functions: camelCase, descriptive verbs ( handleQuery , fetchGitHubRepoData , setupChatUI ). Variables: camelCase; use const by default, let when reassignment is needed. DOM ids: kebab case ( chat output , chat input , loading icon ). Style Rules Vanilla JavaScript only. No frameworks, no TypeScript, no build tools. Use semicolons. Prefer async/await"
     },
     {
       "title": "coding standards",
@@ -9165,7 +8607,7 @@
         "project",
         "docs"
       ],
-      "content": "tools. Use semicolons. Prefer async/await over promise chains. Use template literals for HTML strings. Avoid global pollution; expose globals only where required for embeddability ( setupChatUI , handleQuery , etc.). Inline styles are acceptable because the widget is self contained and must work without external CSS. No Build Constraints Do not add a bundler (Webpack, Vite, Rollup, etc.). Do not add JSX/TSX. package.json is for metadata only. The backend calls all providers with vanilla fetch ; no OpenAI SDK is required in production. The widget must run when loaded via https://bradleymatera.github.io/ProjectHub/ProjectHub.js . index.html is the public GitHub Pages landing site; use local test.html for local widget testing. server gemini.js must pass node check before deployment."
+      "content": "over promise chains. Use template literals for HTML strings. Avoid global pollution; expose globals only where required for embeddability ( setupChatUI , handleQuery , etc.). Inline styles are acceptable because the widget is self contained and must work without external CSS. No Build Constraints Do not add a bundler (Webpack, Vite, Rollup, etc.). Do not add JSX/TSX. Keep the backend dependency light. Ollama is called with the built in fetch ; no model SDK is required. The widget must run when loaded via https://bradleymatera.github.io/ProjectHub/ProjectHub.js . index.html is the public GitHub Pages landing site; use local test.html for local widget testing. server gemini.js must pass node check before deployment. data/recruiter knowledge.json must be valid JSON — verify with python3 c"
     },
     {
       "title": "coding standards",
@@ -9174,7 +8616,7 @@
         "project",
         "docs"
       ],
-      "content": "data/recruiter knowledge.json must be valid JSON — verify with python3 c \"import json; json.load(open('data/recruiter knowledge.json'))\" before pushing. lib/ Module Conventions Start with 'use strict'; Export via module.exports = at the bottom Pure JS, no npm dependencies (except what's already in package.json ) Prefer <200 lines; split into a new module if larger Each lib/ module should have a corresponding test/ .test.js file No side effects on require — only on explicit function calls test/ Directory Rules Tests use Node.js built in test runner: const = require('node:test') + const assert = require('node:assert/strict') Naming: test/ .test.js (e.g., test/bm25.test.js for lib/bm25.js ) Run with: node test test/ .test.js or npm run test:retrieval Each test file should cover: happy path,"
+      "content": "\"import json; json.load(open('data/recruiter knowledge.json'))\" before pushing. lib/ Module Conventions Start with 'use strict'; Export via module.exports = at the bottom Pure JS, no npm dependencies (except what's already in package.json ) Prefer <200 lines; split into a new module if larger Each lib/ module should have a corresponding test/ .test.js file No side effects on require — only on explicit function calls test/ Directory Rules Tests use Node.js built in test runner: const = require('node:test') + const assert = require('node:assert/strict') Naming: test/ .test.js (e.g., test/bm25.test.js for lib/bm25.js ) Run with: node test test/ .test.js or npm run test:retrieval Each test file should cover: happy path, edge cases, error handling Tests must be self contained — no network"
     },
     {
       "title": "coding standards",
@@ -9183,7 +8625,7 @@
         "project",
         "docs"
       ],
-      "content": "edge cases, error handling Tests must be self contained — no network calls, no file system reads beyond the test fixture scripts/ Conventions scripts/ .js are one off build/eval tasks, not loaded at runtime by the server Must be runnable via node scripts/ .js Add a corresponding package.json script entry (e.g., \"build:embeddings\": \"node scripts/build embeddings.js\" ) May require env vars — document them in .env.development.example and .env.production.example Must handle missing env vars gracefully with a clear error message Documentation Rule When changing a feature, update the relevant docs/ guide and AGENTS.md if navigation/quick reference info changes."
+      "content": "calls, no file system reads beyond the test fixture scripts/ Conventions scripts/ .js are one off build/eval tasks, not loaded at runtime by the server Must be runnable via node scripts/ .js Add a corresponding package.json script entry for repeatable maintenance tasks. May require env vars — document them in .env.development.example and .env.production.example Must handle missing env vars gracefully with a clear error message Documentation Rule When changing a feature, update the relevant docs/ guide and AGENTS.md if navigation/quick reference info changes."
     },
     {
       "title": "common tasks",
@@ -9192,7 +8634,7 @@
         "project",
         "docs"
       ],
-      "content": "common tasks.md Read when: You need step by step workflows for routine development, testing, publishing, or maintenance. BM25 index test/bm25.test.js 8 Query understanding test/query understanding.test.js 15 Vector index test/vector index.test.js 5 Hybrid fusion test/hybrid retrieve.test.js 8 Conversation Tests Repository level conversation tests exercise multi turn behavior against the live API: bash Short scenario based conversation test (8 scenarios, 3 5 minutes) python3 test conversation.py Full length conversation test (10 conversations, 8 15 messages each, 5 8 minutes) Tests memory, tone adaptation, context retention, repetition, contradictions, and follow ups. python3 test conversations full.py Run one conversation with verbose output python3 test conversations full.py only \"Follow"
+      "content": "common tasks.md Read when: You need step by step workflows for routine development, testing, publishing, or maintenance. BM25 index test/bm25.test.js 8 Query understanding test/query understanding.test.js 15 Conversation Tests Repository level conversation tests exercise multi turn behavior against the live API: bash Short scenario based conversation test (8 scenarios, 3 5 minutes) python3 test conversation.py Full length conversation test (10 conversations, 8 15 messages each, 5 8 minutes) Tests memory, tone adaptation, context retention, repetition, contradictions, and follow ups. python3 test conversations full.py Run one conversation with verbose output python3 test conversations full.py only \"Follow up heavy conversation\" v Update Documentation 1. Find the relevant docs/ guide. 2."
     },
     {
       "title": "common tasks",
@@ -9201,7 +8643,7 @@
         "project",
         "docs"
       ],
-      "content": "up heavy conversation\" v Update Documentation 1. Find the relevant docs/ guide. 2. Make edits. 3. If navigation or quick reference info changed, update AGENTS.md . 4. Keep the README and landing page ( index.html ) in sync with the new docs. Release Workflow We use a master / develop model with a public staging repo ( ProjectHub dev ) and a second GCP VM. All changes start on develop . 1. Feature work: branch from develop in BradleyMatera/ProjectHub . 2. Pull request: open a PR to develop . GitHub Actions runs npm audit , npm run build , checks ProjectHub.js freshness, and validates server gemini.js syntax. 3. Stage: after merging to develop , push to the staging repo: bash git push projecthub dev develop:main Staging frontend: https://bradleymatera.github.io/ProjectHub dev/ Staging"
+      "content": "Make edits. 3. If navigation or quick reference info changed, update AGENTS.md . 4. Keep the README and landing page ( index.html ) in sync with the new docs. Release Workflow We use a master / develop model with a public staging repo ( ProjectHub dev ) and a second GCP VM. All changes start on develop . 1. Feature work: branch from develop in BradleyMatera/ProjectHub . 2. Pull request: open a PR to develop . GitHub Actions runs npm audit , npm run build , checks ProjectHub.js freshness, and validates server gemini.js syntax. 3. Stage: after merging to develop , push to the staging repo: bash git push projecthub dev develop:main Staging frontend: https://bradleymatera.github.io/ProjectHub dev/ Staging backend: https://dev.projecthub chat.bradleymatera.dev/ 4. Validate: run the conversation"
     },
     {
       "title": "common tasks",
@@ -9210,7 +8652,7 @@
         "project",
         "docs"
       ],
-      "content": "backend: https://dev.projecthub chat.bradleymatera.dev/ 4. Validate: run the conversation test suites against the staging backend. Test knowledge base changes by asking Scout sample questions on the staging widget. If the cost ledger changed, verify /api/costs on the dev backend and confirm the dashboard \"Cost & Free Tier\" section loads on https://bradleymatera.github.io/ProjectHub dev/ . 5. Release: open a PR from develop to master . After merge, tag the release and run bash deploy gcp.sh . 6. Production verify: check /health , /api/knowledge health , the live widget, and — if COST TRACKER=true is enabled there — /api/costs . Knowledge Base Edits All knowledge base changes go through develop / ProjectHub dev first. This is especially important for new answers, role fit wording, safety"
+      "content": "test suites against the staging backend. Test knowledge base changes by asking Scout sample questions on the staging widget. If the cost ledger changed, verify /api/costs on the dev backend and confirm the dashboard \"Cost & Free Tier\" section loads on https://bradleymatera.github.io/ProjectHub dev/ . 5. Release: open a PR from develop to master . After merge, tag the release and run bash deploy gcp.sh . 6. Production verify: check /health , /api/knowledge health , the live widget, and — if COST TRACKER=true is enabled there — /api/costs . Knowledge Base Edits All knowledge base changes go through develop / ProjectHub dev first. This is especially important for new answers, role fit wording, safety rules, and prompt changes. Small, low risk edits (single typo fixes, date updates, URL"
     },
     {
       "title": "common tasks",
@@ -9219,7 +8661,7 @@
         "project",
         "docs"
       ],
-      "content": "rules, and prompt changes. Small, low risk edits (single typo fixes, date updates, URL corrections) may use a PR directly to master if they do not change answer logic or safety behavior. Never edit data/recruiter knowledge.json on master and then immediately deploy the production backend without staging."
+      "content": "corrections) may use a PR directly to master if they do not change answer logic or safety behavior. Never edit data/recruiter knowledge.json on master and then immediately deploy the production backend without staging."
     },
     {
       "title": "data guide",
@@ -9264,7 +8706,7 @@
         "project",
         "docs"
       ],
-      "content": "Scout Design Principles These principles guide every change to the ProjectHub / Scout recruiter assistant. 1. Single Source of Truth Both LLM providers and the grounded fallback consume the same canonical knowledge block ( buildKnowledgeContext ). If a fact is not in data/recruiter knowledge.json , it is not in an answer. 2. Grounded Only Answers Scout answers from Bradley's verified data. It does not use the LLM's general training knowledge. The prompt explicitly forbids outside facts, assumptions, and industry generalizations. 3. Indistinguishable Fallback When free LLM providers are unavailable, the grounded fallback must be: Factually identical to what the LLM would have said. Conversational, direct, and free of broken grammar. Fast enough that users don't notice the switch. We achieve"
+      "content": "Scout Design Principles These principles guide every change to the ProjectHub / Scout recruiter assistant. 1. Single Source of Truth Local Ollama generation and the grounded fallback consume the same canonical knowledge block ( buildKnowledgeContext ). If a fact is not in data/recruiter knowledge.json , it is not in an answer. 2. Grounded Only Answers Scout answers from Bradley's verified data. It does not use the LLM's general training knowledge. The prompt explicitly forbids outside facts, assumptions, and industry generalizations. 3. Indistinguishable Fallback When local generation is slow or fails validation, the grounded fallback must be: Factually identical to what the LLM would have said. Conversational, direct, and free of broken grammar. Fast enough that users don't notice the"
     },
     {
       "title": "design principles",
@@ -9273,7 +8715,7 @@
         "project",
         "docs"
       ],
-      "content": "this by sharing context, using natural sentence templates, and avoiding the repetitive \"Bradley is a...\" opener in every turn. 4. Safety by Design These requests are always handled deterministically: Prompt injection / secret extraction attempts. Requests for false claims or overselling. Private data (salary, address, etc.). Structured output constraints. Safety checks run before any LLM call or learned answer lookup. 5. Graceful Degradation The small local model can be cold, slow, or wrong. Scout degrades gracefully: Per provider retry once on transient errors. Circuit breaker opens when too many recent calls fail, skipping the network entirely. Response cache warms common questions so first time visitors get instant replies. The grounded knowledge base is the last resort fallback; it"
+      "content": "switch. We achieve this by sharing context, using natural sentence templates, and avoiding the repetitive \"Bradley is a...\" opener in every turn. 4. Safety by Design These requests are always handled deterministically: Prompt injection / secret extraction attempts. Requests for false claims or overselling. Private data (salary, address, etc.). Structured output constraints. Safety checks run before any LLM call or learned answer lookup. 5. Graceful Degradation The small local model can be cold, slow, or wrong. Scout degrades gracefully: Response cache warms common questions so first time visitors get instant replies. A bounded Ollama deadline prevents a slow generation from holding the request open. The grounded knowledge base is always ready; it needs no model call and keeps Scout useful"
     },
     {
       "title": "design principles",
@@ -9282,43 +8724,34 @@
         "project",
         "docs"
       ],
-      "content": "needs no LLM calls and keeps Scout online when all providers are unavailable. 6. Fast Feedback A recruiter should not wait for a bad provider to time out. The circuit breaker and cache keep grounded reply latency under one second during outages. 7. Observability Every reply reports its provider, model, pipeline, and latency via the /health endpoint. Test failures, provider errors, and weak answers are logged and stashed for Think Mode. 8. Continuous Validation Changes are validated against the conversation test suite before deployment. The suite checks correctness, latency, safety, and—when providers are healthy—naturalness and uniqueness. It is tolerant of grounded dominant behavior during provider outages."
+      "content": "if Ollama is cold, unavailable, or wrong. 6. Fast Feedback A recruiter should not wait indefinitely for local generation. The request has a 15 second end to end budget, and cached or grounded answers usually return much faster. 7. Observability Every reply reports its route, local model, pipeline, and latency. Runtime state is summarized by /health ; weak relevant answers are logged and stashed for local Think Mode. 8. Continuous Validation Changes are validated against unit, retrieval, API, memory, latency, safety, and browser checks before deployment. Local Ollama output must pass the same evidence and overclaim rules as every grounded answer."
     },
     {
-      "title": "think mode migration plan",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/think-mode-migration-plan.md",
+      "title": "local ai runtime",
+      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/local-ai-runtime.md",
       "tags": [
         "project",
         "docs"
       ],
-      "content": "Think Mode Release Compatibility Migration Plan Current state Think Mode runs every 20 minutes on the production backend. When it learns a new answer: 1. The answer is stored in learned.json (runtime queue) 2. pushLearnedToGitHub() uses the GitHub Contents API to directly commit to master/data/recruiter knowledge.json 3. The knowledge cache is refreshed This conflicts with branch protection on master (which requires pull requests) and with the coordinated release flow (which requires backend verification before frontend changes). Problem Once master branch protection is enabled: Direct commits via the Contents API will be rejected with 403 Learned answers will accumulate in the local queue with no way to reach production The queue grows indefinitely Target design 1. Think Mode stores"
+      "content": "Local AI Runtime Scout performs model inference only through Ollama on the ProjectHub VM. The default model is qwen2.5:0.5b ; it stays warm to avoid repeated load time and has a 12.5 second generation ceiling so the full request stays inside 15 seconds. How Scout stays useful with a small model 1. Query understanding normalizes text, corrects common typos, classifies intent, and rewrites short follow ups with conversation context. 2. BM25 retrieves verified facts from the bundled recruiter knowledge file. 3. Five recent turns and retained topic stances preserve conversational coherence. 4. Read only local tools handle comparisons, role evidence, recruiter briefs, and interview question workflows deterministically. 5. Ollama phrases open ended answers. Safety, source overlap, entity,"
     },
     {
-      "title": "think mode migration plan",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/think-mode-migration-plan.md",
+      "title": "local ai runtime",
+      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/local-ai-runtime.md",
       "tags": [
         "project",
         "docs"
       ],
-      "content": "candidate learned answers in its runtime queue ( learned.json ) 2. A controlled export creates a JSON patch file or a branch with a proposed update 3. The proposal targets develop (not master ) 4. Tests and human review determine whether it is accepted 5. Accepted knowledge reaches production through the normal release process (PR to master → deploy backend → deploy Pages) Interim measures (implemented now) Dev backend: THINK PUSH ENABLED=false — learned answers stay local, no GitHub pushes Prod backend: THINK PUSH ENABLED=true but branch protection will reject pushes Error handling: 403 and 409 errors are logged clearly; learned answers are preserved in the local queue Pages workflow: No longer auto deploys on master push, so even if a Think Mode commit somehow succeeds, it won't trigger"
+      "content": "number, length, and overclaim validators reject weak generations. 6. A deterministic grounded answer is always available when generation times out or fails validation. Local learning and retention Weak relevant answers may be stashed in learned.json . Every 20 minutes, Think Mode processes at most three items through the same local model, compares candidates with the grounded baseline, and retains only measurable, validated improvements. Learned answers stay on local disk and never trigger an external write. Required settings env OLLAMA URL=http://127.0.0.1:11434 GEN MODEL=qwen2.5:0.5b GEN TIMEOUT MS=12500 GEN ENABLED=true OLLAMA AGENT ENABLED=true OLLAMA AGENT CONTEXT=1536 OLLAMA AGENT KEEP ALIVE= 1 USE BM25 RETRIEVAL=true Verification bash node check server gemini.js npm test npm run"
     },
     {
-      "title": "think mode migration plan",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/think-mode-migration-plan.md",
+      "title": "local ai runtime",
+      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/local-ai-runtime.md",
       "tags": [
         "project",
         "docs"
       ],
-      "content": "a Pages deploy Implementation steps (future PRs) 1. Add /api/think/export endpoint — returns the current learned queue as a JSON patch 2. Add scripts/think propose.js — fetches the export, creates a branch on develop , commits the knowledge update, opens a PR 3. Run on a schedule — daily or weekly, via GitHub Actions on the source repo (not the VM) 4. Disable direct push — set THINK PUSH ENABLED=false on production once the proposal workflow is active 5. Review process — Bradley reviews the PR, runs tests, merges through the normal release flow Environment variable reference Variable Dev Prod Notes THINK PUSH ENABLED false true (interim) → false (target) Controls whether learned answers are pushed to GitHub THINK REPO OWNER BradleyMatera BradleyMatera GitHub repo owner for Contents API"
-    },
-    {
-      "title": "think mode migration plan",
-      "source": "file:///Users/bradleymatera/Desktop/Projects/Git/ProjectHub/docs/think-mode-migration-plan.md",
-      "tags": [
-        "project",
-        "docs"
-      ],
-      "content": "THINK REPO NAME ProjectHub ProjectHub GitHub repo name THINK KNOWLEDGE PATH data/recruiter knowledge.json data/recruiter knowledge.json Path to knowledge file in repo GITHUB API TOKEN Not set Set (scoped token) Used only when THINK PUSH ENABLED=true"
+      "content": "eval retrieval curl http://127.0.0.1:3000/health curl http://127.0.0.1:3000/api/diagnose No design can truthfully guarantee correct factual knowledge for every possible question. ProjectHub's contract is narrower and testable: every request receives a useful response, unknown facts are identified honestly, and unsupported claims are never presented as verified facts."
     },
     {
       "title": "AGENTS",

@@ -41,7 +41,7 @@ flowchart LR
 | `ui.js` | Chat DOM creation, event handling, styling, loading spinner. |
 | `utils.js` | GitHub repo metadata fetcher. |
 | GCP recruiter chat API | `server-gemini.js` runs Node and loopback-only Ollama on an e2-micro VM. Local Qwen phrases open-ended answers; deterministic tools handle evidence-heavy questions. Every generated reply must pass source, entity, number, safety, and overclaim validation. |
-| Retrieval pipeline | `lib/rag-chunks.js` flattens knowledge into chunks. `lib/bm25.js` scores them locally. `lib/query-understanding.js` corrects typos, classifies intent, and rewrites contextual follow-ups. Dense retrieval is forced off in local-only mode because it needs an external embedding service. |
+| Retrieval pipeline | `lib/rag-chunks.js` flattens knowledge into chunks. `lib/bm25.js` scores them locally. `lib/query-understanding.js` corrects typos, classifies intent, and rewrites contextual follow-ups. |
 | Stance consistency | The first answer sentence is recorded per topic and injected into later prompts to prevent contradictions. 60-minute TTL, cap 12 per session. |
 | Session memory | The five newest sanitized user/assistant turns are injected into local prompts. The frontend also sends the five latest turns. |
 | Recruiter knowledge | Bundled `data/recruiter-knowledge.json`; local-only mode makes no runtime knowledge fetch. |
@@ -73,16 +73,16 @@ flowchart LR
 The backend lives in this repo as `server-gemini.js` and is deployed to a GCP VM.
 
 - **Server:** `server-gemini.js` — Express API serving local retrieval, local inference, memory, tools, and validation.
-- **Generative layer:** Pre-warmed `qwen2.5:0.5b` through loopback-only Ollama, with a 15-second cap and 64-token output limit. No cloud AI provider is called.
-- **Retrieval pipeline:** Local Okapi BM25 with query understanding. BM25 Recall@6=0.925 on the current 40-query golden eval set.
+- **Generative layer:** Pre-warmed `qwen2.5:0.5b` through loopback-only Ollama, with a 12.5-second model cap and 64-token output limit so the full request stays inside 15 seconds.
+- **Retrieval pipeline:** Local Okapi BM25 with query understanding. BM25 Recall@6=1.000 on the current 40-query golden eval set.
 - **Stance consistency:** Per-session topic stances injected into LLM prompts to prevent contradictions across turns.
-- **Think Mode:** May evaluate weak answers with local Ollama, but GitHub knowledge pushes are disabled in local-only mode.
+- **Think Mode:** Evaluates weak answers with local Ollama and stores validated improvements in the local learned file; it performs no external writes.
 - **Safety system:** Safety regex blocks injection/XSS/social engineering. False-claim regex blocks exaggerated claims. Both run BEFORE learned answers in `buildGroundedFallbackPayload`.
 - **Knowledge base:** Bundled `data/recruiter-knowledge.json`, including canonical facts and `sourceMaterial` chunks.
 - **Session memory:** Five sanitized turns plus up to 12 topic stances per session.
 - **Cost:** GCP Always Free e2-micro VM; no hosted LLM account or AI credits.
 - **Agent:** The assistant is named **Scout** and uses the persona in `knowledge.agent`.
-- **Test suites:** 6 test suites (adversarial, coverage, load/stress, regression, edge cases, verification) — 474+ tests total, 99.8% pass rate. Plus 2 quality suites (real conversation replay with 40 visitor questions, quality regression with 60+ targeted tests) and 36 retrieval unit tests (BM25, query understanding, vector index, hybrid fusion) and 40-query golden eval.
+- **Test suites:** 6 legacy API suites plus 58 checked-in Node unit tests, a 48-request local API evaluation, and a 40-query BM25 golden eval.
 
 ---
 

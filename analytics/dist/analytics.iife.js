@@ -67,13 +67,11 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
     <div class="ph-analytics__tile-label">${t}</div>
     <div class="ph-analytics__tile-value">${n}</div>
     ${r?`<div class="ph-analytics__tile-comparison">${r}</div>`:``}
-  `,e.appendChild(i)}function ik(e,t,n,r){try{new kO(e,{data:t.flatMap(([e,t])=>[{group:`Grounded`,date:`${e}:00`,value:t.grounded||0},{group:`LLM`,date:`${e}:00`,value:t.llm||0},{group:`Cached`,date:`${e}:00`,value:t.cached||0}]),options:{title:n,axes:{bottom:{title:`Hour`,mapsTo:`date`,scaleType:`labels`},left:{title:`Requests`,mapsTo:`value`,scaleType:`linear`}},height:`300px`,width:`100%`,theme:YO(r)}})}catch(t){console.error(`Failed to render stacked bar chart:`,t),e.textContent=`Chart unavailable`}}function ak(e,t,n,r){try{new OO(e,{data:Object.entries(t).map(([e,t])=>({group:e,value:t})).sort((e,t)=>t.value-e.value).slice(0,12),options:{title:n,axes:{bottom:{title:`Count`,mapsTo:`value`,scaleType:`linear`},left:{title:`Category`,mapsTo:`group`,scaleType:`labels`}},height:`300px`,width:`100%`,theme:YO(r)}})}catch(t){console.error(`Failed to render bar chart:`,t),e.textContent=`Chart unavailable`}}function ok(e,t,n){try{new DO(e,{data:[{group:`Grounded / learned`,value:(t.groundedCount||0)+(t.learnedCount||0)},{group:`LLM`,value:t.llmCount||0},{group:`Cached`,value:t.cachedCount||0}],options:{title:`Reply source mix`,resizable:!0,donut:{center:{label:`Replies`}},height:`300px`,width:`100%`,theme:YO(n)}})}catch(t){console.error(`Failed to render donut chart:`,t),e.textContent=`Chart unavailable`}}function sk(e,t,n,r){try{let i=Object.entries(t||{}).map(([e,t])=>({group:e,value:Number(t)||0})).filter(e=>e.value>0).sort((e,t)=>t.value-e.value).slice(0,8);if(i.length===0){e.textContent=`No data`;return}let a=i.reduce((e,t)=>e+t.value,0);new DO(e,{data:i,options:{title:n,resizable:!0,donut:{center:{label:String(a)}},height:`300px`,width:`100%`,theme:YO(r)}})}catch(t){console.error(`Failed to render donut breakdown chart:`,t),e.textContent=`Chart unavailable`}}function ck(e,t,n){if(!Array.isArray(t)||t.length===0){e.innerHTML=`<tr><td colspan="6">No provider data</td></tr>`;return}e.innerHTML=t.map(e=>{let t=typeof e.usedToday==`number`?e.usedToday:`--`,r=e.limit?$(e.limit):`∞`,i=$(n?.[e.slug]||0),a=`status-online`,o=`Active`;return e.enabled?e.exhausted?(a=`status-cooldown`,o=`Cooldown`):e.available||(a=`status-offline`,o=`Unavailable`):(a=`status-disabled`,o=`Disabled`),`<tr>
-      <td><strong>${e.slug}</strong></td>
+  `,e.appendChild(i)}function ik(e,t,n,r){try{new kO(e,{data:t.flatMap(([e,t])=>[{group:`Grounded`,date:`${e}:00`,value:t.grounded||0},{group:`LLM`,date:`${e}:00`,value:t.llm||0},{group:`Cached`,date:`${e}:00`,value:t.cached||0}]),options:{title:n,axes:{bottom:{title:`Hour`,mapsTo:`date`,scaleType:`labels`},left:{title:`Requests`,mapsTo:`value`,scaleType:`linear`}},height:`300px`,width:`100%`,theme:YO(r)}})}catch(t){console.error(`Failed to render stacked bar chart:`,t),e.textContent=`Chart unavailable`}}function ak(e,t,n,r){try{new OO(e,{data:Object.entries(t).map(([e,t])=>({group:e,value:t})).sort((e,t)=>t.value-e.value).slice(0,12),options:{title:n,axes:{bottom:{title:`Count`,mapsTo:`value`,scaleType:`linear`},left:{title:`Category`,mapsTo:`group`,scaleType:`labels`}},height:`300px`,width:`100%`,theme:YO(r)}})}catch(t){console.error(`Failed to render bar chart:`,t),e.textContent=`Chart unavailable`}}function ok(e,t,n){try{new DO(e,{data:[{group:`Grounded / learned`,value:(t.groundedCount||0)+(t.learnedCount||0)},{group:`LLM`,value:t.llmCount||0},{group:`Cached`,value:t.cachedCount||0}],options:{title:`Reply source mix`,resizable:!0,donut:{center:{label:`Replies`}},height:`300px`,width:`100%`,theme:YO(n)}})}catch(t){console.error(`Failed to render donut chart:`,t),e.textContent=`Chart unavailable`}}function sk(e,t,n,r){try{let i=Object.entries(t||{}).map(([e,t])=>({group:e,value:Number(t)||0})).filter(e=>e.value>0).sort((e,t)=>t.value-e.value).slice(0,8);if(i.length===0){e.textContent=`No data`;return}let a=i.reduce((e,t)=>e+t.value,0);new DO(e,{data:i,options:{title:n,resizable:!0,donut:{center:{label:String(a)}},height:`300px`,width:`100%`,theme:YO(r)}})}catch(t){console.error(`Failed to render donut breakdown chart:`,t),e.textContent=`Chart unavailable`}}function ck(e,t,n){if(!Array.isArray(t)||t.length===0){e.innerHTML=`<tr><td colspan="4">No local model data</td></tr>`;return}e.innerHTML=t.map(e=>{let t=$(n?.ollama||0);return`<tr>
+      <td><strong>${e.engine}</strong></td>
       <td>${e.model||`--`}</td>
-      <td><span class="ph-status ${a}">${o}</span></td>
-      <td>${$(t)}</td>
-      <td>${i}</td>
-      <td>${r}</td>
+      <td><span class="ph-status status-online">Local only</span></td>
+      <td>${t}</td>
     </tr>`}).join(``)}function lk(e,t){if(!t||Object.keys(t).length===0){e.innerHTML=`<tr><td colspan="4">No provider health data</td></tr>`;return}e.innerHTML=Object.entries(t).sort(([e],[t])=>e.localeCompare(t)).map(([e,t])=>{let n=(t.successes||0)+(t.failures||0),r=n>0?Math.round(t.successes/n*100):0,i=`status-offline`;return r>=80?i=`status-online`:r>=50&&(i=`status-cooldown`),`<tr>
         <td>${e}</td>
         <td><span class="ph-status ${i}">${r}%</span></td>
@@ -146,7 +144,7 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
     <div class="ph-learning-tile">
       <div class="ph-analytics__tile-label">Learned answers</div>
       <div class="ph-analytics__tile-value">${$(n.learnedCount)}</div>
-      <div class="ph-muted">${$(n.pendingLearned||0)} pending push to GitHub</div>
+      <div class="ph-muted">${$(n.pendingLearned||0)} retained locally</div>
     </div>
     <div class="ph-learning-tile">
       <div class="ph-analytics__tile-label">Think mode status</div>
@@ -154,9 +152,9 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
       <div class="ph-muted">${n.lastThinkAt?`Last run: `+WO(n.lastThinkAt):`Last run: never`}</div>
     </div>
     <div class="ph-learning-tile">
-      <div class="ph-analytics__tile-label">GitHub sync</div>
-      <div class="ph-analytics__tile-value" style="font-size:1.5rem">${n.hasGitHubToken?`Connected`:`No token`}</div>
-      <div class="ph-muted">Pushes learned answers to knowledge JSON</div>
+      <div class="ph-analytics__tile-label">Learning storage</div>
+      <div class="ph-analytics__tile-value" style="font-size:1.5rem">Local disk</div>
+      <div class="ph-muted">Validated improvements stay on this VM</div>
     </div>
     <div class="ph-learning-tile">
       <div class="ph-analytics__tile-label">Avg learned score</div>
@@ -176,12 +174,7 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
     <div class="ph-learning-tile">
       <div class="ph-analytics__tile-label">Next think run</div>
       <div class="ph-analytics__tile-value" style="font-size:1.5rem">${o>0?Math.ceil(o/1e3)+`s`:`Due now`}</div>
-      <div class="ph-muted">Auto-triggers when providers recover</div>
-    </div>
-    <div class="ph-learning-tile">
-      <div class="ph-analytics__tile-label">Semantic cache</div>
-      <div class="ph-analytics__tile-value">${$(n.semanticCacheSize)}</div>
-      <div class="ph-muted">Paraphrase dedup (≥0.92 similarity)</div>
+      <div class="ph-muted">Runs every 20 minutes when gaps are queued</div>
     </div>
     <div class="ph-learning-tile">
       <div class="ph-analytics__tile-label">Stance tracking</div>
@@ -191,12 +184,7 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
     <div class="ph-learning-tile">
       <div class="ph-analytics__tile-label">Retrieval mode</div>
       <div class="ph-analytics__tile-value" style="font-size:1.5rem">${n.retrievalMode||`bm25`}</div>
-      <div class="ph-muted">${$(n.bm25Chunks||0)} chunks · ${n.vectorIndexLoaded?`vectors loaded`:`no vectors`}</div>
-    </div>
-    <div class="ph-learning-tile">
-      <div class="ph-analytics__tile-label">Providers recovered</div>
-      <div class="ph-analytics__tile-value">${$((n.providersRecentlyRecovered||[]).length)}</div>
-      <div class="ph-muted">Recently back online</div>
+      <div class="ph-muted">${$(n.bm25Chunks||0)} local knowledge chunks</div>
     </div>
   `,e.innerHTML=``,e.appendChild(l);let u=document.createElement(`div`);if(u.className=`ph-pipeline-counts`,u.style.marginTop=`1rem`,u.innerHTML=`
     <div class="ph-pipeline-count">
@@ -268,7 +256,7 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
     <div class="ph-learning-grid">
       ${r(`Production backend`,FO,n)}
       ${r(`Dev / Staging backend`,IO,t)}
-    </div>`}function Sk(e){return e>=1073741824?(e/1073741824).toFixed(2)+` GB`:e>=1048576?(e/1048576).toFixed(1)+` MB`:e>=1024?(e/1024).toFixed(1)+` KB`:(e||0)+` B`}function Ck(e,t){if(!t||!t.sessions||t.sessions.length===0){e.innerHTML=`<p class="ph-muted">No chat history yet. Conversations will appear here as visitors interact with Scout.</p>`;return}let n=t.sessions,r={grounded:`ph-text-success`,groq:`ph-text-info`,cloudflare:`ph-text-info`,github:`ph-text-info`,gemini:`ph-text-info`,grok:`ph-text-info`,cached:`ph-text-warn`,learned:`ph-text-success`};e.innerHTML=`
+    </div>`}function Sk(e){return e>=1073741824?(e/1073741824).toFixed(2)+` GB`:e>=1048576?(e/1048576).toFixed(1)+` MB`:e>=1024?(e/1024).toFixed(1)+` KB`:(e||0)+` B`}function Ck(e,t){if(!t||!t.sessions||t.sessions.length===0){e.innerHTML=`<p class="ph-muted">No chat history yet. Conversations will appear here as visitors interact with Scout.</p>`;return}let n=t.sessions,r={grounded:`ph-text-success`,"local-agent":`ph-text-info`,ollama:`ph-text-info`,cached:`ph-text-warn`,learned:`ph-text-success`};e.innerHTML=`
     <div class="ph-analytics__chat-summary" style="margin-bottom:0.75rem;font-size:0.875rem;color:var(--cds-text-secondary,#525252)">
       <strong>${t.totalMessages}</strong> messages across <strong>${t.totalSessions}</strong> sessions
     </div>
@@ -326,7 +314,6 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
       <td><strong>${e}</strong></td>
       <td>${$(t.calls)}</td>
       <td>${$(t.tokensIn)} / ${$(t.tokensOut)}</td>
-      <td>${$(t.neurons)}</td>
       <td>${Sk(t.bytes)}</td>
       <td>$${(t.shadowMicroUsd/1e6).toFixed(6)}${t.estimated?` (est)`:``}</td>
     </tr>`).join(``),l=(t.caveats||[]).map(e=>`<li>${e}</li>`).join(``);e.innerHTML=`
@@ -339,12 +326,12 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
     <ul class="ph-cost-insights">${s||`<li class="ph-muted">Collecting data…</li>`}</ul>
     <div class="ph-analytics__table-wrap" style="margin-top:1rem">
       <table class="ph-analytics__table">
-        <thead><tr><th>Source</th><th>Calls</th><th>Tokens in/out</th><th>Neurons</th><th>Bytes</th><th>Shadow $ (month)</th></tr></thead>
-        <tbody>${c||`<tr><td colspan="6">No usage this month yet</td></tr>`}</tbody>
+        <thead><tr><th>Source</th><th>Calls</th><th>Tokens in/out</th><th>Bytes</th><th>Shadow $ (month)</th></tr></thead>
+        <tbody>${c||`<tr><td colspan="5">No usage this month yet</td></tr>`}</tbody>
       </table>
     </div>
     <details style="margin-top:0.75rem"><summary class="ph-muted">Measurement caveats</summary><ul class="ph-muted">${l}</ul></details>
-  `}function Tk(e,t){let n=e.querySelector(`.ph-analytics__grid`),r=e.querySelector(`.ph-analytics__charts`),i=e.querySelector(`.ph-analytics__meta`),a=e.querySelector(`.ph-analytics__provider-table tbody`),o=e.querySelector(`.ph-analytics__provider-health-table tbody`),s=e.querySelector(`.ph-analytics__sessions-table tbody`);n&&(n.innerHTML=``),r&&(r.innerHTML=``),i&&(i.innerHTML=``),a&&(a.innerHTML=``),o&&(o.innerHTML=``),s&&(s.innerHTML=``);let{health:c,repo:l,contributors:u,errors:d}=t;if(nk(e),d.length>0&&XO(e,`Some data sources failed: ${d.join(`; `)}`,`error`),!c&&!l){XO(e,`Unable to load analytics data.`,`error`);return}if(c){rk(n,`API status`,c.ok?`Online`:`Issue`,`Uptime: ${GO(c.uptimeSeconds)}`),rk(n,`Requests this restart`,$(c.totalRequestsServed),`All-time: ${$(c.allTimeRequests)}`);let e=c.groundedCount||0,t=c.llmCount||0,r=c.cachedCount||0;rk(n,`Answer breakdown`,`Grounded ${$(e)} · LLM ${$(t)} · Cached ${$(r)}`),rk(n,`Deploys`,$(c.deployCount),c.firstDeployAt?`since ${UO(c.firstDeployAt).split(`,`)[0]}`:``),rk(n,`Last provider`,c.lastReplyProvider||`None yet`,`Most recent reply source`)}if(l&&(rk(n,`GitHub stars`,$(l.stargazers_count)),rk(n,`GitHub forks`,$(l.forks_count)),rk(n,`Open issues`,$(l.open_issues_count))),u&&(rk(n,`Watchers`,$(l.watchers_count)),rk(n,`Contributors`,$(u.length))),a&&c&&ck(a,c.providers,c.providerBreakdown),o&&c&&lk(o,c.providerHealth),s&&c){let e=QO(s);uk(s,c.recentSessions),$O(s,e)}let f=e.querySelector(`.ph-analytics__recent-requests`);if(f&&c){let e=QO(f);dk(f,c.recentRequests),ZO(f,`ph-scroll-box--lg`),$O(f,e)}let p=e.querySelector(`.ph-analytics__activity-feed`);p&&c&&(fk(p,c.recentRequests),ZO(p,`ph-scroll-box--sm`));let m=e.querySelector(`.ph-analytics__last-pipeline`);m&&c&&pk(m,c.lastPipeline);let h=e.querySelector(`.ph-analytics__referrers`);if(h&&c){let t=Object.entries(c.referrerBreakdown||{}).reduce((e,[t,n])=>{let r=KO(t);return e[r]=(e[r]||0)+n,e},{});h.innerHTML=`<div class="ph-analytics__referrers-bar"></div><div class="ph-analytics__referrers-chart"></div>`;let n=h.querySelector(`.ph-analytics__referrers-bar`),r=h.querySelector(`.ph-analytics__referrers-chart`);mk(n,t,{emptyText:`No referrer data yet`,limit:10}),Object.keys(t).length>0&&sk(r,t,`Visitors by referrer`,e)}let g=e.querySelector(`.ph-analytics__topics`);g&&c&&mk(g,Object.values(c.topicBreakdown||{}).reduce((e,t)=>(Object.entries(t).forEach(([t,n])=>{e[t]=(e[t]||0)+n}),e),{}),{emptyText:`No topic data yet`,highlight:e=>e===`uncategorized`||e===`out-of-scope`});let _=e.querySelector(`.ph-analytics__gaps`);_&&c&&hk(_,c);let v=e.querySelector(`.ph-analytics__learning`);v&&c&&gk(v,c);let y=e.querySelector(`.ph-analytics__retrieval-debug`);y&&jO&&_k(y);let b=e.querySelector(`.ph-analytics__costs-prod`);b&&wk(b,t.costsProd,`Production`,FO);let x=e.querySelector(`.ph-analytics__costs-dev`);x&&wk(x,t.costsDev,`Dev / Staging`,IO);let S=e.querySelector(`.ph-analytics__environments`);S&&xk(S,jO?c:null,t.healthProd);let C=e.querySelector(`.ph-analytics__chat-history`);if(C&&Ck(C,t.chatLog),i&&c&&(i.innerHTML=`
+  `}function Tk(e,t){let n=e.querySelector(`.ph-analytics__grid`),r=e.querySelector(`.ph-analytics__charts`),i=e.querySelector(`.ph-analytics__meta`),a=e.querySelector(`.ph-analytics__provider-table tbody`),o=e.querySelector(`.ph-analytics__provider-health-table tbody`),s=e.querySelector(`.ph-analytics__sessions-table tbody`);n&&(n.innerHTML=``),r&&(r.innerHTML=``),i&&(i.innerHTML=``),a&&(a.innerHTML=``),o&&(o.innerHTML=``),s&&(s.innerHTML=``);let{health:c,repo:l,contributors:u,errors:d}=t;if(nk(e),d.length>0&&XO(e,`Some data sources failed: ${d.join(`; `)}`,`error`),!c&&!l){XO(e,`Unable to load analytics data.`,`error`);return}if(c){rk(n,`API status`,c.ok?`Online`:`Issue`,`Uptime: ${GO(c.uptimeSeconds)}`),rk(n,`Requests this restart`,$(c.totalRequestsServed),`All-time: ${$(c.allTimeRequests)}`);let e=c.groundedCount||0,t=c.llmCount||0,r=c.cachedCount||0;rk(n,`Answer breakdown`,`Grounded ${$(e)} · LLM ${$(t)} · Cached ${$(r)}`),rk(n,`Deploys`,$(c.deployCount),c.firstDeployAt?`since ${UO(c.firstDeployAt).split(`,`)[0]}`:``),rk(n,`Last provider`,c.lastReplyProvider||`None yet`,`Most recent reply source`)}if(l&&(rk(n,`GitHub stars`,$(l.stargazers_count)),rk(n,`GitHub forks`,$(l.forks_count)),rk(n,`Open issues`,$(l.open_issues_count))),u&&(rk(n,`Watchers`,$(l.watchers_count)),rk(n,`Contributors`,$(u.length))),a&&c&&ck(a,c.models,c.providerBreakdown),o&&c&&lk(o,c.providerHealth),s&&c){let e=QO(s);uk(s,c.recentSessions),$O(s,e)}let f=e.querySelector(`.ph-analytics__recent-requests`);if(f&&c){let e=QO(f);dk(f,c.recentRequests),ZO(f,`ph-scroll-box--lg`),$O(f,e)}let p=e.querySelector(`.ph-analytics__activity-feed`);p&&c&&(fk(p,c.recentRequests),ZO(p,`ph-scroll-box--sm`));let m=e.querySelector(`.ph-analytics__last-pipeline`);m&&c&&pk(m,c.lastPipeline);let h=e.querySelector(`.ph-analytics__referrers`);if(h&&c){let t=Object.entries(c.referrerBreakdown||{}).reduce((e,[t,n])=>{let r=KO(t);return e[r]=(e[r]||0)+n,e},{});h.innerHTML=`<div class="ph-analytics__referrers-bar"></div><div class="ph-analytics__referrers-chart"></div>`;let n=h.querySelector(`.ph-analytics__referrers-bar`),r=h.querySelector(`.ph-analytics__referrers-chart`);mk(n,t,{emptyText:`No referrer data yet`,limit:10}),Object.keys(t).length>0&&sk(r,t,`Visitors by referrer`,e)}let g=e.querySelector(`.ph-analytics__topics`);g&&c&&mk(g,Object.values(c.topicBreakdown||{}).reduce((e,t)=>(Object.entries(t).forEach(([t,n])=>{e[t]=(e[t]||0)+n}),e),{}),{emptyText:`No topic data yet`,highlight:e=>e===`uncategorized`||e===`out-of-scope`});let _=e.querySelector(`.ph-analytics__gaps`);_&&c&&hk(_,c);let v=e.querySelector(`.ph-analytics__learning`);v&&c&&gk(v,c);let y=e.querySelector(`.ph-analytics__retrieval-debug`);y&&jO&&_k(y);let b=e.querySelector(`.ph-analytics__costs-prod`);b&&wk(b,t.costsProd,`Production`,FO);let x=e.querySelector(`.ph-analytics__costs-dev`);x&&wk(x,t.costsDev,`Dev / Staging`,IO);let S=e.querySelector(`.ph-analytics__environments`);S&&xk(S,jO?c:null,t.healthProd);let C=e.querySelector(`.ph-analytics__chat-history`);if(C&&Ck(C,t.chatLog),i&&c&&(i.innerHTML=`
       <p><strong>Service:</strong> ${c.service||`ProjectHub Chat API`}</p>
       <p><strong>Status:</strong> ${c.status||`unknown`}</p>
       <p><strong>Deployed:</strong> ${UO(c.deployedAt)}</p>
@@ -371,12 +358,12 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
     <div class="ph-analytics__grid"></div>
 
     <div class="ph-analytics__section">
-      <h3 class="ph-analytics__section-title">Provider status</h3>
-      ${jO?`<p class="ph-muted">Scout routes each open-ended question through this free-tier LLM network in priority order. "Used today" counts against each provider's self-imposed daily budget; when one is exhausted the router falls through to the next.</p>`:``}
+      <h3 class="ph-analytics__section-title">Local model</h3>
+      ${jO?`<p class="ph-muted">Scout performs model inference only through Ollama on the ProjectHub VM.</p>`:``}
       <div class="ph-analytics__table-wrap">
-        <table class="ph-analytics__table ph-analytics__provider-table" aria-label="Provider status">
+        <table class="ph-analytics__table ph-analytics__provider-table" aria-label="Local model status">
           <thead>
-            <tr><th>Provider</th><th>Model</th><th>Status</th><th>Used today</th><th>All-time</th><th>Daily limit</th></tr>
+            <tr><th>Engine</th><th>Model</th><th>Status</th><th>All-time replies</th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -385,7 +372,7 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
 
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Trends & breakdowns</h3>
-      ${jO?`<p class="ph-muted">Hourly request volume and provider mix. Grounded answers come straight from the knowledge base; LLM answers passed validation; cached answers were served from the semantic cache.</p>`:``}
+      ${jO?`<p class="ph-muted">Hourly request volume and answer-source mix. Grounded answers come from bundled knowledge; Ollama answers passed local validation.</p>`:``}
       <div class="ph-analytics__charts"></div>
     </div>`+(jO?`
     <div class="ph-analytics__section ph-analytics__environments"></div>
@@ -398,7 +385,7 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
       </div>
       <div class="ph-analytics__section">
         <h3 class="ph-analytics__section-title">Last request pipeline</h3>
-        <p class="ph-muted">How the most recent question moved through the answer pipeline: grounding, provider routing, validation, and final source.</p>
+        <p class="ph-muted">How the most recent question moved through grounding, local generation, validation, and final answer selection.</p>
         <div class="ph-analytics__last-pipeline"></div>
       </div>
     </div>
@@ -423,12 +410,12 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
     </div>
 
     <div class="ph-analytics__section">
-      <h3 class="ph-analytics__section-title">Provider health history</h3>
-      <p class="ph-muted">Success rate and latency per provider since the last deploy. A failing provider is skipped automatically by the router.</p>
+      <h3 class="ph-analytics__section-title">Local model health history</h3>
+      <p class="ph-muted">Ollama success rate and latency since the last deploy.</p>
       <div class="ph-analytics__table-wrap">
-        <table class="ph-analytics__table ph-analytics__provider-health-table" aria-label="Provider health history">
+        <table class="ph-analytics__table ph-analytics__provider-health-table" aria-label="Local model health history">
           <thead>
-            <tr><th>Provider</th><th>Success rate</th><th>Success / Fail</th><th>Avg latency</th></tr>
+            <tr><th>Engine</th><th>Success rate</th><th>Success / Fail</th><th>Avg latency</th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -450,7 +437,7 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
 
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Recent requests</h3>
-      <p class="ph-muted">Each row shows provider, time, topic, and referrer. Click a row to expand the full request record, including the sanitized question and reply preview.</p>
+      <p class="ph-muted">Each row shows answer source, time, topic, and referrer. Click a row to expand the sanitized request record.</p>
       <div class="ph-analytics__recent-requests"></div>
     </div>
 
@@ -465,7 +452,7 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
         <h3 class="ph-analytics__section-title">Learning system (Scout think mode)</h3>
         <button class="cds--btn cds--btn--secondary" id="ph-analytics-think" type="button">Run Think Mode now</button>
       </div>
-      <p class="ph-muted">Uses LLM-as-judge: every promoted answer must beat the grounded baseline on faithfulness, relevance, helpfulness, and safety.</p>
+      <p class="ph-muted">The local model judges candidates; strict validation and score improvement are still required before retention.</p>
       <div class="ph-analytics__learning"></div>
     </div>
 
@@ -498,11 +485,11 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
     </div>
 
     <div class="ph-analytics__section">
-      <h3 class="ph-analytics__section-title">Provider health history</h3>
+      <h3 class="ph-analytics__section-title">Local model health history</h3>
       <div class="ph-analytics__table-wrap">
-        <table class="ph-analytics__table ph-analytics__provider-health-table" aria-label="Provider health history">
+        <table class="ph-analytics__table ph-analytics__provider-health-table" aria-label="Local model health history">
           <thead>
-            <tr><th>Provider</th><th>Success rate</th><th>Success / Fail</th><th>Avg latency</th></tr>
+            <tr><th>Engine</th><th>Success rate</th><th>Success / Fail</th><th>Avg latency</th></tr>
           </thead>
           <tbody></tbody>
         </table>

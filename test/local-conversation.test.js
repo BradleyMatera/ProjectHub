@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { buildLocalConversationMemory, extractFirstCompleteSentence, validateLocalConversationReply } = require('../lib/local-conversation');
+const { buildLocalConversationMemory, extractFirstCompleteSentence, extractCompleteSentences, validateLocalConversationReply } = require('../lib/local-conversation');
 
 test('local conversation memory keeps the five newest sanitized turns and stance', () => {
   const history = Array.from({ length: 7 }, (_, index) => ({
@@ -21,6 +21,13 @@ test('local conversation streaming stops at the first complete sentence', () => 
   assert.equal(extractFirstCompleteSentence('ProjectHub uses local retrieval'), '');
 });
 
+test('local conversation can retain two complete natural sentences', () => {
+  assert.equal(
+    extractCompleteSentences('He reads existing code carefully. Then he makes a small reviewable change. A third sentence is ignored.'),
+    'He reads existing code carefully. Then he makes a small reviewable change.'
+  );
+});
+
 test('local reply validator accepts grounded phrasing and rejects new entities and hype', () => {
   const source = 'Bradley built ProjectHub with JavaScript, Node.js, BM25 retrieval, session memory, and local Ollama.';
   assert.equal(validateLocalConversationReply(
@@ -30,6 +37,7 @@ test('local reply validator accepts grounded phrasing and rejects new entities a
   ), true);
   assert.equal(validateLocalConversationReply('ProjectSage is a clear winner with strong AI capabilities.', source), false);
   assert.equal(validateLocalConversationReply('ProjectHub has 50 production users.', source), false);
+  assert.equal(validateLocalConversationReply('Bradley built ProjectHub with JavaScript. It uses BM25 retrieval and session memory.', source, 'How did Bradley build ProjectHub?'), true);
   assert.equal(validateLocalConversationReply('Bradley built ProjectHub. It uses BM25 retrieval. It also uses local Ollama.', source), false);
   assert.equal(validateLocalConversationReply('ProjectHub uses BM25 retrieval', source, 'How does ProjectHub retrieve facts?'), false);
   assert.equal(validateLocalConversationReply('Bradley studies data structures and algorithms.', `${source} Bradley studies data structures and algorithms.`, 'How does he approach an unfamiliar codebase?'), false);

@@ -10,17 +10,16 @@ ProjectHub is an embeddable, AI-powered chat widget that showcases Bradley Mater
 
 - **Tech stack:** Vanilla JavaScript (ES6 modules via IIFE), HTML/CSS-in-JS, GitHub Pages; live analytics uses Vite + @carbon/charts + @carbon/web-components + @carbon/styles
 - **Runtime:** Browser only; chat widget has no frontend framework or bundler; analytics section is bundled with Vite
-- **AI backend:** Recruiter chat API at `https://projecthub-chat.bradleymatera.dev/api/chat` on a GCP e2-micro VM with Caddy HTTPS. Production configuration is local-only: a pre-warmed `qwen2.5:0.5b` Ollama model, deterministic grounded tools, BM25 retrieval, bundled recruiter knowledge, session memory, stance consistency, and strict generated-output validation. `LOCAL_ONLY_MODE=true` disables every cloud inference provider and runtime knowledge fetch. Known retired Groq model IDs and retired GitHub Models inference remain hard-blocked for stale environments. If local generation is cold, slow, or invalid, the final fallback is a fast grounded answer from the bundled `data/recruiter-knowledge.json`.
+- **AI backend:** Recruiter chat API at `https://projecthub-chat.bradleymatera.dev/api/chat` on a free GCP e2-micro VM with Caddy HTTPS. Inference is exclusively a pre-warmed local `qwen2.5:0.5b` model through Ollama. Deterministic evidence tools, BM25 retrieval, bundled knowledge, memory, stance consistency, and strict validation compensate for the small model. Invalid or slow generations fall back to a useful grounded answer from `data/recruiter-knowledge.json`.
 - **Session memory:** Browser sends a per-tab session id and recent turns. The local RAG layer uses the five newest sanitized turns; the browser keeps up to 10.
-- **Generative usage:** Grounded-first deterministic logic answers factual and safety-sensitive queries. Evidence-heavy requests execute five read-only tools deterministically. Open-ended recruiter conversation uses local Ollama RAG with up to five recent turns plus per-topic stances. Generated replies must pass safety, entity, number, length, source-overlap, and overclaim validation; otherwise the grounded answer is returned. Unknown tools fail closed and no public tool performs writes or arbitrary web access. 15s generation ceiling. Out-of-scope questions are forced to grounded replies.
-- **Retrieval pipeline:** Local Okapi BM25 (`lib/bm25.js`) with query understanding (`lib/query-understanding.js` — typo correction, intent classification, contextual rewriting) is the production retrieval mode. Dense Cloudflare embeddings remain legacy/optional code but are disabled by local-only configuration. BM25 Recall@6=0.925 on the current 40-query golden eval set.
+- **Generative usage:** Grounded-first deterministic logic answers factual and safety-sensitive queries. Evidence-heavy requests execute five read-only tools deterministically. Open-ended recruiter conversation uses local Ollama RAG with up to five recent turns plus per-topic stances. Generated replies must pass safety, entity, number, length, source-overlap, and overclaim validation; otherwise the grounded answer is returned. Unknown tools fail closed and no public tool performs writes or arbitrary web access. 15s end-to-end response budget. Out-of-scope questions are forced to grounded replies.
+- **Retrieval pipeline:** Local Okapi BM25 (`lib/bm25.js`) with query understanding (`lib/query-understanding.js` — typo correction, intent classification, contextual rewriting). BM25 Recall@6=1.000 on the current 40-query golden eval set.
 - **Stance consistency:** Per-session topic stances injected into local prompts to prevent contradictions across turns. 60-minute TTL, cap 12 per session.
-- **Semantic cache:** Paraphrase dedup via embedding cosine similarity (≥0.92 threshold). LRU, 200 entries, 10-min TTL. Only active when vector retrieval is enabled.
 - **Agent name & persona:** The assistant is named **Scout**: helpful, calm, concise, honest, and never over-hype.
 - **Widget UX:** Header shows "Scout" as the assistant title and "Bradley Matera · Recruiter assistant". Placeholder and welcome messages are from Scout. Each session starts by asking the visitor's name.
 - **Data sources:** `data.js` (projects/CodePens), `data/recruiter-knowledge.json` (canonical facts), and `sourceMaterial` (ingested blog posts, pages, and resume guardrails from `scripts/build-knowledge.js`).
-- **Think Mode:** Self-improvement loop runs every 20 minutes using local Ollama. It stashes weak answers, processes up to 3 per cycle, validates, and keeps proposals in the isolated local learned file. GitHub pushes are forced off in local-only mode. False-claim, safety, out-of-scope, and meta questions are filtered before stashing.
-- **Test suites:** 6 test suites (adversarial, coverage, load/stress, regression, edge cases, full system verification) — 474+ tests total, 99.8% pass rate. Plus 2 quality suites (real conversation replay with 40 visitor questions, quality regression with 60+ targeted tests). Test files live in `/tmp/test-suite-*.py`. Plus 36 retrieval unit tests (`test/*.test.js`) and 40-query golden eval (`data/eval-golden.json`).
+- **Think Mode:** A local self-improvement loop runs every 20 minutes. It stashes weak answers, asks Ollama for improved grounded wording, scores and judges candidates, and retains only validated improvements in the local learned file. It never writes to GitHub or another external system.
+- **Test suites:** 6 legacy API suites (adversarial, coverage, load/stress, regression, edge cases, full system verification) plus 58 checked-in Node unit tests, a 48-request local API evaluation, and a 40-query retrieval golden set.
 - **Current branch/focus:** `feat/agent-systems-network` — local-only Ollama conversation, grounded agent tools, coherent memory, strict validation, and a private SSH-tunneled preview
 
 ---
@@ -66,14 +65,11 @@ cat data.js utils.js logic.js ui.js > ProjectHub.js
 npm install
 npm run build
 
-# Run retrieval unit tests (BM25, query understanding, vector index, hybrid fusion)
+# Run local retrieval tests (BM25 and query understanding)
 npm run test:retrieval
 
 # Evaluate retrieval quality against golden set (Recall@k, MRR@k)
 npm run eval-retrieval
-
-# Build pre-computed embeddings (requires CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN)
-npm run build:embeddings
 
 # Publish changes to GitHub Pages (PRODUCTION)
 # 1. Merge release PR to master
@@ -101,33 +97,23 @@ Live widget URL for embedding:
 | `logic.js` | Query intent detection, response generation, AI fallback orchestration |
 | `ui.js` | DOM creation, event handling, rendering of the floating chat widget |
 | `utils.js` | Shared helpers (GitHub API fetching) |
-| `server-gemini.js` | Backend server — chat API, LLM network, Think Mode, safety regexes, analytics, hybrid retrieval, stance consistency, semantic cache |
+| `server-gemini.js` | Backend server — local Ollama chat, Think Mode, safety, analytics, BM25 retrieval, and memory |
 | `lib/rag-chunks.js` | Shared RAG chunk builder — flattens knowledge JSON into retrievable fact chunks |
 | `lib/bm25.js` | Okapi BM25 retrieval index — TF saturation, IDF weighting, document-length normalization |
 | `lib/query-understanding.js` | Query understanding pipeline — normalization, typo correction, intent classification, contextual rewriting |
-| `lib/vector-index.js` | Dense vector index — loads pre-built embeddings, brute-force cosine similarity search |
-| `lib/hybrid-retrieve.js` | Hybrid fusion — reciprocal rank fusion (RRF) + maximal marginal relevance (MMR) |
-| `lib/model-policy.js` | Runtime retirement policy that blocks deprecated Groq model IDs and retired inference providers |
 | `lib/agent-tools.js` | Allowlisted read-only agent tools for portfolio search, project comparison, role matching, and public profile evidence |
-| `lib/agent-fallback.js` | Provider-independent deterministic agent planning and evidence-based answers when Groq tool calling is unavailable |
-| `lib/agent-runtime.js` | Provider-neutral bounded tool-call loop with argument validation, call caps, and fail-closed execution |
+| `lib/agent-fallback.js` | Deterministic local agent planning and evidence-based answers |
 | `lib/local-conversation.js` | Five-turn local memory shaping and strict Ollama RAG output validation |
 | `lib/cost-ledger.js` | Metering tracker for every billable-adjacent event |
 | `lib/cost-insights.js` | Cost insights builder for the /api/costs dev endpoint |
-| `data/recruiter-knowledge.json` | Canonical knowledge base (read by server, written by Think Mode) |
+| `data/recruiter-knowledge.json` | Canonical bundled knowledge base |
 | `data/eval-golden.json` | Golden set of 40 queries for retrieval evaluation |
-| `data/knowledge-vectors.json` | Pre-built chunk embeddings (generated by build-embeddings script) |
-| `data/intent-centroids.json` | Intent centroid embeddings (generated by build-embeddings script) |
-| `scripts/build-embeddings.js` | Build-time embedding generation via Cloudflare Workers AI |
 | `scripts/eval-retrieval.js` | Retrieval evaluation harness — measures Recall@k and MRR@k |
+| `scripts/eval-local-api.js` | Local API acceptance harness — 48 requests covering facts, safety, NLP, memory, project references, and answer variety |
 | `test/bm25.test.js` | BM25 index unit tests (8 tests) |
 | `test/query-understanding.test.js` | Query understanding unit tests (15 tests) |
-| `test/vector-index.test.js` | Vector index unit tests (5 tests) |
-| `test/hybrid-retrieve.test.js` | Hybrid fusion unit tests (8 tests) |
-| `test/model-policy.test.js` | Retired-model blocking and explicit Groq model policy tests |
 | `test/agent-tools.test.js` | Read-only agent tool selection, evidence, privacy, and fail-closed tests |
-| `test/agent-fallback.test.js` | Groq-independent project comparison, role evidence, and interview workflow tests |
-| `test/agent-runtime.test.js` | Agent orchestration, tool validation, output bounding, and denial tests |
+| `test/agent-fallback.test.js` | Local project comparison, role evidence, and interview workflow tests |
 | `deploy-gcp.sh` | Deploy script — copies server-gemini.js + lib/ to prod GCP VM and restarts service |
 | `deploy-gcp-dev.sh` | Deploy script — copies server-gemini.js + lib/ to dev GCP VM and restarts service |
 | `.github/workflows/test.yml` | CI — runs unit tests, retrieval eval, syntax checks on develop |
@@ -212,7 +198,6 @@ Add an entry to `data.js` `projects` array and mirror it in `ProjectHub.js` if t
 |-----------|-----------------|
 | **Release, staging, branching, or rollback** | **`PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md`** |
 | **Branch protection or environment setup** | **`docs/branch-protection-setup.md`** |
-| **Think Mode migration plan** | **`docs/think-mode-migration-plan.md`** |
 | Bounded agent tools, Ollama fallback, or private preview | `docs/agent-systems.md` |
 | Understand data flow, hosting, or backend migration | `docs/architecture-overview.md` |
 | Add a project, CodePen, suggestion, or update data | `docs/data-guide.md` |
@@ -220,7 +205,7 @@ Add an entry to `data.js` `projects` array and mirror it in `ProjectHub.js` if t
 | Run, test, publish, or do routine maintenance | `docs/common-tasks.md` |
 | Follow naming, file organization, or style rules | `docs/coding-standards.md` |
 | Deploy, secure, or monitor the GCP backend | `docs/backend-guide.md` |
-| Understand free-tier routing and cost optimization | `docs/low-cost-ai-routing.md` |
+| Understand the local AI runtime | `docs/local-ai-runtime.md` |
 
 ---
 
@@ -233,10 +218,9 @@ Add an entry to `data.js` `projects` array and mirror it in `ProjectHub.js` if t
 5. `docs/data-guide.md` — Schema and update workflow for projects, CodePens, and suggestions.
 6. `docs/api-guide.md` — Chat endpoint contract, GitHub API usage, and fallback proxy behavior.
 7. `docs/backend-guide.md` — GCP VM deployment, Caddy HTTPS, systemd, environment variables, cost checklist.
-8. `docs/low-cost-ai-routing.md` — Free-tier LLM routing policy, provider order, validation, and cost optimization.
+8. `docs/local-ai-runtime.md` — Ollama runtime, retrieval, memory, validation, and local learning.
 9. `docs/branch-protection-setup.md` — Branch protection rules and GitHub environment configuration.
-10. `docs/think-mode-migration-plan.md` — Think Mode transition from direct commits to PR-based proposal workflow.
-11. `docs/agent-systems.md` — Provider-independent agent tools, constrained Ollama control, and the private SSH-tunneled feature preview.
+10. `docs/agent-systems.md` — Local agent tools, constrained Ollama control, and the private SSH-tunneled feature preview.
 
 ---
 

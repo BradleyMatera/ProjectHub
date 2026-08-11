@@ -368,8 +368,8 @@
 
         <p class="subtitle">
           Scout helps visitors ask questions about my projects, background, skills, blogs, resume details,
-          and career fit without digging through every page manually. It runs entirely on free tiers:
-          GitHub Pages, a GCP VM, free LLM providers, and a local Ollama fallback.
+          and career fit without digging through every page manually. Model inference runs locally through
+          Ollama on a free GCP VM; the frontend stays on GitHub Pages.
         </p>
 
         <div class="hero-panel" aria-label="Scout assistant summary">
@@ -421,7 +421,7 @@
 
         <p>
           The current direction is a zero-cost recruiter assistant that uses the resources already available:
-          GitHub Pages, ProjectHub data files, a free GCP VM tier, free LLM providers, local Ollama models, and structured recruiter knowledge.
+          GitHub Pages, ProjectHub data files, a free GCP VM tier, local Ollama, and structured recruiter knowledge.
         </p>
       </section>
 
@@ -456,7 +456,7 @@
           <div class="flow-arrow">→</div>
           <div class="flow-step">ProjectHub widget</div>
           <div class="flow-arrow">→</div>
-          <div class="flow-step">Free LLM router</div>
+          <div class="flow-step">Local Ollama + tools</div>
           <div class="flow-arrow">→</div>
           <div class="flow-step">ProjectHub data + RAG</div>
           <div class="flow-arrow">→</div>
@@ -466,7 +466,7 @@
         <p>
           Scout first checks whether a question can be answered deterministically from the knowledge JSON.
           For evidence-heavy questions, deterministic tools build a verified answer and local Ollama may select an allowlisted presentation style without rewriting facts.
-          Open-ended questions use local Qwen through Ollama before the grounded fallback; cloud AI providers are disabled.
+          Open-ended questions use local Qwen through Ollama before the grounded fallback.
           Every generative reply is validated against the source facts before it is returned.
         </p>
       </section>
@@ -483,12 +483,12 @@
             <p>Runs the Node.js chat API and local Ollama fallback without a monthly bill.</p>
           </div>
           <div class="free-card">
-            <strong>Free LLM providers</strong>
-            <p>No hosted AI API, provider quota, or model key is required.</p>
+            <strong>Bundled knowledge</strong>
+            <p>Verified recruiter facts and BM25 retrieval require no model API or key.</p>
           </div>
           <div class="free-card">
             <strong>Local Ollama</strong>
-            <p>A memory-bounded open-weight style controller; deterministic knowledge tools remain authoritative.</p>
+            <p>A memory-bounded local language model; deterministic knowledge tools remain authoritative.</p>
           </div>
         </div>
       </section>
@@ -548,7 +548,7 @@
       <footer class="card-footer">
         <div class="chip-row">
           <span class="chip">Vanilla JavaScript</span>
-          <span class="chip">Multi-provider LLM fallback</span>
+          <span class="chip">Local Ollama inference</span>
           <span class="chip">Grounded RAG</span>
           <span class="chip">GitHub Pages</span>
           <span class="chip">Scout</span>

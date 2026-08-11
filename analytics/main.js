@@ -296,27 +296,18 @@ function renderDonutBreakdown(holder, breakdown, title, container) {
   }
 }
 
-function renderProviderTable(tbody, providers, providerBreakdown) {
-  if (!Array.isArray(providers) || providers.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6">No provider data</td></tr>';
+function renderProviderTable(tbody, models, providerBreakdown) {
+  if (!Array.isArray(models) || models.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4">No local model data</td></tr>';
     return;
   }
-  const rows = providers.map((p) => {
-    const used = typeof p.usedToday === 'number' ? p.usedToday : '--';
-    const limit = p.limit ? formatNumber(p.limit) : '∞';
-    const allTime = formatNumber(providerBreakdown?.[p.slug] || 0);
-    let statusClass = 'status-online';
-    let statusText = 'Active';
-    if (!p.enabled) { statusClass = 'status-disabled'; statusText = 'Disabled'; }
-    else if (p.exhausted) { statusClass = 'status-cooldown'; statusText = 'Cooldown'; }
-    else if (!p.available) { statusClass = 'status-offline'; statusText = 'Unavailable'; }
+  const rows = models.map((model) => {
+    const allTime = formatNumber(providerBreakdown?.ollama || 0);
     return `<tr>
-      <td><strong>${p.slug}</strong></td>
-      <td>${p.model || '--'}</td>
-      <td><span class="ph-status ${statusClass}">${statusText}</span></td>
-      <td>${formatNumber(used)}</td>
+      <td><strong>${model.engine}</strong></td>
+      <td>${model.model || '--'}</td>
+      <td><span class="ph-status status-online">Local only</span></td>
       <td>${allTime}</td>
-      <td>${limit}</td>
     </tr>`;
   }).join('');
   tbody.innerHTML = rows;
@@ -571,7 +562,7 @@ function renderLearningSystem(container, data) {
     <div class="ph-learning-tile">
       <div class="ph-analytics__tile-label">Learned answers</div>
       <div class="ph-analytics__tile-value">${formatNumber(learn.learnedCount)}</div>
-      <div class="ph-muted">${formatNumber(learn.pendingLearned || 0)} pending push to GitHub</div>
+      <div class="ph-muted">${formatNumber(learn.pendingLearned || 0)} retained locally</div>
     </div>
     <div class="ph-learning-tile">
       <div class="ph-analytics__tile-label">Think mode status</div>
@@ -579,9 +570,9 @@ function renderLearningSystem(container, data) {
       <div class="ph-muted">${learn.lastThinkAt ? 'Last run: ' + formatTime(learn.lastThinkAt) : 'Last run: never'}</div>
     </div>
     <div class="ph-learning-tile">
-      <div class="ph-analytics__tile-label">GitHub sync</div>
-      <div class="ph-analytics__tile-value" style="font-size:1.5rem">${learn.hasGitHubToken ? 'Connected' : 'No token'}</div>
-      <div class="ph-muted">Pushes learned answers to knowledge JSON</div>
+      <div class="ph-analytics__tile-label">Learning storage</div>
+      <div class="ph-analytics__tile-value" style="font-size:1.5rem">Local disk</div>
+      <div class="ph-muted">Validated improvements stay on this VM</div>
     </div>
     <div class="ph-learning-tile">
       <div class="ph-analytics__tile-label">Avg learned score</div>
@@ -601,12 +592,7 @@ function renderLearningSystem(container, data) {
     <div class="ph-learning-tile">
       <div class="ph-analytics__tile-label">Next think run</div>
       <div class="ph-analytics__tile-value" style="font-size:1.5rem">${nextThinkIn > 0 ? Math.ceil(nextThinkIn / 1000) + 's' : 'Due now'}</div>
-      <div class="ph-muted">Auto-triggers when providers recover</div>
-    </div>
-    <div class="ph-learning-tile">
-      <div class="ph-analytics__tile-label">Semantic cache</div>
-      <div class="ph-analytics__tile-value">${formatNumber(learn.semanticCacheSize)}</div>
-      <div class="ph-muted">Paraphrase dedup (≥0.92 similarity)</div>
+      <div class="ph-muted">Runs every 20 minutes when gaps are queued</div>
     </div>
     <div class="ph-learning-tile">
       <div class="ph-analytics__tile-label">Stance tracking</div>
@@ -616,12 +602,7 @@ function renderLearningSystem(container, data) {
     <div class="ph-learning-tile">
       <div class="ph-analytics__tile-label">Retrieval mode</div>
       <div class="ph-analytics__tile-value" style="font-size:1.5rem">${learn.retrievalMode || 'bm25'}</div>
-      <div class="ph-muted">${formatNumber(learn.bm25Chunks || 0)} chunks · ${learn.vectorIndexLoaded ? 'vectors loaded' : 'no vectors'}</div>
-    </div>
-    <div class="ph-learning-tile">
-      <div class="ph-analytics__tile-label">Providers recovered</div>
-      <div class="ph-analytics__tile-value">${formatNumber((learn.providersRecentlyRecovered || []).length)}</div>
-      <div class="ph-muted">Recently back online</div>
+      <div class="ph-muted">${formatNumber(learn.bm25Chunks || 0)} local knowledge chunks</div>
     </div>
   `;
   container.innerHTML = '';
@@ -832,11 +813,8 @@ function renderChatHistory(section, chatLog) {
   const sessions = chatLog.sessions;
   const providerColors = {
     grounded: 'ph-text-success',
-    groq: 'ph-text-info',
-    cloudflare: 'ph-text-info',
-    github: 'ph-text-info',
-    gemini: 'ph-text-info',
-    grok: 'ph-text-info',
+    'local-agent': 'ph-text-info',
+    ollama: 'ph-text-info',
     cached: 'ph-text-warn',
     learned: 'ph-text-success',
   };
@@ -936,7 +914,6 @@ function renderCostSection(section, costs, label, apiBase) {
       <td><strong>${source}</strong></td>
       <td>${formatNumber(a.calls)}</td>
       <td>${formatNumber(a.tokensIn)} / ${formatNumber(a.tokensOut)}</td>
-      <td>${formatNumber(a.neurons)}</td>
       <td>${costFmtBytes(a.bytes)}</td>
       <td>$${(a.shadowMicroUsd / 1e6).toFixed(6)}${a.estimated ? ' (est)' : ''}</td>
     </tr>`).join('');
@@ -953,8 +930,8 @@ function renderCostSection(section, costs, label, apiBase) {
     <ul class="ph-cost-insights">${insights || '<li class="ph-muted">Collecting data…</li>'}</ul>
     <div class="ph-analytics__table-wrap" style="margin-top:1rem">
       <table class="ph-analytics__table">
-        <thead><tr><th>Source</th><th>Calls</th><th>Tokens in/out</th><th>Neurons</th><th>Bytes</th><th>Shadow $ (month)</th></tr></thead>
-        <tbody>${sources || '<tr><td colspan="6">No usage this month yet</td></tr>'}</tbody>
+        <thead><tr><th>Source</th><th>Calls</th><th>Tokens in/out</th><th>Bytes</th><th>Shadow $ (month)</th></tr></thead>
+        <tbody>${sources || '<tr><td colspan="5">No usage this month yet</td></tr>'}</tbody>
       </table>
     </div>
     <details style="margin-top:0.75rem"><summary class="ph-muted">Measurement caveats</summary><ul class="ph-muted">${caveats}</ul></details>
@@ -1012,7 +989,7 @@ function render(container, data) {
   }
 
   if (providerTableBody && health) {
-    renderProviderTable(providerTableBody, health.providers, health.providerBreakdown);
+    renderProviderTable(providerTableBody, health.models, health.providerBreakdown);
   }
 
   if (providerHealthBody && health) {
@@ -1188,12 +1165,12 @@ export function mount(selector) {
     <div class="ph-analytics__grid"></div>
 
     <div class="ph-analytics__section">
-      <h3 class="ph-analytics__section-title">Provider status</h3>
-      ${isDevHost ? '<p class="ph-muted">Scout routes each open-ended question through this free-tier LLM network in priority order. "Used today" counts against each provider\'s self-imposed daily budget; when one is exhausted the router falls through to the next.</p>' : ''}
+      <h3 class="ph-analytics__section-title">Local model</h3>
+      ${isDevHost ? '<p class="ph-muted">Scout performs model inference only through Ollama on the ProjectHub VM.</p>' : ''}
       <div class="ph-analytics__table-wrap">
-        <table class="ph-analytics__table ph-analytics__provider-table" aria-label="Provider status">
+        <table class="ph-analytics__table ph-analytics__provider-table" aria-label="Local model status">
           <thead>
-            <tr><th>Provider</th><th>Model</th><th>Status</th><th>Used today</th><th>All-time</th><th>Daily limit</th></tr>
+            <tr><th>Engine</th><th>Model</th><th>Status</th><th>All-time replies</th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -1202,7 +1179,7 @@ export function mount(selector) {
 
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Trends & breakdowns</h3>
-      ${isDevHost ? '<p class="ph-muted">Hourly request volume and provider mix. Grounded answers come straight from the knowledge base; LLM answers passed validation; cached answers were served from the semantic cache.</p>' : ''}
+      ${isDevHost ? '<p class="ph-muted">Hourly request volume and answer-source mix. Grounded answers come from bundled knowledge; Ollama answers passed local validation.</p>' : ''}
       <div class="ph-analytics__charts"></div>
     </div>`;
 
@@ -1217,7 +1194,7 @@ export function mount(selector) {
       </div>
       <div class="ph-analytics__section">
         <h3 class="ph-analytics__section-title">Last request pipeline</h3>
-        <p class="ph-muted">How the most recent question moved through the answer pipeline: grounding, provider routing, validation, and final source.</p>
+        <p class="ph-muted">How the most recent question moved through grounding, local generation, validation, and final answer selection.</p>
         <div class="ph-analytics__last-pipeline"></div>
       </div>
     </div>
@@ -1242,12 +1219,12 @@ export function mount(selector) {
     </div>
 
     <div class="ph-analytics__section">
-      <h3 class="ph-analytics__section-title">Provider health history</h3>
-      <p class="ph-muted">Success rate and latency per provider since the last deploy. A failing provider is skipped automatically by the router.</p>
+      <h3 class="ph-analytics__section-title">Local model health history</h3>
+      <p class="ph-muted">Ollama success rate and latency since the last deploy.</p>
       <div class="ph-analytics__table-wrap">
-        <table class="ph-analytics__table ph-analytics__provider-health-table" aria-label="Provider health history">
+        <table class="ph-analytics__table ph-analytics__provider-health-table" aria-label="Local model health history">
           <thead>
-            <tr><th>Provider</th><th>Success rate</th><th>Success / Fail</th><th>Avg latency</th></tr>
+            <tr><th>Engine</th><th>Success rate</th><th>Success / Fail</th><th>Avg latency</th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -1269,7 +1246,7 @@ export function mount(selector) {
 
     <div class="ph-analytics__section">
       <h3 class="ph-analytics__section-title">Recent requests</h3>
-      <p class="ph-muted">Each row shows provider, time, topic, and referrer. Click a row to expand the full request record, including the sanitized question and reply preview.</p>
+      <p class="ph-muted">Each row shows answer source, time, topic, and referrer. Click a row to expand the sanitized request record.</p>
       <div class="ph-analytics__recent-requests"></div>
     </div>
 
@@ -1284,7 +1261,7 @@ export function mount(selector) {
         <h3 class="ph-analytics__section-title">Learning system (Scout think mode)</h3>
         <button class="cds--btn cds--btn--secondary" id="ph-analytics-think" type="button">Run Think Mode now</button>
       </div>
-      <p class="ph-muted">Uses LLM-as-judge: every promoted answer must beat the grounded baseline on faithfulness, relevance, helpfulness, and safety.</p>
+      <p class="ph-muted">The local model judges candidates; strict validation and score improvement are still required before retention.</p>
       <div class="ph-analytics__learning"></div>
     </div>
 
@@ -1319,11 +1296,11 @@ export function mount(selector) {
     </div>
 
     <div class="ph-analytics__section">
-      <h3 class="ph-analytics__section-title">Provider health history</h3>
+      <h3 class="ph-analytics__section-title">Local model health history</h3>
       <div class="ph-analytics__table-wrap">
-        <table class="ph-analytics__table ph-analytics__provider-health-table" aria-label="Provider health history">
+        <table class="ph-analytics__table ph-analytics__provider-health-table" aria-label="Local model health history">
           <thead>
-            <tr><th>Provider</th><th>Success rate</th><th>Success / Fail</th><th>Avg latency</th></tr>
+            <tr><th>Engine</th><th>Success rate</th><th>Success / Fail</th><th>Avg latency</th></tr>
           </thead>
           <tbody></tbody>
         </table>

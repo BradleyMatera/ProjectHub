@@ -12,7 +12,7 @@
 - Put shared backend modules in `lib/` — these are `require()`d by `server-gemini.js` and `scripts/`.
 - Put unit tests in `test/` — one `test/*.test.js` file per `lib/` module.
 - Put build-time and evaluation tools in `scripts/` — not loaded at runtime.
-- Put generated data artifacts in `data/` — `knowledge-vectors.json`, `intent-centroids.json`, `eval-golden.json`.
+- Put evaluation data artifacts in `data/`, including `eval-golden.json`.
 - `ProjectHub.js` is the inlined/concatenated deployment artifact. When you edit a source module, mirror the change in `ProjectHub.js` if it is still the live distribution file.
 - `server-gemini.js` is the backend server. It is deployed to the VM as `server.js`. Edit `server-gemini.js` in the repo, then deploy.
 - Test suites live in `/tmp/test-suite-*.py` and run against the live API. Run them sequentially with delays to avoid 429 rate limits.
@@ -37,7 +37,7 @@
 
 - Do not add a bundler (Webpack, Vite, Rollup, etc.).
 - Do not add JSX/TSX.
-- `package.json` is for metadata only. The backend calls all providers with vanilla `fetch`; no OpenAI SDK is required in production.
+- Keep the backend dependency-light. Ollama is called with the built-in `fetch`; no model SDK is required.
 - The widget must run when loaded via `https://bradleymatera.github.io/ProjectHub/ProjectHub.js`.
 - `index.html` is the public GitHub Pages landing site; use `local-test.html` for local widget testing.
 - `server-gemini.js` must pass `node --check` before deployment.
@@ -64,7 +64,7 @@
 
 - `scripts/*.js` are one-off build/eval tasks, not loaded at runtime by the server
 - Must be runnable via `node scripts/<name>.js`
-- Add a corresponding `package.json` script entry (e.g., `"build:embeddings": "node scripts/build-embeddings.js"`)
+- Add a corresponding `package.json` script entry for repeatable maintenance tasks.
 - May require env vars — document them in `.env.development.example` and `.env.production.example`
 - Must handle missing env vars gracefully with a clear error message
 

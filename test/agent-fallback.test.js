@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { buildDeterministicAgentResult, parseLocalStyleResponse, projectNamesFromQuestion } = require('../lib/agent-fallback');
+const { buildDeterministicAgentResult, parseLocalStyleResponse, projectNamesFromQuestion, shouldUseDeterministicAgent } = require('../lib/agent-fallback');
 
 const knowledge = {
   summary: { honestGaps: ['No production DSA mentorship.'] },
@@ -21,7 +21,7 @@ test('projectNamesFromQuestion identifies known projects without model inference
   assert.deepEqual(names, ['ProjectHub (Scout)', 'AWS Serverless Metadata Extraction Workflow']);
 });
 
-test('deterministic agent compares projects without Groq', () => {
+test('deterministic local agent compares projects', () => {
   const result = buildDeterministicAgentResult('Compare ProjectHub and the Metadata Extraction Workflow', knowledge);
   assert.match(result.reply, /ProjectHub.*while AWS Serverless Metadata/i);
   assert.deepEqual(result.steps.map(step => step.tool), ['search_portfolio', 'compare_projects']);
@@ -44,4 +44,12 @@ test('local style response accepts only a constrained presentation hint', () => 
   assert.equal(parseLocalStyleResponse('{"style":"standard"}', 'Compare these projects'), 'standard');
   assert.equal(parseLocalStyleResponse('{"style":"rewrite","reply":"invented"}', 'Compare these projects'), null);
   assert.equal(parseLocalStyleResponse('ProjectSage is better', 'Compare these projects'), null);
+});
+
+test('agent routing reserves tools for evidence-rich work', () => {
+  assert.equal(shouldUseDeterministicAgent('Compare ProjectHub and the Metadata Extraction Workflow'), true);
+  assert.equal(shouldUseDeterministicAgent('Is he fit for a role requiring JavaScript and AWS Lambda?'), true);
+  assert.equal(shouldUseDeterministicAgent('Give me interview questions about his AWS work'), true);
+  assert.equal(shouldUseDeterministicAgent('Is he a fit for a junior frontend role?'), false);
+  assert.equal(shouldUseDeterministicAgent('Which project is best for frontend?'), false);
 });

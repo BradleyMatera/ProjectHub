@@ -28,7 +28,10 @@ const EXTRA_FILES = [
 const MAX_FILE_SIZE = 1024 * 1024; // 1 MB
 const IGNORE = [
   'node_modules', '.git', 'public', 'out', 'cache', 'package-lock.json', 'package.json',
-  'aichat.md', 'aichat', 'aichat.md', 'Screenshot', 'test_suite.txt', 'conversational_ai_test_suite_projecthub.pdf'
+  'aichat.md', 'aichat', 'aichat.md', 'Screenshot', 'test_suite.txt', 'conversational_ai_test_suite_projecthub.pdf',
+  // These public pages describe Scout's retired hosted-provider architecture.
+  // Structured project facts and the current in-repo docs remain in the corpus.
+  'projecthub-embeddable-ai-recruiter-free-tiers', '/content/pages/projects/projecthub.mdx'
 ];
 
 function listFiles(dir, exts, files = []) {

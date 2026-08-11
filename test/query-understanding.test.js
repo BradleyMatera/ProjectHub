@@ -10,15 +10,23 @@ const {
   rewriteQuery,
   understandQuery,
   damerauLevenshtein,
+  expandQueryAliases,
 } = require('../lib/query-understanding');
 
 test('normalizeQuery lowercases and strips punctuation', () => {
-  assert.equal(normalizeQuery("What's his tech stack?"), "what s his tech stack?");
+  assert.equal(normalizeQuery("What's his tech stack?"), "what s his tech stack");
 });
 
 test('normalizeQuery applies typo map', () => {
   assert.equal(normalizeQuery("recruter contact"), "recruiter contact");
   assert.equal(normalizeQuery("certifcation details"), "certification details");
+  assert.equal(normalizeQuery('is he qualifed and avaliable'), 'is he qualified and available');
+});
+
+test('natural recruiter phrasing expands into retrievable concepts', () => {
+  assert.match(expandQueryAliases('Is he good with people?'), /communication customer service teamwork/);
+  assert.match(expandQueryAliases('Does he pick things up quickly?'), /learning adaptability unfamiliar code feedback/);
+  assert.match(expandQueryAliases('Is he worth an interview?'), /role fit strengths gaps evidence/);
 });
 
 test('damerauLevenshtein computes edit distance', () => {

@@ -28,7 +28,7 @@ const projects = [
   },
   {
     name: "ProjectHub (Scout)",
-    desc: "Embeddable AI recruiter assistant named Scout. One script tag adds a chat widget to any site. It answers questions about Bradley's projects, skills, AWS experience, and target roles from a grounded knowledge base, with multi-provider LLM failover, safety checks, Think Mode self-improvement, and a live analytics dashboard. Frontend is vanilla JS on GitHub Pages; backend runs on a free GCP e2-micro VM.",
+    desc: "Embeddable recruiter assistant named Scout. One script tag adds a chat widget to any site. It combines local Ollama inference, BM25 retrieval, conversational memory, deterministic evidence tools, strict safety checks, local learning, and a live analytics dashboard. Frontend is vanilla JS on GitHub Pages; backend runs on a free GCP e2-micro VM.",
     url: "https://bradleymatera.github.io/ProjectHub/",
     platform: "GitHub Pages",
     repo: "https://github.com/BradleyMatera/ProjectHub",

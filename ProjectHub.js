@@ -28,7 +28,7 @@ const projects = [
   },
   {
     name: "ProjectHub (Scout)",
-    desc: "Embeddable AI recruiter assistant named Scout. One script tag adds a chat widget to any site. It answers questions about Bradley's projects, skills, AWS experience, and target roles from a grounded knowledge base, with multi-provider LLM failover, safety checks, Think Mode self-improvement, and a live analytics dashboard. Frontend is vanilla JS on GitHub Pages; backend runs on a free GCP e2-micro VM.",
+    desc: "Embeddable recruiter assistant named Scout. One script tag adds a chat widget to any site. It combines local Ollama inference, BM25 retrieval, conversational memory, deterministic evidence tools, strict safety checks, local learning, and a live analytics dashboard. Frontend is vanilla JS on GitHub Pages; backend runs on a free GCP e2-micro VM.",
     url: "https://bradleymatera.github.io/ProjectHub/",
     platform: "GitHub Pages",
     repo: "https://github.com/BradleyMatera/ProjectHub",
@@ -118,7 +118,8 @@ const suggestions = [
   "List all projects",
   "List all CodePens",
   "How can I contact Bradley?"
-];// In-memory cache for GitHub metadata so we never block on repeated or slow API calls
+];
+// In-memory cache for GitHub metadata so we never block on repeated or slow API calls
 const __githubCache = {};
 
 // Function to fetch GitHub repo data (e.g., stars, last commit)
@@ -166,7 +167,18 @@ async function fetchAllGitHubData(projects) {
     }
   })).catch(() => {});
   return projectData;
-}// Function to handle user queries
+}function buildServerHistory(context) {
+  return (Array.isArray(context) ? context : []).reduce((turns, turn) => {
+    if (turn.role === 'user') {
+      turns.push({ user: turn.content, assistant: '' });
+    } else if ((turn.role === 'bot' || turn.role === 'assistant') && turns.length > 0) {
+      turns[turns.length - 1].assistant = turn.content;
+    }
+    return turns;
+  }, []).slice(-5);
+}
+
+// Function to handle user queries
 // The client is a thin pass-through: all routing, grounded answers, and LLM
 // generation happen on the server. This keeps answers consistent, contextual,
 // and conversation-aware instead of fragmented across client and server.
@@ -191,14 +203,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
-        const history = (Array.isArray(chatSession.context) ? chatSession.context : []).reduce((acc, turn) => {
-          if (turn.role === 'user') {
-            acc.push({ user: turn.content, assistant: '' });
-          } else if (turn.role === 'bot' && acc.length > 0) {
-            acc[acc.length - 1].assistant = turn.content;
-          }
-          return acc;
-        }, []).slice(-5);
+        const history = buildServerHistory(chatSession.context);
 
         const res = await fetch(CHAT_API_URL, {
           method: "POST",
@@ -240,7 +245,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   // - Safety/injection blocking
   // - False-claim refusal
   // - Grounded deterministic answers (contact, projects, role-fit, etc.)
-  // - LLM provider network for conversational questions
+  // - Local Ollama RAG for conversational questions
   // - Follow-up suggestions
   // - Session memory and conversation context
   const aiResult = await askAIBackend();
@@ -252,7 +257,12 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   // Fallback if the server is unreachable
   const fallbackReply = "I'm here to help with Bradley Matera's work as a junior software engineer. Try asking about ProjectHub, the AWS serverless workflow, CIRIS Ethical AI, his GitHub or LinkedIn, target roles, or strongest technical skills.";
   return { reply: fallbackReply, newTopic: "unrelated" };
-}function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData) {
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { buildServerHistory };
+}
+function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData) {
   const isDevHost = typeof window !== "undefined" && /projecthub-dev/i.test(window.location.hostname + window.location.pathname);
   const devLabel = isDevHost ? " (dev)" : "";
   const botLabel = "Scout" + devLabel;
@@ -1083,7 +1093,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
         <div class="projecthub-title">Scout${devLabel}</div>
         <div class="projecthub-subtitle-row">
           <span class="projecthub-subtitle">Ask me about Bradley's projects, skills, fit, or contact info${devLabel}</span>
-          <span class="projecthub-free-badge" title="Scout runs on free GitHub Pages, a GCP free-tier VM, free LLM providers, and a local Ollama fallback — no paid AI required.">100% free</span>
+          <span class="projecthub-free-badge" title="Scout uses GitHub Pages and local Ollama on a free-tier VM — no hosted model API required.">100% free</span>
         </div>
       </div>
       <div class="projecthub-actions">
@@ -1271,7 +1281,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       "Checking his AWS background…",
       "Writing an honest answer…",
       "Double-checking the facts…",
-      "Picking the next available free provider…"
+      "Asking the local model to phrase it clearly…"
     ];
     let tipIndex = 0;
     const tipEl = row.querySelector(".thinking-tip");
@@ -1517,7 +1527,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     chatDiv.classList.toggle("projecthub-compact", e.matches || Boolean(chatSettings.compactMode));
   });
   renderSuggestions();
-  const freeNote = `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(57,217,138,0.12);border:1px solid rgba(57,217,138,0.28);color:#b8f5d3;font-size:12px;">🟢 I run entirely on free tiers. If a provider hits its daily cap or rate limit, I automatically switch to another free provider or local Ollama on the GCP VM.</span>`;
+  const freeNote = `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(57,217,138,0.12);border:1px solid rgba(57,217,138,0.28);color:#b8f5d3;font-size:12px;">🟢 My model runs locally through Ollama on the free ProjectHub VM. Your chat is not sent to a hosted AI model.</span>`;
   const devNote = isDevHost ? `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(255,193,7,0.12);border:1px solid rgba(255,193,7,0.35);color:#ffd54f;font-size:12px;">⚠️ You are on the dev/staging environment.</span>` : "";
   const welcomeHtml = visitorName
     ? `Welcome back, ${escapeHtml(visitorName)}. I’m Scout${devLabel}, Bradley’s assistant. Ask about his projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.${freeNote}${devNote}`

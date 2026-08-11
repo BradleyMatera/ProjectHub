@@ -45,14 +45,12 @@
 ## Run Retrieval Tests
 
 ```bash
-# Run all retrieval unit tests (BM25, query understanding, vector index, hybrid fusion)
+# Run all local retrieval unit tests (BM25 and query understanding)
 npm run test:retrieval
 
 # Evaluate retrieval quality against the 40-query golden set (Recall@k, MRR@k)
 npm run eval-retrieval
 
-# Build pre-computed embeddings (requires CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN)
-npm run build:embeddings
 ```
 
 ## Debug Retrieval
@@ -65,7 +63,7 @@ curl 'https://dev.projecthub-chat.bradleymatera.dev/api/retrieve?q=what+is+his+t
 curl 'https://dev.projecthub-chat.bradleymatera.dev/api/retrieve?q=tell+me+more+about+that&h=%5B%7B%22user%22%3A%22tell+me+about+his+projects%22%2C%22assistant%22%3A%22...%22%7D%5D'
 ```
 
-Returns rewritten query, normalized query, classified intent, and side-by-side BM25 / dense / fused / legacy results.
+Returns the rewritten query, normalized query, classified intent, and BM25 results.
 
 ## Test the Widget Locally
 
@@ -82,7 +80,7 @@ Check the browser console for errors. Verify:
 - suggestions populate
 - known queries return correct answers
 - GitHub metadata loads (stars, last commit)
-- recruiter questions hit the backend and return grounded or provider-generated answers
+- recruiter questions hit the backend and return grounded or validated local Ollama answers
 
 ## Publish to GitHub Pages
 
@@ -144,7 +142,7 @@ Close the tunnel with `Ctrl-C`. See `docs/agent-systems.md` for its isolation an
 ## Test the Live API
 
 ```bash
-# Health and provider status
+# Health and local-model status
 curl https://projecthub-chat.bradleymatera.dev/health
 
 # Knowledge base coverage
@@ -194,16 +192,12 @@ npm run test:retrieval
 # Or run individually
 node --test test/bm25.test.js
 node --test test/query-understanding.test.js
-node --test test/vector-index.test.js
-node --test test/hybrid-retrieve.test.js
 ```
 
 | Module | File | Tests |
 |--------|------|-------|
 | BM25 index | `test/bm25.test.js` | 8 |
 | Query understanding | `test/query-understanding.test.js` | 15 |
-| Vector index | `test/vector-index.test.js` | 5 |
-| Hybrid fusion | `test/hybrid-retrieve.test.js` | 8 |
 
 ### Conversation Tests
 

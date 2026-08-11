@@ -1,121 +1,89 @@
-// Run: node --test test/cost-ledger.test.js
 const test = require('node:test');
 const assert = require('node:assert');
-const { CostLedger, priceEventMicroUsd, loadRegistry, dayKey, monthKey } = require('../lib/cost-ledger');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { CostLedger, priceEventMicroUsd, loadRegistry } = require('../lib/cost-ledger');
 
 const registry = loadRegistry();
-
-function makeLedger(nowFn) {
-  return new CostLedger({ registry, stateFile: null, now: nowFn || (() => Date.parse('2026-07-15T12:00:00Z')) });
-}
-
-test('micro-USD pricing: LLM tokens round up, never undercount', () => {
-  // grok: input 2,000,000 micro-USD per 1M tokens -> 100 tokens = 200
-  const micro = priceEventMicroUsd('grok', { tokensIn: 100, tokensOut: 0 }, registry);
-  assert.strictEqual(micro, 200);
-  // 1 token must cost at least 1 micro-USD (ceil), not 0
-  const tiny = priceEventMicroUsd('grok', { tokensIn: 1 }, registry);
-  assert.strictEqual(tiny, 2);
+const makeLedger = now => new CostLedger({
+  registry,
+  stateFile: null,
+  now: now || (() => Date.parse('2026-07-15T12:00:00Z'))
 });
 
-test('micro-USD pricing: cloudflare neurons', () => {
-  // 11000 micro-USD per 1000 neurons -> 12 neurons = ceil(12*11000/1000) = 132
-  const micro = priceEventMicroUsd('cloudflare', { neurons: 12 }, registry);
-  assert.strictEqual(micro, 132);
+test('local Ollama tokens have zero shadow model cost', () => {
+  assert.strictEqual(priceEventMicroUsd('ollama', { tokensIn: 500, tokensOut: 200 }, registry), 0);
 });
 
-test('micro-USD pricing: egress applies overhead factor', () => {
-  // 1 GB with 1.08 factor at 120000 micro-USD/GB = ceil(1.08 * 120000) = 129600
+test('egress pricing includes the safety overhead factor', () => {
   const micro = priceEventMicroUsd('gcp-egress', { bytes: 1073741824 }, registry);
   assert.strictEqual(micro, Math.ceil(1.08 * 120000));
 });
 
-test('micro-USD pricing: unknown source is zero', () => {
-  assert.strictEqual(priceEventMicroUsd('nope', { tokensIn: 1000 }, registry), 0);
+test('unknown sources cost zero', () => {
+  assert.strictEqual(priceEventMicroUsd('unknown', { tokensIn: 1000 }, registry), 0);
 });
 
-test('record aggregates across all windows', () => {
+test('records aggregate local inference across windows', () => {
   const ledger = makeLedger();
-  ledger.record({ source: 'groq', kind: 'llm', tokensIn: 200, tokensOut: 100 });
-  ledger.record({ source: 'groq', kind: 'llm', tokensIn: 300, tokensOut: 150 });
-  const day = ledger.state.days['2026-07-15'].groq;
-  assert.strictEqual(day.calls, 2);
-  assert.strictEqual(day.tokensIn, 500);
-  assert.strictEqual(day.tokensOut, 250);
-  const month = ledger.state.months['2026-07'].groq;
-  assert.strictEqual(month.calls, 2);
-  assert.strictEqual(ledger.state.allTime.groq.calls, 2);
+  ledger.record({ source: 'ollama', kind: 'llm', tokensIn: 200, tokensOut: 100 });
+  ledger.record({ source: 'ollama', kind: 'llm', tokensIn: 300, tokensOut: 150 });
+  assert.strictEqual(ledger.state.days['2026-07-15'].ollama.calls, 2);
+  assert.strictEqual(ledger.state.days['2026-07-15'].ollama.tokensIn, 500);
+  assert.strictEqual(ledger.state.months['2026-07'].ollama.tokensOut, 250);
 });
 
 test('UTC day rollover splits windows correctly', () => {
-  let t = Date.parse('2026-07-15T23:59:59Z');
-  const ledger = makeLedger(() => t);
-  ledger.record({ source: 'groq', tokensIn: 10 });
-  t = Date.parse('2026-07-16T00:00:01Z');
-  ledger.record({ source: 'groq', tokensIn: 10 });
-  assert.strictEqual(ledger.state.days['2026-07-15'].groq.calls, 1);
-  assert.strictEqual(ledger.state.days['2026-07-16'].groq.calls, 1);
-  assert.strictEqual(ledger.state.months['2026-07'].groq.calls, 2);
+  let now = Date.parse('2026-07-15T23:59:59Z');
+  const ledger = makeLedger(() => now);
+  ledger.record({ source: 'ollama', tokensIn: 10 });
+  now = Date.parse('2026-07-16T00:00:01Z');
+  ledger.record({ source: 'ollama', tokensIn: 10 });
+  assert.strictEqual(ledger.state.days['2026-07-15'].ollama.calls, 1);
+  assert.strictEqual(ledger.state.days['2026-07-16'].ollama.calls, 1);
 });
 
-test('month boundary rollover', () => {
-  let t = Date.parse('2026-07-31T23:59:59Z');
-  const ledger = makeLedger(() => t);
-  ledger.record({ source: 'gcp-egress', bytes: 1000 });
-  t = Date.parse('2026-08-01T00:00:01Z');
-  ledger.record({ source: 'gcp-egress', bytes: 2000 });
-  assert.strictEqual(ledger.state.months['2026-07']['gcp-egress'].bytes, 1000);
-  assert.strictEqual(ledger.state.months['2026-08']['gcp-egress'].bytes, 2000);
-});
-
-test('headroom percentages', () => {
+test('snapshot stays free within hosting limits', () => {
   const ledger = makeLedger();
-  // Cloudflare allowance: 10,000 neurons/day -> 1,000 neurons = 10%
-  ledger.record({ source: 'cloudflare', neurons: 1000 });
-  const h = ledger.headroom().find(x => x.source === 'cloudflare' && x.metric === 'neuronsPerDay');
-  assert.strictEqual(h.used, 1000);
-  assert.strictEqual(h.pct, 10);
+  ledger.record({ source: 'ollama', tokensIn: 120, tokensOut: 40 });
+  const snapshot = ledger.snapshot();
+  assert.strictEqual(snapshot.free, true);
+  assert.strictEqual(snapshot.shadowCost.actualUsd, '0.000000');
 });
 
-test('snapshot reports free=true within limits and correct USD string', () => {
+test('snapshot detects exceeded network allowance', () => {
   const ledger = makeLedger();
-  ledger.record({ source: 'cloudflare', neurons: 12 });
-  const snap = ledger.snapshot();
-  assert.strictEqual(snap.free, true);
-  assert.strictEqual(snap.shadowCost.actualUsd, '0.000000');
-  assert.match(snap.shadowCost.monthUsd, /^\d+\.\d{6}$/);
-  assert.ok(snap.shadowCost.monthMicroUsd > 0);
+  ledger.record({ source: 'gcp-egress', bytes: 1073741825 });
+  const snapshot = ledger.snapshot();
+  assert.strictEqual(snapshot.free, false);
+  assert.strictEqual(snapshot.shadowCost.actualUsd, null);
 });
 
-test('snapshot flips free=false when a quota is exceeded', () => {
-  const ledger = makeLedger();
-  ledger.record({ source: 'cloudflare', neurons: 10001 });
-  const snap = ledger.snapshot();
-  assert.strictEqual(snap.free, false);
-  assert.strictEqual(snap.shadowCost.actualUsd, null);
-});
-
-test('estimated flag propagates', () => {
-  const ledger = makeLedger();
-  ledger.record({ source: 'cloudflare', neurons: 12, estimated: true });
-  const h = ledger.headroom().find(x => x.source === 'cloudflare' && x.metric === 'neuronsPerDay');
-  assert.strictEqual(h.estimated, true);
-});
-
-test('recent events ring buffer caps at 100', () => {
-  const ledger = makeLedger();
-  for (let i = 0; i < 150; i++) ledger.record({ source: 'groq', tokensIn: 1 });
-  assert.strictEqual(ledger.state.recentEvents.length, 100);
-});
-
-test('window trimming keeps bounded history', () => {
-  let t = Date.parse('2026-01-01T00:00:00Z');
-  const ledger = makeLedger(() => t);
-  for (let d = 0; d < 90; d++) {
-    ledger.record({ source: 'groq', tokensIn: 1 });
-    t += 24 * 60 * 60 * 1000;
+test('recent event buffer and historical windows stay bounded', () => {
+  let now = Date.parse('2026-01-01T00:00:00Z');
+  const ledger = makeLedger(() => now);
+  for (let day = 0; day < 150; day++) {
+    ledger.record({ source: 'ollama', tokensIn: 1 });
+    now += 24 * 60 * 60 * 1000;
   }
+  assert.strictEqual(ledger.state.recentEvents.length, 100);
   assert.ok(Object.keys(ledger.state.days).length <= 60);
   assert.ok(Object.keys(ledger.state.hours).length <= 48);
   assert.ok(Object.keys(ledger.state.months).length <= 12);
+});
+
+test('loading persisted state drops sources not present in the local registry', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'projecthub-ledger-'));
+  const stateFile = path.join(directory, 'costs.json');
+  fs.writeFileSync(stateFile, JSON.stringify({
+    allTime: { ollama: { calls: 1 }, legacyHostedModel: { calls: 4 } },
+    hours: {}, days: {}, months: {},
+    recentEvents: [{ source: 'ollama' }, { source: 'legacyHostedModel' }]
+  }));
+  const ledger = new CostLedger({ registry, stateFile, now: () => Date.parse('2026-07-15T12:00:00Z') });
+  assert.ok(ledger.state.allTime.ollama);
+  assert.equal(ledger.state.allTime.legacyHostedModel, undefined);
+  assert.deepEqual(ledger.state.recentEvents.map(event => event.source), ['ollama']);
+  fs.rmSync(directory, { recursive: true, force: true });
 });

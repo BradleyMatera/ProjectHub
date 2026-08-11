@@ -84,19 +84,15 @@ echo_step "Writing environment file on VM"
 gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   sudo tee $REMOTE_DIR/.env <<'EOF'
 PORT=3000
-LOCAL_ONLY_MODE=true
 KNOWLEDGE_FILE=data/recruiter-knowledge.json
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000,https://bradleymatera.github.io,https://bradleymatera.github.io/ProjectHub-dev
-PROVIDER_ORDER=
-GROQ_ENABLED=false
-GROQ_MODEL=
-AGENT_GROQ_ENABLED=false
+AGENT_ENABLED=true
 OLLAMA_AGENT_ENABLED=true
 OLLAMA_AGENT_MODEL=qwen2.5:0.5b
 OLLAMA_AGENT_TIMEOUT_MS=2500
 OLLAMA_AGENT_CONTEXT=1536
 OLLAMA_AGENT_KEEP_ALIVE=-1
-GEN_TIMEOUT_MS=14500
+GEN_TIMEOUT_MS=12500
 GEN_MODEL=qwen2.5:0.5b
 GEN_ENABLED=true
 RATE_LIMIT_MAX=20
@@ -104,9 +100,7 @@ STATS_FILE=stats-dev.json
 LEARNED_FILE=learned-dev.json
 COST_TRACKER=true
 COST_FILE=costs-dev.json
-THINK_PUSH_ENABLED=false
 USE_BM25_RETRIEVAL=true
-USE_VECTOR_RETRIEVAL=false
 EOF
   sudo chmod 600 $REMOTE_DIR/.env
 "

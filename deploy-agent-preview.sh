@@ -75,19 +75,12 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   sudo install -m 644 '$REMOTE_TMP/recruiter-knowledge.json' '$REMOTE_DIR/data/recruiter-knowledge.json'
   sudo ln -sfn /opt/recruiter-chat-api-dev/node_modules '$REMOTE_DIR/node_modules'
 
-  sudo grep -Ev '^(PORT|LOCAL_ONLY_MODE|PROVIDER_ORDER|KNOWLEDGE_FILE|FEATURE_PREVIEW_ENABLED|AGENT_ENABLED|AGENT_GROQ_ENABLED|GROQ_ENABLED|GROQ_MODEL|GROQ_AGENT_MODEL|GEMINI_MODEL|OLLAMA_AGENT_ENABLED|OLLAMA_AGENT_MODEL|OLLAMA_AGENT_TIMEOUT_MS|OLLAMA_AGENT_CONTEXT|OLLAMA_AGENT_KEEP_ALIVE|OLLAMA_URL|GEN_ENABLED|GEN_MODEL|GEN_TIMEOUT_MS|THINK_PUSH_ENABLED|THINK_|GITHUB_TOKEN|GITHUB_PAT|STATS_FILE|LEARNED_FILE|COST_FILE|USE_VECTOR_RETRIEVAL)=' '$SOURCE_ENV' > /tmp/projecthub-agent-preview.env
+  sudo grep -Ev '^(PORT|KNOWLEDGE_FILE|FEATURE_PREVIEW_ENABLED|AGENT_ENABLED|OLLAMA_AGENT_ENABLED|OLLAMA_AGENT_MODEL|OLLAMA_AGENT_TIMEOUT_MS|OLLAMA_AGENT_CONTEXT|OLLAMA_AGENT_KEEP_ALIVE|OLLAMA_URL|GEN_ENABLED|GEN_MODEL|GEN_TIMEOUT_MS|STATS_FILE|LEARNED_FILE|COST_FILE|USE_BM25_RETRIEVAL)=' '$SOURCE_ENV' > /tmp/projecthub-agent-preview.env
   printf '%s\n' \
     'PORT=$PREVIEW_PORT' \
-    'LOCAL_ONLY_MODE=true' \
-    'PROVIDER_ORDER=' \
     'KNOWLEDGE_FILE=data/recruiter-knowledge.json' \
     'FEATURE_PREVIEW_ENABLED=true' \
     'AGENT_ENABLED=true' \
-    'GROQ_ENABLED=false' \
-    'GROQ_MODEL=' \
-    'GROQ_AGENT_MODEL=' \
-    'AGENT_GROQ_ENABLED=false' \
-    'GEMINI_MODEL=gemini-3.6-flash' \
     'OLLAMA_AGENT_ENABLED=true' \
     'OLLAMA_AGENT_MODEL=qwen2.5:0.5b' \
     'OLLAMA_AGENT_TIMEOUT_MS=2500' \
@@ -95,9 +88,8 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
     'OLLAMA_AGENT_KEEP_ALIVE=-1' \
     'GEN_ENABLED=true' \
     'GEN_MODEL=qwen2.5:0.5b' \
-    'GEN_TIMEOUT_MS=14500' \
-    'THINK_PUSH_ENABLED=false' \
-    'USE_VECTOR_RETRIEVAL=false' \
+    'GEN_TIMEOUT_MS=12500' \
+    'USE_BM25_RETRIEVAL=true' \
     'STATS_FILE=stats-feature.json' \
     'LEARNED_FILE=learned-feature.json' \
     'COST_FILE=costs-feature.json' >> /tmp/projecthub-agent-preview.env
@@ -122,7 +114,7 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   done
   systemctl is-active --quiet $SERVICE_NAME
   curl --fail --silent 'http://127.0.0.1:$PREVIEW_PORT/preview/' >/dev/null
-  node -e \"const h=require('/tmp/projecthub-agent-health.json'); if(!h.ok || !h.localOnly || h.providerOrder.length || !h.agent?.enabled || h.agent.groqPlannerEnabled || !h.agent.ollamaControllerEnabled || h.agent.ollamaModel!=='qwen2.5:0.5b' || h.agent.groqModel || !h.agent.deterministicFallback) process.exit(1); console.log(JSON.stringify({ok:h.ok, localOnly:h.localOnly, agent:h.agent, providerOrder:h.providerOrder, providers:h.providers.map(p=>({slug:p.slug,enabled:p.enabled,blockedReason:p.blockedReason}))}, null, 2))\"
+  node -e \"const h=require('/tmp/projecthub-agent-health.json'); if(!h.ok || !h.localOnly || !h.agent?.enabled || !h.agent.ollamaControllerEnabled || h.agent.ollamaModel!=='qwen2.5:0.5b' || !h.agent.deterministicFallback || h.models?.length!==1 || h.models[0].engine!=='ollama') process.exit(1); console.log(JSON.stringify({ok:h.ok, localOnly:h.localOnly, agent:h.agent, models:h.models, memory:h.memory}, null, 2))\"
   rm -rf '$REMOTE_TMP' /tmp/projecthub-agent-health.json
 "
 

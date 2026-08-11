@@ -4,7 +4,7 @@ These principles guide every change to the ProjectHub / Scout recruiter assistan
 
 ## 1. Single Source of Truth
 
-Both LLM providers and the grounded fallback consume the **same canonical knowledge block** (`buildKnowledgeContext`). If a fact is not in `data/recruiter-knowledge.json`, it is not in an answer.
+Local Ollama generation and the grounded fallback consume the **same canonical knowledge block** (`buildKnowledgeContext`). If a fact is not in `data/recruiter-knowledge.json`, it is not in an answer.
 
 ## 2. Grounded-Only Answers
 
@@ -12,7 +12,7 @@ Scout answers from Bradley's verified data. It does not use the LLM's general tr
 
 ## 3. Indistinguishable Fallback
 
-When free LLM providers are unavailable, the grounded fallback must be:
+When local generation is slow or fails validation, the grounded fallback must be:
 
 - Factually identical to what the LLM would have said.
 - Conversational, direct, and free of broken grammar.
@@ -35,19 +35,18 @@ Safety checks run before any LLM call or learned-answer lookup.
 
 The small local model can be cold, slow, or wrong. Scout degrades gracefully:
 
-- Per-provider retry once on transient errors.
-- Circuit breaker opens when too many recent calls fail, skipping the network entirely.
 - Response cache warms common questions so first-time visitors get instant replies.
-- The grounded knowledge base is the last-resort fallback; it needs no LLM calls and keeps Scout online when all providers are unavailable.
+- A bounded Ollama deadline prevents a slow generation from holding the request open.
+- The grounded knowledge base is always ready; it needs no model call and keeps Scout useful if Ollama is cold, unavailable, or wrong.
 
 ## 6. Fast Feedback
 
-A recruiter should not wait for a bad provider to time out. The circuit breaker and cache keep grounded-reply latency under one second during outages.
+A recruiter should not wait indefinitely for local generation. The request has a 15-second end-to-end budget, and cached or grounded answers usually return much faster.
 
 ## 7. Observability
 
-Every reply reports its provider, model, pipeline, and latency via the `/health` endpoint. Test failures, provider errors, and weak answers are logged and stashed for Think Mode.
+Every reply reports its route, local model, pipeline, and latency. Runtime state is summarized by `/health`; weak relevant answers are logged and stashed for local Think Mode.
 
 ## 8. Continuous Validation
 
-Changes are validated against the conversation test suite before deployment. The suite checks correctness, latency, safety, and—when providers are healthy—naturalness and uniqueness. It is tolerant of grounded-dominant behavior during provider outages.
+Changes are validated against unit, retrieval, API, memory, latency, safety, and browser checks before deployment. Local Ollama output must pass the same evidence and overclaim rules as every grounded answer.
