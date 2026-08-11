@@ -177,7 +177,7 @@ Key variables on the GCP VM (`.env`):
 | `AGENT_ENABLED` | Enable bounded read-only agent workflows (default `true`) |
 | `OLLAMA_AGENT_ENABLED` | Allow local Ollama to choose an allowlisted presentation style; never required for correctness (enabled on prepared hosts) |
 | `OLLAMA_AGENT_MODEL` | Local conversation/style model (prepared hosts use `qwen2.5:0.5b`) |
-| `OLLAMA_AGENT_TIMEOUT_MS` | Local controller timeout, clamped to 1-15 seconds (default `15000`) |
+| `OLLAMA_AGENT_TIMEOUT_MS` | Optional tool-answer style timeout, clamped to 1-5 seconds (default `2500`); deterministic tools never wait longer |
 | `OLLAMA_AGENT_CONTEXT` | Shared local context window, clamped to 512-4096 tokens (default `1536`) |
 | `OLLAMA_AGENT_KEEP_ALIVE` | Model retention; local-only deployment uses `-1` after boot-time prewarm |
 | `PROVIDER_ORDER` | Empty and ignored in local-only deployments |

@@ -90,7 +90,7 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
     'GEMINI_MODEL=gemini-3.6-flash' \
     'OLLAMA_AGENT_ENABLED=true' \
     'OLLAMA_AGENT_MODEL=qwen2.5:0.5b' \
-    'OLLAMA_AGENT_TIMEOUT_MS=15000' \
+    'OLLAMA_AGENT_TIMEOUT_MS=2500' \
     'OLLAMA_AGENT_CONTEXT=1536' \
     'OLLAMA_AGENT_KEEP_ALIVE=-1' \
     'GEN_ENABLED=true' \

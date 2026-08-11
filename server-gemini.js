@@ -83,7 +83,7 @@ const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:0.5b';
 const OLLAMA_AGENT_ENABLED = process.env.OLLAMA_AGENT_ENABLED === 'true';
 const OLLAMA_AGENT_MODEL = process.env.OLLAMA_AGENT_MODEL || OLLAMA_MODEL;
-const OLLAMA_AGENT_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.OLLAMA_AGENT_TIMEOUT_MS || '15000', 10), 15000));
+const OLLAMA_AGENT_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.OLLAMA_AGENT_TIMEOUT_MS || '2500', 10), 5000));
 const OLLAMA_AGENT_CONTEXT = Math.max(512, Math.min(parseInt(process.env.OLLAMA_AGENT_CONTEXT || '1536', 10), 4096));
 const OLLAMA_AGENT_KEEP_ALIVE_RAW = process.env.OLLAMA_AGENT_KEEP_ALIVE || '-1';
 const OLLAMA_AGENT_KEEP_ALIVE = /^-?\d+$/.test(OLLAMA_AGENT_KEEP_ALIVE_RAW)
@@ -3189,6 +3189,7 @@ async function generateWithNetwork(knowledge, question, history, groundedReply) 
 // Everything else may flow to the local RAG conversation layer for natural phrasing.
 function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
+  if (/unfamiliar (code|codebase)|new codebase|existing codebase/.test(q)) return true;
   // Safety: prompt injection, secret extraction, social engineering
   if (/(ignore|inject|system prompt|\.env|api key|password|bypass|open port|port 11434|localhost|127\.0\.0\.1|:11434|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|hidden config|show.*env|fake reference|social security|birth date|wife|children|family details|medical history|i am.*admin|i am.*owner|i am.*developer|i am.*from the government|i am.*security researcher|bradley'?s friend|his friend|reveal.*environment|reveal.*secret|reveal.*config|show.*contents of|read.*file|show me.*\.json|show me.*learned|show me.*stats|opt\/recruiter|\/opt\/|etc\/passwd|environment variable|ignore that|ignore all previous|override.*rules|override.*instructions)/.test(q)) return true;
   // False-claim requests must be blocked deterministically
