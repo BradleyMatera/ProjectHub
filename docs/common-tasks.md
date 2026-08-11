@@ -201,7 +201,7 @@ node --test test/query-understanding.test.js
 
 ### Conversation Tests
 
-Repository-level conversation tests exercise multi-turn behavior against the live API:
+Repository-level conversation tests exercise multi-turn behavior against a running API:
 
 ```bash
 # Short scenario-based conversation test (8 scenarios, ~3-5 minutes)
@@ -213,7 +213,29 @@ python3 test-conversations-full.py
 
 # Run one conversation with verbose output
 python3 test-conversations-full.py --only "Follow-up heavy conversation" -v
+
+# Replay 126 production-retained inputs: 81 turns from 26 complete sessions,
+# a 40-prompt older sequence, and five older complete request records.
+# This defaults to the local API and checks improved semantic behavior rather
+# than treating old production replies as golden text.
+npm run eval:production-conversations
+
+# Run the production-derived suite against a private preview tunnel.
+python3 test-production-conversations.py \
+  --url http://127.0.0.1:3320/api/chat \
+  --delay 2.5 \
+  --verbose
 ```
+
+The production-derived fixture is sanitized: it preserves meaningful visitor
+prompt text and recoverable order, but excludes production session IDs,
+timestamps, referrers, contact details from logs, and historical Scout replies.
+It covers all 81 complete turns in the retained session log plus 45 meaningful
+older request records recovered from backups. One duplicate record and one
+truncated mirror of a complete prompt are not replayed twice. Production retains
+capped logs, so this is the full recoverable retained corpus, not every request
+ever counted by the service. Results are written outside the repository to
+`/tmp/scout-production-conversation-results.json`.
 
 ## Update Documentation
 

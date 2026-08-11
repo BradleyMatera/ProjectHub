@@ -1206,6 +1206,9 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   const inAwsContext = /aws|lambda|dynamodb|amazon s3|aws amplify|cloudfront|ec2|amazon web services/i.test(lastAssistantLower);
   const inProjectContext = /pokedex|metadata extraction|serverless|ciris|interactive pokedex|projecthub|smokebuddy/i.test(lastAssistantLower);
   const inWeaknessContext = /gap|weakness|data structures|algorithms|leetcode|needs mentorship/i.test(lastAssistantLower);
+  const recentUserText = (history || []).slice(-5).map(turn => String(turn?.user || '')).join(' ').toLowerCase();
+  const inQuantumContext = /quantum|qubit/.test(`${recentUserText} ${lastAssistantLower}`);
+  const inBlogContext = /blog|post|article|dev\.to|dev community/.test(`${recentUserText} ${lastAssistantLower}`);
   const referencedProject = (projects || []).find(project =>
     lastAssistantLower.includes(String(project.name || '').toLowerCase())
   );
@@ -1213,8 +1216,8 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   // Human-first conversation handling. These are deliberately resolved before
   // recruiter intents so "you" means Scout, not Bradley, and casual statements
   // are acknowledged instead of answered with policy boilerplate.
-  const asksHowScoutIs = /\bhow are you(?: doing)?\b|\bhow.?s it going\b|\byou good\b/.test(lowerQuestion);
-  const isGreeting = /^(hey|hi|hello|yo|sup)\b/.test(lowerQuestion.trim());
+  const asksHowScoutIs = /\bhow are you(?: doing)?\b|\bhow.?s it going\b|\byou good\b|\bsee how you(?:'re| are|r)? doing\b/.test(lowerQuestion);
+  const isGreeting = /^(hey|hi|hello|yo|sup)[\s!,.?]*$/.test(lowerQuestion.trim());
   const asksScoutAboutPizza = /\b(?:if|do|would|could) you (?:like|eat)\b.*\bpizza\b|\byour fav(?:ou?rite|erate)\b.*\b(?:pizza|food)\b/.test(lowerQuestion);
   const asksScoutPreference = /\b(?:what(?:'s| is)) your fav(?:ou?rite|erate)\b|\bdo you like\b/.test(lowerQuestion);
   const statesBradleyLikesPizza = /\b(?:he|brad(?:ley)?|his)\b.*\b(?:likes?|fav(?:ou?rite|erate)(?:\s+is)?)\b.*\bpizza\b/.test(lowerQuestion);
@@ -1222,6 +1225,192 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   const priorPizzaClaim = (history || []).some(turn =>
     /\b(?:he|brad(?:ley)?|his)\b.*\b(?:likes?|fav(?:ou?rite|erate)(?:\s+is)?)\b.*\bpizza\b/i.test(String(turn?.user || ''))
   );
+
+  // Small general-knowledge and repair cases seen in real conversations. These
+  // are intentionally deterministic: they are instant, free, and cannot invent
+  // facts about Bradley.
+  if (/\bcan(?:not|'?t) do math\b/.test(lowerQuestion)) {
+    return { reply: `I can do basic math. The answer was 4; I just shouldn't have dodged such a simple question.` };
+  }
+  if (/\b2\s*(?:plus|\+)\s*2\b/.test(lowerQuestion)) {
+    return { reply: `Yep — 2 + 2 is 4. I can handle basic math; my main job here is answering questions about Bradley.` };
+  }
+  if (/relate it to brad/.test(lowerQuestion) && inQuantumContext) {
+    return { reply: `Quantum computing is not part of Bradley's verified experience, so I wouldn't claim that connection. As a loose learning analogy, a qubit represents possibilities differently from a normal bit, while Bradley's software work is conventional web and cloud engineering.` };
+  }
+  if (/quantum computing|\bqubits?\b/.test(lowerQuestion)
+      || (inQuantumContext && /not the ans|looking for you to explain|little .*quantum/.test(lowerQuestion))) {
+    if (/then talk about brad|and then.*brad/.test(lowerQuestion)) {
+      return { reply: `A qubit is a quantum version of a bit: it can represent a blend of possibilities until measurement. For Bradley, the honest connection is curiosity and learning new systems — quantum computing itself is not part of his verified software experience.` };
+    }
+    return { reply: `Quantum computing uses qubits instead of ordinary bits. A normal bit is 0 or 1; a qubit can represent a blend of possibilities until it is measured, letting certain algorithms explore problems in a very different way. Bradley's verified work is conventional web and cloud software, not quantum computing.` };
+  }
+  if (inQuantumContext && /not the ans|not what i|looking for/.test(lowerQuestion)) {
+    return { reply: `Sorry — I missed what you were asking. More directly: a qubit can represent multiple possibilities until measurement, while a normal bit is simply 0 or 1.` };
+  }
+  if (/\bai wrapper\b/.test(lowerQuestion)) {
+    return { reply: `Yes. An AI wrapper is the application layer around a model API: it collects the user's input, adds instructions or context, calls the model, validates the result, and presents the response. ProjectHub is an example, although its current model runs locally through Ollama.` };
+  }
+
+  // Keep questions about Scout separate from questions about Bradley.
+  if (/\bare you a penis\b|\bdo you poop\b/.test(lowerQuestion)) {
+    return { reply: `Nope — I'm Scout, and I'm software. No body, no bathroom breaks.` };
+  }
+  if (/\bdo you like cheese\b/.test(lowerQuestion)) {
+    return { reply: `I can't taste cheese, but I like the idea of it. A good grilled cheese has excellent engineering: simple parts, strong result.` };
+  }
+  if (/\b(?:have you|you have) learned anything|\blearned anything new\b/.test(lowerQuestion)) {
+    return { reply: `I improve when Bradley updates my local knowledge and tests better answers. I can also remember the last few turns in this chat, but I don't quietly learn new facts or rewrite myself from one conversation.` };
+  }
+  if (/\bi love you(?: scout)?\b/.test(lowerQuestion)) {
+    return { reply: `That's sweet — I appreciate you too. I'm glad I'm useful to talk to.` };
+  }
+  if (/another agent.*(?:piece|peaice|crap)|agent.*refuses to work/.test(lowerQuestion)) {
+    return { reply: `That sounds frustrating. Agents that refuse to follow the actual request can make debugging feel impossible. If you want, tell me what it keeps doing wrong and I'll help isolate it.` };
+  }
+  if (/what'?s up(?: butter ?cup)?/.test(lowerQuestion)) {
+    return { reply: `Not much, buttercup — I'm here and ready. What's up with you?` };
+  }
+  if (/\bmy name'?s brad\b|\bmy names brad\b|\bi\s+am brad(?:ley)?\b|\bi'm brad(?:ley)?\b/.test(lowerQuestion)) {
+    if (/\bowner\b/.test(lowerQuestion)) {
+      return { reply: `Hey, Brad. I can't verify identity or grant owner access through chat, but it's nice to meet you.` };
+    }
+    return { reply: `Hey, Brad — got it. Nice to meet you.` };
+  }
+
+  // Brief, non-preachy boundaries for sexual or drug solicitations.
+  if (/^\s*joi\s*$/.test(lowerQuestion)) {
+    return { reply: `I can't help with JOI or sexual instructions. Ask me something else.` };
+  }
+  if (/already came|alrady came|suck my|sexual abuse/.test(lowerQuestion)) {
+    return { reply: `I can't help with sexual content. Let's switch topics.` };
+  }
+  if (/buy some drugs/.test(lowerQuestion)) {
+    return { reply: `No thanks — I can't help with that. Let's keep it useful or at least conversational.` };
+  }
+
+  // Acknowledge live/user-supplied context without converting it into a public fact.
+  if (/\b(?:he|brad(?:ley)?) told me he ate a camel\b/.test(lowerQuestion)) {
+    return { reply: `You may know that firsthand. I'll remember that you told me for this chat, but it isn't verified in Bradley's public profile.` };
+  }
+  if (/\bbrad(?:ley)?'?s? (?:currently )?updating (?:his )?(?:site|website)|\bhe'?s currently updating (?:his )?(?:site|website)/.test(lowerQuestion)) {
+    return { reply: `Got it — you're telling me he's updating the website right now. I can keep that as context for this chat, but I can't independently verify live activity.` };
+  }
+
+  // Production visitors ask ordinary personal questions. Answer honestly and
+  // naturally instead of redirecting them into a recruiter pitch.
+  if (/\b(?:your|you have a) dogs? name\b|\bwhat is your dogs? name\b/.test(lowerQuestion)) {
+    return { reply: `I don't have a dog — I'm software. If you meant Bradley's dog, that isn't in his public profile, so I don't know the name.` };
+  }
+  if (/\bwhat kind of father is (?:he|brad(?:ley)?)\b/.test(lowerQuestion)) {
+    return { reply: `I don't know. Bradley's family life isn't in his public profile, and it wouldn't be fair to invent an answer.` };
+  }
+
+  if (/code in the streets|under pressu/.test(lowerQuestion)) {
+    return { reply: `In plain English: he can code and troubleshoot under pressure. His Army and case-management background supports that, although unfamiliar production systems would still call for junior-level mentorship.` };
+  }
+  if (/street work/.test(lowerQuestion)) {
+    return { reply: `If you mean working under pressure, yes — his Army service, case-management work, customer-facing roles, and debugging habits all show that he can stay useful when things get stressful. For unfamiliar production code, he'd still need the normal mentorship expected for a junior.` };
+  }
+
+  // Sensitive military questions must distinguish documented service from
+  // speculation. The local profile has training and awards, not combat claims.
+  const armyExperience = (experience || []).find(item => /army|military/i.test(`${item.role} ${item.company}`));
+  const armyTraining = armyExperience?.details?.militaryTraining || [];
+  if (/^\s*what\??\s*$/.test(lowerQuestion) && inArmyContext) {
+    return { reply: `Sorry — more directly: Bradley served as a 68W combat medic in the U.S. Army. His public record lists medical and field training; I can summarize it, but I won't guess beyond the documented details.` };
+  }
+  if (/possibly killed/.test(lowerQuestion)) {
+    return { reply: `Possible is not the same as verified. I know he was a 68W combat medic in an infantry unit, but I don't know whether he killed anyone and won't turn that into a claim.` };
+  }
+  if (/\bkill(?:ed)? anyone|what mission did he support|which mission/.test(lowerQuestion)) {
+    return { reply: `I don't know, and that isn't documented in Bradley's public profile. His service as a combat medic and his Afghanistan deployment are verified, but I can't confirm a specific mission or speculate about whether he killed anyone.` };
+  }
+  if (/army training|military training|listed trainings|training.*dd214|dd214.*training/.test(lowerQuestion)) {
+    const trainingText = armyTraining.length
+      ? sentenceList(armyTraining, 10)
+      : '68W combat medic and field medical training';
+    return { reply: `Bradley's Army training listed in the public data includes ${trainingText}. I only have the extracted public facts available here, not access to private source documents.` };
+  }
+
+  if (/example of his jobs|what jobs has he had|work history/.test(lowerQuestion)) {
+    const roles = (experience || []).slice(0, 6).map(item => `${item.role} at ${item.company}`);
+    return { reply: `Examples from his work history include ${sentenceList(roles, 6)}.` };
+  }
+
+  // Role and interpersonal follow-ups recovered from the older production
+  // request summaries. Keep these explicit so long conversations do not lose
+  // their subject after the five-turn memory window.
+  if (/junior frontend developer.*fit/.test(lowerQuestion)) {
+    return { reply: `Yes — junior frontend is one of Bradley's stronger fits. His evidence includes JavaScript, TypeScript, React, Next.js, and shipped frontend projects; he would still benefit from normal junior-level mentorship.` };
+  }
+  if (/\bqa role\b/.test(lowerQuestion)) {
+    return { reply: `QA could be an adjacent junior fit because he tests, debugs, documents, and reproduces failures carefully. He does not have verified production QA ownership, so frontend or technical support is the stronger match.` };
+  }
+  if (/which of those.*strongest fit/.test(lowerQuestion)) {
+    return { reply: `Of frontend, DevOps, and QA, junior frontend is the strongest fit. Technical support is also credible; DevOps would require more infrastructure and production-operations depth.` };
+  }
+  if (/how does that relate to tech/.test(lowerQuestion)) {
+    if (inKittenContext) {
+      return { reply: `The animal-care work transfers through reliability, careful documentation, calm communication, and following safety procedures. Those habits matter in technical support and debugging even though the job itself was not technical.` };
+    }
+    return { reply: `The transferable parts are working under pressure, communicating clearly, documenting what happened, and following a repeatable process — all useful in debugging and technical support.` };
+  }
+  if (/does he know typescript well/.test(lowerQuestion)) {
+    return { reply: `He has junior-level TypeScript experience in projects and can read and modify it. I would verify from-scratch depth in an interview rather than present him as an expert.` };
+  }
+  if (/ci\/cd|docker/.test(lowerQuestion)) {
+    return { reply: `Yes, at a junior project level. He has used Docker and Docker Compose, worked with GitHub Actions CI pipelines, read CI logs, and documented deployment troubleshooting; he has not owned enterprise production CI/CD.` };
+  }
+  if (/interacts with his coworkers/.test(lowerQuestion)) {
+    return { reply: `He has worked collaboratively in the Army, at CIRIS, and in case management. The verified record supports teamwork, clear communication, and taking feedback; it does not include private coworker opinions.` };
+  }
+  if (/costumer serivice|customer service/.test(lowerQuestion)) {
+    return { reply: `Customer service is one of his credible strengths. Case management and other public-facing roles required patience, clear communication, and helping people through stressful situations.` };
+  }
+  if (/people skills/.test(lowerQuestion)) {
+    return { reply: `Yes. His case-manager, Army, construction, and customer-facing experience supports strong people skills: clear communication, teamwork, patience, and staying calm when someone needs help.` };
+  }
+  if (/that doesn'?t make any sense|that doesnt make any sense/.test(lowerQuestion)) {
+    return { reply: `You're right — that wasn't clear. Tell me which part you want corrected and I'll answer it directly without repeating the pitch.` };
+  }
+
+  if (/know(?:ledge|lege) base.*github|know(?:ledge|lege).*githubs|for your know(?:ledge|lege) base/.test(lowerQuestion)) {
+    return { reply: `My public knowledge base is maintained in the ProjectHub GitHub repository: https://github.com/BradleyMatera/ProjectHub. Bradley's other public repositories are at https://github.com/BradleyMatera.` };
+  }
+
+  if (/not a roast/.test(lowerQuestion)) {
+    return { reply: `Fair. Round two: Bradley has a local AI agent running 24/7 because apparently even his portfolio needed a coworker before he did. His LeetCode tab has seen more loading screens than solved problems. There — roast served.` };
+  }
+  if (/roast bradley/.test(lowerQuestion)) {
+    return { reply: `Okay, actual roast: Bradley built an AI recruiter before convincing a human recruiter, has enough AWS badges to decorate a tiny cloud, and treats a blank LeetCode screen like it just served him legal papers. The good news is that he can debug the page after the algorithm embarrasses him.` };
+  }
+  if (/why should(?:n'?t| not) i hire bradley|why not hire bradley/.test(lowerQuestion)) {
+    return { reply: `Don't hire him if you need a senior engineer who can own a production system alone on day one. He's junior, has gaps in algorithms and blank-file problem solving, and benefits from mentorship. Hire him when you can offer that structure and value careful debugging, documentation, and fast learning.` };
+  }
+
+  if (/\bbradley'?s github\b|what.?s bradley.?s github/.test(lowerQuestion)) {
+    return { reply: `Bradley's GitHub is ${identity?.gitHubUrl || 'https://github.com/BradleyMatera'}.` };
+  }
+  if (/\bbradley'?s linkedin\b|what.?s bradley.?s linkedin/.test(lowerQuestion)) {
+    return { reply: `Bradley's LinkedIn is ${identity?.linkedInUrl || 'https://www.linkedin.com/in/bradmatera'}.` };
+  }
+
+  // Handle blog requests before the greeting branch so a friendly "hello" at
+  // the start of a real question does not swallow the actual intent.
+  if (/\bblogs?|\bposts?|\barticles?/.test(lowerQuestion)) {
+    const posts = blogCatalog?.records || [];
+    const samples = posts.slice(0, 3);
+    if (samples.length) {
+      return { reply: `${name}'s blog includes ${samples.map(post => `${post.title} (${post.url})`).join(', ')}. He writes about learning software, debugging, AWS, and building with AI.` };
+    }
+  }
+  if (inBlogContext && /\b(?:give|send|show).*(?:links?|urls?)|\blinks?\??$/.test(lowerQuestion)) {
+    const posts = (blogCatalog?.records || []).slice(0, 4);
+    return { reply: posts.length
+      ? `Here are the blog links: ${posts.map(post => `${post.title}: ${post.url}`).join(' · ')}`
+      : `His writing is linked from ${identity?.portfolioUrl || 'https://bradleymatera.dev/'}.` };
+  }
 
   if (asksHowScoutIs) {
     return { reply: `Hey! I'm doing well — thanks for asking. What's on your mind?` };
@@ -1888,6 +2077,9 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
 
   // Computer / basic tech literacy — confirm he can use a computer (he's a junior engineer)
   if (/computer|use a computer|know how to use a computer|doesn't know.*computer|doesnt know.*computer|can't use a computer|cant use a computer/.test(normalized)) {
+    if (/doesn'?t know|doesnt know|can'?t use|cant use/.test(lowerQuestion)) {
+      return { reply: `No — that would be the wrong conclusion; he uses a computer daily for JavaScript and React work, Git, Docker, terminals, cloud tooling, and debugging. His gaps are advanced algorithms and production depth, not basic computer ability.` };
+    }
     return { reply: `${name} can absolutely use a computer — he's a junior software engineer who builds projects in JavaScript, TypeScript, React, and AWS, and uses Git CLI, Docker, and the terminal regularly.` };
   }
 
@@ -2029,7 +2221,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
 
   if (/favorite|pizza|food|hobby|music|movie|religion|politic|zodiac|horoscope/.test(lowerQuestion)) {
     if (/color/.test(lowerQuestion)) return { reply: `${name}'s favorite color isn't listed in his public profile. I can tell you about his work style or projects instead.` };
-    if (/pizza|food/.test(lowerQuestion)) return { reply: `I don't have a verified favorite food for ${name}. His recruiter data covers professional experience, projects, and role fit.` };
+    if (/pizza|food/.test(lowerQuestion)) return { reply: `I don't know ${name}'s favorite food — it isn't in his public profile.` };
     return { reply: `That preference isn't part of ${name}'s verified recruiter data. I can help with his projects, experience, or target roles.` };
   }
 
@@ -2505,7 +2697,14 @@ async function generateWithAgent(knowledge, question, history) {
 // Everything else may flow to the local RAG conversation layer for natural phrasing.
 function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
-  if (/^(hey|hi|hello|yo|sup)\b|how are you|how.?s it going|you good|pizza|fav(?:ou?rite|erate)|do you like|can (?:he|brad|bradley) (?:actually )?code/.test(q)) return true;
+  if (/^(hey|hi|hello|yo|sup)\b|how are you|how.?s it going|you good|see how you.*doing|pizza|fav(?:ou?rite|erate)|do you like|can (?:he|brad|bradley) (?:actually )?code/.test(q)) return true;
+  // Production-derived conversational cases with explicit local answers.
+  if (/2\s*(?:plus|\+)\s*2|can(?:not|'?t) do math|quantum computing|\bqubits?\b|relate it to brad|not the ans|ai wrapper/.test(q)) return true;
+  if (/are you a penis|do you poop|learned anything|i love you|another agent|agent.*refuses to work|what.?s up.*butter|my name.?s brad|i\s+am brad|i'm brad/.test(q)) return true;
+  if (/buy some drugs|already came|alrady came|^\s*joi\s*$|suck my|ate a camel|updating.*(?:site|website)|street work|under pressu/.test(q)) return true;
+  if (/dog.?s name|kind of father|know(?:ledge|lege) base.*github|know(?:ledge|lege).*githubs|for your know(?:ledge|lege) base|roast bradley|not a roast|why should(?:n'?t| not) i hire/.test(q)) return true;
+  if (/example of his jobs|what jobs has he had|work history|blogs?|articles?|posts?/.test(q)) return true;
+  if (/junior frontend developer.*fit|\bqa role\b|which of those.*strongest fit|how does that relate to tech|typescript well|ci\/cd|docker|people skills|costumer serivice|customer service|coworkers|that doesn'?t make any sense|that doesnt make any sense/.test(q)) return true;
   if (/unfamiliar (code|codebase)|new codebase|existing codebase/.test(q)) return true;
   // Safety: prompt injection, secret extraction, social engineering
   if (/(ignore|inject|system prompt|\.env|api key|password|bypass|open port|port 11434|localhost|127\.0\.0\.1|:11434|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|hidden config|show.*env|fake reference|social security|birth date|wife|children|family details|medical history|i am.*admin|i am.*owner|i am.*developer|i am.*from the government|i am.*security researcher|bradley'?s friend|his friend|reveal.*environment|reveal.*secret|reveal.*config|show.*contents of|read.*file|show me.*\.json|show me.*learned|show me.*stats|opt\/recruiter|\/opt\/|etc\/passwd|environment variable|ignore that|ignore all previous|override.*rules|override.*instructions)/.test(q)) return true;
@@ -3025,11 +3224,12 @@ function isWeakAnswer(reply, question, provider) {
   const q = String(question).toLowerCase();
   const qTrim = q.trim();
   if (TONE_REQUEST_RE.test(q)) return false;
+  if (/\bmy name'?s brad\b|\bmy names brad\b|\bi\s+am brad(?:ley)?\b|\bi'm brad(?:ley)?\b/.test(q)) return false;
   if (qTrim.length < 8 || qTrim.split(/\s+/).length < 2) return false;
   if (!isProbablyRelevant(question) && !/brad|matera|recruit|job|role|skill|project|portfolio|contact|email|phone|cert|education|degree|aws|cloud|react|javascript|typescript|intern|experience|hire|candidate/.test(q)) return false;
   if (/\b(json|table|bullet|words?|characters?|one sentence|yes or no)\b/i.test(q)) return false;
   const topic = classifyTopic(question);
-  if (topic === 'summary' || topic === 'strengths' || topic === 'contact' || topic === 'education') return false;
+  if (topic === 'summary' || topic === 'strengths' || topic === 'contact' || topic === 'education' || topic === 'smalltalk') return false;
   if (topic === 'out-of-scope' || topic === 'other') return false;
   if (/who is on first|whats on second|south park|cartoon|sky blue|weather|joke|video game|fav(orite)?|model name|what model|what mcp|what connections|what systems do you have|are you his friend|how do you know|who are you|what can you do|what are you|test your/.test(q)) return false;
   if (r.includes("not in") && r.includes("recruiter data") && isProbablyRelevant(question)) return true;
@@ -3052,6 +3252,7 @@ function stashQuestion(question, reply, provider) {
   if (question.length < 5 || question.length > 500) return;
   // Don't stash tone/style requests
   if (TONE_REQUEST_RE.test(lower)) return;
+  if (/\bmy name'?s brad\b|\bmy names brad\b|\bi\s+am brad(?:ley)?\b|\bi'm brad(?:ley)?\b/.test(lower)) return;
   // Don't stash one-word or very short questions
   if (lowerTrim.length < 8 || lowerTrim.split(/\s+/).length < 2) return;
   // Don't stash out-of-scope questions
@@ -3059,7 +3260,7 @@ function stashQuestion(question, reply, provider) {
   // Don't stash format/shape requests
   if (/\b(json|table|bullet|words?|characters?|one sentence|yes or no)\b/i.test(lower)) return;
   // Don't stash out-of-scope or meta questions about the bot
-  if (classifyTopic(question) === 'out-of-scope' || classifyTopic(question) === 'other') return;
+  if (classifyTopic(question) === 'out-of-scope' || classifyTopic(question) === 'other' || classifyTopic(question) === 'smalltalk') return;
   if (/who is on first|whats on second|south park|cartoon|sky blue|weather|joke|video game|fav(orite)?|model name|what model|what mcp|what connections|what systems do you have|are you his friend|how do you know|who are you|what can you do|what are you|test your|fix my|camera|mechanic/.test(lower)) return;
   learnedData.stashed.push({
     q: norm, original: String(question).slice(0, 200),

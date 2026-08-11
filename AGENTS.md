@@ -19,7 +19,7 @@ ProjectHub is an embeddable, AI-powered chat widget that showcases Bradley Mater
 - **Widget UX:** Header shows "Scout" as the assistant title and "Bradley Matera · Recruiter assistant". Placeholder and welcome messages are from Scout. Each session starts by asking the visitor's name.
 - **Data sources:** `data.js` (projects/CodePens), `data/recruiter-knowledge.json` (canonical facts), and `sourceMaterial` (ingested blog posts, pages, and resume guardrails from `scripts/build-knowledge.js`).
 - **Think Mode:** A local self-improvement loop runs every 20 minutes. It stashes weak answers, asks Ollama for improved grounded wording, scores and judges candidates, and retains only validated improvements in the local learned file. It never writes to GitHub or another external system.
-- **Test suites:** 6 legacy API suites (adversarial, coverage, load/stress, regression, edge cases, full system verification) plus 58 checked-in Node unit tests, a 55-request local API evaluation, and a 40-query retrieval golden set.
+- **Test suites:** 6 legacy API suites (adversarial, coverage, load/stress, regression, edge cases, full system verification) plus 58 checked-in Node unit tests, a 55-request local API evaluation, a sanitized 126-input production regression (81 complete turns across 26 retained sessions plus 45 older request records), and a 40-query retrieval golden set.
 - **Current branch/focus:** `feat/agent-systems-network` — local-only Ollama conversation, grounded agent tools, coherent memory, strict validation, and a private SSH-tunneled preview
 
 ---
@@ -110,6 +110,7 @@ Live widget URL for embedding:
 | `data/eval-golden.json` | Golden set of 40 queries for retrieval evaluation |
 | `scripts/eval-retrieval.js` | Retrieval evaluation harness — measures Recall@k and MRR@k |
 | `scripts/eval-local-api.js` | Local API acceptance harness — 55 requests covering facts, safety, NLP, memory, project references, answer variety, and natural casual dialogue |
+| `test-production-conversations.py` | Sanitized replay of 126 production-retained inputs: 81 complete turns across 26 sessions plus 45 meaningful older request records, with semantic quality, local-provider, repetition, privacy, and latency assertions |
 | `test/bm25.test.js` | BM25 index unit tests (8 tests) |
 | `test/query-understanding.test.js` | Query understanding unit tests (15 tests) |
 | `test/agent-tools.test.js` | Read-only agent tool selection, evidence, privacy, and fail-closed tests |

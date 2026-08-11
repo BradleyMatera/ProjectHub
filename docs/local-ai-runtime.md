@@ -37,10 +37,11 @@ node --check server-gemini.js
 npm test
 npm run eval-retrieval
 PROJECTHUB_API_URL=http://127.0.0.1:3000 npm run eval:local-api
+npm run eval:production-conversations
 curl http://127.0.0.1:3000/health
 curl http://127.0.0.1:3000/api/diagnose
 ```
 
-The checked-in suites currently cover 58 deterministic unit tests, a 40-query retrieval golden set, and a 55-request local API evaluation. The API evaluation includes a casual-dialogue regression that checks pronoun handling, user-provided context, response variety, and concise answers. The longer recruiter conversation scripts exercise 107 additional multi-turn prompts and should be run against the private preview before promotion.
+The checked-in suites currently cover 58 deterministic unit tests, a 40-query retrieval golden set, a 55-request local API evaluation, and 126 production-retained inputs. The production corpus includes 81 complete turns across 26 sessions, one reconstructed 40-prompt older sequence, and five older complete request records; duplicate and truncated backup mirrors are not replayed twice. The API evaluation includes a casual-dialogue regression that checks pronoun handling, user-provided context, response variety, and concise answers. The production-derived suite removes session metadata and old replies; its assertions require improved semantic behavior, local-only providers, useful uncertainty, response variety, and the 15-second latency ceiling. The longer recruiter conversation scripts exercise 107 additional multi-turn prompts and should be run against the private preview before promotion.
 
 No design can truthfully guarantee correct factual knowledge for every possible question. ProjectHub's contract is narrower and testable: every request receives a useful response, unknown facts are identified honestly, and unsupported claims are never presented as verified facts.
