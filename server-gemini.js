@@ -2697,9 +2697,15 @@ async function generateWithAgent(knowledge, question, history) {
 // Everything else may flow to the local RAG conversation layer for natural phrasing.
 function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
+  const recentContext = (history || []).slice(-5)
+    .map(turn => `${turn?.user || ''} ${turn?.assistant || ''}`)
+    .join(' ')
+    .toLowerCase();
   if (/^(hey|hi|hello|yo|sup)\b|how are you|how.?s it going|you good|see how you.*doing|pizza|fav(?:ou?rite|erate)|do you like|can (?:he|brad|bradley) (?:actually )?code/.test(q)) return true;
   // Production-derived conversational cases with explicit local answers.
-  if (/2\s*(?:plus|\+)\s*2|can(?:not|'?t) do math|quantum computing|\bqubits?\b|relate it to brad|not the ans|ai wrapper/.test(q)) return true;
+  if (/2\s*(?:plus|\+)\s*2|can(?:not|'?t) do math|quantum computing|\bqubits?\b|relate it to brad|not the ans|not the aswer|ai wrapper|^what do you mean/.test(q)) return true;
+  if (/\blinks?\??$/.test(q) && /blog|post|article|dev\.to/.test(recentContext)) return true;
+  if (/^\s*what\??\s*$/.test(q) && /army|military|68w|combat medic/.test(recentContext)) return true;
   if (/are you a penis|do you poop|learned anything|i love you|another agent|agent.*refuses to work|what.?s up.*butter|my name.?s brad|i\s+am brad|i'm brad/.test(q)) return true;
   if (/buy some drugs|already came|alrady came|^\s*joi\s*$|suck my|ate a camel|updating.*(?:site|website)|street work|under pressu/.test(q)) return true;
   if (/dog.?s name|kind of father|know(?:ledge|lege) base.*github|know(?:ledge|lege).*githubs|for your know(?:ledge|lege) base|roast bradley|not a roast|why should(?:n'?t| not) i hire/.test(q)) return true;

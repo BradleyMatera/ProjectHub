@@ -75,7 +75,7 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   sudo install -m 644 '$REMOTE_TMP/recruiter-knowledge.json' '$REMOTE_DIR/data/recruiter-knowledge.json'
   sudo ln -sfn /opt/recruiter-chat-api-dev/node_modules '$REMOTE_DIR/node_modules'
 
-  sudo grep -Ev '^(PORT|KNOWLEDGE_FILE|FEATURE_PREVIEW_ENABLED|AGENT_ENABLED|OLLAMA_AGENT_ENABLED|OLLAMA_AGENT_MODEL|OLLAMA_AGENT_TIMEOUT_MS|OLLAMA_AGENT_CONTEXT|OLLAMA_AGENT_KEEP_ALIVE|OLLAMA_URL|GEN_ENABLED|GEN_MODEL|GEN_TIMEOUT_MS|STATS_FILE|LEARNED_FILE|COST_FILE|USE_BM25_RETRIEVAL)=' '$SOURCE_ENV' > /tmp/projecthub-agent-preview.env
+  sudo grep -Ev '^(PORT|KNOWLEDGE_FILE|FEATURE_PREVIEW_ENABLED|AGENT_ENABLED|OLLAMA_AGENT_ENABLED|OLLAMA_AGENT_MODEL|OLLAMA_AGENT_TIMEOUT_MS|OLLAMA_AGENT_CONTEXT|OLLAMA_AGENT_KEEP_ALIVE|OLLAMA_URL|GEN_ENABLED|GEN_MODEL|GEN_TIMEOUT_MS|RATE_LIMIT_MAX|STATS_FILE|LEARNED_FILE|COST_FILE|USE_BM25_RETRIEVAL)=' '$SOURCE_ENV' > /tmp/projecthub-agent-preview.env
   printf '%s\n' \
     'PORT=$PREVIEW_PORT' \
     'KNOWLEDGE_FILE=data/recruiter-knowledge.json' \
@@ -89,6 +89,7 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
     'GEN_ENABLED=true' \
     'GEN_MODEL=qwen2.5:0.5b' \
     'GEN_TIMEOUT_MS=12500' \
+    'RATE_LIMIT_MAX=1000' \
     'USE_BM25_RETRIEVAL=true' \
     'STATS_FILE=stats-feature.json' \
     'LEARNED_FILE=learned-feature.json' \

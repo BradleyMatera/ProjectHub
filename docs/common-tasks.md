@@ -104,6 +104,9 @@ Check the browser console for errors. Verify:
 ### Private agent feature preview (`feat/*`)
 
 The agent preview is a separate loopback-only service on the staging VM. It does not replace the staging API and has no public Caddy route.
+Its isolated API limit is set to 1,000 requests per window so full regression
+suites can run through an authenticated SSH tunnel; public staging and
+production rate limits are unchanged.
 
 ```bash
 # One-time: installs loopback-only Ollama, bounded swap, and qwen2.5:0.5b
