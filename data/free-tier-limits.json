@@ -1,16 +1,24 @@
 {
   "version": "1.0.0",
-  "lastVerified": "2026-07-15",
+  "lastVerified": "2026-08-10",
   "notes": "Authoritative free-tier limits and paid shadow rates for every metered source. Rates are integer micro-USD per unit unless noted. Update lastVerified when limits are re-checked against provider docs.",
   "egressOverheadFactor": 1.08,
   "sources": {
     "groq": {
       "label": "Groq (llama-3.1-8b-instant)",
       "kind": "llm",
-      "freeLimits": { "requestsPerDay": 1000, "tokensPerMinute": 6000 },
+      "freeLimits": { "requestsPerDay": 14400, "tokensPerDay": 500000, "tokensPerMinute": 6000 },
       "shadowRates": { "inputPerMillionTokensMicroUsd": 50000, "outputPerMillionTokensMicroUsd": 80000 },
       "citation": "https://console.groq.com/docs/rate-limits",
-      "lastVerified": "2026-07-15"
+      "lastVerified": "2026-08-10"
+    },
+    "agent-local-tools": {
+      "label": "ProjectHub read-only agent tools",
+      "kind": "tool",
+      "freeLimits": {},
+      "shadowRates": {},
+      "citation": "local in-process retrieval over the verified recruiter knowledge cache",
+      "lastVerified": "2026-08-10"
     },
     "cloudflare": {
       "label": "Cloudflare Workers AI",

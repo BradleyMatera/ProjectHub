@@ -103,6 +103,20 @@ Check the browser console for errors. Verify:
 
 ## Deploy the Backend
 
+### Private agent feature preview (`feat/*`)
+
+The agent preview is a separate loopback-only service on the staging VM. It does not replace the staging API and has no public Caddy route.
+
+```bash
+# Requires a clean, committed feat/* branch
+bash deploy-agent-preview.sh
+
+# Opens an authenticated SSH tunnel and the local preview URL
+bash scripts/open-agent-preview.sh
+```
+
+Close the tunnel with `Ctrl-C`. See `docs/agent-systems.md` for its isolation and promotion boundaries.
+
 ### Production (`master`)
 
 1. Edit `server-gemini.js`.

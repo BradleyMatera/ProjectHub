@@ -63,11 +63,40 @@ Response body:
   "fallback": false,
   "cached": false,
   "pipeline": ["cache-miss", "knowledge-loaded", "learned-check:miss", "mustStayGrounded:false", "network:groq:success", "shaped"],
-  "followUps": ["What about his AWS certifications?", "Did he do real production work at AWS?"]
+  "followUps": ["What about his AWS certifications?", "Did he do real production work at AWS?"],
+  "agent": {
+    "used": true,
+    "tools": ["search_portfolio", "compare_projects"],
+    "steps": 2
+  }
 }
 ```
 
 When the question is routed to the deterministic fallback, `provider` is `grounded` and `model` is `knowledge-json`. When the multi-provider network succeeds, `provider` and `model` reflect the winning provider. If every provider fails, the response falls back to the grounded answer and `fallback` is `true`. The `pipeline` array shows the exact decision path, including `semantic-cache-hit` when a paraphrase match is found. The `followUps` array contains 0-2 contextual follow-up suggestions.
+
+The optional `agent` object is present only when Scout completes a bounded tool workflow. It reports the allowlisted read-only tools used and the number of completed steps; raw tool arguments and internal evidence payloads are never returned to the browser.
+
+## Bounded Agent Workflows
+
+Project comparisons, job-description matching, role evidence, recruiter briefs, and interview-question requests can use Groq function calling before the normal provider fallback. The orchestration remains inside ProjectHub:
+
+1. `lib/agent-tools.js` selects up to five task-relevant read-only tools and executes them against the verified in-memory knowledge cache.
+2. `lib/agent-runtime.js` validates tool names and JSON arguments, caps execution at two rounds and three tool calls, and fails closed on unknown tools.
+3. Groq may propose tool calls and synthesize the final answer. ProjectHub never enables Groq built-in web search, code execution, remote MCP, or write-capable tools on the public route.
+4. If Groq is disabled, unavailable, deprecated, out of quota, or rejected, ProjectHub deterministically selects and executes the same tools itself. This removes Groq as a single point of failure.
+5. Optional local Ollama formatting can rewrite the deterministic answer using `OLLAMA_AGENT_MODEL`; the rewrite is rejected unless it passes the same grounded validator. The deterministic answer remains authoritative.
+6. The final text runs through the existing false-claim, slop, number, and grounded-source validator.
+7. If the bounded agent path cannot produce a valid answer, the existing free multi-provider network runs unchanged. The deterministic grounded answer remains the final fallback.
+
+Current tools:
+
+- `search_portfolio` — searches verified projects, experience, skills, and certifications.
+- `get_project` — returns one verified project.
+- `compare_projects` — compares two to four verified projects.
+- `match_role` — matches a job description to verified evidence and honest gaps without making a hiring decision.
+- `get_candidate_profile` — returns an allowlisted public profile section; identity/contact data is excluded.
+
+Every local tool execution is recorded in the cost ledger as `agent-local-tools`. No tool makes an external call or persistent write.
 
 ## Retrieval Pipeline
 
@@ -167,6 +196,13 @@ Key variables on the GCP VM (`.env`):
 | Variable | Purpose |
 |----------|---------|
 | `GROQ_API_KEY` | Groq API key |
+| `AGENT_ENABLED` | Enable bounded read-only agent workflows (default `true`) |
+| `AGENT_GROQ_ENABLED` | Allow Groq to plan bounded tool calls; disable to test the provider-independent fallback (default `true`) |
+| `GROQ_AGENT_MODEL` | Groq tool-calling model; defaults to `GROQ_MODEL` |
+| `AGENT_TIMEOUT_MS` | Timeout for each Groq agent-model request, clamped to 1-10 seconds (default `6000`) |
+| `OLLAMA_AGENT_ENABLED` | Allow local Ollama to format deterministic agent evidence; never required for correctness (default `false`) |
+| `OLLAMA_AGENT_MODEL` | Local evidence formatter model (default `OLLAMA_MODEL`, currently `gemma3:1b`) |
+| `OLLAMA_AGENT_TIMEOUT_MS` | Local formatter timeout, clamped to 1-15 seconds (default `10000`) |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare Workers AI token |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
 | `GITHUB_MODELS_TOKEN` | GitHub personal access token with `models:read` |

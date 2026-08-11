@@ -29,8 +29,13 @@ ProjectHub stays grounded-first and free-provider-first:
 7. In-memory session cache keeps the last 3 turns per tab. Frontend sends 5 turns and keeps 10.
 8. Response caches avoid repeated work, but context-dependent follow-ups bypass the global cache.
 9. Out-of-scope questions are forced to grounded replies by `mustStayGrounded` to prevent LLM hallucinations.
+10. Evidence-heavy requests may use a bounded Groq tool loop over local verified data. The loop is capped at two rounds and three calls, and falls back to the normal provider network if it fails.
 
 This keeps the widget useful even if every free provider tier is temporarily exhausted.
+
+The agent model defaults to the same `llama-3.1-8b-instant` model as normal Groq chat so it shares the higher free allowance. `GROQ_AGENT_MODEL` can be changed independently after quota and quality validation. Groq has announced that `llama-3.1-8b-instant` will shut down on August 16, 2026; migration must be validated against free-tier headroom before deployment rather than silently changing the default.
+
+Groq is not a single point of failure for agent workflows. When its agent lane is unavailable, ProjectHub deterministically selects and executes the same local knowledge tools. `OLLAMA_AGENT_ENABLED=true` may use the already-installed local Ollama engine to format that evidence, but the small local model is never treated as authoritative and its output must pass the normal grounded validator. If formatting fails, the deterministic answer is returned directly. General conversation continues through Cloudflare Workers AI, GitHub Models, Gemini, Grok, and the grounded fallback.
 
 ---
 

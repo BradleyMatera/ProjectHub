@@ -1,0 +1,15 @@
+[Unit]
+Description=ProjectHub private agent feature preview
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/recruiter-chat-api-feature
+EnvironmentFile=/opt/recruiter-chat-api-feature/.env
+ExecStart=/usr/bin/node /opt/recruiter-chat-api-feature/server.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

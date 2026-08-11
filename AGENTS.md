@@ -12,7 +12,7 @@ ProjectHub is an embeddable, AI-powered chat widget that showcases Bradley Mater
 - **Runtime:** Browser only; chat widget has no frontend framework or bundler; analytics section is bundled with Vite
 - **AI backend:** Recruiter chat API at `https://projecthub-chat.bradleymatera.dev/api/chat` on a GCP e2-micro VM with Caddy HTTPS. Uses a free multi-provider LLM network (Groq, Cloudflare Workers AI, GitHub Models, Google Gemini, xAI Grok, OpenAI-compatible). If every provider is unavailable or the reply fails validation, the final fallback is a fast, grounded answer from `data/recruiter-knowledge.json`. Provider order and daily quota guards are configurable. Local Ollama is present in the codebase but currently filtered out of the active provider order.
 - **Session memory:** Browser sends a per-tab session id and recent turns; backend caches a trimmed knowledge JSON and the last 3 turns of each session. Frontend keeps 10 turns of context and sends all to the server; server uses the last 3.
-- **Generative usage:** Grounded-first deterministic engine answers factual queries. Safety and false-claim checks run BEFORE learned answers. Open-ended questions are sent through the free provider network in priority order; each reply is validated against slop/false-claim rules and falls back to the grounded answer if no provider succeeds. 15s total latency budget. Out-of-scope questions are forced to grounded replies (not LLM hallucinations).
+- **Generative usage:** Grounded-first deterministic engine answers factual queries. Safety and false-claim checks run BEFORE learned answers. Evidence-heavy requests can use a bounded Groq function-calling loop over five read-only local tools; if Groq is unavailable, ProjectHub deterministically executes the same tools and can optionally use local Ollama only as a validated formatter. Unknown tools fail closed and no public tool performs writes or arbitrary web access. Open-ended questions are sent through the free provider network in priority order; each reply is validated against slop/false-claim rules and falls back to the grounded answer if no provider succeeds. 15s total latency budget. Out-of-scope questions are forced to grounded replies (not LLM hallucinations).
 - **Retrieval pipeline:** Okapi BM25 index (`lib/bm25.js`) with query understanding (`lib/query-understanding.js` — typo correction, intent classification, contextual rewriting) is the default retrieval mode. Optional dense vector retrieval via Cloudflare Workers AI embeddings (`lib/vector-index.js`) with hybrid RRF+MMR fusion (`lib/hybrid-retrieve.js`). BM25 Recall@6=0.950 on 40-query golden eval set.
 - **Stance consistency:** Per-session topic stances injected into LLM prompts to prevent contradictions across turns. 30-min TTL, cap 8 per session.
 - **Semantic cache:** Paraphrase dedup via embedding cosine similarity (≥0.92 threshold). LRU, 200 entries, 10-min TTL. Only active when vector retrieval is enabled.
@@ -107,6 +107,9 @@ Live widget URL for embedding:
 | `lib/query-understanding.js` | Query understanding pipeline — normalization, typo correction, intent classification, contextual rewriting |
 | `lib/vector-index.js` | Dense vector index — loads pre-built embeddings, brute-force cosine similarity search |
 | `lib/hybrid-retrieve.js` | Hybrid fusion — reciprocal rank fusion (RRF) + maximal marginal relevance (MMR) |
+| `lib/agent-tools.js` | Allowlisted read-only agent tools for portfolio search, project comparison, role matching, and public profile evidence |
+| `lib/agent-fallback.js` | Provider-independent deterministic agent planning and evidence-based answers when Groq tool calling is unavailable |
+| `lib/agent-runtime.js` | Provider-neutral bounded tool-call loop with argument validation, call caps, and fail-closed execution |
 | `lib/cost-ledger.js` | Metering tracker for every billable-adjacent event |
 | `lib/cost-insights.js` | Cost insights builder for the /api/costs dev endpoint |
 | `data/recruiter-knowledge.json` | Canonical knowledge base (read by server, written by Think Mode) |
@@ -119,6 +122,9 @@ Live widget URL for embedding:
 | `test/query-understanding.test.js` | Query understanding unit tests (15 tests) |
 | `test/vector-index.test.js` | Vector index unit tests (5 tests) |
 | `test/hybrid-retrieve.test.js` | Hybrid fusion unit tests (8 tests) |
+| `test/agent-tools.test.js` | Read-only agent tool selection, evidence, privacy, and fail-closed tests |
+| `test/agent-fallback.test.js` | Groq-independent project comparison, role evidence, and interview workflow tests |
+| `test/agent-runtime.test.js` | Agent orchestration, tool validation, output bounding, and denial tests |
 | `deploy-gcp.sh` | Deploy script — copies server-gemini.js + lib/ to prod GCP VM and restarts service |
 | `deploy-gcp-dev.sh` | Deploy script — copies server-gemini.js + lib/ to dev GCP VM and restarts service |
 | `.github/workflows/test.yml` | CI — runs unit tests, retrieval eval, syntax checks on develop |
@@ -204,6 +210,7 @@ Add an entry to `data.js` `projects` array and mirror it in `ProjectHub.js` if t
 | **Release, staging, branching, or rollback** | **`PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md`** |
 | **Branch protection or environment setup** | **`docs/branch-protection-setup.md`** |
 | **Think Mode migration plan** | **`docs/think-mode-migration-plan.md`** |
+| Bounded agent tools, Ollama fallback, or private preview | `docs/agent-systems.md` |
 | Understand data flow, hosting, or backend migration | `docs/architecture-overview.md` |
 | Add a project, CodePen, suggestion, or update data | `docs/data-guide.md` |
 | Add/modify intents, AI fallback, response logic | `docs/api-guide.md` |
@@ -226,6 +233,7 @@ Add an entry to `data.js` `projects` array and mirror it in `ProjectHub.js` if t
 8. `docs/low-cost-ai-routing.md` — Free-tier LLM routing policy, provider order, validation, and cost optimization.
 9. `docs/branch-protection-setup.md` — Branch protection rules and GitHub environment configuration.
 10. `docs/think-mode-migration-plan.md` — Think Mode transition from direct commits to PR-based proposal workflow.
+11. `docs/agent-systems.md` — Provider-independent agent tools, optional Ollama formatting, and the private SSH-tunneled feature preview.
 
 ---
 

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>Scout Agent Network Preview</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%2346e39a'/%3E%3Cpath d='M22 22h20v6H28v5h12v6H28v9h-6z' fill='%2307100d'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Private feature branch</p>
+        <h1>Scout agent systems network</h1>
+        <p class="subtitle">Bounded tools, free-provider failover, deterministic evidence, and optional local Ollama formatting.</p>
+      </div>
+      <div class="connection" aria-live="polite">
+        <span id="connection-dot" class="dot"></span>
+        <span id="connection-label">Checking service</span>
+      </div>
+    </header>
+
+    <section class="status-grid" aria-label="Runtime status">
+      <article><span>Agent mode</span><strong id="agent-mode">Loading</strong></article>
+      <article><span>Groq planner</span><strong id="groq-planner">Loading</strong></article>
+      <article><span>Ollama formatter</span><strong id="ollama-formatter">Loading</strong></article>
+      <article><span>Last route</span><strong id="last-route">None</strong></article>
+    </section>
+
+    <section class="workspace">
+      <aside class="examples">
+        <h2>Agent workflows</h2>
+        <button data-prompt="Compare ProjectHub and the AWS Serverless Metadata Extraction Workflow.">Compare projects</button>
+        <button data-prompt="Which project is most relevant to a junior JavaScript and Node.js role? Show the evidence.">Find role evidence</button>
+        <button data-prompt="Is Bradley a fit for a cloud support role requiring AWS Lambda, S3, troubleshooting, and documentation?">Match a role</button>
+        <button data-prompt="Give me grounded interview questions about Bradley's AWS work and ProjectHub.">Build interview questions</button>
+        <div class="provider-panel">
+          <h2>Free network</h2>
+          <div id="providers" class="provider-list"><span>Loading providers…</span></div>
+        </div>
+      </aside>
+
+      <section class="chat-panel">
+        <div id="messages" class="messages" aria-live="polite">
+          <article class="message scout">
+            <span>Scout</span>
+            <p>This private preview exercises the feature branch’s read-only agent tools. Try a workflow or ask a recruiter question.</p>
+          </article>
+        </div>
+        <form id="chat-form" class="composer">
+          <label for="message">Message Scout</label>
+          <div>
+            <textarea id="message" rows="3" maxlength="600" placeholder="Paste a role or ask for project evidence…" required></textarea>
+            <button id="send" type="submit">Run workflow</button>
+          </div>
+        </form>
+      </section>
+    </section>
+  </main>
+  <script src="./app.js" defer></script>
+</body>
+</html>
