@@ -147,6 +147,38 @@ async function main() {
     failures.push(`out-of-scope variety: ${(overlap * 100).toFixed(0)}% word overlap`);
   }
 
+  const naturalSession = `eval-natural-dialogue-${Date.now()}`;
+  const naturalTurns = [
+    ['natural greeting', 'Hi scout! how are you doing?', /doing well.*thanks for asking/i],
+    ['Scout pizza preference', 'I want to know... if you like pizza', /can'?t actually eat.*pizza/i],
+    ['Bradley pizza speculation', 'i think he likes pizza though', /might.*public profile.*(?:confirmed|confirm)/i],
+    ['user-provided pizza fact', 'Yeah but his faverate is pizza', /remember pizza.*this chat.*verified/i],
+    ['remembered pizza fact', "Okay, what's his favorite food then?", /you told me pizza.*this chat.*verified profile/i],
+    ['Scout favorite color', "What's your favorite color?", /green.*interface.*branding/i],
+    ['short coding question', 'Can brad code?', /^Yes.*junior.*JavaScript.*TypeScript.*React.*Node\.js/i]
+  ];
+  const naturalReplies = [];
+  for (const [name, message, expected] of naturalTurns) {
+    await pause();
+    const result = await ask(message, naturalSession);
+    record(name, result);
+    const reply = String(result.body.reply || '');
+    naturalReplies.push(reply);
+    if (!expected.test(reply)) {
+      failedCases.add(name);
+      failures.push(`${name}: unnatural or irrelevant reply ${JSON.stringify(reply)}`);
+    }
+  }
+  extraCaseCount += naturalTurns.length;
+  if (/I answer questions about|recruiter data covers/i.test(naturalReplies.join(' '))) {
+    failedCases.add('natural dialogue boilerplate');
+    failures.push('natural dialogue boilerplate: capability or policy copy leaked into casual chat');
+  }
+  if ((naturalReplies.at(-1) || '').split(/\s+/).length > 55) {
+    failedCases.add('short coding question');
+    failures.push('short coding question: response exceeded 55 words');
+  }
+
   const sorted = [...latencies].sort((a, b) => a - b);
   const percentile = p => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))] || 0;
   console.log(JSON.stringify({

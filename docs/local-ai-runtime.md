@@ -41,6 +41,6 @@ curl http://127.0.0.1:3000/health
 curl http://127.0.0.1:3000/api/diagnose
 ```
 
-The checked-in suites currently cover 58 deterministic unit tests, a 40-query retrieval golden set, and a 48-request local API evaluation. The longer recruiter conversation scripts exercise 107 additional multi-turn prompts and should be run against the private preview before promotion.
+The checked-in suites currently cover 58 deterministic unit tests, a 40-query retrieval golden set, and a 55-request local API evaluation. The API evaluation includes a casual-dialogue regression that checks pronoun handling, user-provided context, response variety, and concise answers. The longer recruiter conversation scripts exercise 107 additional multi-turn prompts and should be run against the private preview before promotion.
 
 No design can truthfully guarantee correct factual knowledge for every possible question. ProjectHub's contract is narrower and testable: every request receives a useful response, unknown facts are identified honestly, and unsupported claims are never presented as verified facts.

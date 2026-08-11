@@ -82,7 +82,7 @@ The backend lives in this repo as `server-gemini.js` and is deployed to a GCP VM
 - **Session memory:** Five sanitized turns plus up to 12 topic stances per session.
 - **Cost:** GCP Always Free e2-micro VM; no hosted LLM account or AI credits.
 - **Agent:** The assistant is named **Scout** and uses the persona in `knowledge.agent`.
-- **Test suites:** 6 legacy API suites plus 58 checked-in Node unit tests, a 48-request local API evaluation, and a 40-query BM25 golden eval.
+- **Test suites:** 6 legacy API suites plus 58 checked-in Node unit tests, a 55-request local API evaluation, and a 40-query BM25 golden eval.
 
 ---
 

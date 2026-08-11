@@ -44,6 +44,8 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 52px); letter-spacing: -.04em; }
 .message.user { margin-left: auto; }
 .message.user p { color: #092016; background: #dff5e8; }
 .trace { margin-top: 7px; color: var(--muted); font-size: 12px; }
+.trace summary { width: fit-content; cursor: pointer; user-select: none; }
+.trace > div { margin-top: 6px; }
 .trace strong { color: var(--blue); }
 .composer { padding: 18px; border-top: 1px solid var(--line); background: #0b1512; }
 .composer label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 12px; font-weight: 700; }

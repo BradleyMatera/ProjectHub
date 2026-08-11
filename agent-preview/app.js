@@ -28,11 +28,15 @@ function addMessage(role, text, trace) {
   body.textContent = String(text || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   article.append(label, body);
   if (trace) {
-    const details = document.createElement('div');
+    const details = document.createElement('details');
     details.className = 'trace';
+    const summary = document.createElement('summary');
+    summary.textContent = 'Debug details';
+    const line = document.createElement('div');
     const route = document.createElement('strong');
     route.textContent = trace.route;
-    details.append('Route: ', route, ` · ${trace.details}`);
+    line.append('Route: ', route, ` · ${trace.details}`);
+    details.append(summary, line);
     article.append(details);
   }
   elements.messages.append(article);
@@ -78,7 +82,7 @@ async function loadHealth() {
 async function runWorkflow(message) {
   addMessage('user', message);
   elements.send.disabled = true;
-  elements.send.textContent = 'Running…';
+  elements.send.textContent = 'Thinking…';
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
@@ -97,7 +101,7 @@ async function runWorkflow(message) {
     addMessage('scout', `Workflow failed: ${error.message}`);
   } finally {
     elements.send.disabled = false;
-    elements.send.textContent = 'Run workflow';
+    elements.send.textContent = 'Send';
     elements.input.focus();
   }
 }

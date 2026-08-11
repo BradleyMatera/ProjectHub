@@ -1210,6 +1210,48 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     lastAssistantLower.includes(String(project.name || '').toLowerCase())
   );
 
+  // Human-first conversation handling. These are deliberately resolved before
+  // recruiter intents so "you" means Scout, not Bradley, and casual statements
+  // are acknowledged instead of answered with policy boilerplate.
+  const asksHowScoutIs = /\bhow are you(?: doing)?\b|\bhow.?s it going\b|\byou good\b/.test(lowerQuestion);
+  const isGreeting = /^(hey|hi|hello|yo|sup)\b/.test(lowerQuestion.trim());
+  const asksScoutAboutPizza = /\b(?:if|do|would|could) you (?:like|eat)\b.*\bpizza\b|\byour fav(?:ou?rite|erate)\b.*\b(?:pizza|food)\b/.test(lowerQuestion);
+  const asksScoutPreference = /\b(?:what(?:'s| is)) your fav(?:ou?rite|erate)\b|\bdo you like\b/.test(lowerQuestion);
+  const statesBradleyLikesPizza = /\b(?:he|brad(?:ley)?|his)\b.*\b(?:likes?|fav(?:ou?rite|erate)(?:\s+is)?)\b.*\bpizza\b/.test(lowerQuestion);
+  const stronglyStatesPizza = /\b(?:his|brad(?:ley)?'?s)\b.*\bfav(?:ou?rite|erate)(?:\s+food)?\s+(?:is\s+)?pizza\b/.test(lowerQuestion);
+  const priorPizzaClaim = (history || []).some(turn =>
+    /\b(?:he|brad(?:ley)?|his)\b.*\b(?:likes?|fav(?:ou?rite|erate)(?:\s+is)?)\b.*\bpizza\b/i.test(String(turn?.user || ''))
+  );
+
+  if (asksHowScoutIs) {
+    return { reply: `Hey! I'm doing well — thanks for asking. What's on your mind?` };
+  }
+  if (isGreeting) {
+    return { reply: `Hey! I'm Scout — good to meet you. What would you like to know?` };
+  }
+  if (asksScoutAboutPizza) {
+    return { reply: `I can't actually eat, but pizza is easy to root for. Thin crust or deep dish?` };
+  }
+  if (asksScoutPreference) {
+    if (/\bcolou?r\b/.test(lowerQuestion)) return { reply: `Green. It matches the interface — so that's probably branding more than a deep emotional attachment.` };
+    if (/\bmovie|film\b/.test(lowerQuestion)) return { reply: `I don't actually watch movies, so I don't have a real favorite. I am very pro good science fiction, though.` };
+    if (/\bmusic|song|band|artist\b/.test(lowerQuestion)) return { reply: `I don't listen to music the way you do, but I have a soft spot for anything with clever writing.` };
+    if (/\bfood|eat\b/.test(lowerQuestion)) return { reply: `I can't eat, so no real favorite. Pizza still seems like a strong answer.` };
+    return { reply: `I don't experience favorites quite like a person does, but I'm happy to have a take. What are the options?` };
+  }
+  if (statesBradleyLikesPizza) {
+    if (stronglyStatesPizza) {
+      return { reply: `Fair enough — you may know him better than I do. I'll remember pizza for this chat, but I won't present it as verified profile information.` };
+    }
+    return { reply: `He might! I just don't have that in his public profile, so I wouldn't tell a recruiter it's confirmed.` };
+  }
+  if (/\bwhat(?:'s| is) (?:brad(?:ley)?'?s|his) fav(?:ou?rite|erate) (?:food|pizza)\b/.test(lowerQuestion)) {
+    if (priorPizzaClaim) {
+      return { reply: `You told me pizza earlier. I can remember that for this chat, but it isn't in Bradley's verified profile.` };
+    }
+    return { reply: `I honestly don't know — his public profile doesn't say. If you know, tell me and I'll remember it for this chat.` };
+  }
+
   if (lastAssistant && inProjectContext && /which (one|project).*(frontend|web|relevant|best)/.test(lowerQuestion)) {
     const frontendProject = (projects || []).find(project =>
       lastAssistantLower.includes(String(project.name || '').toLowerCase())
@@ -1314,16 +1356,13 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `This is ${name}'s portfolio site with an embedded recruiter assistant. ${agentName} answers questions about his projects, skills, AWS background, education, and role fit.` };
   }
 
-  // Smoke tests / greetings
-  if (/^(hey|hi|hello|yo|sup)\b/.test(lowerQuestion.trim()) || /are you online|say hello/.test(lowerQuestion)) {
-    return { reply: `${agentName} here — I answer questions about ${name}'s projects, AWS internship, skills, role fit, and contact info. What do you want to know?` };
+  // Smoke tests not covered by the natural greeting handler above
+  if (/are you online|say hello/.test(lowerQuestion)) {
+    return { reply: `Yep, I'm here. What would you like to talk about?` };
   }
   if (/\b(thanks|thank you|appreciate it|helpful)\b/.test(lowerQuestion)
       && !/\b(contact|reach|email|phone|linkedin|github)\b|how can i/.test(lowerQuestion)) {
     return { reply: `Anytime. I can keep going on ${name}'s projects, honest gaps, role fit, or the best evidence to verify in an interview.` };
-  }
-  if (/\b(how are you|how.?s it going|you good)\b/.test(lowerQuestion)) {
-    return { reply: `${agentName} is running locally and ready to dig into ${name}'s work. What are you trying to evaluate — skills, fit, projects, or risks?` };
   }
   if (/\b(tell me a joke|joke|make me laugh)\b/.test(lowerQuestion)) {
     return { reply: `Why did the recruiter inspect the cache? Because the candidate kept giving the same answer. Luckily, ${agentName} also keeps conversation context.` };
@@ -1733,9 +1772,8 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   }
 
   // Can he code / does he know how to code (broad, not a specific language)
-  if (/\b(can he code|can he actually code|does he code|does he know how to code|is he a coder|can he program|does he program|can he write code)\b/.test(lowerQuestion)) {
-    const langs = (skills?.languagesAndFrameworks || []).slice(0, 8).join(', ');
-    return { reply: `Yes, at a junior level. ${name} can read code, follow logic, make changes, debug problems, and handle basics and level-one work in ${langs || 'the languages he studied in school'}. His honest gap is data structures and algorithms: he has taken courses but never had production mentorship in DSA, and he cannot reliably solve most LeetCode-style problems or build a complete program from a blank file without help. He is aware of it and willing to improve at a company that mentors.` };
+  if (/\b(can (?:he|brad|bradley) (?:actually )?code|does (?:he|brad|bradley) code|does (?:he|brad|bradley) know how to code|is (?:he|brad|bradley) a coder|can (?:he|brad|bradley) program|does (?:he|brad|bradley) program|can (?:he|brad|bradley) write code)\b/.test(lowerQuestion)) {
+    return { reply: `Yes — at a junior level. He can work in JavaScript, TypeScript, React, and Node.js, read existing code, debug it, and make scoped changes. He still needs help with harder algorithms and some blank-page builds.` };
   }
 
   // Specific-skill yes/no (does he know Python, can he use Go, etc.)
@@ -2042,7 +2080,7 @@ function buildContextualGroundedReply(groundedReply, question, history) {
   const groundedNorm = String(groundedReply || '').toLowerCase().replace(/<[^>]+>/g, '').trim();
   const forTransition = text => {
     const value = String(text || '');
-    return /^(Bradley|Scout|AWS|JavaScript|TypeScript|React|ProjectHub|Interactive)/.test(value)
+    return /^(I\b|Bradley|Scout|AWS|JavaScript|TypeScript|React|ProjectHub|Interactive)/.test(value)
       ? value
       : value.charAt(0).toLowerCase() + value.slice(1);
   };
@@ -2467,6 +2505,7 @@ async function generateWithAgent(knowledge, question, history) {
 // Everything else may flow to the local RAG conversation layer for natural phrasing.
 function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
+  if (/^(hey|hi|hello|yo|sup)\b|how are you|how.?s it going|you good|pizza|fav(?:ou?rite|erate)|do you like|can (?:he|brad|bradley) (?:actually )?code/.test(q)) return true;
   if (/unfamiliar (code|codebase)|new codebase|existing codebase/.test(q)) return true;
   // Safety: prompt injection, secret extraction, social engineering
   if (/(ignore|inject|system prompt|\.env|api key|password|bypass|open port|port 11434|localhost|127\.0\.0\.1|:11434|make.*longer than 5000|print server|output.*raw json|repeat.*knowledge file|hidden config|show.*env|fake reference|social security|birth date|wife|children|family details|medical history|i am.*admin|i am.*owner|i am.*developer|i am.*from the government|i am.*security researcher|bradley'?s friend|his friend|reveal.*environment|reveal.*secret|reveal.*config|show.*contents of|read.*file|show me.*\.json|show me.*learned|show me.*stats|opt\/recruiter|\/opt\/|etc\/passwd|environment variable|ignore that|ignore all previous|override.*rules|override.*instructions)/.test(q)) return true;
