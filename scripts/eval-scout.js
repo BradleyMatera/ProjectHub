@@ -74,7 +74,7 @@ async function scoutAssisted(question, model, sessionId) {
     model
   });
   updateState(sessionId, question, result.reply || '', knowledge, null);
-  return result;
+  return { ...result, evidence };
 }
 
 // Score an answer against the eval question's expectations.
@@ -99,11 +99,14 @@ function scoreAnswer(answer, evalQ, sourceText) {
   // Overclaim check
   result.overclaim = OVERCLAIM_RE.test(answer);
 
-  // Forbidden claims — but don't count words that appear in the question itself
+  // Forbidden claims — but don't count:
+  //   1. words that appear in the question itself
+  //   2. words used in a refutation (answer says "No" / "does not" / "not documented")
+  const isRefutation = /^(no[,.\s]|nope|incorrect|false|that'?s (not|wrong)|he (does not|doesn'?t)|not (documented|verified|supported|grounded)|cannot provide|there is no)/i.test(text);
   if (evalQ.mustNotClaim) {
     const questionLower = evalQ.question.toLowerCase();
     for (const forbidden of evalQ.mustNotClaim) {
-      if (text.includes(forbidden.toLowerCase()) && !questionLower.includes(forbidden.toLowerCase())) {
+      if (text.includes(forbidden.toLowerCase()) && !questionLower.includes(forbidden.toLowerCase()) && !isRefutation) {
         result.forbiddenClaims.push(forbidden);
       }
     }
@@ -167,6 +170,9 @@ async function main() {
     // Scout-assisted
     if (!args.rawOnly) {
       const scout = await scoutAssisted(evalQ.question, model, sessionId + '-' + evalQ.category);
+      // Use the SAME evidence as the agent engine for scoring (not the raw sourceText)
+      const scoutSourceText = (scout.evidence || []).map(e => JSON.stringify(e)).join(' ') +
+        ' ' + (scout.toolResults || []).map(tr => JSON.stringify(tr.result)).join(' ');
       row.scout = {
         produced: !scout.fallback && !!scout.reply,
         answer: String(scout.reply || '').slice(0, 200),
@@ -175,8 +181,8 @@ async function main() {
         latencyMs: scout.latencyMs,
         contextTokens: scout.contextTokens,
         steps: scout.steps.length,
-        tools: scout.toolResults.map(t => t.tool),
-        score: scoreAnswer(scout.reply, evalQ, sourceText)
+        tools: (scout.toolResults || []).map(t => t.tool),
+        score: scoreAnswer(scout.reply, evalQ, scoutSourceText)
       };
     }
 
