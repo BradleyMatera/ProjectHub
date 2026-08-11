@@ -46,7 +46,7 @@ bash deploy-agent-preview.sh
 bash scripts/open-agent-preview.sh
 ```
 
-The second command creates an authenticated SSH port forward and opens `http://127.0.0.1:3200/preview/`. Anyone without GCP SSH access cannot reach the service. No shared password, browser-stored secret, or macOS Keychain command is involved.
+The third command creates an authenticated SSH port forward and opens `http://127.0.0.1:3200/preview/`. Anyone without GCP SSH access cannot reach the service. No shared password, browser-stored secret, or macOS Keychain command is involved.
 
 To stop access, press `Ctrl-C` in the tunnel terminal. The remote service remains loopback-only.
 
