@@ -26,5 +26,6 @@ test('local reply validator accepts grounded phrasing and rejects new entities a
   assert.equal(validateLocalConversationReply('ProjectSage is a clear winner with strong AI capabilities.', source), false);
   assert.equal(validateLocalConversationReply('ProjectHub has 50 production users.', source), false);
   assert.equal(validateLocalConversationReply('Bradley built ProjectHub. It uses BM25 retrieval. It also uses local Ollama.', source), false);
+  assert.equal(validateLocalConversationReply('ProjectHub uses BM25 retrieval', source, 'How does ProjectHub retrieve facts?'), false);
   assert.equal(validateLocalConversationReply('Bradley studies data structures and algorithms.', `${source} Bradley studies data structures and algorithms.`, 'How does he approach an unfamiliar codebase?'), false);
 });

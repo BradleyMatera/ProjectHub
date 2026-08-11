@@ -18,7 +18,7 @@ ProjectHub has zero recurring AI spend. It does not require Groq, Cloudflare Wor
 6. A deterministic grounded answer is computed before generation.
 7. Open-ended questions may be phrased by pre-warmed `qwen2.5:0.5b` through loopback-only Ollama.
 8. The prompt includes the five newest sanitized turns and the stored stance for the current topic.
-9. Generated output is capped at 32 tokens and 14.5 seconds, then checked for unsupported numbers, new entities, overclaims, slop, safety problems, source overlap, and a two-sentence maximum.
+9. Generated output is capped at one complete sentence, 32 tokens, and 14.5 seconds, then checked for truncation, unsupported numbers, new entities, overclaims, slop, safety problems, source overlap, and question relevance.
 10. Timeout or any failed check returns the deterministic grounded answer.
 
 `LOCAL_ONLY_MODE=true` forces `PROVIDER_ORDER` to an empty list and forces dense vector retrieval off even when a stale environment variable enables it. Legacy hosted-provider adapters remain for backward compatibility outside local-only mode, but they are unreachable in the deployed local configuration.
