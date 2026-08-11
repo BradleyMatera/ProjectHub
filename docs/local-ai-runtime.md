@@ -46,6 +46,23 @@ These are the exact models Scout has been tested against. Pin the tag and digest
 
 **Why selected:** Fast (274-304ms warm on Mac, ~1s on e2-micro), low RAM, reliable structured JSON with compact prompts, best grounding rate on the Scout eval set (61% Scout-assisted vs 25% raw). The smallest viable model — proves the harness boosts a weak model significantly.
 
+### Candidate: `qwen2.5:1.5b`
+
+| Field | Value |
+|-------|-------|
+| Ollama tag | `qwen2.5:1.5b` |
+| Digest | `65ec06548149b04c096a` (target VM) |
+| Family | qwen2 |
+| Parameter size | 1.5B |
+| Quantization | Q4_K_M |
+| File size | ~986 MB (target VM) / ~940 MB (Mac) |
+| License | Apache 2.0 (Qwen2.5 weights). Self-hosted use permitted. |
+| Context window | 32768 (Ollama default; Scout uses 1536-2048) |
+| Min RAM | ~1400 MB (with quantization) |
+| Dev hardware | Apple M2 Pro, 16 GB RAM |
+
+**Why not selected as primary:** The 1.5b model produces better conversation quality (86% multi-turn pass rate vs 57% for 0.5b) and higher grounding (75% vs 61% on Mac). However, on the actual production target (GCP e2-micro, 958 MiB RAM), the 1.5b model **cannot run**. It takes 171 seconds to load, uses 620 MB RSS + 416 MB swap (1036 MB total), and cannot complete even a simple 16-token generation request due to severe swap thrashing (47% I/O wait). See the Target Machine Measurements section below.
+
 ### Candidate: `gemma3:1b`
 
 | Field | Value |
@@ -61,6 +78,85 @@ These are the exact models Scout has been tested against. Pin the tag and digest
 | Min RAM | ~1200 MB |
 
 **Eval result:** 57% Scout-assisted grounded (vs 11% raw). Slower (457-484ms warm on Mac). More forbidden claims on adversarial questions (4 vs 2). Not selected as primary due to higher RAM, slower latency, and worse adversarial safety on the e2-micro target hardware.
+
+---
+
+## Target Machine Measurements (GCP e2-micro)
+
+**Measured on:** `projecthub-dev-vm` (private dev VM, separate from production `ollama-api-gate`)
+- Machine type: e2-micro (2 vCPU AMD EPYC 7B12, 958 MiB RAM, 2 GB swap)
+- OS: Ubuntu 22.04.5 LTS, kernel 6.8.0-1064-gcp
+- Ollama: 0.32.7
+- Ollama config: `OLLAMA_KEEP_ALIVE=-1`, `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_MAX_LOADED_MODELS=1`, `OLLAMA_CONTEXT_LENGTH=1536`
+
+### qwen2.5:0.5b on e2-micro
+
+| Metric | Value |
+|--------|-------|
+| Model loads | Yes (stays resident with keep_alive=-1) |
+| Load time (cold) | 15-20 seconds |
+| RSS (loaded) | ~470-500 MB |
+| VmSwap | 0-130 MB (varies with memory pressure) |
+| RAM free (loaded) | 76-102 MiB |
+| Simple JSON (16 tokens, warm) | 771-879 ms |
+| Reasoning (80 tokens, warm) | 4389-5579 ms |
+| Synthesis (150 tokens, warm) | 3319-3616 ms |
+| Scout agent loop (900-token context) | **30-60 seconds per step (TIMEOUT)** |
+| Reduced context (150 tokens, ctx=512) | 2.4 seconds |
+| Reduced context (267 tokens, ctx=768) | 37.9 seconds |
+| Prompt eval rate | ~70-74 tokens/second |
+| Scout eval (28 questions, full context) | 0/28 grounded (all fallback) |
+| Scout eval (28 questions, reduced context) | 0/28 grounded (all fallback) |
+
+**Verdict: MARGINAL.** The 0.5b model loads and stays resident, and can handle small prompts (<150 tokens) in under 3 seconds. However, Scout's agent loop requires 775-900 token context packets, which take 30-60 seconds per step on the e2-micro. The prompt eval rate (~70 tok/s) is too slow for the full agent loop. The model works for simple direct generation but not for the multi-step agent engine.
+
+### qwen2.5:1.5b on e2-micro
+
+| Metric | Value |
+|--------|-------|
+| Model loads | Yes (after 171 seconds) |
+| Load time (cold) | 171 seconds |
+| RSS (loaded) | ~620 MB |
+| VmSwap | 416 MB (620+416=1036 MB total, exceeds 958 MiB RAM) |
+| Simple JSON (16 tokens, warm) | **FAILED (62 second timeout, swap thrashing)** |
+| Swap-in rate during generation | 17884-20520 pages/second |
+| I/O wait during generation | 47% |
+| CPU during generation | 0-4% (stalled on I/O) |
+
+**Verdict: NOT DEPLOYABLE.** The 1.5b model exceeds the e2-micro's physical RAM. It loads after 171 seconds but cannot generate any output because the model weights are swapped to disk. Every generation request thrashes swap at ~18000-20000 pages/second with 47% I/O wait. The model is unusable on this hardware.
+
+### M2 Pro vs e2-micro Comparison
+
+| Metric | M2 Pro (16 GB) | e2-micro (1 GB) |
+|--------|----------------|-----------------|
+| 0.5b cold load | 304 ms | 15-20 seconds |
+| 0.5b warm simple gen | 274 ms | 771-879 ms |
+| 0.5b Scout agent loop | 1100-3620 ms | 30000-60000 ms (timeout) |
+| 0.5b Scout eval grounded | 17/28 (61%) | 0/28 (0%) |
+| 1.5b cold load | ~1 second | 171 seconds |
+| 1.5b warm simple gen | ~500 ms | FAILED (swap thrashing) |
+| 1.5b Scout eval grounded | 21/28 (75%) | N/A (cannot generate) |
+
+### Context Behavior on e2-micro
+
+The primary bottleneck on the e2-micro is **prompt eval speed**, not model size. The 0.5b model fits in RAM (~470 MB RSS) but prompt eval runs at only ~70 tokens/second on 2 vCPU. Scout's context packet is 775-900 tokens, requiring 11-13 seconds for prompt eval alone. With 2-3 steps per question, total latency is 22-39 seconds, exceeding the 15-second production response budget.
+
+Reducing the context to 150 tokens brings latency to 2.4 seconds, but this requires stripping most evidence, tool definitions, and rules — defeating the purpose of the agent loop.
+
+### Model Selection Decision
+
+| Model | Classification | Reason |
+|-------|---------------|--------|
+| qwen2.5:0.5b | **MARGINAL** | Loads and stays resident, but Scout's full agent loop context (775+ tokens) takes 30-60s per step. Works for simple direct generation only. |
+| qwen2.5:1.5b | **NOT DEPLOYABLE** | Exceeds physical RAM. Cannot generate due to swap thrashing. |
+| gemma3:1b | **NOT DEPLOYABLE** | 815 MB model + ~1.1 GB RAM needed > 958 MiB available. Same swap thrashing expected as 1.5b. |
+
+**Recommendation:** The e2-micro (958 MiB RAM, 2 vCPU) is too constrained for Scout's full agent loop with any currently tested model. The 0.5b model is the only one that loads and stays resident, but the 2 vCPU prompt eval rate (~70 tok/s) makes the 775+ token agent context impractical.
+
+**Path forward (not attempted in this phase):**
+1. Upgrade to e2-small (2 vCPU, 2 GB RAM) — would eliminate swap thrashing for 0.5b and may allow 1.5b to run.
+2. Implement a "lite agent" mode for e2-micro: single-step direct generation with 200-token context, no tool loop, no repair. This would work at 2-3 second latency.
+3. Use the 0.5b model with a heavily compressed context packet (<200 tokens) and accept lower grounding quality.
 
 ---
 
@@ -98,12 +194,14 @@ These are the exact models Scout has been tested against. Pin the tag and digest
 
 | Model | Mode | Grounded | Overclaim | Forbidden claims | Fallback | Generative |
 |-------|------|----------|-----------|-----------------|----------|------------|
-| qwen2.5:0.5b | RAW | 6/28 (21%) | 7/28 | 2/28 | n/a | n/a |
-| qwen2.5:0.5b | SCOUT | 17/28 (61%) | 0/28 | 0/28 | 5/28 (18%) | 23/28 (82%) |
-| qwen2.5:1.5b | RAW | 9/28 (32%) | 7/28 | 2/28 | n/a | n/a |
-| qwen2.5:1.5b | SCOUT | 21/28 (75%) | 2/28 | 2/28 | 3/28 (11%) | 25/28 (89%) |
+| qwen2.5:0.5b | RAW | 5/28 (18%) | 5/28 | 1/28 | n/a | n/a |
+| qwen2.5:0.5b | SCOUT | 20/28 (71%) | 0/28 | 0/28 | 8/28 (29%) | 20/28 (71%) |
+| qwen2.5:1.5b | RAW | 8/28 (29%) | 8/28 | 3/28 | n/a | n/a |
+| qwen2.5:1.5b | SCOUT | 24/28 (86%) | 0/28 | 0/28 | 4/28 (14%) | 24/28 (86%) |
 | gemma3:1b | RAW | 3/28 (11%) | 3/28 | 5/28 | n/a | n/a |
 | gemma3:1b | SCOUT | 16/28 (57%) | 1/28 | 4/28 | 9/28 | 19/28 |
+
+Note: Results above are from the M2 Pro with the fixed validator (contextual number grounding + word-boundary entity matching) and fixed eval scorer (same source text as agent engine + refutation detection). The previous report's 1.5b "2 unsupported claims" were real hallucinations that passed validation due to substring number matching — now fixed. Both models achieve 0 unsupported claims in final Scout output.
 
 ### Multi-Turn Conversation (14 turns across 4 conversations)
 
@@ -190,8 +288,14 @@ AGENT_PREVIEW_LOCAL_PORT=3320 bash scripts/open-agent-preview.sh
 | `OLLAMA_AGENT_CONTEXT` | `1536` | Context window for agent calls |
 | `OLLAMA_KEEP_ALIVE` | `-1` | Keep model in memory indefinitely |
 | `SCOUT_MAX_STEPS` | `3` | Max agent loop iterations |
-| `SCOUT_STEP_TIMEOUT_MS` | `6000` | Per-step timeout |
-| `SCOUT_TOTAL_BUDGET_MS` | `15000` | Total agent loop budget |
+| `SCOUT_STEP_TIMEOUT_MS` | `6000` | Per-step timeout (max 60000) |
+| `SCOUT_TOTAL_BUDGET_MS` | `15000` | Total agent loop budget (max 120000) |
+| `OLLAMA_PROBE_TIMEOUT_MS` | `5000` | Probe timeout for agent reachability check |
+| `SCOUT_EVIDENCE_MAX_ITEMS` | `5` | Max evidence items in reasoning packet |
+| `SCOUT_EVIDENCE_MAX_CHARS` | `220` | Max chars per evidence item in reasoning |
+| `SCOUT_SYNTHESIS_EVIDENCE_MAX_ITEMS` | `4` | Max evidence items in synthesis/repair packet |
+| `SCOUT_SYNTHESIS_EVIDENCE_MAX_CHARS` | `200` | Max chars per evidence item in synthesis |
+| `SCOUT_TOOL_OBS_MAX_CHARS` | `400` | Max chars for tool observation results |
 
 ### Health checks
 

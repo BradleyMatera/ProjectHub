@@ -4,7 +4,7 @@
 
 **Working branch:** `feat/agent-systems-network`
 
-**Code baseline:** `0e0c606 fix: keep unknown technology conversations specific`
+**Code baseline:** `7c15f07 fix: contextual number grounding prevents hallucinated claims from passing validation`
 
 **Release state:** committed locally, not promoted to `develop` or `master`, and the newest commit has not been deployed to the private preview. Production is unchanged.
 
