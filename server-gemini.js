@@ -17,7 +17,7 @@ const { groqModelPolicy, providerPolicy } = require('./lib/model-policy');
 const { executeAgentTool, getAgentToolDefinitions, selectAgentToolNames } = require('./lib/agent-tools');
 const { buildDeterministicAgentResult, parseLocalStyleResponse } = require('./lib/agent-fallback');
 const { runAgentLoop } = require('./lib/agent-runtime');
-const { buildLocalConversationMemory, validateLocalConversationReply } = require('./lib/local-conversation');
+const { buildLocalConversationMemory, extractFirstCompleteSentence, validateLocalConversationReply } = require('./lib/local-conversation');
 
 const app = express();
 
@@ -2899,6 +2899,7 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
   const timeout = setTimeout(() => controller.abort(), timeoutMs || GEN_TIMEOUT_MS);
   let accumulated = '';
   let usage = {};
+  let completedSentenceEarly = false;
   try {
     const res = await fetch(`${OLLAMA_URL}/api/chat`, {
       method: 'POST',
@@ -2942,6 +2943,13 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
               controller.abort();
               throw new Error('aborted: bad pattern detected');
             }
+            const completeSentence = extractFirstCompleteSentence(clean);
+            if (completeSentence) {
+              accumulated = completeSentence;
+              completedSentenceEarly = true;
+              await reader.cancel();
+              break;
+            }
           }
         } catch (e) {
           if (e.message === 'aborted: bad pattern detected') throw e;
@@ -2959,7 +2967,7 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
       estimated: !Number.isFinite(usage.prompt_eval_count),
       meta: { model: GEN_MODEL, localConversation: true, memoryTurns: memory.turns.length }
     });
-    return usage.done_reason === 'length' ? '' : cleaned;
+    return usage.done_reason === 'length' && !completedSentenceEarly ? '' : cleaned;
   } finally {
     clearTimeout(timeout);
   }

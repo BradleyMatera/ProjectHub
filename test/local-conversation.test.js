@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { buildLocalConversationMemory, validateLocalConversationReply } = require('../lib/local-conversation');
+const { buildLocalConversationMemory, extractFirstCompleteSentence, validateLocalConversationReply } = require('../lib/local-conversation');
 
 test('local conversation memory keeps the five newest sanitized turns and stance', () => {
   const history = Array.from({ length: 7 }, (_, index) => ({
@@ -14,6 +14,11 @@ test('local conversation memory keeps the five newest sanitized turns and stance
   assert.equal(memory.turns[0].user, 'question 2');
   assert.equal(memory.turns[4].assistant, 'answer 6');
   assert.equal(memory.stance, 'projects: ProjectHub is grounded.');
+});
+
+test('local conversation streaming stops at the first complete sentence', () => {
+  assert.equal(extractFirstCompleteSentence('ProjectHub uses Node.js locally. It also has a fallback.'), 'ProjectHub uses Node.js locally.');
+  assert.equal(extractFirstCompleteSentence('ProjectHub uses local retrieval'), '');
 });
 
 test('local reply validator accepts grounded phrasing and rejects new entities and hype', () => {
