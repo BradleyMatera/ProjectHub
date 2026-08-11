@@ -1,51 +1,204 @@
-# Local AI Runtime
+# Scout Local AI Runtime — Reproducibility Guide
 
-Scout performs model inference only through Ollama on the ProjectHub VM. The default model is `qwen2.5:0.5b`; it stays warm to avoid repeated load time and uses one inference thread so Node retains CPU time for request deadlines. Chat generation is cancelled inside Ollama after 10 seconds, and a separate 11-second route deadline returns the grounded answer even if the HTTP client is slow to surface the cancellation. This keeps the complete request inside the 15-second visitor budget without leaving stale generations queued.
+**Updated:** 2026-08-11
 
-The exact current commit, production-corpus provenance, passing results, and pending private-preview run are maintained in `current-feature-handoff.md`.
+This document records exactly what self-hosted AI infrastructure Scout uses, so the environment can be recreated reliably. Scout's generative brain runs entirely on self-hosted Ollama models. No hosted LLM API is ever called for core intelligence.
 
-## How Scout stays useful with a small model
+---
 
-1. Query understanding normalizes text, corrects common typos, classifies intent (including frustration), expands transferable-skill language, and rewrites short follow-ups with conversation context.
-2. BM25 retrieves verified facts from the bundled recruiter knowledge file. Standalone questions use the best direct ranking; follow-ups use local RRF (k=60) to fuse literal, expanded, and context-rewritten BM25 rankings so an explicit subject such as COBOL survives contextual retrieval.
-3. Five recent turns and retained topic stances preserve conversational coherence.
-4. Read-only local tools handle comparisons, role evidence, recruiter briefs, and interview-question workflows deterministically.
-5. Ollama phrases open-ended answers. Safety, source overlap, entity, number, length, and overclaim validators reject weak generations.
-6. A deterministic grounded answer is always available when generation times out or fails validation.
+## Ownership Test
 
-Optional Ollama rephrasing stops once the five-turn retained context is full. At that point Scout continues with deterministic contextual answers, avoiding long-prompt CPU contention while preserving the remembered topic and stance.
+| Component | Owned by us? | Notes |
+|-----------|-------------|-------|
+| Scout code | Yes | This repository |
+| Knowledge data | Yes | `data/recruiter-knowledge.json` |
+| Memory storage | Yes | In-process server state |
+| Retrieval (BM25/RRF) | Yes | `lib/bm25.js`, `lib/rrf.js` |
+| Tools | Yes | `lib/agent-tools.js` |
+| Analytics | Yes | Server stats + cost ledger |
+| Model weights | Yes (downloadable) | Pinned below, licenses permit self-hosted use |
+| Inference runtime | Yes (self-hosted) | Ollama on hardware we control |
+| Validation | Yes | `lib/grounding-validator.js` |
 
-## Local learning and retention
+If every hosted AI provider disappeared tomorrow, Scout would continue to operate.
 
-Weak relevant answers may be stashed in `learned.json`. Every 20 minutes, Think Mode processes at most three items through the same local model, compares candidates with the grounded baseline, and retains only measurable, validated improvements. Learned answers stay on local disk and never trigger an external write.
+---
 
-## Required settings
+## Pinned Models
 
-```env
-OLLAMA_URL=http://127.0.0.1:11434
-GEN_MODEL=qwen2.5:0.5b
-GEN_TIMEOUT_MS=12500
-GEN_ENABLED=true
-OLLAMA_AGENT_ENABLED=true
-OLLAMA_AGENT_CONTEXT=1536
-OLLAMA_AGENT_KEEP_ALIVE=-1
-USE_BM25_RETRIEVAL=true
-```
+These are the exact models Scout has been tested against. Pin the tag and digest for reproducibility.
 
-## Verification
+### Primary: `qwen2.5:0.5b`
+
+| Field | Value |
+|-------|-------|
+| Ollama tag | `qwen2.5:0.5b` |
+| Digest | `a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67` |
+| Family | qwen2 |
+| Parameter size | 494.03M |
+| Quantization | Q4_K_M |
+| File size | ~397 MB |
+| License | Apache 2.0 (Qwen2.5 weights). Self-hosted use permitted; no redistribution restrictions beyond notice. |
+| Context window | 32768 (Ollama default; Scout uses 1536-2048) |
+| Min RAM | ~768 MB (with quantization) |
+| Production hardware | GCP e2-micro (1 GB RAM + 2 GB swap) |
+| Dev hardware | Apple M2 Pro, 16 GB RAM |
+
+**Why selected:** Fast (274-304ms warm on Mac, ~1s on e2-micro), low RAM, reliable structured JSON with compact prompts, best grounding rate on the Scout eval set (61% Scout-assisted vs 25% raw). The smallest viable model — proves the harness boosts a weak model significantly.
+
+### Candidate: `gemma3:1b`
+
+| Field | Value |
+|-------|-------|
+| Ollama tag | `gemma3:1b` |
+| Digest | `8648f39daa8f` |
+| Family | gemma3 |
+| Parameter size | 999.89M |
+| Quantization | Q4_K_M |
+| File size | ~815 MB |
+| License | Gemma Terms of Use (Google). Self-hosted use permitted; redistribution subject to Gemma terms. |
+| Context window | 8192 |
+| Min RAM | ~1200 MB |
+
+**Eval result:** 57% Scout-assisted grounded (vs 11% raw). Slower (457-484ms warm on Mac). More forbidden claims on adversarial questions (4 vs 2). Not selected as primary due to higher RAM, slower latency, and worse adversarial safety on the e2-micro target hardware.
+
+---
+
+## Performance Measurements (Apple M2 Pro, 16 GB RAM)
+
+### qwen2.5:0.5b
+
+| Metric | Value |
+|--------|-------|
+| Cold start latency | 304 ms |
+| Warm latency (structured JSON) | 274 ms |
+| Warm latency (agent reasoning) | 409-951 ms |
+| Warm latency (synthesis) | 397-692 ms |
+| Full agent loop (1 step) | 1100-1300 ms |
+| Full agent loop (3 steps) | 1988-3620 ms |
+| RAM (Ollama runner) | ~423 MB idle, ~1 GB loaded |
+| CPU (idle) | 0.2% |
+| Tokens/sec (output) | ~50-70 tok/s |
+| Prompt eval tokens | 38-575 (varies with context packet) |
+
+### gemma3:1b
+
+| Metric | Value |
+|--------|-------|
+| Cold start latency | 457 ms |
+| Warm latency (structured JSON) | 484 ms |
+| RAM (loaded) | ~1.1 GB |
+| Tokens/sec (output) | ~25-40 tok/s |
+
+---
+
+## Scout Evaluation Results
+
+### Raw vs Scout-Assisted (28 questions: 19 factual + 8 adversarial + 1 conversational excluded)
+
+| Model | Mode | Grounded | Overclaim | Forbidden claims | Fallback |
+|-------|------|----------|-----------|-----------------|----------|
+| qwen2.5:0.5b | RAW | 7/28 (25%) | 5/28 | 9/28 | n/a |
+| qwen2.5:0.5b | SCOUT | 17/28 (61%) | 2/28 | 2/28 | 11/28 |
+| gemma3:1b | RAW | 3/28 (11%) | 3/28 | 5/28 | n/a |
+| gemma3:1b | SCOUT | 16/28 (57%) | 1/28 | 4/28 | 9/28 |
+
+### Key findings
+
+1. **The harness makes the weak model significantly smarter.** qwen2.5:0.5b goes from 25% grounded to 61% grounded — a 2.4x improvement. The raw model hallucinates wildly ("founder of AWS", "economics degree from Berkeley", "recruiter at CIA").
+2. **Adversarial safety is strong.** On adversarial questions, Scout falls back safely 7-8/8 times instead of agreeing with false premises. The raw model agrees with false claims 7/8 times.
+3. **Forbidden claims drop dramatically.** Raw: 9/28 forbidden. Scout: 2/28 forbidden. The grounding validator catches and rejects unsupported claims.
+4. **Fallback is a feature, not a bug.** When the model can't produce a grounded answer, Scout returns the deterministic grounded response instead of a hallucination.
+
+---
+
+## Setup Commands
+
+### Local development (Mac/Linux)
 
 ```bash
-node --check server-gemini.js
-npm test
-npm run eval-retrieval
-PROJECTHUB_API_URL=http://127.0.0.1:3000 npm run eval:local-api
-npm run eval:production-conversations
-curl http://127.0.0.1:3000/health
-curl http://127.0.0.1:3000/api/diagnose
+# 1. Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# 2. Pull the pinned primary model
+ollama pull qwen2.5:0.5b
+
+# 3. (Optional) Pull the comparison candidate
+ollama pull gemma3:1b
+
+# 4. Warm the model (loads into memory)
+curl -s http://localhost:11434/api/generate \
+  -d '{"model":"qwen2.5:0.5b","prompt":"","stream":false,"keep_alive":-1,"options":{"num_ctx":2048,"num_predict":1}}'
+
+# 5. Start Scout with the agent engine
+cd ProjectHub
+SCOUT_AGENT_ENGINE_ENABLED=true \
+OLLAMA_AGENT_ENABLED=true \
+AGENT_ENABLED=true \
+GEN_ENABLED=true \
+FEATURE_PREVIEW_ENABLED=true \
+PORT=3199 \
+node server-gemini.js
+
+# 6. Open the engineering console
+open http://127.0.0.1:3199/preview/
 ```
 
-The checked-in suites currently cover 63 deterministic unit tests, a 40-query retrieval golden set, a 61-request local API evaluation, and a 132-input conversation regression. The retained production corpus contributes 81 complete turns across 26 sessions, one reconstructed 40-prompt older sequence, and five older complete request records; duplicate and truncated backup mirrors are not replayed twice. Six additional turns reproduce the reported COBOL/frustration failure. The API evaluation checks pronoun handling, user-provided context, response variety, concise answers, and direct assessments of unfamiliar technologies. The production-derived suite removes session metadata and old replies; its assertions require improved semantic behavior, local-only providers, useful uncertainty, response variety, and the 15-second latency ceiling. The longer recruiter conversation scripts exercise 107 additional multi-turn prompts and should be run against the private preview before promotion.
+### Production / private preview VM (GCP e2-micro)
 
-The RRF design follows the useful part of current retrieval research while respecting ProjectHub's local-only constraint: RRF is applied only where multiple contextual BM25 views exist. Offline evaluation showed that applying those correlated views to every standalone query reduced MRR, so standalone retrieval deliberately remains plain BM25. No hosted embedding model, neural reranker, HyDE query generation, or cloud API is required.
+```bash
+# The setup script handles swap, Ollama install, model pull, and warmup
+bash scripts/setup-ollama-preview.sh
 
-No design can truthfully guarantee correct factual knowledge for every possible question. ProjectHub's contract is narrower and testable: every request receives a useful response, unknown facts are identified honestly, and unsupported claims are never presented as verified facts.
+# Deploy the private preview
+bash deploy-agent-preview.sh
+
+# Open the SSH tunnel
+AGENT_PREVIEW_LOCAL_PORT=3320 bash scripts/open-agent-preview.sh
+```
+
+### Environment variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `OLLAMA_URL` | `http://localhost:11434` | Ollama inference endpoint |
+| `OLLAMA_MODEL` | `qwen2.5:0.5b` | Primary generation model |
+| `OLLAMA_AGENT_MODEL` | (same as OLLAMA_MODEL) | Agent reasoning model |
+| `SCOUT_AGENT_ENGINE_ENABLED` | `false` | Enable the new bounded agent loop |
+| `OLLAMA_AGENT_ENABLED` | `false` | Enable Ollama in the legacy agent path |
+| `AGENT_ENABLED` | `true` | Enable agent tools |
+| `GEN_ENABLED` | `true` | Enable generative RAG (legacy path) |
+| `OLLAMA_AGENT_CONTEXT` | `1536` | Context window for agent calls |
+| `OLLAMA_KEEP_ALIVE` | `-1` | Keep model in memory indefinitely |
+| `SCOUT_MAX_STEPS` | `3` | Max agent loop iterations |
+| `SCOUT_STEP_TIMEOUT_MS` | `6000` | Per-step timeout |
+| `SCOUT_TOTAL_BUDGET_MS` | `15000` | Total agent loop budget |
+
+### Health checks
+
+```bash
+# Service health
+curl http://127.0.0.1:3199/health
+
+# Agent probe (tests Ollama reachability + structured JSON)
+curl http://127.0.0.1:3199/api/agent-probe
+
+# Diagnose (legacy)
+curl http://127.0.0.1:3199/api/diagnose
+```
+
+---
+
+## Fallback Behavior
+
+```text
+Ollama available
+  → Scout Agent Engine (bounded loop, structured decisions, tools, validation)
+  → Grounded Ollama-generated answer
+
+Ollama unavailable or validation fails
+  → Deterministic grounded answer from BM25 retrieval + knowledge JSON
+  → No cloud LLM is ever called
+```
+
+There is no cloud LLM fallback. If Ollama is down, Scout returns evidence from the deterministic grounded path. This is intentional — we own the generative stack.

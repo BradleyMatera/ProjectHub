@@ -15,6 +15,11 @@ const { searchBm25WithRrf } = require('./lib/rrf');
 const { executeAgentTool, getAgentToolDefinitions, selectAgentToolNames } = require('./lib/agent-tools');
 const { buildDeterministicAgentResult, parseLocalStyleResponse, shouldUseDeterministicAgent } = require('./lib/agent-fallback');
 const { buildLocalConversationMemory, extractCompleteSentences, validateLocalConversationReply } = require('./lib/local-conversation');
+const localModelRouter = require('./lib/local-model-router');
+const { runAgentLoop, probeAgent } = require('./lib/agent-engine');
+const { buildReasoningPacket, buildSynthesisPacket, estimateTokens } = require('./lib/context-packet');
+const { validateAnswer, validateToolDecision, attemptJsonRepair } = require('./lib/grounding-validator');
+const sessionState = require('./lib/session-state');
 
 const app = express();
 
@@ -63,6 +68,7 @@ const OLLAMA_AGENT_KEEP_ALIVE = /^-?\d+$/.test(OLLAMA_AGENT_KEEP_ALIVE_RAW)
   : OLLAMA_AGENT_KEEP_ALIVE_RAW;
 
 const AGENT_ENABLED = process.env.AGENT_ENABLED !== 'false';
+const SCOUT_AGENT_ENGINE_ENABLED = process.env.SCOUT_AGENT_ENGINE_ENABLED === 'true';
 const FEATURE_PREVIEW_ENABLED = process.env.FEATURE_PREVIEW_ENABLED === 'true';
 const KNOWLEDGE_FILE = path.join(__dirname, process.env.KNOWLEDGE_FILE || 'data/recruiter-knowledge.json');
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://bradleymatera.dev,https://www.bradleymatera.dev,https://bradleymatera.github.io').split(',').map(s => s.trim()).filter(Boolean);
@@ -191,10 +197,12 @@ app.get('/health', async (req, res) => {
     models: [{ engine: 'ollama', model: GEN_MODEL, local: true }],
     agent: {
       enabled: AGENT_ENABLED,
+      scoutEngineEnabled: SCOUT_AGENT_ENGINE_ENABLED,
       ollamaControllerEnabled: OLLAMA_AGENT_ENABLED,
       ollamaModel: OLLAMA_AGENT_MODEL,
       deterministicFallback: true,
-      mode: 'ollama-rag-tools-memory'
+      mode: SCOUT_AGENT_ENGINE_ENABLED ? 'scout-agent-engine' : 'ollama-rag-tools-memory',
+      pinnedModels: localModelRouter.listPinnedModels()
     },
     genModel: process.env.GEN_MODEL || 'qwen2.5:0.5b',
     genTimeoutMs: parseInt(process.env.GEN_TIMEOUT_MS || '12500', 10),
@@ -204,7 +212,8 @@ app.get('/health', async (req, res) => {
       retainedSessions: conversationMemoryStore.size,
       conversationTtlMinutes: CONVERSATION_TTL_MS / 60000,
       stanceTopics: STANCE_MAX_PER_SESSION,
-      stanceTtlMinutes: STANCE_TTL_MS / 60000
+      stanceTtlMinutes: STANCE_TTL_MS / 60000,
+      sessionStateStore: sessionState.storeSize()
     },
     mode: 'rag-generative-with-grounded-fallback',
     // Learning system stats
@@ -308,6 +317,29 @@ app.get('/api/diagnose', async (req, res) => {
     }
     const valid = !!raw && validateFallbackReply(raw);
     res.json({ ok: true, testQuestion, ollama: { model: GEN_MODEL, reachable: ollamaReachable, connectivityLatencyMs, latencyMs: Date.now() - startedAt, validated: valid, replyPreview: raw.slice(0, 160) }, fallbackReady: !!grounded.reply });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Agent probe: tests the local Ollama model's reachability and structured-JSON
+// capability. Used by the no-cloud test and the private engineering console.
+app.get('/api/agent-probe', async (req, res) => {
+  try {
+    const probe = await probeAgent(localModelRouter.agentModel());
+    const tags = await localModelRouter.listLocalModels(3000);
+    res.json({
+      ok: true,
+      engine: SCOUT_AGENT_ENGINE_ENABLED ? 'scout-agent-engine' : 'legacy',
+      model: probe.model,
+      reachable: probe.reachable,
+      structuredOk: probe.structuredOk,
+      latencyMs: probe.latencyMs,
+      error: probe.error,
+      ollamaModels: tags.models,
+      pinnedModels: localModelRouter.listPinnedModels(),
+      sessionStateStore: sessionState.storeSize()
+    });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
@@ -3559,8 +3591,90 @@ app.post('/api/chat', async (req, res) => {
     //    tools and optionally classify presentation style with Ollama.
     let generated = false;
     let agentMeta = null;
+    let agentEvents = null;
     currentStanceContext = getStanceContext(sessionId);
-    if (!mustStayGrounded(userMessage, history)) {
+
+    // 2a. NEW: Scout Agent Engine — real bounded Ollama agent loop with structured
+    //     decisions, tool selection, multi-step reasoning, and grounding validation.
+    //     This is the primary generative path. The existing deterministic agent and
+    //     RAG rephrasing paths below remain as fallbacks when this is disabled or
+    //     when the agent loop exhausts its budget and returns fallback:true.
+    if (SCOUT_AGENT_ENGINE_ENABLED && !mustStayGrounded(userMessage, history)) {
+      pipeline.push('scout-agent-engine:eligible');
+      try {
+        // Retrieve evidence via BM25 for the agent context packet
+        const understood = understandQuery(userMessage, history, ragChunks || buildRagChunks(knowledge));
+        const bm25Results = bm25Index
+          ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 5)
+          : [];
+        const evidence = bm25Results.map(r => ({
+          kind: r.tag || r.chunk?.kind || 'evidence',
+          name: r.chunk?.title || r.chunk?.name || '',
+          description: r.text || r.chunk?.text || r.chunk?.description || '',
+          tech: r.chunk?.tech || [],
+          skills: r.chunk?.skills || [],
+          category: r.chunk?.category || null,
+          url: r.chunk?.url || null,
+          evidenceScore: r.rrfScore || r.score
+        })).filter(e => e.description);
+
+        // Get server-owned structured conversation state
+        const convState = sessionState.getState(sessionId);
+
+        const agentResult = await runAgentLoop({
+          question: userMessage,
+          conversationState: convState,
+          evidence,
+          knowledge,
+          sessionId,
+          model: localModelRouter.agentModel()
+        });
+
+        // Meter each Ollama call
+        for (const evt of (agentResult.events || [])) {
+          if (evt.type === 'reasoning_call' || evt.type === 'synthesis_call') {
+            meterEvent({ source: 'ollama', kind: 'llm', meta: { model: agentResult.model, agentEngine: true, step: evt.step } });
+          }
+          if (evt.type === 'tool_result') {
+            meterEvent({ source: 'agent-engine', kind: 'tool', meta: { tool: evt.tool, agentEngine: true } });
+          }
+        }
+
+        if (!agentResult.fallback && agentResult.reply) {
+          pipeline.push(`scout-agent-engine:ollama-agent:success`);
+          reply = agentResult.reply;
+          provider = 'ollama-agent';
+          model = agentResult.model;
+          agentMeta = {
+            used: true,
+            engine: 'scout-agent',
+            tools: agentResult.toolResults.map(t => t.tool),
+            steps: agentResult.steps.length,
+            contextTokens: agentResult.contextTokens,
+            validation: agentResult.validation?.verdict || null,
+            languageLayer: 'ollama',
+            languageModel: agentResult.model
+          };
+          agentEvents = agentResult.events;
+          generated = true;
+        } else {
+          pipeline.push(`scout-agent-engine:fallback:${agentResult.fallback ? 'true' : 'false'}`);
+          // Store events even on fallback for diagnostics
+          agentEvents = agentResult.events;
+          agentMeta = {
+            used: true,
+            engine: 'scout-agent',
+            tools: agentResult.toolResults.map(t => t.tool),
+            steps: agentResult.steps.length,
+            contextTokens: agentResult.contextTokens,
+            validation: 'fallback',
+            fallbackReason: agentResult.events?.find(e => e.type === 'agent_fallback')?.reason || 'unknown'
+          };
+        }
+      } catch (e) {
+        pipeline.push(`scout-agent-engine:error:${String(e?.message || e).slice(0, 60)}`);
+      }
+    } else if (!mustStayGrounded(userMessage, history)) {
       pipeline.push('mustStayGrounded:false');
       if (shouldUseDeterministicAgent(userMessage)) {
         pipeline.push('agent:eligible');
@@ -3662,6 +3776,7 @@ app.post('/api/chat', async (req, res) => {
     const payload = { reply, provider, model, fallback: false, grounded: provider === 'grounded' || provider === 'local-agent', pipeline, followUps };
     payload.local = { only: true, memoryTurns: Math.min(history.length, 5), stanceTopics: (stanceStore.get(sessionId) || []).length, model: GEN_MODEL };
     if (agentMeta) payload.agent = agentMeta;
+    if (agentEvents) payload.agentEvents = agentEvents;
     if (!hasHistory) {
       responseCache.set(cacheKey, { ts: Date.now(), payload });
       if (responseCache.size > RESPONSE_CACHE_LIMIT) {
@@ -3679,6 +3794,8 @@ app.post('/api/chat', async (req, res) => {
       stashQuestion(userMessage, reply, provider);
     }
     rememberConversation(sessionId, userMessage, reply);
+    // Update server-owned structured conversation state (topic, projects, job, references)
+    sessionState.updateState(sessionId, userMessage, reply, knowledge, null);
     payload.sessionMemory = { turns: Math.min(history.length + 1, CONVERSATION_MAX_TURNS), retained: true };
     return res.json(payload);
   } catch (err) {

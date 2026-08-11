@@ -12,11 +12,15 @@ const elements = {
   messages: document.querySelector('#messages'),
   dot: document.querySelector('#connection-dot'),
   connection: document.querySelector('#connection-label'),
-  providers: document.querySelector('#providers'),
   agentMode: document.querySelector('#agent-mode'),
-  cloudAi: document.querySelector('#cloud-ai'),
   ollamaModel: document.querySelector('#ollama-model'),
-  lastRoute: document.querySelector('#last-route')
+  ollamaStatus: document.querySelector('#ollama-status'),
+  ollamaStructured: document.querySelector('#ollama-structured'),
+  sessionState: document.querySelector('#session-state'),
+  providers: document.querySelector('#providers'),
+  lastRoute: document.querySelector('#last-route'),
+  probeBtn: document.querySelector('#probe-btn'),
+  probeResult: document.querySelector('#probe-result')
 };
 
 function addMessage(role, text, trace) {
@@ -27,18 +31,66 @@ function addMessage(role, text, trace) {
   const body = document.createElement('p');
   body.textContent = String(text || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   article.append(label, body);
+
   if (trace) {
     const details = document.createElement('details');
     details.className = 'trace';
     const summary = document.createElement('summary');
-    summary.textContent = 'Debug details';
-    const line = document.createElement('div');
-    const route = document.createElement('strong');
-    route.textContent = trace.route;
-    line.append('Route: ', route, ` · ${trace.details}`);
-    details.append(summary, line);
+    summary.textContent = 'Agent trace';
+    const traceDiv = document.createElement('div');
+    traceDiv.className = 'trace-detail';
+
+    // Route line
+    const routeLine = document.createElement('div');
+    routeLine.className = 'trace-route';
+    routeLine.innerHTML = `<strong>Route</strong>: ${trace.route} · <strong>Latency</strong>: ${trace.latencyMs}ms · <strong>Context</strong>: ${trace.contextTokens || 'n/a'} tokens`;
+    traceDiv.append(routeLine);
+
+    // Pipeline
+    if (trace.pipeline && trace.pipeline.length) {
+      const pipeLine = document.createElement('div');
+      pipeLine.innerHTML = `<strong>Pipeline</strong>: ${trace.pipeline.join(' → ')}`;
+      traceDiv.append(pipeLine);
+    }
+
+    // Agent meta
+    if (trace.agent) {
+      const agentLine = document.createElement('div');
+      agentLine.innerHTML = `<strong>Agent</strong>: engine=${trace.agent.engine || 'legacy'} · tools=[${(trace.agent.tools || []).join(',')}] · steps=${trace.agent.steps || 0} · validation=${trace.agent.validation || 'n/a'}`;
+      traceDiv.append(agentLine);
+    }
+
+    // Agent events timeline
+    if (trace.events && trace.events.length) {
+      const eventsTitle = document.createElement('div');
+      eventsTitle.className = 'trace-events-title';
+      eventsTitle.textContent = 'Agent events (real backend events):';
+      traceDiv.append(eventsTitle);
+
+      const eventList = document.createElement('div');
+      eventList.className = 'trace-events';
+      for (const evt of trace.events) {
+        const evtLine = document.createElement('div');
+        evtLine.className = `trace-event ${evt.type}`;
+        let text = `[${evt.ts}ms] ${evt.type}`;
+        if (evt.tool) text += `:${evt.tool}`;
+        if (evt.model) text += ` model=${evt.model}`;
+        if (evt.contextTokens) text += ` ctx=${evt.contextTokens}tok`;
+        if (evt.latencyMs) text += ` ${evt.latencyMs}ms`;
+        if (evt.error) text += ` ERROR:${evt.error}`;
+        if (evt.decision) text += ` → ${evt.decision.action}`;
+        if (evt.verdict) text += ` verdict=${evt.verdict}`;
+        if (evt.reason) text += ` reason=${evt.reason}`;
+        evtLine.textContent = text;
+        eventList.append(evtLine);
+      }
+      traceDiv.append(eventList);
+    }
+
+    details.append(summary, traceDiv);
     article.append(details);
   }
+
   elements.messages.append(article);
   elements.messages.scrollTop = elements.messages.scrollHeight;
 }
@@ -51,31 +103,52 @@ async function loadHealth() {
     elements.dot.className = 'dot online';
     elements.connection.textContent = 'Private service online';
     elements.agentMode.textContent = data.agent?.mode || 'Unavailable';
-    elements.cloudAi.textContent = data.localOnly && !(data.providerOrder || []).length ? 'Disabled' : 'Configured';
-    elements.ollamaModel.textContent = data.agent?.ollamaControllerEnabled ? data.agent.ollamaModel : 'Deterministic fallback';
-    elements.providers.replaceChildren();
-    const activeProviders = new Set(data.providerOrder || []);
-    if (data.localOnly) {
-      const row = document.createElement('div');
-      row.className = 'provider';
-      row.innerHTML = '<span>Qwen + BM25</span><em>local only</em>';
-      elements.providers.append(row);
-    }
-    for (const provider of (data.providers || []).filter(item => activeProviders.has(item.slug))) {
-      const row = document.createElement('div');
-      row.className = 'provider';
-      const name = document.createElement('span');
-      name.textContent = provider.slug;
-      const status = document.createElement('em');
-      const ready = provider.enabled && provider.available;
-      status.textContent = !provider.enabled ? 'not configured' : provider.available ? 'quota ready' : 'cooldown';
-      if (!ready) status.className = 'off';
-      row.append(name, status);
-      elements.providers.append(row);
-    }
+    elements.ollamaModel.textContent = data.agent?.ollamaModel || data.genModel || 'Unknown';
+    elements.sessionState.textContent = data.memory?.sessionStateStore || 0;
+
+    // Load agent probe for Ollama reachability + structured JSON
+    try {
+      const probeResp = await fetch('/api/agent-probe', { cache: 'no-store' });
+      if (probeResp.ok) {
+        const probe = await probeResp.json();
+        elements.ollamaStatus.textContent = probe.reachable ? `Yes (${probe.latencyMs}ms)` : 'No';
+        elements.ollamaStatus.className = probe.reachable ? 'ok' : 'off';
+        elements.ollamaStructured.textContent = probe.structuredOk ? 'Yes' : 'No';
+        elements.ollamaStructured.className = probe.structuredOk ? 'ok' : 'off';
+
+        // Render pinned models
+        elements.providers.replaceChildren();
+        if (probe.pinnedModels && probe.pinnedModels.length) {
+          for (const model of probe.pinnedModels) {
+            const row = document.createElement('div');
+            row.className = 'provider';
+            const name = document.createElement('span');
+            name.textContent = `${model.name} (${model.parameterSize}, ${model.quantization})`;
+            const status = document.createElement('em');
+            const isCurrent = model.name === (data.agent?.ollamaModel || data.genModel);
+            status.textContent = isCurrent ? 'active' : 'available';
+            if (isCurrent) status.className = 'ok';
+            row.append(name, status);
+            elements.providers.append(row);
+          }
+        }
+      }
+    } catch {}
+
   } catch (error) {
     elements.dot.className = 'dot offline';
     elements.connection.textContent = `Service unavailable: ${error.message}`;
+  }
+}
+
+async function runProbe() {
+  if (elements.probeResult) elements.probeResult.textContent = 'Probing...';
+  try {
+    const resp = await fetch('/api/agent-probe', { cache: 'no-store' });
+    const data = await resp.json();
+    elements.probeResult.textContent = JSON.stringify(data, null, 2);
+  } catch (error) {
+    elements.probeResult.textContent = `Probe failed: ${error.message}`;
   }
 }
 
@@ -91,12 +164,22 @@ async function runWorkflow(message) {
     });
     const data = await response.json();
     if (!response.ok || !data.reply) throw new Error(data.error || `HTTP ${response.status}`);
-    const tools = data.agent?.tools?.length ? `tools: ${data.agent.tools.join(', ')}` : 'no tools';
+
     const route = `${data.provider || 'unknown'} / ${data.model || 'unknown'}`;
-    addMessage('scout', data.reply, { route, details: `${tools} · ${(data.pipeline || []).join(' → ')}` });
+    const trace = {
+      route,
+      latencyMs: data.pipeline ? null : null,
+      pipeline: data.pipeline || [],
+      agent: data.agent,
+      events: data.agentEvents,
+      contextTokens: data.agent?.contextTokens
+    };
+    addMessage('scout', data.reply, trace);
     elements.lastRoute.textContent = route;
     state.history.push({ user: message, assistant: data.reply });
     state.history = state.history.slice(-5);
+    // Refresh session state count
+    loadHealth();
   } catch (error) {
     addMessage('scout', `Workflow failed: ${error.message}`);
   } finally {
@@ -119,6 +202,10 @@ for (const button of document.querySelectorAll('[data-prompt]')) {
     elements.input.value = button.dataset.prompt;
     elements.input.focus();
   });
+}
+
+if (elements.probeBtn) {
+  elements.probeBtn.addEventListener('click', runProbe);
 }
 
 loadHealth();

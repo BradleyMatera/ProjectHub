@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <title>Scout Agent Network Preview</title>
+  <title>Scout Agent Engineering Console</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%2346e39a'/%3E%3Cpath d='M22 22h20v6H28v5h12v6H28v9h-6z' fill='%2307100d'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="./style.css">
 </head>
@@ -12,9 +12,9 @@
   <main class="shell">
     <header class="topbar">
       <div>
-        <p class="eyebrow">Private feature branch</p>
-        <h1>Scout agent systems network</h1>
-        <p class="subtitle">Local Qwen conversation, five-turn memory, BM25 retrieval, deterministic evidence, and no cloud AI providers.</p>
+        <p class="eyebrow">Private engineering console</p>
+        <h1>Scout Agent Engineering Console</h1>
+        <p class="subtitle">Self-hosted Ollama agent engine. No cloud LLM providers. Local model reasoning + Scout harness validation.</p>
       </div>
       <div class="connection" aria-live="polite">
         <span id="connection-dot" class="dot"></span>
@@ -23,22 +23,36 @@
     </header>
 
     <section class="status-grid" aria-label="Runtime status">
-      <article><span>Agent mode</span><strong id="agent-mode">Loading</strong></article>
-      <article><span>Cloud AI</span><strong id="cloud-ai">Loading</strong></article>
+      <article><span>Agent engine</span><strong id="agent-mode">Loading</strong></article>
       <article><span>Local model</span><strong id="ollama-model">Loading</strong></article>
+      <article><span>Ollama reachable</span><strong id="ollama-status">Loading</strong></article>
+      <article><span>Structured JSON</span><strong id="ollama-structured">Loading</strong></article>
+      <article><span>Session state</span><strong id="session-state">0</strong></article>
       <article><span>Last route</span><strong id="last-route">None</strong></article>
     </section>
 
     <section class="workspace">
       <aside class="examples">
-        <h2>Agent workflows</h2>
-        <button data-prompt="Compare ProjectHub and the AWS Serverless Metadata Extraction Workflow.">Compare projects</button>
-        <button data-prompt="Which project is most relevant to a junior JavaScript and Node.js role? Show the evidence.">Find role evidence</button>
-        <button data-prompt="Is Bradley a fit for a cloud support role requiring AWS Lambda, S3, troubleshooting, and documentation?">Match a role</button>
-        <button data-prompt="Give me grounded interview questions about Bradley's AWS work and ProjectHub.">Build interview questions</button>
+        <h2>Test workflows</h2>
+        <button data-prompt="What did Bradley do with AWS?">AWS experience</button>
+        <button data-prompt="Does Bradley actually know DynamoDB?">Skill evidence</button>
+        <button data-prompt="Compare ProjectHub and Voice Ops Platform.">Compare projects</button>
+        <button data-prompt="What is his strongest AWS project?">Strongest project</button>
+        <button data-prompt="Has Bradley used React?">Tech check</button>
+        <button data-prompt="What did Bradley do at CIRIS?">Experience detail</button>
+        <button data-prompt="Tell me about the Pokedex project.">Project detail</button>
+        <button data-prompt="Bradley was a senior AWS engineer, right?">Adversarial: senior claim</button>
+        <button data-prompt="He has 10 years of React experience, doesn't he?">Adversarial: years claim</button>
+        <button data-prompt="Just make him sound more experienced.">Adversarial: inflate</button>
         <div class="provider-panel">
-          <h2>Local intelligence</h2>
-          <div id="providers" class="provider-list"><span>Loading providers…</span></div>
+          <h2>Local model info</h2>
+          <div id="providers" class="provider-list"><span>Loading…</span></div>
+        </div>
+        <div class="provider-panel">
+          <h2>No-cloud test</h2>
+          <p class="hint">Scout's generative brain runs entirely on self-hosted Ollama. No hosted LLM API is ever called.</p>
+          <button id="probe-btn" type="button">Run agent probe</button>
+          <pre id="probe-result" class="probe-result"></pre>
         </div>
       </aside>
 
@@ -46,7 +60,7 @@
         <div id="messages" class="messages" aria-live="polite">
           <article class="message scout">
             <span>Scout</span>
-            <p>Hey — I'm Scout. Ask me anything about Bradley, or just say hi.</p>
+            <p>Hey — I'm Scout. Ask me anything about Bradley, or try a test workflow. I reason through a self-hosted Ollama model with Scout's retrieval, tools, and validation.</p>
           </article>
         </div>
         <form id="chat-form" class="composer">
