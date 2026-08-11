@@ -85,7 +85,10 @@ const OLLAMA_AGENT_ENABLED = process.env.OLLAMA_AGENT_ENABLED === 'true';
 const OLLAMA_AGENT_MODEL = process.env.OLLAMA_AGENT_MODEL || OLLAMA_MODEL;
 const OLLAMA_AGENT_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.OLLAMA_AGENT_TIMEOUT_MS || '15000', 10), 15000));
 const OLLAMA_AGENT_CONTEXT = Math.max(512, Math.min(parseInt(process.env.OLLAMA_AGENT_CONTEXT || '1536', 10), 4096));
-const OLLAMA_AGENT_KEEP_ALIVE = process.env.OLLAMA_AGENT_KEEP_ALIVE || '-1';
+const OLLAMA_AGENT_KEEP_ALIVE_RAW = process.env.OLLAMA_AGENT_KEEP_ALIVE || '-1';
+const OLLAMA_AGENT_KEEP_ALIVE = /^-?\d+$/.test(OLLAMA_AGENT_KEEP_ALIVE_RAW)
+  ? Number(OLLAMA_AGENT_KEEP_ALIVE_RAW)
+  : OLLAMA_AGENT_KEEP_ALIVE_RAW;
 
 // Legacy hosted-provider keys. LOCAL_ONLY_MODE makes these adapters unreachable.
 const XAI_API_KEY = process.env.XAI_API_KEY || '';
