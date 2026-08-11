@@ -14,8 +14,8 @@ const elements = {
   connection: document.querySelector('#connection-label'),
   providers: document.querySelector('#providers'),
   agentMode: document.querySelector('#agent-mode'),
-  groqPlanner: document.querySelector('#groq-planner'),
-  ollamaFormatter: document.querySelector('#ollama-formatter'),
+  cloudAi: document.querySelector('#cloud-ai'),
+  ollamaModel: document.querySelector('#ollama-model'),
   lastRoute: document.querySelector('#last-route')
 };
 
@@ -47,10 +47,16 @@ async function loadHealth() {
     elements.dot.className = 'dot online';
     elements.connection.textContent = 'Private service online';
     elements.agentMode.textContent = data.agent?.mode || 'Unavailable';
-    elements.groqPlanner.textContent = data.agent?.groqPlannerEnabled ? data.agent.groqModel : 'Disabled';
-    elements.ollamaFormatter.textContent = data.agent?.ollamaControllerEnabled ? data.agent.ollamaModel : 'Deterministic fallback';
+    elements.cloudAi.textContent = data.localOnly && !(data.providerOrder || []).length ? 'Disabled' : 'Configured';
+    elements.ollamaModel.textContent = data.agent?.ollamaControllerEnabled ? data.agent.ollamaModel : 'Deterministic fallback';
     elements.providers.replaceChildren();
     const activeProviders = new Set(data.providerOrder || []);
+    if (data.localOnly) {
+      const row = document.createElement('div');
+      row.className = 'provider';
+      row.innerHTML = '<span>Qwen + BM25</span><em>local only</em>';
+      elements.providers.append(row);
+    }
     for (const provider of (data.providers || []).filter(item => activeProviders.has(item.slug))) {
       const row = document.createElement('div');
       row.className = 'provider';

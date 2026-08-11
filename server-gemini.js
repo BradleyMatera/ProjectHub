@@ -17,6 +17,7 @@ const { groqModelPolicy, providerPolicy } = require('./lib/model-policy');
 const { executeAgentTool, getAgentToolDefinitions, selectAgentToolNames } = require('./lib/agent-tools');
 const { buildDeterministicAgentResult, parseLocalStyleResponse } = require('./lib/agent-fallback');
 const { runAgentLoop } = require('./lib/agent-runtime');
+const { buildLocalConversationMemory, validateLocalConversationReply } = require('./lib/local-conversation');
 
 const app = express();
 
@@ -71,6 +72,7 @@ app.use((req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
+const LOCAL_ONLY_MODE = process.env.LOCAL_ONLY_MODE !== 'false';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const LLM_PROVIDER = process.env.LLM_PROVIDER || 'gemini'; // gemini | openai | ollama
@@ -78,14 +80,14 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma3:1b';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:0.5b';
 const OLLAMA_AGENT_ENABLED = process.env.OLLAMA_AGENT_ENABLED === 'true';
 const OLLAMA_AGENT_MODEL = process.env.OLLAMA_AGENT_MODEL || OLLAMA_MODEL;
-const OLLAMA_AGENT_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.OLLAMA_AGENT_TIMEOUT_MS || '12000', 10), 15000));
-const OLLAMA_AGENT_CONTEXT = Math.max(512, Math.min(parseInt(process.env.OLLAMA_AGENT_CONTEXT || '1024', 10), 4096));
-const OLLAMA_AGENT_KEEP_ALIVE = process.env.OLLAMA_AGENT_KEEP_ALIVE || '60s';
+const OLLAMA_AGENT_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.OLLAMA_AGENT_TIMEOUT_MS || '15000', 10), 15000));
+const OLLAMA_AGENT_CONTEXT = Math.max(512, Math.min(parseInt(process.env.OLLAMA_AGENT_CONTEXT || '1536', 10), 4096));
+const OLLAMA_AGENT_KEEP_ALIVE = process.env.OLLAMA_AGENT_KEEP_ALIVE || '-1';
 
-// Free multi-provider network keys
+// Legacy hosted-provider keys. LOCAL_ONLY_MODE makes these adapters unreachable.
 const XAI_API_KEY = process.env.XAI_API_KEY || '';
 const XAI_MODEL = process.env.XAI_MODEL || 'grok-4.3';
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
@@ -102,13 +104,15 @@ const GITHUB_MODELS_MODEL = process.env.GITHUB_MODELS_MODEL || 'openai/gpt-4o-mi
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || '';
 const CLOUDFLARE_MODEL = process.env.CLOUDFLARE_MODEL || '@cf/meta/llama-3.2-3b-instruct';
-const PROVIDER_ORDER = (process.env.PROVIDER_ORDER || 'cloudflare,gemini,grok')
+const CONFIGURED_PROVIDER_ORDER = (process.env.PROVIDER_ORDER || 'cloudflare')
   .split(',')
   .map(s => s.trim())
   .filter(Boolean)
   .filter(s => s !== 'ollama');
+const PROVIDER_ORDER = LOCAL_ONLY_MODE ? [] : CONFIGURED_PROVIDER_ORDER;
 
 const KNOWLEDGE_URL = process.env.KNOWLEDGE_URL || 'https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter-knowledge.json';
+const KNOWLEDGE_FILE = path.join(__dirname, process.env.KNOWLEDGE_FILE || 'data/recruiter-knowledge.json');
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://bradleymatera.dev,https://www.bradleymatera.dev,https://bradleymatera.github.io').split(',').map(s => s.trim()).filter(Boolean);
 
 let knowledgeCache = null;
@@ -118,7 +122,7 @@ let ragChunks = null;
 let vectorIndex = null;
 const KNOWLEDGE_CACHE_MS = 15 * 60 * 1000; // 15 min — reduces GitHub raw fetch egress
 const USE_BM25_RETRIEVAL = process.env.USE_BM25_RETRIEVAL !== 'false';
-const USE_VECTOR_RETRIEVAL = process.env.USE_VECTOR_RETRIEVAL === 'true';
+const USE_VECTOR_RETRIEVAL = !LOCAL_ONLY_MODE && process.env.USE_VECTOR_RETRIEVAL === 'true';
 const RESPONSE_CACHE_MS = 30 * 60 * 1000; // 30 min — more cache hits = fewer LLM calls
 const RESPONSE_CACHE_LIMIT = 200;
 const GEMINI_TIMEOUT_MS = 7000;
@@ -126,7 +130,7 @@ const MAX_ACTIVE_GENERATIONS = 1;
 const responseCache = new Map();
 let activeGenerations = 0;
 
-// Circuit breaker for the free LLM provider network.
+// Circuit breaker retained for explicit non-local compatibility mode.
 // When the last several network calls all failed, skip the network for a cooldown
 // and return the fast grounded fallback instead.
 const networkHealth = { failures: [], successes: [], lastSuccessAt: Date.now() };
@@ -164,7 +168,7 @@ const GITHUB_API_TOKEN = process.env.GITHUB_TOKEN || process.env.GITHUB_PAT || G
 const GITHUB_REPO_OWNER = process.env.THINK_REPO_OWNER || 'BradleyMatera';
 const GITHUB_REPO_NAME = process.env.THINK_REPO_NAME || 'ProjectHub';
 const GITHUB_KNOWLEDGE_PATH = process.env.THINK_KNOWLEDGE_PATH || 'data/recruiter-knowledge.json';
-const THINK_PUSH_ENABLED = process.env.THINK_PUSH_ENABLED !== 'false';
+const THINK_PUSH_ENABLED = !LOCAL_ONLY_MODE && process.env.THINK_PUSH_ENABLED !== 'false';
 
 // Tone/style requests that are NOT knowledge gaps — don't stash these
 const TONE_REQUEST_RE = /no corporate|without buzzwords|just answer|be direct|say it in one|summarize like a normal|answer the question directly|stop avoiding|no bs|straight answer|plain (english|paragraph|language)|like a normal person|in plain|talk like a|normal tone|less formal|more casual|stop being so|tone|buzzword|corporate tone/;
@@ -234,7 +238,7 @@ const PROVIDER_DEFS = {
   },
   ollama: {
     type: 'ollama',
-    model: process.env.GEN_MODEL || 'smollm2:135m',
+    model: process.env.GEN_MODEL || 'qwen2.5:0.5b',
     dailyLimit: Infinity
   },
   openai: {
@@ -267,6 +271,7 @@ function isProviderEnabled(slug) {
   const def = PROVIDER_DEFS[slug];
   if (!def) return false;
   if (!providerPolicy(slug).allowed) return false;
+  if (LOCAL_ONLY_MODE && slug !== 'ollama') return false;
   if (slug === 'groq') return GROQ_ENABLED && GROQ_MODEL_POLICY.allowed && def.apiKey.length > 10;
   if (def.type === 'openai') return def.apiKey.length > 10;
   if (def.type === 'cloudflare') return def.apiToken.length > 10 && def.accountId.length > 10;
@@ -305,6 +310,7 @@ function providerStatus() {
       available: isProviderAvailable(slug),
       blockedReason: !providerPolicy(slug).allowed
         ? providerPolicy(slug).reason
+        : LOCAL_ONLY_MODE && slug !== 'ollama' ? 'local-only-mode'
         : slug === 'groq' && !GROQ_MODEL_POLICY.allowed ? GROQ_MODEL_POLICY.reason : null,
       exhausted: Date.now() < state.exhaustedUntil,
       usedToday: state.count,
@@ -352,7 +358,7 @@ app.use('/api/chat', rateLimit({
 }));
 
 app.get('/', (req, res) => {
-  res.json({ ok: true, service: 'Bradley Matera Recruiter Chat API', status: 'online', backend: 'free-multi-provider-llm-network' });
+  res.json({ ok: true, service: 'Bradley Matera Recruiter Chat API', status: 'online', backend: LOCAL_ONLY_MODE ? 'local-only-ollama-rag' : 'provider-network' });
 });
 
 const DEPLOYED_AT = Date.now();
@@ -385,19 +391,22 @@ app.get('/health', async (req, res) => {
     recentSessions: getRecentSessions(),
     // Provider table
     providerOrder: PROVIDER_ORDER,
+    localOnly: LOCAL_ONLY_MODE,
     providers,
     agent: {
       enabled: AGENT_ENABLED,
-      groqPlannerEnabled: GROQ_ENABLED && AGENT_GROQ_ENABLED && groqModelPolicy(GROQ_AGENT_MODEL).allowed,
-      groqModel: GROQ_ENABLED && groqModelPolicy(GROQ_AGENT_MODEL).allowed ? GROQ_AGENT_MODEL : null,
+      groqPlannerEnabled: !LOCAL_ONLY_MODE && GROQ_ENABLED && AGENT_GROQ_ENABLED && groqModelPolicy(GROQ_AGENT_MODEL).allowed,
+      groqModel: !LOCAL_ONLY_MODE && GROQ_ENABLED && groqModelPolicy(GROQ_AGENT_MODEL).allowed ? GROQ_AGENT_MODEL : null,
       ollamaControllerEnabled: OLLAMA_AGENT_ENABLED,
       ollamaModel: OLLAMA_AGENT_MODEL,
       deterministicFallback: true,
-      mode: 'bounded-read-only-tools'
+      mode: LOCAL_ONLY_MODE ? 'local-only-rag-tools-memory' : 'bounded-read-only-tools'
     },
-    genModel: process.env.GEN_MODEL || 'smollm2:135m',
-    genTimeoutMs: parseInt(process.env.GEN_TIMEOUT_MS || '13000', 10),
-    knowledgeUrl: KNOWLEDGE_URL,
+    genModel: process.env.GEN_MODEL || 'qwen2.5:0.5b',
+    genTimeoutMs: parseInt(process.env.GEN_TIMEOUT_MS || '15000', 10),
+    knowledgeUrl: LOCAL_ONLY_MODE ? null : KNOWLEDGE_URL,
+    knowledgeSource: LOCAL_ONLY_MODE ? 'bundled-local-json' : 'remote-json',
+    memory: { recentTurns: 5, stanceTopics: STANCE_MAX_PER_SESSION, stanceTtlMinutes: STANCE_TTL_MS / 60000 },
     mode: 'rag-generative-with-grounded-fallback',
     // Learning system stats
     learning: {
@@ -647,12 +656,17 @@ async function fetchKnowledge() {
     return knowledgeCache;
   }
   try {
-    trackEgressCall();
-    const fetchPromise = fetch(KNOWLEDGE_URL);
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Knowledge fetch timeout')), 25000));
-    const res = await Promise.race([fetchPromise, timeoutPromise]);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
+    let json;
+    if (LOCAL_ONLY_MODE) {
+      json = JSON.parse(fs.readFileSync(KNOWLEDGE_FILE, 'utf8'));
+    } else {
+      trackEgressCall();
+      const fetchPromise = fetch(KNOWLEDGE_URL);
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Knowledge fetch timeout')), 25000));
+      const res = await Promise.race([fetchPromise, timeoutPromise]);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      json = await res.json();
+    }
     knowledgeCache = json;
     knowledgeCacheAt = now;
     // Rebuild BM25 index and RAG chunks when knowledge refreshes
@@ -1860,10 +1874,10 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${agentName} covers ${name}'s projects, skills, AWS background, education, certifications, role fit, honest limitations, and how to contact him.` };
   }
   if (/what model|what provider|what llm|what ai|which model|which provider/.test(lowerQuestion)) {
-    return { reply: `${agentName} uses deterministic grounded tools with an optional constrained local Ollama controller, plus a free overflow network of Cloudflare Workers AI, Google Gemini, and xAI Grok. Groq is disabled by default, and retired GitHub Models inference is blocked.` };
+    return { reply: `${agentName} uses Qwen 2.5 0.5B on the VM's local Ollama engine, backed by BM25 retrieval, deterministic evidence tools, five-turn memory, and strict grounded validation. Cloud AI providers are disabled.` };
   }
   if (/what is this chatbot using|does this use ollama|is this ai local|is my chat private|what data do you use/.test(lowerQuestion)) {
-    return { reply: `${agentName} is grounded in ${name}'s public recruiter data file. Nothing private is stored beyond short session context.` };
+    return { reply: `${agentName} runs inference locally through Ollama and reads ${name}'s bundled recruiter data. It keeps only short session context for coherence; it does not send prompts to cloud AI providers.` };
   }
   if (/how do you know.*(bradley|brad|him)|are you his friend|who are you|what are you/.test(lowerQuestion)) {
     return { reply: `${agentName} is an AI assistant on ${name}'s portfolio site. I answer recruiter questions using his public data — projects, skills, AWS background, education, and contact info. I'm not a person, just a helper bot.` };
@@ -1872,7 +1886,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${agentName} doesn't connect to external systems or databases. I answer from ${name}'s public recruiter data file — his projects, skills, AWS training, education, and contact info. I can't make changes, send emails, or access repos.` };
   }
   if (/can you tell me.*(your|you.?re).*model name|what.?s your model name|what is your model name|what model are you/.test(lowerQuestion)) {
-    return { reply: `${agentName} uses deterministic grounded tools and a constrained local Ollama presentation controller that cannot rewrite facts. Open-ended overflow routes through Cloudflare Workers AI, Google Gemini, and xAI Grok. Groq is disabled by default, retired GitHub Models inference is blocked, and the full provider configuration is public in the GitHub repo.` };
+    return { reply: `${agentName}'s conversational model is Qwen 2.5 0.5B running locally in Ollama. BM25 retrieval and deterministic tools supply verified facts, and validators reject unsupported model output.` };
   }
   if (/what limits|what can.*this chatbot|limits are in place|what can you not do/.test(lowerQuestion)) {
     return { reply: `${agentName} only answers recruiter questions about ${name}. I can't access external systems, make changes to repos, send messages, or answer questions unrelated to his background. I stick to his verified public data.` };
@@ -1884,13 +1898,13 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `No, ${agentName} runs on GCP (Google Cloud Platform) — a free-tier e2-micro VM runs the Node API, and GitHub Pages hosts the widget. No AWS infrastructure is involved in running this chat.` };
   }
   if (/how is this chat free|how do you stay free|what powers you|what is your stack|free tier|free providers/.test(lowerQuestion)) {
-    return { reply: `${agentName} runs entirely on free systems: GitHub Pages hosts the widget, a GCP free-tier VM runs the Node API and constrained local Ollama controller, open-ended overflow uses Cloudflare Workers AI, Gemini, and Grok, and the final answer can always come from ${name}'s verified recruiter data. No paid AI subscription is required.` };
+    return { reply: `${agentName} uses GitHub Pages for the widget and a GCP free-tier VM for Node, Ollama, Qwen 2.5 0.5B, BM25 retrieval, and bundled recruiter data. It makes no paid or cloud AI inference calls.` };
   }
   if (/daily cap|daily limit|rate limit|cooldown|how.*handle.*limit|run 24|24.?7|24x7|always available|what if.*provider|exhausted|out of quota/.test(lowerQuestion)) {
-    return { reply: `${agentName} is designed to stay online 24/7 without paid AI. Each free provider has its own daily request cap and rate limit. When a provider hits its cap, returns a rate-limit error, or reports exhausted credits, ${agentName} pauses that provider (60 seconds for rate limits, 24 hours for credit exhaustion) and tries the next free provider in priority order. If every free provider is unavailable, the final fallback is a fast, grounded answer from ${name}'s verified recruiter data. That layered fallback means the widget keeps working as long as the VM and GitHub Pages are up.` };
+    return { reply: `${agentName} has no AI-provider quota because Qwen runs locally through Ollama. The API still rate-limits abuse, and if local generation times out the deterministic grounded answer returns instead.` };
   }
   if (/health status|are you healthy|how are you running|system status/.test(lowerQuestion)) {
-    return { reply: `${agentName} is online. The backend runs on a free GCP VM with a multi-provider LLM network; if all providers are unavailable, the final fallback is a fast, grounded answer from ${name}'s verified recruiter data.` };
+    return { reply: `${agentName} runs on a free GCP VM with local Ollama inference and a deterministic grounded fallback. It does not depend on an external AI provider staying online.` };
   }
   // Repair: shorter / more honest / tone changes using previous answer
   if (repair.shorter && lastAssistant) {
@@ -2612,7 +2626,7 @@ function buildContextualGroundedReply(groundedReply, question, history) {
 
 function shouldUseGroundedAnswer(question) {
   const rawQuestion = String(question || '').toLowerCase();
-  // Only use grounded fallback for simple factual lookups, let Gemini handle complex questions
+  // Use the grounded engine for factual lookups; local RAG handles safe open-ended phrasing.
   return /\b(contact|email|phone|reach|linkedin|github)\b/.test(normalizeQuestion(question));
 }
 
@@ -2633,10 +2647,10 @@ function cleanModelReply(reply, knowledge, question, history) {
 
 // ============ RAG GENERATIVE LAYER ============
 // Retrieval over the full knowledge JSON + constrained generation on the local
-// tiny model (smollm2:135m), hard-capped at GEN_TIMEOUT_MS so answers stay
+// warm local model, hard-capped at GEN_TIMEOUT_MS so answers stay
 // inside the 15-second budget. Grounded answer is the guaranteed fallback.
-const GEN_MODEL = process.env.GEN_MODEL || 'smollm2:135m';
-const GEN_TIMEOUT_MS = parseInt(process.env.GEN_TIMEOUT_MS || '13000', 10);
+const GEN_MODEL = process.env.GEN_MODEL || 'qwen2.5:0.5b';
+const GEN_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.GEN_TIMEOUT_MS || '15000', 10), 15000));
 const GEN_ENABLED = process.env.GEN_ENABLED !== 'false';
 
 const STOPWORDS = new Set(['the', 'a', 'an', 'is', 'are', 'was', 'were', 'his', 'her', 'he', 'she', 'it', 'and', 'or', 'of', 'to', 'in', 'for', 'with', 'about', 'what', 'who', 'how', 'does', 'do', 'did', 'can', 'me', 'tell', 'you', 'your', 'this', 'that', 'on', 'at', 'i']);
@@ -2863,9 +2877,11 @@ function shouldAbortGeneration(text) {
 }
 
 async function callGenerativeRag(knowledge, question, groundedReply, history, timeoutMs) {
+  const memory = buildLocalConversationMemory(history, currentStanceContext);
   const retrieved = await retrieveWithBM25(question, history, 3);
   const facts = retrieved.map(c => truncateWords(c.text, 30)).join(' ');
-  const source = toThirdPerson(`${truncateWords(groundedReply.replace(/<[^>]+>/g, ' '), 55)} ${facts}`);
+  const priorVerifiedAnswers = memory.turns.map(turn => turn.assistant).filter(Boolean).join(' ');
+  const source = toThirdPerson(`${truncateWords(groundedReply.replace(/<[^>]+>/g, ' '), 55)} ${facts} ${truncateWords(priorVerifiedAnswers, 45)}`);
   callGenerativeRag.lastSource = source;
 
   // Stream the generation and abort as soon as a forbidden pattern appears.
@@ -2873,15 +2889,13 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
   // wastes time completing a bad answer.
   const agentName = knowledge?.agent?.name || 'Scout';
   const agentPersona = knowledge?.agent?.persona || 'the helpful, honest site assistant';
-  const historyText = Array.isArray(history) && history.length > 0
-    ? history.slice(-4).map(h => `User: ${h.user || ''}\n${agentName}: ${h.assistant || ''}`).join('\n')
-    : '';
-  const system = `A recruiter is asking about a job candidate named Bradley Matera. You are ${agentName}, ${agentPersona}. You are not Bradley. Use ONLY the verified facts below to answer.\n\nVerified facts: ${truncateWords(source, 80)}\n\nCore behavior:\n- Answer the recruiter's actual question directly and naturally.\n- You may make reasonable, careful inferences when the facts support them, but label them as inference (e.g., "That's not directly stated, but...").\n- If no relevant fact exists, explain what is known and what is not known, and ask one focused follow-up question when needed.\n- Do not use a generic scope warning like "That's outside what Scout covers."\n- Third person only (he/his).\n- 1-3 short sentences.\n- Plain, honest language. No buzzwords.\n- Never start with "Certainly", "Absolutely", "Great question", "As an AI", or "I would be happy".\n- Never use: leverage, robust, synergy, passionate, world-class, cutting-edge, groundbreaking, extensive expertise, proven leader, deep mastery, dynamic, innovative, exceptional.\n- Do not repeat the user's question back.\n- Do not end with a sales pitch or vague offer to help.\n- Never add facts, employers, degrees, or years of experience not listed above.\n- Do not describe his AWS work as live production ownership; it was structured labs and a capstone.`;
-  const user = historyText ? `${historyText}\nUser: ${truncateWords(question, 40)}\n${agentName}:` : truncateWords(question, 40);
+  const system = `A recruiter is asking about a job candidate named Bradley Matera. You are ${agentName}, ${agentPersona}. You are not Bradley. Use ONLY the verified facts below to answer.\n\nVerified facts: ${truncateWords(source, 110)}${memory.stance ? `\n\nPrior stance to preserve: ${memory.stance}` : ''}\n\nCore behavior:\n- Answer the recruiter's actual question directly and naturally.\n- Remember the recent turns, resolve pronouns, and do not repeat an earlier answer unless asked.\n- You may make reasonable, careful inferences when the facts support them, but label them as inference.\n- If no relevant fact exists, explain what is known and what is not known, then ask one focused follow-up question.\n- Third person only (he/his).\n- 1-3 short sentences.\n- Plain, warm language with no buzzwords or sales pitch.\n- Never start with "Certainly", "Absolutely", "Great question", "As an AI", or "I would be happy".\n- Never add facts, employers, degrees, metrics, or years of experience not listed above.\n- Do not describe his AWS work as live production ownership; it was structured labs and a capstone.`;
+  const user = memory.text ? `${memory.text}\nUser: ${truncateWords(question, 40)}\n${agentName}:` : truncateWords(question, 40);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs || GEN_TIMEOUT_MS);
   let accumulated = '';
+  let usage = {};
   try {
     const res = await fetch(`${OLLAMA_URL}/api/chat`, {
       method: 'POST',
@@ -2894,8 +2908,8 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
           { role: 'user', content: user }
         ],
         stream: true,
-        keep_alive: '24h',
-        options: { temperature: 0.3, top_p: 0.85, num_predict: 50, repeat_penalty: 1.2 }
+        keep_alive: OLLAMA_AGENT_KEEP_ALIVE,
+        options: { temperature: 0.3, top_p: 0.85, num_ctx: OLLAMA_AGENT_CONTEXT, num_predict: 64, repeat_penalty: 1.2 }
       })
     });
     if (!res.ok) throw new Error(`gen HTTP ${res.status}`);
@@ -2916,6 +2930,7 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
         if (!trimmed) continue;
         try {
           const chunk = JSON.parse(trimmed);
+          if (chunk.done) usage = chunk;
           const content = chunk.message?.content || chunk.response || '';
           if (content) {
             accumulated += content;
@@ -2932,7 +2947,16 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
       }
     }
 
-    return removeSlop(accumulated.replace(/\s+/g, ' ').trim());
+    const cleaned = removeSlop(accumulated.replace(/\s+/g, ' ').trim());
+    meterEvent({
+      source: 'ollama',
+      kind: 'llm',
+      tokensIn: Number.isFinite(usage.prompt_eval_count) ? usage.prompt_eval_count : Math.ceil((system.length + user.length) / 4),
+      tokensOut: Number.isFinite(usage.eval_count) ? usage.eval_count : Math.ceil(cleaned.length / 4),
+      estimated: !Number.isFinite(usage.prompt_eval_count),
+      meta: { model: GEN_MODEL, localConversation: true, memoryTurns: memory.turns.length }
+    });
+    return cleaned;
   } finally {
     clearTimeout(timeout);
   }
@@ -3070,6 +3094,7 @@ async function generateWithAgent(knowledge, question, history) {
 }
 
 async function generateWithNetwork(knowledge, question, history, groundedReply) {
+  if (LOCAL_ONLY_MODE) return null;
   // Circuit breaker: if the network has been failing consistently, skip it entirely
   // and let the caller fall back to the fast grounded reply.
   if (isNetworkCircuitOpen()) {
@@ -3143,7 +3168,7 @@ async function generateWithNetwork(knowledge, question, history, groundedReply) 
 
 // Queries that must stay deterministic for correctness/safety.
 // Only safety-critical and private-data questions are forced grounded.
-// Everything else flows to the LLM provider network for natural, contextual answers.
+// Everything else may flow to the local RAG conversation layer for natural phrasing.
 function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
   // Safety: prompt injection, secret extraction, social engineering
@@ -3270,10 +3295,10 @@ function detectVisitorIntent(question, history) {
 const activeSessions = new Map();
 
 // Stance-consistency store: per-session topic stances to prevent contradictions
-// { sessionId: [{ topic, stanceSummary, ts }] } — cap 8 per session, 30-min TTL
+// { sessionId: [{ topic, stanceSummary, ts }] } — cap 12 per session, 60-min TTL
 const stanceStore = new Map();
-const STANCE_MAX_PER_SESSION = 8;
-const STANCE_TTL_MS = 30 * 60 * 1000;
+const STANCE_MAX_PER_SESSION = 12;
+const STANCE_TTL_MS = 60 * 60 * 1000;
 
 function recordStance(sessionId, question, reply) {
   if (!sessionId) return;
@@ -4088,7 +4113,7 @@ app.post('/api/chat', async (req, res) => {
 
     // 2. For bounded evidence workflows, execute ProjectHub's read-only local
     //    tools and optionally classify presentation style with Ollama. An explicitly
-    //    enabled current Groq model may plan calls, but it is never required.
+    //    Legacy non-local mode may opt into a hosted planner; local-only never does.
     let generated = false;
     let agentMeta = null;
     currentStanceContext = getStanceContext(sessionId);
@@ -4116,40 +4141,43 @@ app.post('/api/chat', async (req, res) => {
         }
       }
       if (!generated) {
-        const networkResult = await generateWithNetwork(knowledge, userMessage, history, grounded.reply);
-        if (networkResult) {
-          pipeline.push(`network:${networkResult.provider}:success`);
-          reply = networkResult.reply;
-          provider = networkResult.provider;
-          model = networkResult.model;
-          generated = true;
+        if (LOCAL_ONLY_MODE) {
+          pipeline.push('network:disabled-local-only');
         } else {
-          pipeline.push('network:all-failed');
+          const networkResult = await generateWithNetwork(knowledge, userMessage, history, grounded.reply);
+          if (networkResult) {
+            pipeline.push(`network:${networkResult.provider}:success`);
+            reply = networkResult.reply;
+            provider = networkResult.provider;
+            model = networkResult.model;
+            generated = true;
+          } else {
+            pipeline.push('network:all-failed');
+          }
         }
       }
     } else {
       pipeline.push('mustStayGrounded:true');
     }
 
-    // 2b. Generative fallback: disabled for now. The local Ollama model (smollm2:135m on the
-    //     1GB VM) frequently contradicts the grounded facts when asked negative or open-ended
-    //     questions, producing answers like "No, Bradley does not have any knowledge of...".
-    //     When the provider network fails we fall through to the deterministic grounded reply,
-    //     which has been widened to handle many more questions naturally.
-    if (false && !generated && GEN_ENABLED && !isNetworkCircuitOpen() && !mustStayGrounded(userMessage, history)) {
+    // 2b. In local-only mode, a pre-warmed Ollama model may phrase open-ended
+    //     RAG answers. Its output must pass both the legacy safety checks and a
+    //     strict source/entity validator; deterministic grounded output wins on
+    //     timeout, cold start, or any validation failure.
+    if (LOCAL_ONLY_MODE && !generated && GEN_ENABLED && !mustStayGrounded(userMessage, history)) {
       try {
-        const genReply = await callGenerativeRag(knowledge, userMessage, grounded.reply, history, 8000);
-        if (genReply && validateFallbackReply(genReply)) {
+        const genReply = await callGenerativeRag(knowledge, userMessage, grounded.reply, history, GEN_TIMEOUT_MS);
+        if (genReply && validateFallbackReply(genReply) && validateLocalConversationReply(genReply, callGenerativeRag.lastSource)) {
           reply = genReply;
           provider = 'ollama';
           model = GEN_MODEL;
           generated = true;
-          pipeline.push('gen-fallback:ollama');
+          pipeline.push('local-rag:ollama:validated');
         } else {
-          pipeline.push('gen-fallback:validation-failed');
+          pipeline.push('local-rag:validation-failed');
         }
       } catch (e) {
-        pipeline.push('gen-fallback:error');
+        pipeline.push('local-rag:timeout-or-error');
       }
     }
 
@@ -4213,6 +4241,7 @@ app.post('/api/chat', async (req, res) => {
     }
 
     const payload = { reply, provider, model, fallback: false, grounded: provider === 'grounded' || provider === 'grounded-agent', pipeline, followUps };
+    if (LOCAL_ONLY_MODE) payload.local = { only: true, memoryTurns: Math.min(history.length, 5), stanceTopics: (stanceStore.get(sessionId) || []).length, model: GEN_MODEL };
     if (agentMeta) payload.agent = agentMeta;
     if (!hasHistory) {
       responseCache.set(cacheKey, { ts: Date.now(), payload });

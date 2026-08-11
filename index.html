@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta name="description" content="ProjectHub is a free, embeddable AI recruiter assistant named Scout. It showcases Bradley Matera's projects, skills, and background through a multi-provider LLM network and grounded RAG." />
+  <meta name="description" content="ProjectHub is a free, embeddable AI recruiter assistant named Scout. It uses local Ollama inference, conversational memory, BM25 retrieval, and grounded project data." />
   <title>ProjectHub · Scout Recruiter Assistant</title>
   <script>
     (function () {
@@ -377,7 +377,7 @@
           <div>
             <p class="hero-kicker">Bradley Matera · Recruiter assistant</p>
             <p class="hero-text">
-              Calm, concise, honest, and grounded in my real project data — with a zero-cost multi-provider LLM network behind it.
+              Calm, concise, honest, and grounded in my real project data — with a zero-cost local Ollama runtime behind it.
             </p>
           </div>
         </div>
@@ -392,7 +392,7 @@
         </p>
         <p>
           The goal is not a hard-coded FAQ bot. Scout retrieves from real project data, recruiter knowledge, source
-          material, and a free multi-provider LLM network so it can answer new questions honestly instead of repeating canned responses.
+          material, local Qwen conversation, and short-term memory so it can answer follow-ups coherently instead of repeating canned responses.
         </p>
       </section>
 
@@ -408,14 +408,14 @@
 
           <div class="status-card">
             <span class="status-label">Backend</span>
-            <strong>Free multi-provider LLM router</strong>
-            <p>Uses deterministic tools, a local Ollama language layer, and Cloudflare, Gemini, and Grok overflow on a GCP VM.</p>
+            <strong>Free local Ollama intelligence</strong>
+            <p>Uses Qwen 2.5 0.5B, deterministic tools, five-turn memory, and BM25 retrieval on one GCP VM.</p>
           </div>
 
           <div class="status-card">
             <span class="status-label">AI</span>
             <strong>Grounded-first RAG</strong>
-            <p>Deterministic answers for facts; the free provider network adds natural phrasing when the data supports it.</p>
+            <p>Deterministic answers for facts; local Qwen adds natural phrasing only when grounded validation passes.</p>
           </div>
         </div>
 
@@ -466,7 +466,7 @@
         <p>
           Scout first checks whether a question can be answered deterministically from the knowledge JSON.
           For evidence-heavy questions, deterministic tools build a verified answer and local Ollama may select an allowlisted presentation style without rewriting facts.
-          Open-ended questions use Cloudflare Workers AI, Gemini, and Grok overflow before the grounded fallback.
+          Open-ended questions use local Qwen through Ollama before the grounded fallback; cloud AI providers are disabled.
           Every generative reply is validated against the source facts before it is returned.
         </p>
       </section>
@@ -484,7 +484,7 @@
           </div>
           <div class="free-card">
             <strong>Free LLM providers</strong>
-            <p>Cloudflare Workers AI, Gemini, and optional Grok free allowances rotate automatically.</p>
+            <p>No hosted AI API, provider quota, or model key is required.</p>
           </div>
           <div class="free-card">
             <strong>Local Ollama</strong>

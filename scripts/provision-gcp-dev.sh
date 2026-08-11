@@ -78,19 +78,26 @@ echo_step "Copying application files to VM"
 gcloud compute scp "server-gemini.js" "$VM_NAME:/tmp/server.js.new" --zone="$ZONE" --project="$PROJECT"
 gcloud compute scp --recurse "lib" "$VM_NAME:/tmp/lib.new" --zone="$ZONE" --project="$PROJECT"
 gcloud compute scp "data/free-tier-limits.json" "$VM_NAME:/tmp/free-tier-limits.json" --zone="$ZONE" --project="$PROJECT"
+gcloud compute scp "data/recruiter-knowledge.json" "$VM_NAME:/tmp/recruiter-knowledge.json" --zone="$ZONE" --project="$PROJECT"
 
 echo_step "Writing environment file on VM"
 gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   sudo tee $REMOTE_DIR/.env <<'EOF'
 PORT=3000
-KNOWLEDGE_URL=https://raw.githubusercontent.com/BradleyMatera/ProjectHub/develop/data/recruiter-knowledge.json
+LOCAL_ONLY_MODE=true
+KNOWLEDGE_FILE=data/recruiter-knowledge.json
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000,https://bradleymatera.github.io,https://bradleymatera.github.io/ProjectHub-dev
-PROVIDER_ORDER=cloudflare,gemini,grok
+PROVIDER_ORDER=
 GROQ_ENABLED=false
 GROQ_MODEL=
 AGENT_GROQ_ENABLED=false
-GEN_TIMEOUT_MS=13000
-GEN_MODEL=smollm2:135m
+OLLAMA_AGENT_ENABLED=true
+OLLAMA_AGENT_MODEL=qwen2.5:0.5b
+OLLAMA_AGENT_TIMEOUT_MS=15000
+OLLAMA_AGENT_CONTEXT=1536
+OLLAMA_AGENT_KEEP_ALIVE=-1
+GEN_TIMEOUT_MS=15000
+GEN_MODEL=qwen2.5:0.5b
 GEN_ENABLED=true
 RATE_LIMIT_MAX=20
 STATS_FILE=stats-dev.json
@@ -98,16 +105,8 @@ LEARNED_FILE=learned-dev.json
 COST_TRACKER=true
 COST_FILE=costs-dev.json
 THINK_PUSH_ENABLED=false
-GROQ_API_KEY=
-CLOUDFLARE_ACCOUNT_ID=
-CLOUDFLARE_API_TOKEN=
-GEMINI_API_KEY=
-GEMINI_MODEL=gemini-3.6-flash
-XAI_API_KEY=
-GROQ_DAILY_LIMIT=0
-CLOUDFLARE_DAILY_LIMIT=50
-GEMINI_DAILY_LIMIT=150
-XAI_DAILY_LIMIT=50
+USE_BM25_RETRIEVAL=true
+USE_VECTOR_RETRIEVAL=false
 EOF
   sudo chmod 600 $REMOTE_DIR/.env
 "
@@ -120,7 +119,8 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   sudo mv /tmp/server.js.new server.js
   sudo rm -rf lib && sudo mv /tmp/lib.new lib
   sudo mv /tmp/free-tier-limits.json data/free-tier-limits.json
-  sudo chmod 644 server.js data/free-tier-limits.json
+  sudo mv /tmp/recruiter-knowledge.json data/recruiter-knowledge.json
+  sudo chmod 644 server.js data/free-tier-limits.json data/recruiter-knowledge.json
   sudo chown -R root:root $REMOTE_DIR
   node --check server.js
 "

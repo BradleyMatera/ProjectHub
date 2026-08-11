@@ -1,5 +1,5 @@
 #!/bin/bash
-# Prepare the private dev VM for memory-bounded local Ollama formatting.
+# Prepare the private dev VM for pre-warmed local-only Ollama conversation.
 # This does not expose Ollama publicly and does not alter Caddy or the public API.
 
 set -euo pipefail
@@ -7,7 +7,7 @@ set -euo pipefail
 VM_NAME="projecthub-dev-vm"
 ZONE="us-central1-a"
 PROJECT="ollamaapi-501903"
-MODEL="gemma3:270m"
+MODEL="qwen2.5:0.5b"
 SWAP_FILE="/var/lib/projecthub/ollama.swap"
 
 echo "Preparing ${VM_NAME} for local Ollama model ${MODEL}..."
@@ -43,10 +43,10 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   printf '%s\n' \
     '[Service]' \
     'Environment=OLLAMA_HOST=127.0.0.1:11434' \
-    'Environment=OLLAMA_KEEP_ALIVE=60s' \
+    'Environment=OLLAMA_KEEP_ALIVE=-1' \
     'Environment=OLLAMA_NUM_PARALLEL=1' \
     'Environment=OLLAMA_MAX_LOADED_MODELS=1' \
-    'Environment=OLLAMA_CONTEXT_LENGTH=1024' | sudo tee /etc/systemd/system/ollama.service.d/projecthub.conf >/dev/null
+    'Environment=OLLAMA_CONTEXT_LENGTH=1536' | sudo tee /etc/systemd/system/ollama.service.d/projecthub.conf >/dev/null
   sudo systemctl daemon-reload
   sudo systemctl enable --now ollama
   sudo systemctl restart ollama
@@ -57,6 +57,10 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   done
   curl --fail --silent http://127.0.0.1:11434/api/tags >/dev/null
   ollama pull '$MODEL'
+  timeout 120 curl --fail --silent --show-error \
+    --header 'Content-Type: application/json' \
+    --data '{"model":"$MODEL","prompt":"","stream":false,"keep_alive":-1,"options":{"num_ctx":1536,"num_predict":1}}' \
+    http://127.0.0.1:11434/api/generate >/dev/null
 
   echo 'Ollama preview resources:'
   free -h
@@ -65,4 +69,4 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   sudo ss -lnt '( sport = :11434 )'
 "
 
-echo "Ollama is ready on VM loopback only. Deploy the preview with: bash deploy-agent-preview.sh"
+echo "Ollama is pre-warmed on VM loopback only. Deploy the preview with: bash deploy-agent-preview.sh"

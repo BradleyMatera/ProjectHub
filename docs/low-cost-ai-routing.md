@@ -1,106 +1,57 @@
 # low-cost-ai-routing.md
 
-**Read when:** You need to understand how ProjectHub stays 100% free by routing LLM calls through free provider tiers, with grounded knowledge as the final fallback.
+**Read when:** You need to understand how ProjectHub keeps AI inference free and local.
 
 ---
 
 ## Budget Rule
 
-ProjectHub is designed to operate on **zero recurring AI spend**. The only optional cost is the GCP VM, which fits within the Always Free tier. No paid LLM subscriptions or credits are required.
+ProjectHub has zero recurring AI spend. It does not require Groq, Cloudflare Workers AI, Gemini, GitHub Models, xAI, OpenAI, or another hosted inference API. The frontend remains on GitHub Pages and the Node/Ollama backend fits on the existing GCP Always Free `e2-micro` VM.
 
----
+## Local-Only Architecture
 
-## Current Best Architecture
+1. The widget calls the Node API on the GCP VM.
+2. The API reads bundled `data/recruiter-knowledge.json`; it does not fetch knowledge at runtime.
+3. Safety, false-claim, scope, and intent checks run first.
+4. Query understanding corrects typos and rewrites follow-ups using recent context.
+5. Local BM25 retrieves verified facts. Evidence-heavy workflows use bounded read-only tools.
+6. A deterministic grounded answer is computed before generation.
+7. Open-ended questions may be phrased by pre-warmed `qwen2.5:0.5b` through loopback-only Ollama.
+8. The prompt includes the five newest sanitized turns and the stored stance for the current topic.
+9. Generated output is capped at 64 tokens and 15 seconds, then checked for unsupported numbers, new entities, overclaims, slop, safety problems, source overlap, and a three-sentence maximum.
+10. Timeout or any failed check returns the deterministic grounded answer.
 
-ProjectHub stays grounded-first and free-provider-first:
+`LOCAL_ONLY_MODE=true` forces `PROVIDER_ORDER` to an empty list and forces dense vector retrieval off even when a stale environment variable enables it. Legacy hosted-provider adapters remain for backward compatibility outside local-only mode, but they are unreachable in the deployed local configuration.
 
-1. Browser widget calls `https://projecthub-chat.bradleymatera.dev/api/chat` directly from any allowed origin.
-2. GCP VM API (`server-gemini.js`) always returns deterministic recruiter-safe answers for factual/profile/project questions.
-3. For open-ended questions, the API walks a priority network of free providers:
-   - Cloudflare Workers AI (`@cf/meta/llama-3.2-3b-instruct`)
-   - Google Gemini (`gemini-3.6-flash`)
-   - xAI Grok (`grok-4.3`) optional
-   - OpenAI-compatible (configurable) optional
-   - Groq optional, disabled by default, with an explicitly configured current model
-4. If all free providers are exhausted or fail validation, the API returns a fast, deterministic grounded answer from `data/recruiter-knowledge.json`.
-5. Every provider reply is validated against the grounded source facts before it is returned.
-6. Safety and false-claim checks run BEFORE learned answers to block injection, XSS, social engineering, and exaggerated claims.
-7. In-memory session cache keeps the last 3 turns per tab. Frontend sends 5 turns and keeps 10.
-8. Response caches avoid repeated work, but context-dependent follow-ups bypass the global cache.
-9. Out-of-scope questions are forced to grounded replies by `mustStayGrounded` to prevent LLM hallucinations.
-10. Evidence-heavy requests use deterministic bounded tools over local verified data. An opt-in Groq planner can use the same tools, but it is disabled by default.
+## Why Qwen 2.5 0.5B
 
-This keeps the widget useful even if every free provider tier is temporarily exhausted.
+The free VM has roughly 1 GB RAM, so an 8B model is not viable. On this VM, `gemma3:1b` remained busy after roughly 90 seconds and pushed about 1 GB into swap. `qwen2.5:0.5b` measured 77.5 seconds on its first cold load but 3.71 seconds after loading at a fixed 1536-token context. Deployments therefore pre-warm Qwen and keep it resident with one loaded model and one parallel request.
 
-`llama-3.1-8b-instant` was removed from all runtime defaults before its August 16, 2026 shutdown. ProjectHub does not silently replace it with GPT-OSS because Groq's published free allowance drops from 14,400 requests and 500,000 tokens per day for Llama 8B to 1,000 requests and 200,000 tokens per day for current replacements. The default network now begins with Cloudflare. Groq requires `GROQ_ENABLED=true` plus an explicit non-retired `GROQ_MODEL`; `lib/model-policy.js` blocks known retired model IDs even when an old environment still names one.
+The small model is the conversational layer, not the source of truth. Retrieval, tools, memory, stance tracking, and validation do the reliability work a larger model would otherwise need to do.
 
-Groq is not a single point of failure for agent workflows. ProjectHub deterministically selects and executes local knowledge tools. `OLLAMA_AGENT_ENABLED=true` may use the already-installed local Ollama engine to choose an allowlisted presentation style, but the small local model never writes the factual answer. If local control fails, the deterministic answer is returned directly. General conversation continues through Cloudflare Workers AI, Gemini, Grok, and the grounded fallback.
+## Coherence and NLP
 
-GitHub Models was removed from the active network after its July 30, 2026 retirement. `lib/model-policy.js` hard-blocks the legacy provider definition so a stale environment cannot make retired inference calls. Gemini 2.0 Flash was also replaced with Google's documented stable replacement, `gemini-3.6-flash`.
+- **Memory:** five recent sanitized user/assistant turns.
+- **Stance:** up to 12 topic summaries per session, retained for 60 minutes.
+- **Query understanding:** normalization, typo correction, intent classification, and contextual rewriting in pure JavaScript.
+- **Retrieval:** in-memory Okapi BM25; current Recall@6 is 0.925 on the 40-query golden set.
+- **Tools:** deterministic comparison, role-matching, evidence, and interview-question workflows.
+- **Persona:** Scout remains concise, warm, honest, and third-person.
 
----
+## Latency and Failure Policy
 
-## Netlify Usage
+The user-facing budget is 15 seconds. The model is pre-warmed during setup and deployment, uses a 1536-token context, produces at most 64 tokens, and stays loaded indefinitely. If Ollama is cold, overloaded, unavailable, or produces invalid text, the already-computed grounded answer is returned. This keeps availability independent of model quality.
 
-Netlify remains the DNS host for `bradleymatera.dev` and `bradleymatera.github.io` serves the widget landing page. No Netlify Functions or paid Netlify AI tokens are required:
+## Think Mode
 
-- The widget calls the GCP backend directly from the browser.
-- Session memory lives in the GCP backend process; no external database is needed.
-- Quota enforcement and cooldowns are handled inside `server-gemini.js`.
-- No paid AI polishing path is used; all generative responses come from free providers, with the grounded knowledge base as the final fallback.
+Think Mode may use the same local Ollama model to examine weak answers. In local-only mode it cannot push changes to GitHub, and it cannot invoke cloud providers. Any permanent knowledge change still follows the normal reviewed branch and release process.
 
----
+## Cost Boundary
 
-## Google Cloud Spend
+- No AI API key or paid model subscription.
+- No external embedding request; BM25 is the production retrieval mode.
+- No runtime database; session and stance memory are in process.
+- No runtime knowledge download; the JSON is deployed with the server.
+- No provider quota, provider cooldown, or Aug 16 dependency.
 
-The backend is intended to run on a GCP Always Free `e2-micro` instance with no monthly compute bill. The grounded fallback requires no LLM calls and no local model, so it keeps the VM small and predictable.
-
-Safer options:
-
-- Keep the Always Free VM as the default backend.
-- Add Google Cloud budget alerts at `$5`, `$10`, and `$20` as guardrails.
-- If testing a larger VM, run it only on demand and stop it automatically.
-- Avoid running large local models; rely on the free provider network and the grounded fallback instead.
-
----
-
-## Think Mode Cost
-
-Think Mode runs every 20 minutes and processes up to 3 stashed questions per cycle through the same free provider network. It adds zero cost because:
-- It uses the same free LLM providers (no additional API calls beyond what the daily quota allows)
-- The grounded knowledge base is the final fallback (no LLM charges)
-- It pushes learned answers back to GitHub via the Contents API (free, no database)
-- False-claim, safety, out-of-scope, and meta questions are filtered before stashing (no wasted LLM calls)
-- The `learned.json` file on the VM is tiny (a few KB)
-
----
-
-## Routing Policy
-
-The multi-provider router tries each enabled provider in `PROVIDER_ORDER` until one returns a valid reply:
-
-- Skip providers that are exhausted or in cooldown.
-- Skip providers whose daily quota has been reached.
-- Build a RAG prompt from the grounded knowledge JSON and recent session context.
-- Validate every reply against anti-slop, false-claim, and number-check rules using the full prompt as the source.
-- If a provider call fails or returns an invalid reply, mark it (rate-limit = 60s cooldown, credit exhaustion = 24h cooldown) and try the next provider.
-- If no provider succeeds, return the grounded answer.
-
-Deterministic/factual questions bypass the network entirely and return the grounded answer immediately to save quota and latency. The `mustStayGrounded` function enforces this for 15+ categories of questions including role fit, experience, work style, interpersonal skills, safety patterns, false-claim patterns, out-of-scope questions, and meta questions about the bot.
-
----
-
-## Retrieval Pipeline Cost
-
-The retrieval pipeline is designed to add zero recurring cost:
-
-- **BM25 index** (`lib/bm25.js`): Pure in-memory, no external calls. Built once per knowledge cache refresh (~600 chunks, <50ms build, <1ms query). Default mode.
-- **Query understanding** (`lib/query-understanding.js`): Pure JS heuristic — normalization, typo correction via Damerau-Levenshtein, intent classification via regex, contextual rewriting via history. No LLM calls. <1ms CPU.
-- **Dense vector retrieval** (`lib/vector-index.js`, optional): When `USE_VECTOR_RETRIEVAL=true`, query embeddings are fetched from Cloudflare Workers AI free tier (`@cf/baai/bge-small-en-v1.5`, 50-150ms per call). Pre-built chunk embeddings are generated at build time via `npm run build:embeddings` and committed to `data/knowledge-vectors.json`. No runtime cost for chunk embeddings.
-- **Hybrid fusion** (`lib/hybrid-retrieve.js`): Pure in-memory RRF + MMR computation. <2ms CPU.
-- **Semantic cache**: When dense retrieval is enabled, paraphrased queries are deduplicated via embedding cosine similarity (≥0.92). On a cache hit, the entire retrieval + LLM pipeline is skipped, saving both latency and provider quota. LRU, 200 entries, 10-min TTL.
-- **Stance consistency store**: Pure in-memory, no external calls. Per-session topic stances, 30-min TTL.
-
-**Build-time embeddings** via `npm run build:embeddings` use Cloudflare Workers AI free tier to batch-embed ~600 chunks in <10 seconds. The script also embeds intent-centroid example sets. Output: `data/knowledge-vectors.json` and `data/intent-centroids.json` (committed to repo).
-
-**Total added latency per message**: ~0ms (BM25-only mode), ~150ms typical (hybrid mode with embedding call), often less with semantic cache hits.
+The remaining infrastructure is GitHub Pages, DNS/HTTPS, and the GCP VM. “Local-only” refers to inference and knowledge processing on that VM, not to browser-only execution.

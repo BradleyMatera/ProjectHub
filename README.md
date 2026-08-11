@@ -5,7 +5,7 @@
 [![Hosted on GitHub Pages](https://img.shields.io/badge/Hosted-GitHub_Pages-181717?logo=github&logoColor=white&style=for-the-badge)](https://bradleymatera.github.io/ProjectHub/)
 [![Free Tier](https://img.shields.io/badge/Stack-100%25%20Free-34d399?style=for-the-badge)]()
 
-> **ProjectHub** is an **embeddable AI chat widget** powered by **Scout**, a free multi-provider recruiter assistant.
+> **ProjectHub** is an **embeddable AI chat widget** powered by **Scout**, a local-only Ollama recruiter assistant.
 > It showcases my **projects, CodePens, skills, and background**, and answers recruiter questions from verified data — running entirely on free tiers.
 
 ---
@@ -17,7 +17,7 @@
 3. [GitHub Knowledge Base Sync](#-github-knowledge-base-sync)
 4. [Learning System (Think Mode)](#-learning-system-think-mode)
 5. [Chat Pipeline (Step by Step)](#-chat-pipeline-step-by-step)
-6. [Free Multi-Provider LLM Network](#-free-multi-provider-llm-network)
+6. [Free Local Ollama Runtime](#-free-local-ollama-runtime)
 7. [Dashboard & Live Monitoring](#-dashboard--live-monitoring)
 8. [Scout Intelligence](#-scout-intelligence)
 9. [Analytics & Tracking](#-analytics--tracking)
@@ -267,8 +267,8 @@ Every chat request goes through a deterministic pipeline. The `pipeline` field i
 
 8. LLM network (if needed)
    ├── Try free overflow providers: cloudflare → github → gemini → grok
-   ├── First valid reply wins → use it (pipeline: ["network:cloudflare:success"])
-   └── All fail → use grounded answer (pipeline: ["network:all-failed"])
+   ├── Qwen output passes grounded validation → use it
+   └── Timeout or invalid output → use deterministic grounded answer
 
 9. Reply shaping
    └── Apply tone, length, format rules (pipeline: ["shaped"])
@@ -290,27 +290,16 @@ Every chat request goes through a deterministic pipeline. The `pipeline` field i
 
 - `["cache-hit"]` — served from response cache
 - `["cache-miss", "knowledge-loaded", "learned-check:miss", "mustStayGrounded:true", "shaped"]` — grounded answer, no LLM needed
-- `["cache-miss", "knowledge-loaded", "learned-check:miss", "mustStayGrounded:false", "network:cloudflare:success", "shaped"]` — LLM via Cloudflare Workers AI
+- `["cache-miss", "knowledge-loaded", "mustStayGrounded:false", "network:disabled-local-only", "local-rag:ollama:validated", "shaped"]` — validated local Qwen answer
 - `["cache-miss", "knowledge-loaded", "learned-check:hit"]` — answered from learned answers
 
 ---
 
-## 🌐 Free Multi-Provider LLM Network
+## 🌐 Free Local Ollama Runtime
 
-Scout never relies on a single paid API. It rotates through free providers:
+Scout does not need any hosted AI API. `qwen2.5:0.5b` runs on Ollama on the same free-tier VM as the Node API. `PROVIDER_ORDER` is empty in local-only mode, cloud models are disabled, and the bundled knowledge JSON avoids a runtime GitHub fetch.
 
-| Provider | Type | Model | Daily Limit | Cooldown on failure |
-|----------|------|-------|-------------|---------------------|
-| **Cloudflare Workers AI** | Cloudflare | `@cf/meta/llama-3.2-3b-instruct` | 300 | 60s (rate limit), 24h (credits) |
-| **Google Gemini** | Gemini | `gemini-3.6-flash` | Account-specific | 60s (rate limit), 24h (credits) |
-| **xAI Grok** | OpenAI-compatible | `grok-4.3` | 1000 | 60s (rate limit), 24h (credits) |
-| **Groq** | OpenAI-compatible | Explicit model required; disabled by default | Model-specific | 60s (rate limit), 24h (credits) |
-| **OpenAI-compatible** | OpenAI-compatible | configurable | 200 | 60s (rate limit), 24h (credits) |
-| **Local Ollama** | Ollama | `smollm2:135m` | ∞ | N/A (runs on VM CPU) |
-
-### Provider order
-
-Configurable via `PROVIDER_ORDER` env var. Default: `cloudflare,gemini,grok`. Groq is opt-in and rejects retired model IDs. GitHub Models inference is hard-blocked because the service retired on July 30, 2026.
+The model receives BM25-retrieved facts, the five newest verified turns, and a per-topic stance. Output is limited to three short sentences and 64 tokens, then rejected if it invents numbers or entities, overstates Bradley's experience, or drifts from the retrieved source. A deterministic answer is always ready if the model exceeds the 15-second budget.
 
 The server tracks success/failure/avg latency per provider in `stats.json` and exposes it on the dashboard:
 
@@ -634,10 +623,10 @@ ProjectHub runs on **zero recurring AI spend** and only free-tier infrastructure
 
 ### AI / LLM — free
 
-- **6 free LLM providers** with automatic failover
-- Local Ollama as unlimited final fallback
-- Daily quota guards per provider
-- Every reply validated against source facts
+- Local Ollama with `qwen2.5:0.5b`; no AI API keys
+- BM25 retrieval, typo correction, contextual rewriting, and bounded tools
+- Five-turn memory plus 60-minute topic stances
+- Every generated reply validated against source facts
 
 ### What this avoids
 
@@ -648,9 +637,9 @@ ProjectHub runs on **zero recurring AI spend** and only free-tier infrastructure
 
 ### Honest caveats
 
-- Free LLM providers have caps that can change
-- On a very busy day, all providers could be exhausted — Scout degrades to grounded answers, not errors
-- Local Ollama (`smollm2:135m`) is a small model — less natural than cloud providers but always available
+- `qwen2.5:0.5b` is deliberately small enough for the 1 GB VM and is less capable than a hosted large model
+- A cold model load can exceed the latency budget, so deploys pre-warm it and keep it resident
+- Under memory pressure or invalid output, Scout degrades to grounded answers, not errors
 - The widget is designed to degrade, not break
 
 ---
@@ -689,7 +678,7 @@ GEMINI_API_KEY=...
 GEMINI_MODEL=gemini-3.6-flash
 XAI_API_KEY=...
 KNOWLEDGE_URL=https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter-knowledge.json
-PROVIDER_ORDER=cloudflare,gemini,grok
+PROVIDER_ORDER=cloudflare
 GROQ_ENABLED=false
 GROQ_MODEL=
 ```

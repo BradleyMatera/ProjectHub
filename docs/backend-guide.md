@@ -1,12 +1,12 @@
 # backend-guide.md
 
-**Read when:** You need to deploy, migrate, or secure the free multi-provider chat backend on Google Cloud.
+**Read when:** You need to deploy, migrate, or secure the local-only Ollama chat backend on Google Cloud.
 
 ---
 
 ## Goal
 
-Host a **zero-cost** chat API that serves the ProjectHub widget from a Google Cloud free-tier VM. The backend routes open-ended recruiter questions through a priority network of free LLM providers, falling back to a fast, grounded answer from `data/recruiter-knowledge.json` if every provider is unavailable or the reply fails validation.
+Host a **zero-cost** chat API on a Google Cloud free-tier VM. The same VM runs Node, loopback-only Ollama, `qwen2.5:0.5b`, local BM25 retrieval, and a deterministic grounded fallback.
 
 ---
 
@@ -32,36 +32,28 @@ flowchart LR
   A[ProjectHub widget] -- HTTPS POST /api/chat --> B[projecthub-chat.bradleymatera.dev]
   B -- Netlify DNS A record --> C[GCP VM 35.208.20.1]
   C -- Caddy HTTPS reverse proxy --> D[Node API 127.0.0.1:3000]
-  D -- constrained style selection --> E1[Ollama]
-  D -- Cloudflare REST --> E2[Cloudflare Workers AI]
-  D -- Gemini REST --> E3[Google Gemini]
-  D -- OpenAI-compatible REST --> E4[xAI Grok]
-  D -- deterministic fallback --> E5[Grounded knowledge base]
-  D -- fetch/cache --> F[recruiter-knowledge.json on GitHub]
-  D -- grounded fallback --> G[Local knowledge base]
-  D -- Think Mode --> H[learned.json + push to GitHub]
+  D -- loopback --> E1[Ollama + qwen2.5:0.5b]
+  D -- deterministic fallback --> E5[Grounded answer engine]
+  D -- local read --> G[Bundled recruiter-knowledge.json]
   D -- BM25 + query understanding --> I[lib/bm25.js + lib/query-understanding.js]
-  D -- dense retrieval (optional) --> J[Cloudflare Workers AI embeddings]
-  D -- hybrid fusion --> K[RRF + MMR]
-  D -- stance store --> L[Per-session topic stances]
-  D -- semantic cache --> M[Paraphrase dedup via embeddings]
+  D -- recent context --> M[Five-turn session memory]
+  D -- stance store --> L[12 topic stances / 60 minutes]
 ```
 
-Current production path: Netlify DNS `A` record for `projecthub-chat.bradleymatera.dev` points to the GCP VM external IP `35.208.20.1`. Caddy terminates HTTPS with Let's Encrypt and proxies to the Node API on `127.0.0.1:3000`. The Node API (`server-gemini.js`) always computes a grounded answer first, then routes open-ended questions through the free provider network in priority order. If no provider succeeds or the reply fails validation, the fast, grounded answer is returned.
+Current production path: Netlify DNS points `projecthub-chat.bradleymatera.dev` to the GCP VM. Caddy terminates HTTPS and proxies to Node on loopback. Node computes a grounded answer first, then permits bounded local Qwen generation for open-ended questions. If the 15-second budget or validation fails, the grounded answer is returned.
 
 ### Cost ledger (env-flagged, enabled on dev and prod)
 
 A metering-grade cost tracker lives in `lib/cost-ledger.js` and is enabled with `COST_TRACKER=true` on both the dev and production VMs. It records:
 
-- LLM provider token usage (parsed from each API's `usage` field)
-- Cloudflare Workers AI neuron estimates
+- Local Ollama token usage
 - GCP VM compute seconds and egress bytes
 - GitHub API call counts and payload sizes
 - Disk writes of state files
 
 All prices are kept in integer **micro-USD** to avoid float drift. The analytics dashboard (including the Cost & Free-Tier section) renders on both the production and staging Pages sites; each site fetches its matching backend's `/api/costs`.
 
-See `data/free-tier-limits.json` for the authoritative free-tier limits, hypothetical paid rates (what it would cost if not free), and citation URLs. Update `lastVerified` and re-check provider docs when limits change.
+See `data/free-tier-limits.json` for metering metadata and legacy provider retirement notes.
 
 ---
 
@@ -74,73 +66,45 @@ See `data/free-tier-limits.json` for the authoritative free-tier limits, hypothe
 - Boot disk: Ubuntu 22.04 LTS, 30 GB standard persistent disk
 - Allow HTTP/HTTPS traffic (we will narrow this later)
 
-### 2. Get Free Provider Keys
+### 2. Install and Pre-warm Ollama
 
-The backend uses a rotating network of free LLM providers. You need keys for the providers you want to enable. None require payment to get started.
-
-| Provider | Signup / Token source | Model used |
-|----------|----------------------|------------|
-| Groq | https://console.groq.com/keys | Optional; disabled until a current model is explicitly selected |
-| Cloudflare Workers AI | https://dash.cloudflare.com/profile/api-tokens | `@cf/meta/llama-3.2-3b-instruct` |
-| Google Gemini | https://aistudio.google.com/app/apikey | `gemini-3.6-flash` |
-| xAI Grok | https://console.x.ai/ | `grok-4.3` (optional; free credits can be exhausted quickly) |
-| OpenAI-compatible | Any OpenAI-compatible endpoint | configurable (optional) |
-| Grounded fallback | `data/recruiter-knowledge.json` hosted on GitHub | Final answer when all providers are unavailable or replies fail validation |
-
-You do **not** need to add billing to any provider to run Scout. The system works as long as at least one provider has remaining free quota.
+No AI provider keys are required. Run `bash scripts/setup-ollama-preview.sh` for the private preview VM, or apply the equivalent loopback-only service settings in production. The script installs bounded swap, pulls `qwen2.5:0.5b`, fixes the context at 1536, restricts parallelism to one, and pre-warms the model.
 
 ### 3. Build the Node.js API
 
 The API is in `server-gemini.js`. It is deployed to the VM as `server.js`. Key files:
 
-- `server-gemini.js` — Express server with the free multi-provider LLM router
+- `server-gemini.js` — Express server with local Ollama conversation and deterministic fallback
 - `lib/rag-chunks.js` — Shared RAG chunk builder (flattens knowledge JSON into retrievable chunks)
 - `lib/bm25.js` — Okapi BM25 retrieval index (TF saturation, IDF, length normalization)
 - `lib/query-understanding.js` — Query normalization, typo correction, intent classification, contextual rewriting
-- `lib/vector-index.js` — Dense vector index using pre-built Cloudflare Workers AI embeddings
-- `lib/hybrid-retrieve.js` — Hybrid fusion via reciprocal rank fusion (RRF) + maximal marginal relevance (MMR)
+- `lib/local-conversation.js` — five-turn memory builder and strict local reply validator
 - `lib/cost-ledger.js` — Metering tracker for every billable-adjacent event
-- `.env` — API keys and configuration
-- `recruiter-knowledge.json` — Hosted on GitHub, fetched by the API
-- `data/knowledge-vectors.json` — Pre-built chunk embeddings (generated by `scripts/build-embeddings.js`)
-- `data/intent-centroids.json` — Intent centroid embeddings (generated by `scripts/build-embeddings.js`)
+- `.env` — local runtime configuration
+- `data/recruiter-knowledge.json` — bundled knowledge read by the API
 
 Example `.env`:
 
 ```env
 PORT=3000
-KNOWLEDGE_URL=https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter-knowledge.json
+LOCAL_ONLY_MODE=true
+KNOWLEDGE_FILE=data/recruiter-knowledge.json
 ALLOWED_ORIGINS=https://bradleymatera.dev,https://www.bradleymatera.dev,https://bradleymatera.github.io,https://*.codepen.io
-
-XAI_API_KEY=xai-...
-XAI_MODEL=grok-4.3
+PROVIDER_ORDER=
 GROQ_ENABLED=false
-GROQ_API_KEY=
-GROQ_MODEL=
-CLOUDFLARE_API_TOKEN=...
-CLOUDFLARE_ACCOUNT_ID=...
-CLOUDFLARE_MODEL=@cf/meta/llama-3.2-3b-instruct
-GEMINI_API_KEY=AIza...
-GEMINI_MODEL=gemini-3.6-flash
-
-PROVIDER_ORDER=cloudflare,gemini,grok
-GEN_MODEL=smollm2:135m
-GEN_TIMEOUT_MS=8000
+AGENT_GROQ_ENABLED=false
+OLLAMA_URL=http://127.0.0.1:11434
+OLLAMA_AGENT_ENABLED=true
+OLLAMA_AGENT_MODEL=qwen2.5:0.5b
+OLLAMA_AGENT_CONTEXT=1536
+OLLAMA_AGENT_KEEP_ALIVE=-1
+GEN_MODEL=qwen2.5:0.5b
+GEN_TIMEOUT_MS=15000
 
 # Retrieval pipeline
 USE_BM25_RETRIEVAL=true
 USE_VECTOR_RETRIEVAL=false
-EMBEDDING_MODEL=@cf/baai/bge-small-en-v1.5
-SEMANTIC_CACHE_THRESHOLD=0.92
-
-# Optional: OpenAI-compatible provider
-OPENAI_API_KEY=...
-OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_MODEL=gpt-4o-mini
-OPENAI_DAILY_LIMIT=200
-
-# Think Mode
-GITHUB_TOKEN=ghp_...  # Used only for Think Mode knowledge JSON pushes
+THINK_PUSH_ENABLED=false
 ```
 
 The server includes:
@@ -149,18 +113,17 @@ The server includes:
 - Knowledge caching (15 minutes)
 - Response caching (30 minutes)
 - Grounded-first routing with safety and false-claim checks BEFORE learned answers
-- Free multi-provider LLM network with daily quota guards and cooldown
+- Local Qwen conversation through loopback-only Ollama
 - Fast grounded fallback from `data/recruiter-knowledge.json`
-- Timeout handling (15 seconds total, 8 seconds per provider)
-- Think Mode self-improvement loop (every 20 minutes, 3 questions per cycle)
+- Timeout handling (15 seconds for local generation)
+- Local Think Mode analysis with remote pushes disabled
 - Safety regex system (injection, XSS, social engineering, secret extraction)
 - False-claim regex system (exaggerated claims, buzzwords, tone manipulation)
 - `mustStayGrounded` function to force deterministic answers for critical queries
 - Out-of-scope question guard (prevents LLM hallucinations on non-recruiter topics)
 - BM25 retrieval index with query understanding (typo correction, intent classification, contextual rewriting)
-- Optional dense vector retrieval via Cloudflare Workers AI embeddings with hybrid RRF+MMR fusion
-- Stance consistency store (per-session topic stances injected into LLM prompts)
-- Semantic cache (paraphrase dedup via embedding cosine similarity)
+- Five-turn memory and a 12-topic, 60-minute stance store
+- Source/entity/number/overclaim validation for every local generation
 
 ### 4. Run the API as a Service
 
@@ -242,15 +205,10 @@ const res = await fetch("https://projecthub-chat.bradleymatera.dev/api/chat", {
 ## Monitoring
 
 - Watch CPU and memory in the Google Cloud console.
-- Call `GET https://projecthub-chat.bradleymatera.dev/health` to see provider order, enabled status, daily quota usage, cooldown state, learning stats, semantic cache size, and stance store size.
+- Call `GET https://projecthub-chat.bradleymatera.dev/health` to verify `localOnly`, the empty provider order, Qwen model, BM25 mode, memory settings, and Ollama status.
 - Debug retrieval: `curl 'https://dev.projecthub-chat.bradleymatera.dev/api/retrieve?q=what+is+his+tech+stack'`
-- Monitor each provider's free-tier dashboard:
-  - Groq: https://console.groq.com/
-  - Cloudflare: https://dash.cloudflare.com/
-  - GitHub Contents API token for Think Mode pushes: https://github.com/settings/tokens
-  - Google Gemini: https://aistudio.google.com/app/apikey
+- Monitor VM CPU, memory, swap, disk, `ollama ps`, and the Node service journal.
 - Keep traffic within the same region to avoid egress charges.
-- Rotate API keys periodically.
 
 ---
 
@@ -261,8 +219,9 @@ const res = await fetch("https://projecthub-chat.bradleymatera.dev/api/chat", {
 - [ ] Static regional IP attached to running VM
 - [ ] Same-region traffic only
 - [ ] HTTPS certificate free (Let's Encrypt via Caddy)
-- [ ] All LLM calls use free-tier providers; grounded fallback requires no LLM credits
-- [ ] Provider quota/cooldown guards enabled (`PROVIDER_ORDER` and daily limits set)
-- [ ] No paid AI subscriptions required to keep Scout online
-- [ ] Embedding calls metered via cost ledger (Cloudflare Workers AI, when `USE_VECTOR_RETRIEVAL=true`)
+- [ ] `LOCAL_ONLY_MODE=true`, `PROVIDER_ORDER=` and `USE_VECTOR_RETRIEVAL=false`
+- [ ] Ollama listens only on `127.0.0.1:11434`
+- [ ] `qwen2.5:0.5b` is pre-warmed at context 1536 and kept loaded
+- [ ] No AI provider key or paid subscription is required
+- [ ] Bundled `data/recruiter-knowledge.json` is deployed beside the server
 - [ ] `lib/` directory synced to VM by deploy script

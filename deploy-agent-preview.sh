@@ -25,7 +25,7 @@ if [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 
-for path in server-gemini.js lib agent-preview data/free-tier-limits.json deploy/projecthub-agent-preview.service; do
+for path in server-gemini.js lib agent-preview data/free-tier-limits.json data/recruiter-knowledge.json deploy/projecthub-agent-preview.service; do
   if [ ! -e "$path" ]; then
     echo "ERROR: Required preview path is missing: $path"
     exit 1
@@ -48,6 +48,7 @@ gcloud compute scp server-gemini.js "$VM_NAME:$REMOTE_TMP/server.js" --zone="$ZO
 gcloud compute scp --recurse lib "$VM_NAME:$REMOTE_TMP/" --zone="$ZONE" --project="$PROJECT"
 gcloud compute scp --recurse agent-preview "$VM_NAME:$REMOTE_TMP/" --zone="$ZONE" --project="$PROJECT"
 gcloud compute scp data/free-tier-limits.json "$VM_NAME:$REMOTE_TMP/free-tier-limits.json" --zone="$ZONE" --project="$PROJECT"
+gcloud compute scp data/recruiter-knowledge.json "$VM_NAME:$REMOTE_TMP/recruiter-knowledge.json" --zone="$ZONE" --project="$PROJECT"
 gcloud compute scp deploy/projecthub-agent-preview.service "$VM_NAME:$REMOTE_TMP/projecthub-agent-preview.service" --zone="$ZONE" --project="$PROJECT"
 
 echo "Installing loopback-only service without a public Caddy route..."
@@ -55,7 +56,7 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   set -euo pipefail
   test -f '$SOURCE_ENV'
   test -d /opt/recruiter-chat-api-dev/node_modules
-  curl --fail --silent http://127.0.0.1:11434/api/tags | node -e \"let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const d=JSON.parse(s);if(!(d.models||[]).some(m=>m.name.startsWith('gemma3:270m')))process.exit(1)})\"
+  curl --fail --silent http://127.0.0.1:11434/api/tags | node -e \"let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const d=JSON.parse(s);if(!(d.models||[]).some(m=>m.name.startsWith('qwen2.5:0.5b')))process.exit(1)})\"
 
   sudo install -d -m 755 '$REMOTE_DIR' '$REMOTE_DIR/data' '$REMOTE_DIR/backups'
   if [ -f '$REMOTE_DIR/server.js' ]; then
@@ -71,12 +72,15 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   sudo cp -r '$REMOTE_TMP/lib' '$REMOTE_DIR/lib'
   sudo cp -r '$REMOTE_TMP/agent-preview' '$REMOTE_DIR/agent-preview'
   sudo install -m 644 '$REMOTE_TMP/free-tier-limits.json' '$REMOTE_DIR/data/free-tier-limits.json'
+  sudo install -m 644 '$REMOTE_TMP/recruiter-knowledge.json' '$REMOTE_DIR/data/recruiter-knowledge.json'
   sudo ln -sfn /opt/recruiter-chat-api-dev/node_modules '$REMOTE_DIR/node_modules'
 
-  sudo grep -Ev '^(PORT|PROVIDER_ORDER|FEATURE_PREVIEW_ENABLED|AGENT_ENABLED|AGENT_GROQ_ENABLED|GROQ_ENABLED|GROQ_MODEL|GROQ_AGENT_MODEL|GEMINI_MODEL|OLLAMA_AGENT_ENABLED|OLLAMA_AGENT_MODEL|OLLAMA_AGENT_CONTEXT|OLLAMA_AGENT_KEEP_ALIVE|OLLAMA_URL|THINK_PUSH_ENABLED|THINK_|GITHUB_TOKEN|GITHUB_PAT|STATS_FILE|LEARNED_FILE|COST_FILE|USE_VECTOR_RETRIEVAL)=' '$SOURCE_ENV' > /tmp/projecthub-agent-preview.env
+  sudo grep -Ev '^(PORT|LOCAL_ONLY_MODE|PROVIDER_ORDER|KNOWLEDGE_FILE|FEATURE_PREVIEW_ENABLED|AGENT_ENABLED|AGENT_GROQ_ENABLED|GROQ_ENABLED|GROQ_MODEL|GROQ_AGENT_MODEL|GEMINI_MODEL|OLLAMA_AGENT_ENABLED|OLLAMA_AGENT_MODEL|OLLAMA_AGENT_TIMEOUT_MS|OLLAMA_AGENT_CONTEXT|OLLAMA_AGENT_KEEP_ALIVE|OLLAMA_URL|GEN_ENABLED|GEN_MODEL|GEN_TIMEOUT_MS|THINK_PUSH_ENABLED|THINK_|GITHUB_TOKEN|GITHUB_PAT|STATS_FILE|LEARNED_FILE|COST_FILE|USE_VECTOR_RETRIEVAL)=' '$SOURCE_ENV' > /tmp/projecthub-agent-preview.env
   printf '%s\n' \
     'PORT=$PREVIEW_PORT' \
-    'PROVIDER_ORDER=cloudflare,gemini,grok' \
+    'LOCAL_ONLY_MODE=true' \
+    'PROVIDER_ORDER=' \
+    'KNOWLEDGE_FILE=data/recruiter-knowledge.json' \
     'FEATURE_PREVIEW_ENABLED=true' \
     'AGENT_ENABLED=true' \
     'GROQ_ENABLED=false' \
@@ -85,10 +89,13 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
     'AGENT_GROQ_ENABLED=false' \
     'GEMINI_MODEL=gemini-3.6-flash' \
     'OLLAMA_AGENT_ENABLED=true' \
-    'OLLAMA_AGENT_MODEL=gemma3:270m' \
-    'OLLAMA_AGENT_TIMEOUT_MS=12000' \
-    'OLLAMA_AGENT_CONTEXT=1024' \
-    'OLLAMA_AGENT_KEEP_ALIVE=60s' \
+    'OLLAMA_AGENT_MODEL=qwen2.5:0.5b' \
+    'OLLAMA_AGENT_TIMEOUT_MS=15000' \
+    'OLLAMA_AGENT_CONTEXT=1536' \
+    'OLLAMA_AGENT_KEEP_ALIVE=-1' \
+    'GEN_ENABLED=true' \
+    'GEN_MODEL=qwen2.5:0.5b' \
+    'GEN_TIMEOUT_MS=15000' \
     'THINK_PUSH_ENABLED=false' \
     'USE_VECTOR_RETRIEVAL=false' \
     'STATS_FILE=stats-feature.json' \
@@ -96,6 +103,11 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
     'COST_FILE=costs-feature.json' >> /tmp/projecthub-agent-preview.env
   sudo install -m 600 /tmp/projecthub-agent-preview.env '$REMOTE_DIR/.env'
   rm -f /tmp/projecthub-agent-preview.env
+
+  timeout 120 curl --fail --silent --show-error \
+    --header 'Content-Type: application/json' \
+    --data '{"model":"qwen2.5:0.5b","prompt":"","stream":false,"keep_alive":-1,"options":{"num_ctx":1536,"num_predict":1}}' \
+    http://127.0.0.1:11434/api/generate >/dev/null
 
   sudo install -m 644 '$REMOTE_TMP/projecthub-agent-preview.service' /etc/systemd/system/$SERVICE_NAME.service
   cd '$REMOTE_DIR'
@@ -110,7 +122,7 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   done
   systemctl is-active --quiet $SERVICE_NAME
   curl --fail --silent 'http://127.0.0.1:$PREVIEW_PORT/preview/' >/dev/null
-  node -e \"const h=require('/tmp/projecthub-agent-health.json'); if(!h.ok || !h.agent?.enabled || h.agent.groqPlannerEnabled || !h.agent.ollamaFormatterEnabled || h.agent.groqModel || !h.agent.deterministicFallback || h.providerOrder.includes('groq')) process.exit(1); console.log(JSON.stringify({ok:h.ok, agent:h.agent, providerOrder:h.providerOrder, providers:h.providers.map(p=>({slug:p.slug,enabled:p.enabled,blockedReason:p.blockedReason}))}, null, 2))\"
+  node -e \"const h=require('/tmp/projecthub-agent-health.json'); if(!h.ok || !h.localOnly || h.providerOrder.length || !h.agent?.enabled || h.agent.groqPlannerEnabled || !h.agent.ollamaControllerEnabled || h.agent.ollamaModel!=='qwen2.5:0.5b' || h.agent.groqModel || !h.agent.deterministicFallback) process.exit(1); console.log(JSON.stringify({ok:h.ok, localOnly:h.localOnly, agent:h.agent, providerOrder:h.providerOrder, providers:h.providers.map(p=>({slug:p.slug,enabled:p.enabled,blockedReason:p.blockedReason}))}, null, 2))\"
   rm -rf '$REMOTE_TMP' /tmp/projecthub-agent-health.json
 "
 

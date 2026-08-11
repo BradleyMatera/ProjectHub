@@ -1,7 +1,7 @@
 {
   "name": "projecthub",
   "version": "1.0.0",
-  "description": "Free embeddable AI recruiter assistant widget using a multi-provider LLM network and grounded RAG",
+  "description": "Free embeddable AI recruiter assistant using local Ollama, conversational memory, and grounded RAG",
   "main": "ProjectHub.js",
   "scripts": {
     "dev": "vite",

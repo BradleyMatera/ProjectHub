@@ -33,7 +33,7 @@ Safety checks run before any LLM call or learned-answer lookup.
 
 ## 5. Graceful Degradation
 
-The free provider network is unreliable by nature. Scout degrades gracefully:
+The small local model can be cold, slow, or wrong. Scout degrades gracefully:
 
 - Per-provider retry once on transient errors.
 - Circuit breaker opens when too many recent calls fail, skipping the network entirely.

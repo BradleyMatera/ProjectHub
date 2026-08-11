@@ -1,6 +1,6 @@
 # api-guide.md
 
-**Read when:** You need to understand or change the chat API contract, the free multi-provider LLM router, or AI fallback behavior.
+**Read when:** You need to understand or change the chat API contract, local-only Ollama RAG, memory, or fallback behavior.
 
 ---
 
@@ -72,21 +72,21 @@ Response body:
 }
 ```
 
-When the question is routed to the deterministic fallback, `provider` is `grounded` and `model` is `knowledge-json`. When the multi-provider network succeeds, `provider` and `model` reflect the winning provider. If every provider fails, the response falls back to the grounded answer and `fallback` is `true`. The `pipeline` array shows the exact decision path, including `semantic-cache-hit` when a paraphrase match is found. The `followUps` array contains 0-2 contextual follow-up suggestions.
+When the question is routed to the deterministic fallback, `provider` is `grounded` and `model` is `knowledge-json`. A validated local conversation reply uses `provider: ollama` and `model: qwen2.5:0.5b`. If Ollama times out or fails validation, the response falls back to the grounded answer. The `pipeline` shows `network:disabled-local-only` and the local RAG outcome. The `followUps` array contains 0-2 contextual suggestions.
 
 The optional `agent` object is present only when Scout completes a bounded tool workflow. It reports the allowlisted read-only tools used and the number of completed steps; raw tool arguments and internal evidence payloads are never returned to the browser.
 
 ## Bounded Agent Workflows
 
-Project comparisons, job-description matching, role evidence, recruiter briefs, and interview-question requests use provider-independent bounded tools before the normal provider fallback. The orchestration remains inside ProjectHub:
+Project comparisons, job-description matching, role evidence, recruiter briefs, and interview-question requests use bounded local tools before conversational generation. The orchestration remains inside ProjectHub:
 
 1. `lib/agent-tools.js` selects up to five task-relevant read-only tools and executes them against the verified in-memory knowledge cache.
 2. `lib/agent-runtime.js` validates tool names and JSON arguments, caps execution at two rounds and three tool calls, and fails closed on unknown tools.
-3. An explicitly enabled, non-retired Groq model may propose tool calls and synthesize the final answer. Groq planning is disabled by default, and ProjectHub never enables Groq built-in web search, code execution, remote MCP, or write-capable tools on the public route.
-4. If Groq is disabled, unavailable, deprecated, out of quota, or rejected, ProjectHub deterministically selects and executes the same tools itself. This removes Groq as a single point of failure.
-5. Optional local Ollama control can choose only `standard` or `brief` using `OLLAMA_AGENT_MODEL`. The factual answer always comes from the deterministic tools and existing deterministic shape rules.
-6. The final text runs through the existing false-claim, slop, number, and grounded-source validator.
-7. If the bounded agent path cannot produce a valid answer, the existing free multi-provider network runs unchanged. The deterministic grounded answer remains the final fallback.
+3. ProjectHub deterministically selects and executes the allowlisted tools; no model or remote provider controls tool access.
+4. Local Ollama may choose only `standard` or `brief` for deterministic tool answers. It never rewrites those facts.
+5. Open-ended local RAG receives BM25 facts, the grounded draft, up to five recent turns, and prior topic stances.
+6. Free-text output is validated for new entities, numbers, hype, source overlap, length, and safety.
+7. If local generation cannot produce a valid answer within 15 seconds, the deterministic grounded answer remains the final fallback.
 
 Current tools:
 
@@ -104,12 +104,12 @@ The server uses a multi-stage retrieval pipeline to find the most relevant knowl
 
 1. **Query understanding** (`lib/query-understanding.js`): Normalizes the query (lowercase, strip punctuation), corrects typos via Damerau-Levenshtein distance against the knowledge vocabulary, classifies intent (role-fit, factual-lookup, experience-detail, contact, smalltalk, meta), and rewrites bare follow-ups using conversation history for context.
 2. **BM25 search** (`lib/bm25.js`): Okapi BM25 scoring with TF saturation (k1=1.2), IDF weighting, and document-length normalization (b=0.75). The index is rebuilt whenever the knowledge cache refreshes (~600 chunks, <1ms query).
-3. **Dense vector search** (`lib/vector-index.js`, optional): When `USE_VECTOR_RETRIEVAL=true`, the rewritten query is embedded via Cloudflare Workers AI (`@cf/baai/bge-small-en-v1.5`, 384-d) and compared against pre-built chunk embeddings using brute-force cosine similarity.
+3. **Dense vector search** (`lib/vector-index.js`, legacy non-local mode only): This path requires an external embedding API and is forcibly disabled when `LOCAL_ONLY_MODE=true`.
 4. **Hybrid fusion** (`lib/hybrid-retrieve.js`): When both BM25 and dense results are available, they are fused via Reciprocal Rank Fusion (RRF, k=60) and then diversified via Maximal Marginal Relevance (MMR, λ=0.7). Tag-aware boosting adjusts scores based on classified intent (e.g., role-fit boosts faq/experience tags).
 
 Feature flags:
 - `USE_BM25_RETRIEVAL=true` (default) — enables BM25 + query understanding
-- `USE_VECTOR_RETRIEVAL=false` (default) — enables dense retrieval + hybrid fusion (requires pre-built embeddings)
+- `USE_VECTOR_RETRIEVAL=false` (default) — BM25 only; local-only mode cannot enable dense retrieval
 
 ### `/api/retrieve` Dev Endpoint
 
@@ -158,37 +158,13 @@ The `mustStayGrounded` function determines whether a question should skip the LL
 
 The browser should treat `reply` as the primary answer. The current widget renders it directly in the chat transcript.
 
-## Multi-Provider LLM Network
+## Local-only Ollama Runtime
 
-Open-ended questions are routed through a priority network of free providers:
+`LOCAL_ONLY_MODE=true` forces the runtime provider order to empty, disables all cloud provider eligibility, loads knowledge from the bundled JSON file, and disables Think Mode GitHub pushes. Open-ended replies use pre-warmed `qwen2.5:0.5b`; factual, agent-tool, safety, timeout, and invalid-generation paths use deterministic grounded output.
 
-1. **Cloudflare Workers AI** (`@cf/meta/llama-3.2-3b-instruct`)
-2. **Google Gemini** (`gemini-3.6-flash`)
-3. **xAI Grok** (`grok-4.3`) — optional, free credits can be exhausted quickly
-4. **Groq** — disabled by default; requires an explicit current model
-5. **OpenAI-compatible** (configurable) — optional, for custom endpoints
+The deployment pre-warms Qwen with the same 1,536-token context used by requests and retains it with `keep_alive=-1`. Measured warm multi-turn inference is under the 15-second ceiling; a cold request fails safely while the deterministic path remains available.
 
-GitHub Models inference is retained only as a blocked legacy definition so stale VM environments cannot call its retired API.
-
-If every free provider is unavailable or the reply fails validation, the final fallback is a fast, deterministic grounded answer from `data/recruiter-knowledge.json`.
-
-The order is controlled by `PROVIDER_ORDER` in the VM `.env`.
-
-### Free-tier limit handling
-
-Each provider has its own free-tier rules, and those rules can change. The backend is designed to tolerate that:
-
-- **Daily caps** are tracked per provider in memory (`*_DAILY_LIMIT` env vars, or sensible defaults).
-- **Rate-limit errors (429 / "too many requests")** pause the provider for 60 seconds.
-- **Credit exhaustion / permission errors (402, 403, "credits", "spending limit")** pause the provider for 24 hours.
-- **Invalid keys / auth failures (401)** are treated as a long-term exhaustion so the router stops wasting time on a dead provider.
-- **Network timeouts** per provider are bounded by `GEN_TIMEOUT_MS` (default 8000 ms) so one slow provider does not blow the 15-second total budget.
-
-If provider A is paused or exhausted, the router immediately tries provider B. If every free provider is unavailable or the reply fails validation, the deterministic grounded answer from `data/recruiter-knowledge.json` is returned. This layered fallback lets Scout stay online 24/7 without paid AI.
-
-For every provider call, the backend sends a RAG prompt built from `recruiter-knowledge.json` and recent session context. The returned text is validated against the source facts to block slop, false claims, overclaiming, and invented numbers. If no provider produces a valid reply, the deterministic grounded answer is returned.
-
-The `/health` endpoint exposes current provider order, enabled status, daily quota usage, and cooldown state.
+Legacy provider definitions remain only for backward compatibility and explicit non-local development. GitHub Models and known retired Groq model IDs remain hard-blocked even outside local-only mode.
 
 ## Environment Variables
 
@@ -196,43 +172,29 @@ Key variables on the GCP VM (`.env`):
 
 | Variable | Purpose |
 |----------|---------|
-| `GROQ_ENABLED` | Opt in to Groq after explicitly choosing a current model (default `false`) |
-| `GROQ_MODEL` | Explicit Groq model ID; empty by default and rejected when retired |
-| `GROQ_API_KEY` | Groq API key; ignored while Groq is disabled |
+| `LOCAL_ONLY_MODE` | Disable every cloud inference provider and runtime knowledge fetch (default `true`) |
+| `KNOWLEDGE_FILE` | Bundled local knowledge path (default `data/recruiter-knowledge.json`) |
 | `AGENT_ENABLED` | Enable bounded read-only agent workflows (default `true`) |
-| `AGENT_GROQ_ENABLED` | Allow an opted-in Groq provider to plan bounded tool calls (default `false`) |
-| `GROQ_AGENT_MODEL` | Groq tool-calling model; defaults to `GROQ_MODEL` |
-| `AGENT_TIMEOUT_MS` | Timeout for each Groq agent-model request, clamped to 1-10 seconds (default `6000`) |
 | `OLLAMA_AGENT_ENABLED` | Allow local Ollama to choose an allowlisted presentation style; never required for correctness (enabled on prepared hosts) |
-| `OLLAMA_AGENT_MODEL` | Local style-controller model (prepared hosts use `gemma3:270m`) |
-| `OLLAMA_AGENT_TIMEOUT_MS` | Local controller timeout, clamped to 1-15 seconds (default `12000`) |
-| `OLLAMA_AGENT_CONTEXT` | Controller context window, clamped to 512-4096 tokens (default `1024`) |
-| `OLLAMA_AGENT_KEEP_ALIVE` | Short model retention window; default `60s` for fast follow-ups without long-lived memory pressure |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare Workers AI token |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
-| `GEMINI_API_KEY` | Google Gemini API key |
-| `GEMINI_MODEL` | Current Gemini model; default `gemini-3.6-flash` |
-| `XAI_API_KEY` | xAI Grok API key |
-| `OPENAI_API_KEY` | OpenAI-compatible API key (optional) |
-| `OPENAI_BASE_URL` | OpenAI-compatible base URL (optional) |
-| `OPENAI_MODEL` | OpenAI-compatible model name (optional) |
-| `PROVIDER_ORDER` | Comma-separated provider slugs; default `cloudflare,gemini,grok` |
-| `GEN_MODEL` | Local Ollama fallback model, default `smollm2:135m` |
-| `GEN_TIMEOUT_MS` | Per-provider timeout in ms, default `8000` |
+| `OLLAMA_AGENT_MODEL` | Local conversation/style model (prepared hosts use `qwen2.5:0.5b`) |
+| `OLLAMA_AGENT_TIMEOUT_MS` | Local controller timeout, clamped to 1-15 seconds (default `15000`) |
+| `OLLAMA_AGENT_CONTEXT` | Shared local context window, clamped to 512-4096 tokens (default `1536`) |
+| `OLLAMA_AGENT_KEEP_ALIVE` | Model retention; local-only deployment uses `-1` after boot-time prewarm |
+| `PROVIDER_ORDER` | Empty and ignored in local-only deployments |
+| `GEN_MODEL` | Local Ollama conversation model, default `qwen2.5:0.5b` |
+| `GEN_TIMEOUT_MS` | Local generation ceiling in ms, clamped to 15 seconds (default `15000`) |
 | `USE_BM25_RETRIEVAL` | Enable BM25 + query understanding retrieval (default `true`) |
-| `USE_VECTOR_RETRIEVAL` | Enable dense vector retrieval + hybrid fusion (default `false`, requires pre-built embeddings) |
-| `EMBEDDING_MODEL` | Cloudflare Workers AI embedding model (default `@cf/baai/bge-small-en-v1.5`) |
-| `SEMANTIC_CACHE_THRESHOLD` | Cosine similarity threshold for semantic cache hits (default `0.92`) |
+| `USE_VECTOR_RETRIEVAL` | Legacy dense retrieval switch; forced off in local-only mode |
 
 ## Session Memory
 
-The browser creates a per-tab `sessionId` and sends the last 5 turns as `history`. The GCP backend keeps only the last three turns per session in memory; there is no external database dependency. The frontend keeps 10 turns of conversation context.
+The browser creates a per-tab `sessionId` and keeps 10 turns of conversation context. The local RAG prompt uses the five newest sanitized turns. The backend separately retains up to 12 topic stances for 60 minutes so follow-ups remain consistent; there is no external database dependency.
 
 Context-dependent messages such as “tell me more,” “what about that project,” or “same for AWS” bypass the global response cache so the router can use recent session context.
 
 ### Stance Consistency
 
-The server maintains a per-session stance store (`stanceStore`) that records the first sentence of each reply keyed by topic. On subsequent turns, prior stances are injected into the LLM prompt as `YOUR PRIOR STANCE ON THESE TOPICS (stay consistent, don't contradict)`. This prevents Scout from contradicting itself across turns. The store has a 30-min TTL and caps at 8 stances per session.
+The server maintains a per-session stance store (`stanceStore`) that records the first sentence of each reply keyed by topic. On subsequent turns, prior stances are injected into the local prompt. This prevents Scout from contradicting itself across turns. The store has a 60-minute TTL and caps at 12 stances per session.
 
 ### Semantic Cache
 

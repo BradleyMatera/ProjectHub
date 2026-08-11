@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "lastVerified": "2026-08-10",
-  "notes": "Authoritative free-tier limits and paid shadow rates for every metered source. Rates are integer micro-USD per unit unless noted. Update lastVerified when limits are re-checked against provider docs.",
+  "lastVerified": "2026-08-11",
+  "notes": "Local-only production uses Ollama and GCP metering. Hosted-provider records are retained as inactive legacy metadata.",
   "egressOverheadFactor": 1.08,
   "sources": {
     "groq": {
@@ -48,12 +48,12 @@
       "lastVerified": "2026-08-10"
     },
     "grok": {
-      "label": "xAI Grok",
+      "label": "xAI Grok (optional, account-specific)",
       "kind": "llm",
-      "freeLimits": { "requestsPerDay": 1000 },
+      "freeLimits": {},
       "shadowRates": { "inputPerMillionTokensMicroUsd": 2000000, "outputPerMillionTokensMicroUsd": 10000000 },
       "citation": "https://docs.x.ai/docs/models",
-      "lastVerified": "2026-07-15"
+      "lastVerified": "2026-08-11"
     },
     "openai": {
       "label": "OpenAI-compatible (disabled)",
@@ -64,12 +64,12 @@
       "lastVerified": "2026-07-15"
     },
     "ollama": {
-      "label": "Local Ollama (VM)",
+      "label": "Local Ollama qwen2.5:0.5b (VM)",
       "kind": "llm",
       "freeLimits": {},
       "shadowRates": { "inputPerMillionTokensMicroUsd": 0, "outputPerMillionTokensMicroUsd": 0 },
       "citation": "local inference on the free VM; cost captured under gcp-vm",
-      "lastVerified": "2026-07-15"
+      "lastVerified": "2026-08-11"
     },
     "gcp-vm": {
       "label": "GCP e2-micro VM (us-central1)",
