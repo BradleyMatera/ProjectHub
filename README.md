@@ -302,8 +302,7 @@ Scout never relies on a single paid API. It rotates through free providers:
 | Provider | Type | Model | Daily Limit | Cooldown on failure |
 |----------|------|-------|-------------|---------------------|
 | **Cloudflare Workers AI** | Cloudflare | `@cf/meta/llama-3.2-3b-instruct` | 300 | 60s (rate limit), 24h (credits) |
-| **GitHub Models** | OpenAI-compatible | `openai/gpt-4o-mini` | 150 | 60s (rate limit), 24h (credits) |
-| **Google Gemini** | Gemini | `gemini-2.0-flash` | 1500 | 60s (rate limit), 24h (credits) |
+| **Google Gemini** | Gemini | `gemini-3.6-flash` | Account-specific | 60s (rate limit), 24h (credits) |
 | **xAI Grok** | OpenAI-compatible | `grok-4.3` | 1000 | 60s (rate limit), 24h (credits) |
 | **Groq** | OpenAI-compatible | Explicit model required; disabled by default | Model-specific | 60s (rate limit), 24h (credits) |
 | **OpenAI-compatible** | OpenAI-compatible | configurable | 200 | 60s (rate limit), 24h (credits) |
@@ -311,7 +310,7 @@ Scout never relies on a single paid API. It rotates through free providers:
 
 ### Provider order
 
-Configurable via `PROVIDER_ORDER` env var. Default: `cloudflare,github,gemini,grok`. Groq is opt-in and rejects retired model IDs.
+Configurable via `PROVIDER_ORDER` env var. Default: `cloudflare,gemini,grok`. Groq is opt-in and rejects retired model IDs. GitHub Models inference is hard-blocked because the service retired on July 30, 2026.
 
 The server tracks success/failure/avg latency per provider in `stats.json` and exposes it on the dashboard:
 
@@ -685,16 +684,17 @@ The server reads API keys and config from `.env` on the VM:
 GROQ_API_KEY=...
 CLOUDFLARE_ACCOUNT_ID=...
 CLOUDFLARE_API_TOKEN=...
-GITHUB_TOKEN=...          # Used for both GitHub Models LLM AND knowledge JSON push
+GITHUB_TOKEN=...          # Used only for Think Mode knowledge JSON pushes
 GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-3.6-flash
 XAI_API_KEY=...
 KNOWLEDGE_URL=https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter-knowledge.json
-PROVIDER_ORDER=cloudflare,github,gemini,grok
+PROVIDER_ORDER=cloudflare,gemini,grok
 GROQ_ENABLED=false
 GROQ_MODEL=
 ```
 
-> The `GITHUB_TOKEN` is dual-purpose: it authenticates to GitHub Models for LLM calls AND authorizes think mode to push learned answers back to the knowledge JSON via the GitHub Contents API.
+> The `GITHUB_TOKEN` authorizes Think Mode to push learned answers through the GitHub Contents API. It is not used for model inference.
 
 ---
 

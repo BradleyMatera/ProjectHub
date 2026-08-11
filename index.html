@@ -409,7 +409,7 @@
           <div class="status-card">
             <span class="status-label">Backend</span>
             <strong>Free multi-provider LLM router</strong>
-            <p>Routes open-ended questions through Groq, Cloudflare Workers AI, GitHub Models, Gemini, and a local Ollama fallback on a GCP VM.</p>
+            <p>Uses deterministic tools, a local Ollama language layer, and Cloudflare, Gemini, and Grok overflow on a GCP VM.</p>
           </div>
 
           <div class="status-card">
@@ -465,8 +465,8 @@
 
         <p>
           Scout first checks whether a question can be answered deterministically from the knowledge JSON.
-          For open-ended questions, it sends the verified context through a priority network of free providers
-          (Groq, Cloudflare Workers AI, GitHub Models, Gemini) and falls back to a local Ollama model if none succeed.
+          For evidence-heavy questions, deterministic tools build a verified answer and local Ollama may copy-edit it.
+          Open-ended questions use Cloudflare Workers AI, Gemini, and Grok overflow before the grounded fallback.
           Every generative reply is validated against the source facts before it is returned.
         </p>
       </section>
@@ -484,11 +484,11 @@
           </div>
           <div class="free-card">
             <strong>Free LLM providers</strong>
-            <p>Groq, Cloudflare Workers AI, GitHub Models, and Gemini free tiers rotate automatically.</p>
+            <p>Cloudflare Workers AI, Gemini, and optional Grok free allowances rotate automatically.</p>
           </div>
           <div class="free-card">
             <strong>Local Ollama</strong>
-            <p>Final fallback using small open-weight models (smollm2:135m) so the assistant is never hard-down.</p>
+            <p>A memory-bounded open-weight formatter; deterministic knowledge tools remain the reliable fallback.</p>
           </div>
         </div>
       </section>

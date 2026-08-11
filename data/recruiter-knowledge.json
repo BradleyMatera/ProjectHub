@@ -513,9 +513,9 @@
         "Carbon Design System",
         "Groq",
         "Cloudflare Workers AI",
-        "GitHub Models",
         "Google Gemini",
-        "xAI Grok"
+        "xAI Grok",
+        "Ollama"
       ],
       "category": "Portfolio / AI recruiter assistant"
     },

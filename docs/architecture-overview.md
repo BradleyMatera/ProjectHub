@@ -26,9 +26,8 @@ flowchart LR
     W --> X[RAG context for LLM prompt]
     H --> I[Free multi-provider LLM network]
     I --> J1[Cloudflare Workers AI]
-    I --> J2[GitHub Models]
-    I --> J3[Google Gemini]
-    I --> J4[xAI Grok]
+    I --> J2[Google Gemini]
+    I --> J3[xAI Grok]
     I --> K[Grounded knowledge + RAG + anti-slop validation]
     H --> SC[(Semantic cache: paraphrase dedup)]
     H --> ST[Stance consistency store]
@@ -45,7 +44,7 @@ flowchart LR
 | `logic.js` | Intent detection, response generation, conversation history, AI fallback trigger. |
 | `ui.js` | Chat DOM creation, event handling, styling, loading spinner. |
 | `utils.js` | GitHub repo metadata fetcher. |
-| GCP recruiter chat API | `server-gemini.js` running on a GCP e2-micro VM free tier with Caddy HTTPS. Executes deterministic evidence tools, optionally formats with local Ollama, and routes open-ended overflow through Cloudflare Workers AI, GitHub Models, Gemini, and xAI Grok. Groq is disabled by default. If every provider is unavailable or the reply fails validation, the final fallback is a fast, grounded answer from `data/recruiter-knowledge.json`. Includes Think Mode, safety validation, hybrid retrieval, stance consistency, and semantic cache. |
+| GCP recruiter chat API | `server-gemini.js` running on a GCP e2-micro VM free tier with Caddy HTTPS. Executes deterministic evidence tools, optionally formats with local Ollama, and routes open-ended overflow through Cloudflare Workers AI, Gemini, and xAI Grok. Groq is disabled by default, and retired GitHub Models inference is hard-blocked. If every provider is unavailable or the reply fails validation, the final fallback is a fast, grounded answer from `data/recruiter-knowledge.json`. Includes Think Mode, safety validation, hybrid retrieval, stance consistency, and semantic cache. |
 | Retrieval pipeline | `lib/rag-chunks.js` flattens knowledge into ~600 retrievable chunks. `lib/bm25.js` provides Okapi BM25 scoring (TF saturation, IDF, length normalization). `lib/query-understanding.js` normalizes queries, corrects typos, classifies intent, and rewrites follow-ups with context. `lib/vector-index.js` loads pre-built Cloudflare Workers AI embeddings for dense retrieval. `lib/hybrid-retrieve.js` fuses BM25 + dense results via reciprocal rank fusion (RRF) + maximal marginal relevance (MMR). |
 | Stance consistency | Per-session topic stances stored in memory. After each reply, the first sentence is recorded per topic. On subsequent turns, prior stances are injected into the LLM prompt to prevent contradictions. 30-min TTL, cap 8 per session. |
 | Semantic cache | Paraphrase dedup via embedding cosine similarity (≥0.92 threshold). LRU, 200 entries, 10-min TTL. Only active when vector retrieval is enabled. Saves redundant embedding + retrieval + LLM calls. |
@@ -79,7 +78,7 @@ flowchart LR
 The backend lives in this repo as `server-gemini.js` and is deployed to a GCP VM.
 
 - **Server:** `server-gemini.js` — Express API that serves the widget endpoint and routes LLM calls through the free provider network.
-- **Generative layer:** Memory-bounded local Ollama formatter plus a free overflow network (Cloudflare Workers AI, GitHub Models, Google Gemini, xAI Grok). Groq is opt-in only. If every provider is unavailable or a reply fails validation, the deterministic grounded answer remains available.
+- **Generative layer:** Memory-bounded local Ollama formatter plus a free overflow network (Cloudflare Workers AI, Google Gemini, xAI Grok). Groq is opt-in only, and retired GitHub Models inference is blocked. If every provider is unavailable or a reply fails validation, the deterministic grounded answer remains available.
 - **Retrieval pipeline:** Okapi BM25 index (`lib/bm25.js`) with query understanding (`lib/query-understanding.js`) is the default retrieval mode. When `USE_VECTOR_RETRIEVAL=true`, dense vector retrieval via Cloudflare Workers AI embeddings (`lib/vector-index.js`) is fused with BM25 via reciprocal rank fusion + MMR (`lib/hybrid-retrieve.js`). BM25 Recall@6=0.950 on 40-query golden eval set.
 - **Stance consistency:** Per-session topic stances injected into LLM prompts to prevent contradictions across turns.
 - **Semantic cache:** Paraphrase dedup via embedding cosine similarity (≥0.92), LRU 200 entries, 30-min TTL.

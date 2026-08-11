@@ -163,11 +163,12 @@ The browser should treat `reply` as the primary answer. The current widget rende
 Open-ended questions are routed through a priority network of free providers:
 
 1. **Cloudflare Workers AI** (`@cf/meta/llama-3.2-3b-instruct`)
-2. **GitHub Models** (`openai/gpt-4o-mini`)
-3. **Google Gemini** (`gemini-2.0-flash`)
-4. **xAI Grok** (`grok-4.3`) — optional, free credits can be exhausted quickly
-5. **Groq** — disabled by default; requires an explicit current model
-6. **OpenAI-compatible** (configurable) — optional, for custom endpoints
+2. **Google Gemini** (`gemini-3.6-flash`)
+3. **xAI Grok** (`grok-4.3`) — optional, free credits can be exhausted quickly
+4. **Groq** — disabled by default; requires an explicit current model
+5. **OpenAI-compatible** (configurable) — optional, for custom endpoints
+
+GitHub Models inference is retained only as a blocked legacy definition so stale VM environments cannot call its retired API.
 
 If every free provider is unavailable or the reply fails validation, the final fallback is a fast, deterministic grounded answer from `data/recruiter-knowledge.json`.
 
@@ -209,13 +210,13 @@ Key variables on the GCP VM (`.env`):
 | `OLLAMA_AGENT_KEEP_ALIVE` | Short model retention window; default `60s` for fast follow-ups without long-lived memory pressure |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare Workers AI token |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
-| `GITHUB_MODELS_TOKEN` | GitHub personal access token with `models:read` |
 | `GEMINI_API_KEY` | Google Gemini API key |
+| `GEMINI_MODEL` | Current Gemini model; default `gemini-3.6-flash` |
 | `XAI_API_KEY` | xAI Grok API key |
 | `OPENAI_API_KEY` | OpenAI-compatible API key (optional) |
 | `OPENAI_BASE_URL` | OpenAI-compatible base URL (optional) |
 | `OPENAI_MODEL` | OpenAI-compatible model name (optional) |
-| `PROVIDER_ORDER` | Comma-separated provider slugs; default `cloudflare,github,gemini,grok` |
+| `PROVIDER_ORDER` | Comma-separated provider slugs; default `cloudflare,gemini,grok` |
 | `GEN_MODEL` | Local Ollama fallback model, default `smollm2:135m` |
 | `GEN_TIMEOUT_MS` | Per-provider timeout in ms, default `8000` |
 | `USE_BM25_RETRIEVAL` | Enable BM25 + query understanding retrieval (default `true`) |

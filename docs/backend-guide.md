@@ -34,10 +34,9 @@ flowchart LR
   C -- Caddy HTTPS reverse proxy --> D[Node API 127.0.0.1:3000]
   D -- local evidence formatting --> E1[Ollama]
   D -- Cloudflare REST --> E2[Cloudflare Workers AI]
-  D -- OpenAI-compatible REST --> E3[GitHub Models]
-  D -- Gemini REST --> E4[Google Gemini]
-  D -- OpenAI-compatible REST --> E5[xAI Grok]
-  D -- deterministic fallback --> E6[Grounded knowledge base]
+  D -- Gemini REST --> E3[Google Gemini]
+  D -- OpenAI-compatible REST --> E4[xAI Grok]
+  D -- deterministic fallback --> E5[Grounded knowledge base]
   D -- fetch/cache --> F[recruiter-knowledge.json on GitHub]
   D -- grounded fallback --> G[Local knowledge base]
   D -- Think Mode --> H[learned.json + push to GitHub]
@@ -83,8 +82,7 @@ The backend uses a rotating network of free LLM providers. You need keys for the
 |----------|----------------------|------------|
 | Groq | https://console.groq.com/keys | Optional; disabled until a current model is explicitly selected |
 | Cloudflare Workers AI | https://dash.cloudflare.com/profile/api-tokens | `@cf/meta/llama-3.2-3b-instruct` |
-| GitHub Models | GitHub Settings → Developer settings → Personal access tokens → `models:read` | `openai/gpt-4o-mini` |
-| Google Gemini | https://aistudio.google.com/app/apikey | `gemini-2.0-flash` |
+| Google Gemini | https://aistudio.google.com/app/apikey | `gemini-3.6-flash` |
 | xAI Grok | https://console.x.ai/ | `grok-4.3` (optional; free credits can be exhausted quickly) |
 | OpenAI-compatible | Any OpenAI-compatible endpoint | configurable (optional) |
 | Grounded fallback | `data/recruiter-knowledge.json` hosted on GitHub | Final answer when all providers are unavailable or replies fail validation |
@@ -119,15 +117,13 @@ XAI_MODEL=grok-4.3
 GROQ_ENABLED=false
 GROQ_API_KEY=
 GROQ_MODEL=
-GITHUB_MODELS_TOKEN=ghp_...
-GITHUB_MODELS_MODEL=openai/gpt-4o-mini
 CLOUDFLARE_API_TOKEN=...
 CLOUDFLARE_ACCOUNT_ID=...
 CLOUDFLARE_MODEL=@cf/meta/llama-3.2-3b-instruct
 GEMINI_API_KEY=AIza...
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-3.6-flash
 
-PROVIDER_ORDER=cloudflare,github,gemini,grok
+PROVIDER_ORDER=cloudflare,gemini,grok
 GEN_MODEL=smollm2:135m
 GEN_TIMEOUT_MS=8000
 
@@ -144,7 +140,7 @@ OPENAI_MODEL=gpt-4o-mini
 OPENAI_DAILY_LIMIT=200
 
 # Think Mode
-GITHUB_TOKEN=ghp_...  # Used for both GitHub Models LLM AND knowledge JSON push
+GITHUB_TOKEN=ghp_...  # Used only for Think Mode knowledge JSON pushes
 ```
 
 The server includes:
@@ -251,7 +247,7 @@ const res = await fetch("https://projecthub-chat.bradleymatera.dev/api/chat", {
 - Monitor each provider's free-tier dashboard:
   - Groq: https://console.groq.com/
   - Cloudflare: https://dash.cloudflare.com/
-  - GitHub Models: https://github.com/settings/tokens
+  - GitHub Contents API token for Think Mode pushes: https://github.com/settings/tokens
   - Google Gemini: https://aistudio.google.com/app/apikey
 - Keep traffic within the same region to avoid egress charges.
 - Rotate API keys periodically.

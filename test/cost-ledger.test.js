@@ -10,12 +10,12 @@ function makeLedger(nowFn) {
 }
 
 test('micro-USD pricing: LLM tokens round up, never undercount', () => {
-  // github: input 150000 micro-USD per 1M tokens -> 100 tokens = ceil(15) = 15
-  const micro = priceEventMicroUsd('github', { tokensIn: 100, tokensOut: 0 }, registry);
-  assert.strictEqual(micro, 15);
+  // grok: input 2,000,000 micro-USD per 1M tokens -> 100 tokens = 200
+  const micro = priceEventMicroUsd('grok', { tokensIn: 100, tokensOut: 0 }, registry);
+  assert.strictEqual(micro, 200);
   // 1 token must cost at least 1 micro-USD (ceil), not 0
-  const tiny = priceEventMicroUsd('github', { tokensIn: 1 }, registry);
-  assert.strictEqual(tiny, 1);
+  const tiny = priceEventMicroUsd('grok', { tokensIn: 1 }, registry);
+  assert.strictEqual(tiny, 2);
 });
 
 test('micro-USD pricing: cloudflare neurons', () => {
@@ -70,16 +70,16 @@ test('month boundary rollover', () => {
 
 test('headroom percentages', () => {
   const ledger = makeLedger();
-  // github free limit: 150 requests/day -> 15 calls = 10%
-  for (let i = 0; i < 15; i++) ledger.record({ source: 'github', tokensIn: 10, tokensOut: 10 });
-  const h = ledger.headroom().find(x => x.source === 'github' && x.metric === 'requestsPerDay');
-  assert.strictEqual(h.used, 15);
+  // Cloudflare allowance: 10,000 neurons/day -> 1,000 neurons = 10%
+  ledger.record({ source: 'cloudflare', neurons: 1000 });
+  const h = ledger.headroom().find(x => x.source === 'cloudflare' && x.metric === 'neuronsPerDay');
+  assert.strictEqual(h.used, 1000);
   assert.strictEqual(h.pct, 10);
 });
 
 test('snapshot reports free=true within limits and correct USD string', () => {
   const ledger = makeLedger();
-  ledger.record({ source: 'github', tokensIn: 1000, tokensOut: 500 });
+  ledger.record({ source: 'cloudflare', neurons: 12 });
   const snap = ledger.snapshot();
   assert.strictEqual(snap.free, true);
   assert.strictEqual(snap.shadowCost.actualUsd, '0.000000');
@@ -89,7 +89,7 @@ test('snapshot reports free=true within limits and correct USD string', () => {
 
 test('snapshot flips free=false when a quota is exceeded', () => {
   const ledger = makeLedger();
-  for (let i = 0; i < 151; i++) ledger.record({ source: 'github', tokensIn: 1 });
+  ledger.record({ source: 'cloudflare', neurons: 10001 });
   const snap = ledger.snapshot();
   assert.strictEqual(snap.free, false);
   assert.strictEqual(snap.shadowCost.actualUsd, null);

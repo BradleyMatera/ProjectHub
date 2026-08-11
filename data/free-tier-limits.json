@@ -31,20 +31,21 @@
       "lastVerified": "2026-07-15"
     },
     "github": {
-      "label": "GitHub Models (gpt-4o-mini)",
+      "label": "GitHub Models (retired 2026-07-30)",
       "kind": "llm",
-      "freeLimits": { "requestsPerDay": 150 },
-      "shadowRates": { "inputPerMillionTokensMicroUsd": 150000, "outputPerMillionTokensMicroUsd": 600000 },
-      "citation": "https://docs.github.com/en/github-models/prototyping-with-ai-models#rate-limits",
-      "lastVerified": "2026-07-15"
+      "freeLimits": {},
+      "shadowRates": {},
+      "citation": "https://github.blog/changelog/2026-07-01-github-models-is-being-fully-retired-on-july-30-2026/",
+      "lastVerified": "2026-08-10"
     },
     "gemini": {
-      "label": "Google Gemini (gemini-2.0-flash)",
+      "label": "Google Gemini (gemini-3.6-flash)",
       "kind": "llm",
-      "freeLimits": { "requestsPerDay": 1500, "requestsPerMinute": 15 },
-      "shadowRates": { "inputPerMillionTokensMicroUsd": 100000, "outputPerMillionTokensMicroUsd": 400000 },
+      "freeLimits": {},
+      "shadowRates": {},
+      "estimated": true,
       "citation": "https://ai.google.dev/gemini-api/docs/rate-limits",
-      "lastVerified": "2026-07-15"
+      "lastVerified": "2026-08-10"
     },
     "grok": {
       "label": "xAI Grok",

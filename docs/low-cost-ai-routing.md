@@ -18,8 +18,7 @@ ProjectHub stays grounded-first and free-provider-first:
 2. GCP VM API (`server-gemini.js`) always returns deterministic recruiter-safe answers for factual/profile/project questions.
 3. For open-ended questions, the API walks a priority network of free providers:
    - Cloudflare Workers AI (`@cf/meta/llama-3.2-3b-instruct`)
-   - GitHub Models (`openai/gpt-4o-mini`)
-   - Google Gemini (`gemini-2.0-flash`)
+   - Google Gemini (`gemini-3.6-flash`)
    - xAI Grok (`grok-4.3`) optional
    - OpenAI-compatible (configurable) optional
    - Groq optional, disabled by default, with an explicitly configured current model
@@ -35,7 +34,9 @@ This keeps the widget useful even if every free provider tier is temporarily exh
 
 `llama-3.1-8b-instant` was removed from all runtime defaults before its August 16, 2026 shutdown. ProjectHub does not silently replace it with GPT-OSS because Groq's published free allowance drops from 14,400 requests and 500,000 tokens per day for Llama 8B to 1,000 requests and 200,000 tokens per day for current replacements. The default network now begins with Cloudflare. Groq requires `GROQ_ENABLED=true` plus an explicit non-retired `GROQ_MODEL`; `lib/model-policy.js` blocks known retired model IDs even when an old environment still names one.
 
-Groq is not a single point of failure for agent workflows. ProjectHub deterministically selects and executes local knowledge tools. `OLLAMA_AGENT_ENABLED=true` may use the already-installed local Ollama engine to format that evidence, but the small local model is never treated as authoritative and its output must pass the normal grounded validator. If formatting fails, the deterministic answer is returned directly. General conversation continues through Cloudflare Workers AI, GitHub Models, Gemini, Grok, and the grounded fallback.
+Groq is not a single point of failure for agent workflows. ProjectHub deterministically selects and executes local knowledge tools. `OLLAMA_AGENT_ENABLED=true` may use the already-installed local Ollama engine to copy-edit an already-verified answer, but the small local model is never treated as authoritative and its output must pass the normal grounded validator. If formatting fails, the deterministic answer is returned directly. General conversation continues through Cloudflare Workers AI, Gemini, Grok, and the grounded fallback.
+
+GitHub Models was removed from the active network after its July 30, 2026 retirement. `lib/model-policy.js` hard-blocks the legacy provider definition so a stale environment cannot make retired inference calls. Gemini 2.0 Flash was also replaced with Google's documented stable replacement, `gemini-3.6-flash`.
 
 ---
 

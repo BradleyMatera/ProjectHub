@@ -85,7 +85,7 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
 PORT=3000
 KNOWLEDGE_URL=https://raw.githubusercontent.com/BradleyMatera/ProjectHub/develop/data/recruiter-knowledge.json
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000,https://bradleymatera.github.io,https://bradleymatera.github.io/ProjectHub-dev
-PROVIDER_ORDER=cloudflare,github,gemini,grok
+PROVIDER_ORDER=cloudflare,gemini,grok
 GROQ_ENABLED=false
 GROQ_MODEL=
 AGENT_GROQ_ENABLED=false
@@ -101,12 +101,11 @@ THINK_PUSH_ENABLED=false
 GROQ_API_KEY=
 CLOUDFLARE_ACCOUNT_ID=
 CLOUDFLARE_API_TOKEN=
-GITHUB_MODELS_TOKEN=
 GEMINI_API_KEY=
+GEMINI_MODEL=gemini-3.6-flash
 XAI_API_KEY=
 GROQ_DAILY_LIMIT=0
 CLOUDFLARE_DAILY_LIMIT=50
-GITHUB_DAILY_LIMIT=25
 GEMINI_DAILY_LIMIT=150
 XAI_DAILY_LIMIT=50
 EOF

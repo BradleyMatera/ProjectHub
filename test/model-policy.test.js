@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { groqModelPolicy } = require('../lib/model-policy');
+const { groqModelPolicy, providerPolicy } = require('../lib/model-policy');
 
 test('blocks the August 16 Llama models even when an old environment names them', () => {
   for (const model of ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile']) {
@@ -31,4 +31,14 @@ test('allows an explicitly configured non-retired model', () => {
     reason: null,
     shutdownDate: null
   });
+});
+
+test('hard-blocks GitHub Models after the provider retirement', () => {
+  assert.deepEqual(providerPolicy('github'), {
+    allowed: false,
+    provider: 'github',
+    reason: 'retired-provider',
+    shutdownDate: '2026-07-30'
+  });
+  assert.equal(providerPolicy('gemini').allowed, true);
 });
