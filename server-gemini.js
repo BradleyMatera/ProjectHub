@@ -1788,6 +1788,13 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   const inAwsContext = /aws|lambda|dynamodb|amazon s3|aws amplify|cloudfront|ec2|amazon web services/i.test(lastAssistantLower);
   const inProjectContext = /pokedex|metadata extraction|serverless|ciris|interactive pokedex|projecthub|smokebuddy/i.test(lastAssistantLower);
 
+  if (lastAssistant && /unfamiliar (code|codebase)|new codebase|existing codebase/.test(lowerQuestion)) {
+    return { reply: `${name} reads existing code before changing anything, makes small reviewable changes, debugs carefully, and documents what he learns.` };
+  }
+  if (lastAssistant && /verif(?:y|ies).*ai-generated|trusting.*blind/.test(lastAssistantLower) && /caution|why.*matter|why.*important/.test(lowerQuestion)) {
+    return { reply: `That caution matters because ${name} verifies AI-generated suggestions instead of trusting them blindly, then tests the resulting code.` };
+  }
+
   if (/^\s*(was that|was it|is that)\b/i.test(question) && inKittenContext && /paid|pay|volunteer|money|compensat/.test(lowerQuestion)) {
     return { reply: `Yes, he started in a paid, part-time animal care role for a few months and then continued as a regular volunteer at Mason County Kitten Rescue.` };
   }
