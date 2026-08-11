@@ -17,6 +17,7 @@ const { buildDeterministicAgentResult, parseLocalStyleResponse, shouldUseDetermi
 const { buildLocalConversationMemory, extractCompleteSentences, validateLocalConversationReply } = require('./lib/local-conversation');
 const localModelRouter = require('./lib/local-model-router');
 const { runAgentLoop, probeAgent } = require('./lib/agent-engine');
+const { runLiteAgent } = require('./lib/lite-agent');
 const { buildReasoningPacket, buildSynthesisPacket, estimateTokens } = require('./lib/context-packet');
 const { validateAnswer, validateToolDecision, attemptJsonRepair } = require('./lib/grounding-validator');
 const sessionState = require('./lib/session-state');
@@ -69,6 +70,7 @@ const OLLAMA_AGENT_KEEP_ALIVE = /^-?\d+$/.test(OLLAMA_AGENT_KEEP_ALIVE_RAW)
 
 const AGENT_ENABLED = process.env.AGENT_ENABLED !== 'false';
 const SCOUT_AGENT_ENGINE_ENABLED = process.env.SCOUT_AGENT_ENGINE_ENABLED === 'true';
+const SCOUT_AGENT_MODE = process.env.SCOUT_AGENT_MODE || (SCOUT_AGENT_ENGINE_ENABLED ? 'full' : 'full');
 const FEATURE_PREVIEW_ENABLED = process.env.FEATURE_PREVIEW_ENABLED === 'true';
 const KNOWLEDGE_FILE = path.join(__dirname, process.env.KNOWLEDGE_FILE || 'data/recruiter-knowledge.json');
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://bradleymatera.dev,https://www.bradleymatera.dev,https://bradleymatera.github.io').split(',').map(s => s.trim()).filter(Boolean);
@@ -198,10 +200,11 @@ app.get('/health', async (req, res) => {
     agent: {
       enabled: AGENT_ENABLED,
       scoutEngineEnabled: SCOUT_AGENT_ENGINE_ENABLED,
+      agentMode: SCOUT_AGENT_MODE,
       ollamaControllerEnabled: OLLAMA_AGENT_ENABLED,
       ollamaModel: OLLAMA_AGENT_MODEL,
       deterministicFallback: true,
-      mode: SCOUT_AGENT_ENGINE_ENABLED ? 'scout-agent-engine' : 'ollama-rag-tools-memory',
+      mode: SCOUT_AGENT_ENGINE_ENABLED ? (SCOUT_AGENT_MODE === 'lite' ? 'scout-lite-agent' : 'scout-agent-engine') : 'ollama-rag-tools-memory',
       pinnedModels: localModelRouter.listPinnedModels()
     },
     genModel: process.env.GEN_MODEL || 'qwen2.5:0.5b',
@@ -330,7 +333,8 @@ app.get('/api/agent-probe', async (req, res) => {
     const tags = await localModelRouter.listLocalModels(3000);
     res.json({
       ok: true,
-      engine: SCOUT_AGENT_ENGINE_ENABLED ? 'scout-agent-engine' : 'legacy',
+      engine: SCOUT_AGENT_ENGINE_ENABLED ? (SCOUT_AGENT_MODE === 'lite' ? 'scout-lite-agent' : 'scout-agent-engine') : 'legacy',
+      agentMode: SCOUT_AGENT_MODE,
       model: probe.model,
       reachable: probe.reachable,
       structuredOk: probe.structuredOk,
@@ -3599,8 +3603,12 @@ app.post('/api/chat', async (req, res) => {
     //     This is the primary generative path. The existing deterministic agent and
     //     RAG rephrasing paths below remain as fallbacks when this is disabled or
     //     when the agent loop exhausts its budget and returns fallback:true.
+    //
+    //     SCOUT_AGENT_MODE controls the execution strategy:
+    //       'full' — multi-step model-driven agent loop (775-900 token packets)
+    //       'lite' — harness pre-routes tools, single generation (150-250 token packets)
     if (SCOUT_AGENT_ENGINE_ENABLED && !mustStayGrounded(userMessage, history)) {
-      pipeline.push('scout-agent-engine:eligible');
+      pipeline.push(`scout-agent-${SCOUT_AGENT_MODE}:eligible`);
       try {
         // Retrieve evidence via BM25 for the agent context packet
         const understood = understandQuery(userMessage, history, ragChunks || buildRagChunks(knowledge));
@@ -3621,59 +3629,80 @@ app.post('/api/chat', async (req, res) => {
         // Get server-owned structured conversation state
         const convState = sessionState.getState(sessionId);
 
-        const agentResult = await runAgentLoop({
-          question: userMessage,
-          conversationState: convState,
-          evidence,
-          knowledge,
-          sessionId,
-          model: localModelRouter.agentModel()
-        });
+        // Select execution strategy based on SCOUT_AGENT_MODE
+        const agentResult = SCOUT_AGENT_MODE === 'lite'
+          ? await runLiteAgent({
+              question: userMessage,
+              conversationState: convState,
+              evidence,
+              knowledge,
+              sessionId,
+              model: localModelRouter.agentModel()
+            })
+          : await runAgentLoop({
+              question: userMessage,
+              conversationState: convState,
+              evidence,
+              knowledge,
+              sessionId,
+              model: localModelRouter.agentModel()
+            });
 
         // Meter each Ollama call
         for (const evt of (agentResult.events || [])) {
-          if (evt.type === 'reasoning_call' || evt.type === 'synthesis_call') {
-            meterEvent({ source: 'ollama', kind: 'llm', meta: { model: agentResult.model, agentEngine: true, step: evt.step } });
+          if (evt.type === 'reasoning_call' || evt.type === 'synthesis_call' || evt.type === 'lite_generate_call' || evt.type === 'lite_repair_call') {
+            meterEvent({ source: 'ollama', kind: 'llm', meta: { model: agentResult.model, agentEngine: true, mode: SCOUT_AGENT_MODE, step: evt.step } });
           }
-          if (evt.type === 'tool_result') {
-            meterEvent({ source: 'agent-engine', kind: 'tool', meta: { tool: evt.tool, agentEngine: true } });
+          if (evt.type === 'tool_result' || evt.type === 'lite_tool_result') {
+            meterEvent({ source: 'agent-engine', kind: 'tool', meta: { tool: evt.tool, agentEngine: true, mode: SCOUT_AGENT_MODE } });
           }
         }
 
         if (!agentResult.fallback && agentResult.reply) {
-          pipeline.push(`scout-agent-engine:ollama-agent:${agentResult.outcome || 'success'}`);
+          pipeline.push(`scout-agent-${SCOUT_AGENT_MODE}:ollama-agent:${agentResult.outcome || 'success'}`);
           reply = agentResult.reply;
-          provider = 'ollama-agent';
+          provider = SCOUT_AGENT_MODE === 'lite' ? 'ollama-lite' : 'ollama-agent';
           model = agentResult.model;
           agentMeta = {
             used: true,
-            engine: 'scout-agent',
+            engine: SCOUT_AGENT_MODE === 'lite' ? 'scout-lite' : 'scout-agent',
+            agentMode: SCOUT_AGENT_MODE,
             tools: (agentResult.toolResults || []).map(t => t.tool),
             steps: agentResult.steps.length,
             contextTokens: agentResult.contextTokens,
             validation: agentResult.validation?.verdict || null,
             outcome: agentResult.outcome || 'accepted',
             languageLayer: 'ollama',
-            languageModel: agentResult.model
+            languageModel: agentResult.model,
+            ...(SCOUT_AGENT_MODE === 'lite' ? {
+              operation: agentResult.operation,
+              queryRewritten: agentResult.rewritten,
+              rewrittenQuery: agentResult.rewrittenQuery
+            } : {})
           };
           agentEvents = agentResult.events;
           generated = true;
         } else {
-          pipeline.push(`scout-agent-engine:fallback:${agentResult.fallback ? 'true' : 'false'}`);
+          pipeline.push(`scout-agent-${SCOUT_AGENT_MODE}:fallback:${agentResult.fallback ? 'true' : 'false'}`);
           // Store events even on fallback for diagnostics
           agentEvents = agentResult.events;
           agentMeta = {
             used: true,
-            engine: 'scout-agent',
-            tools: agentResult.toolResults.map(t => t.tool),
+            engine: SCOUT_AGENT_MODE === 'lite' ? 'scout-lite' : 'scout-agent',
+            agentMode: SCOUT_AGENT_MODE,
+            tools: (agentResult.toolResults || []).map(t => t.tool),
             steps: agentResult.steps.length,
             contextTokens: agentResult.contextTokens,
             validation: 'fallback',
-            fallbackReason: agentResult.events?.find(e => e.type === 'agent_fallback')?.reason || 'unknown'
+            fallbackReason: agentResult.events?.find(e => e.type === 'agent_fallback' || e.type === 'lite_fallback')?.reason || 'unknown',
+            ...(SCOUT_AGENT_MODE === 'lite' ? {
+              operation: agentResult.operation,
+              queryRewritten: agentResult.rewritten
+            } : {})
           };
         }
       } catch (e) {
-        pipeline.push(`scout-agent-engine:error:${String(e?.message || e).slice(0, 60)}`);
+        pipeline.push(`scout-agent-${SCOUT_AGENT_MODE}:error:${String(e?.message || e).slice(0, 60)}`);
       }
     } else if (!mustStayGrounded(userMessage, history)) {
       pipeline.push('mustStayGrounded:false');

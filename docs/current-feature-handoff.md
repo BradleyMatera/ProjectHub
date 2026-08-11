@@ -130,17 +130,29 @@ An earlier private-preview deployment at commit `a4c8bd4` passed the then-curren
 ## Known limitations and unfinished acceptance
 
 - Commit `0e0c606` still needs the 132-input live private-preview run described above.
+- LITE mode (`lib/lite-agent.js`) has been implemented, tested on M2 Pro and e2-micro, and committed. It is selected by `SCOUT_AGENT_MODE=lite`. FULL mode remains the default.
+- LITE mode on the e2-micro achieves 32% generative rate (project and skill questions work at 2–5s; larger packets and adversarial questions fall back deterministically). 0 forbidden claims in final output across all tested adversarial cases.
 - Local Ollama on an e2-micro is useful but inconsistent; validators and deterministic grounding are part of the product, not temporary scaffolding.
 - Production retained only a capped subset of all-time requests, so the suite cannot reproduce missing conversations.
 - The public frontend and production backend have not been changed by this feature branch.
 - The canonical `PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md` has been restored with the required feature, development staging, and production gates.
 
+## LITE mode files
+
+- `lib/lite-agent.js` — compact agent pipeline (rewrite → pre-route → tool → compress → generate → validate → fallback)
+- `scripts/eval-lite.js` — LITE evaluation harness (28 questions across 9 categories)
+- `data/lite-eval-results.json` — latest LITE eval results
+- `docs/local-ai-runtime.md` — FULL vs LITE comparison, configuration, and measured results
+
 ## Files central to continuation
 
-- `server-gemini.js` — orchestration, unknown-technology answers, memory, validation, endpoints.
+- `server-gemini.js` — orchestration, unknown-technology answers, memory, validation, endpoints, mode selection.
+- `lib/lite-agent.js` — LITE agent pipeline.
 - `lib/query-understanding.js` — protected terms, intent, contextual rewrite.
 - `lib/rrf.js` — local reciprocal-rank fusion.
+- `lib/grounding-validator.js` — shared validation (FULL and LITE).
 - `test/rrf.test.js` and `test/query-understanding.test.js` — retrieval regressions.
 - `scripts/eval-local-api.js` — 61-case local API acceptance.
+- `scripts/eval-lite.js` — 28-case LITE evaluation.
 - `test-production-conversations.py` — sanitized 132-input replay.
 - `deploy-agent-preview.sh`, `scripts/open-agent-preview.sh`, and `deploy/projecthub-agent-preview.service` — private preview path.
