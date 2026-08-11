@@ -59,7 +59,7 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   ollama pull '$MODEL'
   timeout 120 curl --fail --silent --show-error \
     --header 'Content-Type: application/json' \
-    --data '{"model":"$MODEL","prompt":"","stream":false,"keep_alive":-1,"options":{"num_ctx":1536,"num_predict":1}}' \
+    --data '{\"model\":\"$MODEL\",\"prompt\":\"\",\"stream\":false,\"keep_alive\":-1,\"options\":{\"num_ctx\":1536,\"num_predict\":1}}' \
     http://127.0.0.1:11434/api/generate >/dev/null
 
   echo 'Ollama preview resources:'

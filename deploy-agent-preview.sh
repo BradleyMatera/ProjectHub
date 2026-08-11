@@ -106,7 +106,7 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
 
   timeout 120 curl --fail --silent --show-error \
     --header 'Content-Type: application/json' \
-    --data '{"model":"qwen2.5:0.5b","prompt":"","stream":false,"keep_alive":-1,"options":{"num_ctx":1536,"num_predict":1}}' \
+    --data '{\"model\":\"qwen2.5:0.5b\",\"prompt\":\"\",\"stream\":false,\"keep_alive\":-1,\"options\":{\"num_ctx\":1536,\"num_predict\":1}}' \
     http://127.0.0.1:11434/api/generate >/dev/null
 
   sudo install -m 644 '$REMOTE_TMP/projecthub-agent-preview.service' /etc/systemd/system/$SERVICE_NAME.service
