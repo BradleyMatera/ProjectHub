@@ -21,6 +21,7 @@ ProjectHub is an embeddable, AI-powered chat widget that showcases Bradley Mater
 - **Think Mode:** A local self-improvement loop runs every 20 minutes. It stashes weak answers, asks Ollama for improved grounded wording, scores and judges candidates, and retains only validated improvements in the local learned file. It never writes to GitHub or another external system.
 - **Test suites:** 6 legacy API suites (adversarial, coverage, load/stress, regression, edge cases, full system verification) plus 63 checked-in Node unit tests, a 61-request local API evaluation, a 132-input conversation regression (126 production-retained inputs plus a six-turn unknown-technology repair), and a 40-query retrieval golden set.
 - **Current branch/focus:** `feat/agent-systems-network` — local-only Ollama conversation, grounded agent tools, coherent memory, strict validation, and a private SSH-tunneled preview
+- **Continuation status:** Read `docs/current-feature-handoff.md` before editing or deploying this branch. Commit `0e0c606` passed local acceptance but still needs the 132-input live private-preview run; production is unchanged.
 
 ---
 
@@ -130,6 +131,7 @@ Live widget URL for embedding:
 | `local-test.html` | Local manual test page for the widget (uses local `ProjectHub.js`) |
 | `live-test.html` | Cache-busting test of the live GitHub Pages `ProjectHub.js` |
 | `docs/` | Detailed on-demand guides |
+| `docs/current-feature-handoff.md` | Exact active-branch state, corpus provenance, validation evidence, limitations, and next commands |
 | `.github/copilot-instructions.md` | Redirect to this file |
 | `CLAUDE.md` | Redirect to this file |
 
@@ -201,6 +203,7 @@ Add an entry to `data.js` `projects` array and mirror it in `ProjectHub.js` if t
 | **Release, staging, branching, or rollback** | **`PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md`** |
 | **Branch protection or environment setup** | **`docs/branch-protection-setup.md`** |
 | Bounded agent tools, Ollama fallback, or private preview | `docs/agent-systems.md` |
+| Continue the active local-only feature branch | `docs/current-feature-handoff.md` |
 | Understand data flow, hosting, or backend migration | `docs/architecture-overview.md` |
 | Add a project, CodePen, suggestion, or update data | `docs/data-guide.md` |
 | Add/modify intents, AI fallback, response logic | `docs/api-guide.md` |
@@ -223,6 +226,7 @@ Add an entry to `data.js` `projects` array and mirror it in `ProjectHub.js` if t
 8. `docs/local-ai-runtime.md` — Ollama runtime, retrieval, memory, validation, and local learning.
 9. `docs/branch-protection-setup.md` — Branch protection rules and GitHub environment configuration.
 10. `docs/agent-systems.md` — Local agent tools, constrained Ollama control, and the private SSH-tunneled feature preview.
+11. `docs/current-feature-handoff.md` — Current commit, completed evidence, pending live acceptance, and continuation checklist.
 
 ---
 

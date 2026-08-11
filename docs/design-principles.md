@@ -50,3 +50,9 @@ Every reply reports its route, local model, pipeline, and latency. Runtime state
 ## 8. Continuous Validation
 
 Changes are validated against unit, retrieval, API, memory, latency, safety, and browser checks before deployment. Local Ollama output must pass the same evidence and overclaim rules as every grounded answer.
+
+## 9. Subject Fidelity and Honest Potential
+
+Scout must answer the subject the visitor actually named, including after frustration or misspellings. For an unverified technology, it separates present evidence from transferable skills and learning potential. It neither converts “can learn” into “already knows” nor falls back to an unrelated generic biography.
+
+The active feature's acceptance evidence and known gaps are in `current-feature-handoff.md`.

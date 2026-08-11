@@ -1,0 +1,146 @@
+# Scout Local-Only Feature Handoff
+
+**Updated:** 2026-08-11
+
+**Working branch:** `feat/agent-systems-network`
+
+**Code baseline:** `0e0c606 fix: keep unknown technology conversations specific`
+
+**Release state:** committed locally, not promoted to `develop` or `master`, and the newest commit has not been deployed to the private preview. Production is unchanged.
+
+This is the continuation source of truth for the local-only Scout work. Read `AGENTS.md` first, then this file before changing or deploying the feature.
+
+## Goal and non-negotiable constraints
+
+Scout must be useful, natural, coherent, and honest while remaining free and local-only. Runtime model inference uses the Ollama model `qwen2.5:0.5b` on the existing GCP e2-micro VM. Do not add Groq, OpenAI, Gemini, Cloudflare AI, hosted embeddings, provider switches, or cloud-model fallbacks. The public agent has read-only evidence tools and no arbitrary web, shell, message, or write capability.
+
+No model can guarantee a correct answer to every possible question. The production contract is instead: always return a relevant, useful response; distinguish verified skill from learnability; preserve the user's subject; never invent evidence; and fall back deterministically if Ollama is slow or invalid.
+
+## Current request path
+
+```text
+visitor message + session history
+  -> safety and false-claim checks
+  -> normalization, protected-term typo handling, intent classification
+  -> direct BM25 for standalone questions
+  -> contextual BM25 views + local RRF (k=60) for follow-ups
+  -> deterministic grounded answer and optional read-only agent tool
+  -> bounded Ollama phrasing for eligible open-ended conversation
+  -> entity, number, source, safety, length, and overclaim validation
+  -> validated local answer or ready grounded answer
+  -> five-turn memory and topic stance update
+```
+
+Important implementation details:
+
+- `lib/query-understanding.js` protects unfamiliar technology names such as COBOL from typo correction, detects frustration, and expands learning/debugging questions.
+- `lib/rrf.js` fuses literal, expanded, and contextual BM25 rankings only when history makes those views useful. Standalone retrieval remains BM25.
+- `server-gemini.js` gives a direct, technology-specific assessment for unverified stacks. It says what is not proven, what transfers, and what learning would require.
+- Literal requests such as `say cobol` preserve `COBOL` and are not replaced by a generic recruiter pitch.
+- Frustration repair acknowledges the conversational failure and answers the actual subject retained in the five-turn context.
+
+## Why RRF is contextual only
+
+The supplied BM25/RRF article and the paper *From BM25 to Corrective RAG: Benchmarking Retrieval Strategies for Text-and-Table Documents* informed this design. The useful local result was reciprocal-rank fusion over complementary lexical query views. An offline experiment applying correlated RRF views to every standalone query lowered MRR from `0.971` to about `0.942`, so global RRF was rejected. No dense service, cross-encoder, HyDE generator, or cloud embedding dependency was added.
+
+## Production-derived regression corpus
+
+A read-only production audit retrieved `stats.json` and seven backups from VM `ollama-api-gate` in project `ollamaapi-501903`, zone `us-central1-a`.
+
+- The all-time request counter was 195, but retained logs are capped; all 195 original conversations are not recoverable.
+- Recoverable material contained 81 complete input/reply turns across 26 sessions, 40 older prompt-only records in reconstructable order, and five meaningful older complete request records.
+- One duplicate and one truncated mirror were excluded.
+- The checked-in suite therefore replays 126 meaningful production-retained inputs, plus six reported COBOL/frustration turns: 132 inputs across 33 scenarios.
+- Historical replies are not treated as golden output. Assertions require improved semantic behavior, local-only sources, privacy, variety, and latency.
+- Production session IDs, timestamps, referrers, contact data, and historical reply text were not committed. The raw temporary export was left outside the repository under `/tmp/projecthub-prod-conversations.O2n36o` and must not be committed.
+
+## COBOL regression contract
+
+The six-turn scenario must remain direct and topic-specific:
+
+1. `YOUR MAKING ME MAD!` — apologize for repeating a generic pitch and invite a specific concern.
+2. `Can he debug cobol?` — do not claim day-one COBOL ability; explain transferable debugging and the learning gap.
+3. `Can he learn cobol?` — answer yes, supported by verified learning behavior, without claiming current COBOL skill.
+4. `yeah but he CAN learn cobol right?` — confirm directly with varied wording.
+5. `say cobol` — answer with correctly capitalized `COBOL`.
+6. The final misspelled request for real feedback — retain COBOL and give a candid specific assessment, not the generic bio.
+
+Do not add COBOL to `data/recruiter-knowledge.json` as a verified skill. This regression tests reasoning about an unfamiliar technology, not a new resume claim.
+
+## Verified results at the code baseline
+
+The following passed locally on commit `0e0c606`:
+
+| Check | Result |
+|---|---|
+| `node --check server-gemini.js` | passed |
+| `npm test` | 63/63 |
+| `npm run test:retrieval` | passed |
+| `npm run eval-retrieval` | Recall@6 `1.000` (40/40), MRR@6 `0.971` |
+| `PROJECTHUB_API_URL=http://127.0.0.1:3199 npm run eval:local-api` | 61/61; p50 1 ms, p95 2 ms, max 24 ms |
+| `python3 test-production-conversations.py --url http://127.0.0.1:3199/api/chat` | 33/33 scenarios, 132/132 inputs |
+| `npm run build` | passed |
+
+An earlier private-preview deployment at commit `a4c8bd4` passed the then-current 126-input live replay: p50 `0.12s`, p95 `10.488s`, max `13.265s`, and no request over 15 seconds. Every observed response source was grounded/local. This proves the end-to-end fallback system, not that every prompt was successfully phrased by Ollama: the small model still often times out or fails validation.
+
+## Exact next-agent checklist
+
+1. Confirm the branch and preserve unrelated work:
+
+   ```bash
+   git status --short --branch
+   git log -5 --oneline
+   ```
+
+2. Re-run the fast local acceptance checks:
+
+   ```bash
+   node --check server-gemini.js
+   npm test
+   npm run eval-retrieval
+   npm run build
+   ```
+
+3. Deploy the current feature commit only to the private loopback preview:
+
+   ```bash
+   bash deploy-agent-preview.sh
+   ```
+
+4. In a second terminal, open an SSH tunnel:
+
+   ```bash
+   AGENT_PREVIEW_LOCAL_PORT=3320 bash scripts/open-agent-preview.sh
+   ```
+
+5. Run the full live acceptance through the tunnel:
+
+   ```bash
+   PROJECTHUB_API_URL=http://127.0.0.1:3320 npm run eval:local-api
+   python3 test-production-conversations.py \
+     --url http://127.0.0.1:3320/api/chat \
+     --delay 2.5 \
+     --verbose
+   ```
+
+6. Manually replay the six COBOL turns in the preview UI and confirm the route display does not replace the answer with generic boilerplate.
+7. Stop the tunnel. Do not run `deploy-gcp.sh` and do not merge to `master` from this feature branch.
+8. Open a PR from this feature branch to `develop`. Validate the development backend and `ProjectHub-dev` frontend before any `develop` to `master` release PR.
+
+## Known limitations and unfinished acceptance
+
+- Commit `0e0c606` still needs the 132-input live private-preview run described above.
+- Local Ollama on an e2-micro is useful but inconsistent; validators and deterministic grounding are part of the product, not temporary scaffolding.
+- Production retained only a capped subset of all-time requests, so the suite cannot reproduce missing conversations.
+- The public frontend and production backend have not been changed by this feature branch.
+- The canonical `PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md` has been restored with the required feature, development staging, and production gates.
+
+## Files central to continuation
+
+- `server-gemini.js` — orchestration, unknown-technology answers, memory, validation, endpoints.
+- `lib/query-understanding.js` — protected terms, intent, contextual rewrite.
+- `lib/rrf.js` — local reciprocal-rank fusion.
+- `test/rrf.test.js` and `test/query-understanding.test.js` — retrieval regressions.
+- `scripts/eval-local-api.js` — 61-case local API acceptance.
+- `test-production-conversations.py` — sanitized 132-input replay.
+- `deploy-agent-preview.sh`, `scripts/open-agent-preview.sh`, and `deploy/projecthub-agent-preview.service` — private preview path.

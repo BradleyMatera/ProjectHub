@@ -61,8 +61,8 @@ Plain strings shown in the chat dropdown:
 1. Edit `data.js`.
 2. If `ProjectHub.js` still contains the inlined data module, mirror the change there.
 3. Open `local-test.html` locally and verify the new data appears in dropdowns and responses.
-4. Commit and push to `master`.
-5. Confirm on GitHub Pages after the build finishes.
+4. Commit on a feature branch created from `develop` and open a PR to `develop`.
+5. Verify on development staging before opening a release PR to `master`.
 
 ## Recruiter Knowledge
 
@@ -87,8 +87,8 @@ The backend `buildRagChunks` adds these to the retriever, so open-ended question
 
 1. Run `node scripts/build-knowledge.js` to regenerate `sourceMaterial` from source files.
 2. Edit canonical sections in `data/recruiter-knowledge.json` manually if needed.
-3. Commit and push the JSON.
-4. The backend reads the raw GitHub URL; wait for the cache to refresh or restart the API.
+3. Commit the JSON through the `develop` and staging flow.
+4. Restart or redeploy the appropriate development API and verify before production promotion.
 
 ## learnedAnswers
 
@@ -118,3 +118,6 @@ In `buildGroundedFallbackPayload`, the false-claim check runs BEFORE the learned
 - Make sure every `repo` points to a valid `https://github.com/BradleyMatera/...` URL.
 - Verify JSON validity before pushing: `python3 -c "import json; json.load(open('data/recruiter-knowledge.json'))"`
 - Never add false-claim answers to `learnedAnswers` manually — Think Mode handles this with safety filtering.
+- Do not add an unfamiliar technology such as COBOL to verified skills merely because Scout says Bradley can learn it. Learnability is an assessment; skills remain evidence-backed facts.
+
+See `current-feature-handoff.md` for the active COBOL regression and production-derived test provenance.

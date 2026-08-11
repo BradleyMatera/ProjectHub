@@ -11,6 +11,7 @@ ProjectHub is Bradley Matera's embeddable portfolio and recruiter assistant. The
 - Answers questions about Bradley's projects, skills, experience, education, and target roles.
 - Corrects common typos and rewrites short follow-ups using recent conversation context.
 - Retrieves verified facts with local BM25 search.
+- Fuses multiple local BM25 views with RRF for context-dependent follow-ups while leaving stronger standalone rankings unchanged.
 - Retains five recent turns plus topic stances for coherent multi-turn conversation.
 - Uses deterministic local tools for project comparison, role evidence, recruiter briefs, and interview questions.
 - Uses `qwen2.5:0.5b` through local Ollama for natural open-ended phrasing.
@@ -72,12 +73,14 @@ curl "http://127.0.0.1:3000/api/retrieve?q=what%20did%20he%20build"
 | `data/recruiter-knowledge.json` | Bundled verified recruiter facts |
 | `lib/query-understanding.js` | Normalization, typo correction, intent, and contextual rewrite |
 | `lib/bm25.js` | Offline lexical retrieval |
+| `lib/rrf.js` | Contextual reciprocal-rank fusion over local BM25 rankings |
 | `lib/local-conversation.js` | Prompt memory and generated-answer validation |
 | `lib/agent-tools.js` | Read-only evidence tools |
 | `lib/agent-fallback.js` | Deterministic local agent planner |
 | `agent-preview/` | Private feature-preview frontend |
 | `analytics/` | Carbon analytics dashboard source |
 | `docs/local-ai-runtime.md` | Runtime design and verification |
+| `docs/current-feature-handoff.md` | Current branch state, evidence, limitations, and exact continuation steps |
 | `PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md` | Canonical release process |
 
 ## Private feature preview
@@ -101,6 +104,8 @@ The deploy script requires a clean `feat/*` branch, runs the automated tests, pr
 6. Trigger the GitHub Pages workflow.
 
 Do not publish feature work directly to production. See the canonical release specification for acceptance and rollback details.
+
+The current feature branch's exact test evidence and unfinished private-preview acceptance are recorded in `docs/current-feature-handoff.md`.
 
 ## Honest capability boundary
 

@@ -17,7 +17,7 @@ flowchart LR
     G -- yes --> H[GCP recruiter chat API]
     H --> M[(In-memory session cache)]
     H --> R[Query understanding: normalize, typo correct, intent classify, contextual rewrite]
-    R --> S[BM25 index search]
+    R --> S[Standalone BM25 or contextual BM25 plus RRF]
     S --> X[RAG context]
     H --> I[Local Ollama: qwen2.5 0.5B]
     M --> I
@@ -41,7 +41,7 @@ flowchart LR
 | `ui.js` | Chat DOM creation, event handling, styling, loading spinner. |
 | `utils.js` | GitHub repo metadata fetcher. |
 | GCP recruiter chat API | `server-gemini.js` runs Node and loopback-only Ollama on an e2-micro VM. Local Qwen phrases open-ended answers; deterministic tools handle evidence-heavy questions. Every generated reply must pass source, entity, number, safety, and overclaim validation. |
-| Retrieval pipeline | `lib/rag-chunks.js` flattens knowledge into chunks. `lib/bm25.js` scores them locally. `lib/query-understanding.js` corrects typos, classifies intent, and rewrites contextual follow-ups. |
+| Retrieval pipeline | `lib/rag-chunks.js` flattens knowledge into chunks. `lib/bm25.js` scores them locally. `lib/query-understanding.js` protects technology terms, corrects typos, classifies intent, and rewrites follow-ups. `lib/rrf.js` fuses contextual lexical views when history is present. |
 | Stance consistency | The first answer sentence is recorded per topic and injected into later prompts to prevent contradictions. 60-minute TTL, cap 12 per session. |
 | Session memory | The five newest sanitized user/assistant turns are injected into local prompts. The frontend also sends the five latest turns. |
 | Recruiter knowledge | Bundled `data/recruiter-knowledge.json`; local-only mode makes no runtime knowledge fetch. |
@@ -74,7 +74,7 @@ The backend lives in this repo as `server-gemini.js` and is deployed to a GCP VM
 
 - **Server:** `server-gemini.js` — Express API serving local retrieval, local inference, memory, tools, and validation.
 - **Generative layer:** Pre-warmed `qwen2.5:0.5b` through loopback-only Ollama, with a 12.5-second model cap and 64-token output limit so the full request stays inside 15 seconds.
-- **Retrieval pipeline:** Local Okapi BM25 with query understanding. BM25 Recall@6=1.000 on the current 40-query golden eval set.
+- **Retrieval pipeline:** Local Okapi BM25 with query understanding. Contextual follow-ups fuse literal, expanded, and rewritten rankings with RRF (`k=60`); standalone queries retain direct BM25 because global RRF reduced offline MRR. Recall@6=1.000 and MRR@6=0.971 on the current 40-query golden set.
 - **Stance consistency:** Per-session topic stances injected into LLM prompts to prevent contradictions across turns.
 - **Think Mode:** Evaluates weak answers with local Ollama and stores validated improvements in the local learned file; it performs no external writes.
 - **Safety system:** Safety regex blocks injection/XSS/social engineering. False-claim regex blocks exaggerated claims. Both run BEFORE learned answers in `buildGroundedFallbackPayload`.
@@ -82,7 +82,7 @@ The backend lives in this repo as `server-gemini.js` and is deployed to a GCP VM
 - **Session memory:** Five sanitized turns plus up to 12 topic stances per session.
 - **Cost:** GCP Always Free e2-micro VM; no hosted LLM account or AI credits.
 - **Agent:** The assistant is named **Scout** and uses the persona in `knowledge.agent`.
-- **Test suites:** 6 legacy API suites plus 58 checked-in Node unit tests, a 55-request local API evaluation, and a 40-query BM25 golden eval.
+- **Test suites:** 6 legacy API suites plus 63 checked-in Node unit tests, a 61-request local API evaluation, a sanitized 132-input conversation regression, and a 40-query retrieval golden eval.
 
 ---
 
@@ -93,3 +93,5 @@ The backend lives in this repo as `server-gemini.js` and is deployed to a GCP VM
 - Files should stay readable in the browser without transpilation.
 - Backend must fit within GCP Always Free limits.
 - AI layer must remain local-only and free, with grounded knowledge as the final fallback.
+
+Current release state and continuation steps are in `current-feature-handoff.md`.

@@ -2,6 +2,8 @@
 
 **Read when:** You need step-by-step workflows for routine development, testing, publishing, or maintenance.
 
+For the active local-only Scout branch, read `current-feature-handoff.md` first. It records the exact baseline, sanitized production replay, private preview commands, and unfinished live acceptance.
+
 ---
 
 ## Add a New Project
@@ -17,7 +19,7 @@
    - `apiEndpoint` (string or `null`)
 3. If `ProjectHub.js` still contains the inlined data module, mirror the change there.
 4. Test locally by opening `local-test.html` or any HTML file that loads the widget.
-5. Commit and push to `master`; GitHub Pages will redeploy.
+5. Commit on a feature branch from `develop`, open a PR to `develop`, and verify staging before a release PR to `master`.
 
 ## Add a New CodePen
 

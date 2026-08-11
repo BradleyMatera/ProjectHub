@@ -2,6 +2,8 @@
 
 Scout performs model inference only through Ollama on the ProjectHub VM. The default model is `qwen2.5:0.5b`; it stays warm to avoid repeated load time and uses one inference thread so Node retains CPU time for request deadlines. Chat generation is cancelled inside Ollama after 10 seconds, and a separate 11-second route deadline returns the grounded answer even if the HTTP client is slow to surface the cancellation. This keeps the complete request inside the 15-second visitor budget without leaving stale generations queued.
 
+The exact current commit, production-corpus provenance, passing results, and pending private-preview run are maintained in `current-feature-handoff.md`.
+
 ## How Scout stays useful with a small model
 
 1. Query understanding normalizes text, corrects common typos, classifies intent (including frustration), expands transferable-skill language, and rewrites short follow-ups with conversation context.

@@ -42,4 +42,6 @@ curl http://127.0.0.1:3000/health
 curl http://127.0.0.1:3000/api/diagnose
 ```
 
-For feature work, use `deploy-agent-preview.sh` and `scripts/open-agent-preview.sh`. The preview service binds to `127.0.0.1:3200` and has no public route. Production deployment still follows `PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md`.
+For feature work, use `deploy-agent-preview.sh` and `scripts/open-agent-preview.sh`. The preview service binds to `127.0.0.1:3200` and has no public route. Its higher replay rate limit is private-preview-only; public limits are unchanged.
+
+The current code baseline has not yet completed its 132-input live preview run. Follow `current-feature-handoff.md` exactly. Production deployment remains gated by a PR to `develop`, development staging, then a PR to `master` as defined by `../PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md`.

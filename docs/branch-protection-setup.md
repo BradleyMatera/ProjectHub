@@ -2,6 +2,8 @@
 
 This guide describes the manual GitHub Settings actions required to enforce the release discipline defined in `PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md`.
 
+Keep the protections below and the `feature -> develop -> staging -> master` sequence intact; see `current-feature-handoff.md` for the active branch's current release boundary.
+
 Run `scripts/setup-branch-protection.sh` to configure everything via the GitHub API, or follow the manual steps below.
 
 ---

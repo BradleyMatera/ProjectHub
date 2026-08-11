@@ -59,6 +59,9 @@
 - Run with: `node --test test/<file>.test.js` or `npm run test:retrieval`
 - Each test file should cover: happy path, edge cases, error handling
 - Tests must be self-contained — no network calls, no file system reads beyond the test fixture
+- Preserve explicit user subjects through normalization and contextual rewrite. Add protected terms for known typo-correction collisions and regression-test literal requests.
+- Do not turn an unfamiliar technology into a verified skill. Test the distinction between current evidence, transferable technique, and learnability.
+- Keep RRF limited to complementary contextual rankings unless the golden evaluation proves a broader use improves both recall and MRR.
 
 ## scripts/ Conventions
 
@@ -71,3 +74,5 @@
 ## Documentation Rule
 
 When changing a feature, update the relevant `docs/` guide and `AGENTS.md` if navigation/quick-reference info changes.
+
+For continuation of the active local-only agent branch, update `current-feature-handoff.md` with the exact commit, deployment state, test evidence, and remaining work.
