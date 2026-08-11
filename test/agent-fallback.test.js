@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { buildDeterministicAgentResult, projectNamesFromQuestion } = require('../lib/agent-fallback');
+const { buildDeterministicAgentResult, parseLocalStyleResponse, projectNamesFromQuestion } = require('../lib/agent-fallback');
 
 const knowledge = {
   summary: { honestGaps: ['No production DSA mentorship.'] },
@@ -36,4 +36,12 @@ test('deterministic agent matches role evidence without a hiring claim', () => {
 test('deterministic agent produces grounded interview prompts', () => {
   const result = buildDeterministicAgentResult('Give me interview questions about his AWS work', knowledge);
   assert.match(result.reply, /structured training from production experience/i);
+});
+
+test('local style response accepts only a constrained presentation hint', () => {
+  assert.equal(parseLocalStyleResponse('{"style":"brief"}', 'Give me a brief comparison'), 'brief');
+  assert.equal(parseLocalStyleResponse('{"style":"brief"}', 'Compare these projects'), 'standard');
+  assert.equal(parseLocalStyleResponse('{"style":"standard"}', 'Compare these projects'), 'standard');
+  assert.equal(parseLocalStyleResponse('{"style":"rewrite","reply":"invented"}', 'Compare these projects'), null);
+  assert.equal(parseLocalStyleResponse('ProjectSage is better', 'Compare these projects'), null);
 });

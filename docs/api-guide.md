@@ -84,7 +84,7 @@ Project comparisons, job-description matching, role evidence, recruiter briefs, 
 2. `lib/agent-runtime.js` validates tool names and JSON arguments, caps execution at two rounds and three tool calls, and fails closed on unknown tools.
 3. An explicitly enabled, non-retired Groq model may propose tool calls and synthesize the final answer. Groq planning is disabled by default, and ProjectHub never enables Groq built-in web search, code execution, remote MCP, or write-capable tools on the public route.
 4. If Groq is disabled, unavailable, deprecated, out of quota, or rejected, ProjectHub deterministically selects and executes the same tools itself. This removes Groq as a single point of failure.
-5. Optional local Ollama formatting can rewrite the deterministic answer using `OLLAMA_AGENT_MODEL`; the rewrite is rejected unless it passes the same grounded validator. The deterministic answer remains authoritative.
+5. Optional local Ollama control can choose only `standard` or `brief` using `OLLAMA_AGENT_MODEL`. The factual answer always comes from the deterministic tools and existing deterministic shape rules.
 6. The final text runs through the existing false-claim, slop, number, and grounded-source validator.
 7. If the bounded agent path cannot produce a valid answer, the existing free multi-provider network runs unchanged. The deterministic grounded answer remains the final fallback.
 
@@ -203,10 +203,10 @@ Key variables on the GCP VM (`.env`):
 | `AGENT_GROQ_ENABLED` | Allow an opted-in Groq provider to plan bounded tool calls (default `false`) |
 | `GROQ_AGENT_MODEL` | Groq tool-calling model; defaults to `GROQ_MODEL` |
 | `AGENT_TIMEOUT_MS` | Timeout for each Groq agent-model request, clamped to 1-10 seconds (default `6000`) |
-| `OLLAMA_AGENT_ENABLED` | Allow local Ollama to format deterministic agent evidence; never required for correctness (enabled on prepared hosts) |
-| `OLLAMA_AGENT_MODEL` | Local evidence formatter model (prepared hosts use `gemma3:270m`) |
-| `OLLAMA_AGENT_TIMEOUT_MS` | Local formatter timeout, clamped to 1-15 seconds (default `12000`) |
-| `OLLAMA_AGENT_CONTEXT` | Formatter context window, clamped to 512-4096 tokens (default `1024`) |
+| `OLLAMA_AGENT_ENABLED` | Allow local Ollama to choose an allowlisted presentation style; never required for correctness (enabled on prepared hosts) |
+| `OLLAMA_AGENT_MODEL` | Local style-controller model (prepared hosts use `gemma3:270m`) |
+| `OLLAMA_AGENT_TIMEOUT_MS` | Local controller timeout, clamped to 1-15 seconds (default `12000`) |
+| `OLLAMA_AGENT_CONTEXT` | Controller context window, clamped to 512-4096 tokens (default `1024`) |
 | `OLLAMA_AGENT_KEEP_ALIVE` | Short model retention window; default `60s` for fast follow-ups without long-lived memory pressure |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare Workers AI token |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |

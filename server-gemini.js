@@ -15,7 +15,7 @@ const { VectorIndex, embedQuery } = require('./lib/vector-index');
 const { hybridRetrieve } = require('./lib/hybrid-retrieve');
 const { groqModelPolicy, providerPolicy } = require('./lib/model-policy');
 const { executeAgentTool, getAgentToolDefinitions, selectAgentToolNames } = require('./lib/agent-tools');
-const { buildDeterministicAgentResult } = require('./lib/agent-fallback');
+const { buildDeterministicAgentResult, parseLocalStyleResponse } = require('./lib/agent-fallback');
 const { runAgentLoop } = require('./lib/agent-runtime');
 
 const app = express();
@@ -390,7 +390,7 @@ app.get('/health', async (req, res) => {
       enabled: AGENT_ENABLED,
       groqPlannerEnabled: GROQ_ENABLED && AGENT_GROQ_ENABLED && groqModelPolicy(GROQ_AGENT_MODEL).allowed,
       groqModel: GROQ_ENABLED && groqModelPolicy(GROQ_AGENT_MODEL).allowed ? GROQ_AGENT_MODEL : null,
-      ollamaFormatterEnabled: OLLAMA_AGENT_ENABLED,
+      ollamaControllerEnabled: OLLAMA_AGENT_ENABLED,
       ollamaModel: OLLAMA_AGENT_MODEL,
       deterministicFallback: true,
       mode: 'bounded-read-only-tools'
@@ -1309,12 +1309,12 @@ async function callGroqAgentCompletion(request) {
   }
 }
 
-async function formatLocalAgentWithOllama(question, localResult, knowledge) {
+async function applyLocalAgentStyleWithOllama(question, localResult) {
   if (!OLLAMA_AGENT_ENABLED) return null;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), OLLAMA_AGENT_TIMEOUT_MS);
-  const verifiedAnswer = String(localResult.reply || '').slice(0, 1600);
-  const prompt = `User question: ${String(question || '').slice(0, 400)}\n\nVerified answer to copy-edit:\n${verifiedAnswer}`;
+  const verifiedAnswer = String(localResult.reply || '');
+  const prompt = `Choose the presentation style for this request: ${String(question || '').slice(0, 240)}`;
   const startedAt = Date.now();
   try {
     const res = await fetch(`${OLLAMA_URL}/api/chat`, {
@@ -1326,32 +1326,36 @@ async function formatLocalAgentWithOllama(question, localResult, knowledge) {
         messages: [
           {
             role: 'system',
-            content: 'Copy-edit the verified answer into 1-3 concise third-person sentences. Preserve every project name, technology, limitation, and comparison. Do not add or remove facts. Return only the final answer.'
+            content: 'Return JSON with one style: standard or brief. Choose brief only when the user explicitly requests a short answer. Do not write the answer.'
           },
           { role: 'user', content: prompt }
         ],
+        format: {
+          type: 'object',
+          properties: { style: { type: 'string', enum: ['standard', 'brief'] } },
+          required: ['style']
+        },
         stream: false,
         keep_alive: OLLAMA_AGENT_KEEP_ALIVE,
-        options: { temperature: 0.1, top_p: 0.9, num_ctx: OLLAMA_AGENT_CONTEXT, num_predict: 120 }
+        options: { temperature: 0, num_ctx: OLLAMA_AGENT_CONTEXT, num_predict: 16 }
       })
     });
-    if (!res.ok) throw new Error(`Ollama agent formatter failed: ${res.status}`);
+    if (!res.ok) throw new Error(`Ollama agent style controller failed: ${res.status}`);
     const data = await res.json();
-    const reply = removeSlop(String(data.message?.content || '').trim().replace(/\s+/g, ' '));
+    const style = parseLocalStyleResponse(data.message?.content, question);
     meterEvent({
       source: 'ollama',
       kind: 'llm',
       tokensIn: Number.isFinite(data.prompt_eval_count) ? data.prompt_eval_count : Math.ceil(prompt.length / 4),
-      tokensOut: Number.isFinite(data.eval_count) ? data.eval_count : Math.ceil(reply.length / 4),
+      tokensOut: Number.isFinite(data.eval_count) ? data.eval_count : Math.ceil(String(data.message?.content || '').length / 4),
       estimated: !Number.isFinite(data.prompt_eval_count),
-      meta: { model: OLLAMA_AGENT_MODEL, agentFormatter: true }
+      meta: { model: OLLAMA_AGENT_MODEL, agentStyleController: true }
     });
-    const sourceText = `${verifiedAnswer} ${buildPrompt(knowledge || {}, question, [], 'ollama')}`.toLowerCase();
-    if (!reply || !validateNetworkReply(reply, sourceText)) return null;
+    if (!style) return null;
     recordProviderHealth('ollama', true, Date.now() - startedAt);
-    return reply;
+    return { reply: verifiedAnswer, style };
   } catch (error) {
-    console.log(`Ollama agent formatter unavailable: ${String(error?.message || error).slice(0, 120)}`);
+    console.log(`Ollama agent style controller unavailable: ${String(error?.message || error).slice(0, 120)}`);
     recordProviderHealth('ollama', false, Date.now() - startedAt);
     return null;
   } finally {
@@ -1856,7 +1860,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${agentName} covers ${name}'s projects, skills, AWS background, education, certifications, role fit, honest limitations, and how to contact him.` };
   }
   if (/what model|what provider|what llm|what ai|which model|which provider/.test(lowerQuestion)) {
-    return { reply: `${agentName} uses deterministic grounded tools with optional local Ollama formatting, plus a free overflow network of Cloudflare Workers AI, Google Gemini, and xAI Grok. Groq is disabled by default, and retired GitHub Models inference is blocked.` };
+    return { reply: `${agentName} uses deterministic grounded tools with an optional constrained local Ollama controller, plus a free overflow network of Cloudflare Workers AI, Google Gemini, and xAI Grok. Groq is disabled by default, and retired GitHub Models inference is blocked.` };
   }
   if (/what is this chatbot using|does this use ollama|is this ai local|is my chat private|what data do you use/.test(lowerQuestion)) {
     return { reply: `${agentName} is grounded in ${name}'s public recruiter data file. Nothing private is stored beyond short session context.` };
@@ -1868,7 +1872,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${agentName} doesn't connect to external systems or databases. I answer from ${name}'s public recruiter data file — his projects, skills, AWS training, education, and contact info. I can't make changes, send emails, or access repos.` };
   }
   if (/can you tell me.*(your|you.?re).*model name|what.?s your model name|what is your model name|what model are you/.test(lowerQuestion)) {
-    return { reply: `${agentName} uses deterministic grounded tools and can format their evidence with local Ollama. Open-ended overflow routes through Cloudflare Workers AI, Google Gemini, and xAI Grok. Groq is disabled by default, retired GitHub Models inference is blocked, and the full provider configuration is public in the GitHub repo.` };
+    return { reply: `${agentName} uses deterministic grounded tools and a constrained local Ollama presentation controller that cannot rewrite facts. Open-ended overflow routes through Cloudflare Workers AI, Google Gemini, and xAI Grok. Groq is disabled by default, retired GitHub Models inference is blocked, and the full provider configuration is public in the GitHub repo.` };
   }
   if (/what limits|what can.*this chatbot|limits are in place|what can you not do/.test(lowerQuestion)) {
     return { reply: `${agentName} only answers recruiter questions about ${name}. I can't access external systems, make changes to repos, send messages, or answer questions unrelated to his background. I stick to his verified public data.` };
@@ -1880,7 +1884,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `No, ${agentName} runs on GCP (Google Cloud Platform) — a free-tier e2-micro VM runs the Node API, and GitHub Pages hosts the widget. No AWS infrastructure is involved in running this chat.` };
   }
   if (/how is this chat free|how do you stay free|what powers you|what is your stack|free tier|free providers/.test(lowerQuestion)) {
-    return { reply: `${agentName} runs entirely on free systems: GitHub Pages hosts the widget, a GCP free-tier VM runs the Node API and local Ollama formatter, open-ended overflow uses Cloudflare Workers AI, Gemini, and Grok, and the final answer can always come from ${name}'s verified recruiter data. No paid AI subscription is required.` };
+    return { reply: `${agentName} runs entirely on free systems: GitHub Pages hosts the widget, a GCP free-tier VM runs the Node API and constrained local Ollama controller, open-ended overflow uses Cloudflare Workers AI, Gemini, and Grok, and the final answer can always come from ${name}'s verified recruiter data. No paid AI subscription is required.` };
   }
   if (/daily cap|daily limit|rate limit|cooldown|how.*handle.*limit|run 24|24.?7|24x7|always available|what if.*provider|exhausted|out of quota/.test(lowerQuestion)) {
     return { reply: `${agentName} is designed to stay online 24/7 without paid AI. Each free provider has its own daily request cap and rate limit. When a provider hits its cap, returns a rate-limit error, or reports exhausted credits, ${agentName} pauses that provider (60 seconds for rate limits, 24 hours for credit exhaustion) and tries the next free provider in priority order. If every free provider is unavailable, the final fallback is a fast, grounded answer from ${name}'s verified recruiter data. That layered fallback means the widget keeps working as long as the VM and GitHub Pages are up.` };
@@ -3043,20 +3047,23 @@ async function generateWithAgent(knowledge, question, history) {
   }
 
   // Provider-independent fallback: ProjectHub selects and executes the same
-  // verified tools deterministically, then optionally lets local Ollama format
-  // the answer. The deterministic result remains authoritative.
+  // verified tools deterministically, then optionally lets local Ollama select
+  // an allowlisted style. Ollama never writes or rewrites the factual answer.
   const localResult = buildDeterministicAgentResult(question, knowledge);
   for (const step of localResult.steps) {
     meterEvent({ source: 'agent-local-tools', kind: 'tool', meta: { tool: step.tool, planner: 'deterministic' } });
   }
-  const ollamaReply = await formatLocalAgentWithOllama(question, localResult, knowledge);
-  const reply = removeSlop(String(ollamaReply || localResult.reply).trim().replace(/\s+/g, ' '));
+  const ollamaResult = await applyLocalAgentStyleWithOllama(question, localResult);
+  const reply = removeSlop(String(ollamaResult?.reply || localResult.reply).trim().replace(/\s+/g, ' '));
   const sourceText = `${buildPrompt(knowledge, question, history, 'openai')} ${localResult.toolResults.map(item => JSON.stringify(item.result)).join(' ')}`.toLowerCase();
   if (!reply || !validateNetworkReply(reply, sourceText)) return null;
   return {
     reply,
-    provider: ollamaReply ? 'ollama' : 'grounded-agent',
-    model: ollamaReply ? OLLAMA_AGENT_MODEL : 'knowledge-tools',
+    provider: 'grounded-agent',
+    model: 'knowledge-tools',
+    languageLayer: ollamaResult ? 'ollama' : 'deterministic',
+    languageModel: ollamaResult ? OLLAMA_AGENT_MODEL : null,
+    style: ollamaResult?.style || 'standard',
     steps: localResult.steps,
     tools: [...new Set(localResult.steps.map(step => step.tool).filter(Boolean))]
   };
@@ -4080,7 +4087,7 @@ app.post('/api/chat', async (req, res) => {
     let model = learnedAns ? 'think-mode' : 'knowledge-json';
 
     // 2. For bounded evidence workflows, execute ProjectHub's read-only local
-    //    tools and optionally format their evidence with Ollama. An explicitly
+    //    tools and optionally classify presentation style with Ollama. An explicitly
     //    enabled current Groq model may plan calls, but it is never required.
     let generated = false;
     let agentMeta = null;
@@ -4095,7 +4102,14 @@ app.post('/api/chat', async (req, res) => {
           reply = agentResult.reply;
           provider = agentResult.provider;
           model = agentResult.model;
-          agentMeta = { used: true, tools: agentResult.tools, steps: agentResult.steps.length };
+          agentMeta = {
+            used: true,
+            tools: agentResult.tools,
+            steps: agentResult.steps.length,
+            languageLayer: agentResult.languageLayer,
+            languageModel: agentResult.languageModel,
+            style: agentResult.style
+          };
           generated = true;
         } else {
           pipeline.push('agent:failed');

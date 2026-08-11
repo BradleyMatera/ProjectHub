@@ -48,7 +48,7 @@ async function loadHealth() {
     elements.connection.textContent = 'Private service online';
     elements.agentMode.textContent = data.agent?.mode || 'Unavailable';
     elements.groqPlanner.textContent = data.agent?.groqPlannerEnabled ? data.agent.groqModel : 'Disabled';
-    elements.ollamaFormatter.textContent = data.agent?.ollamaFormatterEnabled ? data.agent.ollamaModel : 'Deterministic fallback';
+    elements.ollamaFormatter.textContent = data.agent?.ollamaControllerEnabled ? data.agent.ollamaModel : 'Deterministic fallback';
     elements.providers.replaceChildren();
     const activeProviders = new Set(data.providerOrder || []);
     for (const provider of (data.providers || []).filter(item => activeProviders.has(item.slug))) {

@@ -465,7 +465,7 @@
 
         <p>
           Scout first checks whether a question can be answered deterministically from the knowledge JSON.
-          For evidence-heavy questions, deterministic tools build a verified answer and local Ollama may copy-edit it.
+          For evidence-heavy questions, deterministic tools build a verified answer and local Ollama may select an allowlisted presentation style without rewriting facts.
           Open-ended questions use Cloudflare Workers AI, Gemini, and Grok overflow before the grounded fallback.
           Every generative reply is validated against the source facts before it is returned.
         </p>
@@ -488,7 +488,7 @@
           </div>
           <div class="free-card">
             <strong>Local Ollama</strong>
-            <p>A memory-bounded open-weight formatter; deterministic knowledge tools remain the reliable fallback.</p>
+            <p>A memory-bounded open-weight style controller; deterministic knowledge tools remain authoritative.</p>
           </div>
         </div>
       </section>

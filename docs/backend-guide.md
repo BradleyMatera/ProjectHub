@@ -32,7 +32,7 @@ flowchart LR
   A[ProjectHub widget] -- HTTPS POST /api/chat --> B[projecthub-chat.bradleymatera.dev]
   B -- Netlify DNS A record --> C[GCP VM 35.208.20.1]
   C -- Caddy HTTPS reverse proxy --> D[Node API 127.0.0.1:3000]
-  D -- local evidence formatting --> E1[Ollama]
+  D -- constrained style selection --> E1[Ollama]
   D -- Cloudflare REST --> E2[Cloudflare Workers AI]
   D -- Gemini REST --> E3[Google Gemini]
   D -- OpenAI-compatible REST --> E4[xAI Grok]
