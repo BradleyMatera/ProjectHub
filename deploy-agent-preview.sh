@@ -95,7 +95,7 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
     'OLLAMA_AGENT_KEEP_ALIVE=-1' \
     'GEN_ENABLED=true' \
     'GEN_MODEL=qwen2.5:0.5b' \
-    'GEN_TIMEOUT_MS=13000' \
+    'GEN_TIMEOUT_MS=14500' \
     'THINK_PUSH_ENABLED=false' \
     'USE_VECTOR_RETRIEVAL=false' \
     'STATS_FILE=stats-feature.json' \

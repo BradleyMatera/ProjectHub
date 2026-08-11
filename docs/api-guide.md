@@ -182,7 +182,7 @@ Key variables on the GCP VM (`.env`):
 | `OLLAMA_AGENT_KEEP_ALIVE` | Model retention; local-only deployment uses `-1` after boot-time prewarm |
 | `PROVIDER_ORDER` | Empty and ignored in local-only deployments |
 | `GEN_MODEL` | Local Ollama conversation model, default `qwen2.5:0.5b` |
-| `GEN_TIMEOUT_MS` | Local generation ceiling in ms, clamped to 13 seconds (default `13000`), leaving room inside the 15-second request budget |
+| `GEN_TIMEOUT_MS` | Local generation ceiling in ms, clamped to 14.5 seconds (default `14500`), leaving response-shaping room inside the 15-second target |
 | `USE_BM25_RETRIEVAL` | Enable BM25 + query understanding retrieval (default `true`) |
 | `USE_VECTOR_RETRIEVAL` | Legacy dense retrieval switch; forced off in local-only mode |
 
