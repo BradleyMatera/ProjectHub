@@ -21,7 +21,7 @@ const cases = [
   ['work habits', 'What are Bradley\'s strongest work habits?', /code|reviewable|document|local|pattern/i],
   ['weaknesses', 'What are his honest weaknesses?', /gap|algorithm|junior|mentorship/i],
   ['hiring risk', 'What risk would you flag for a hiring manager?', /algorithm.*leetcode|leetcode.*algorithm/i],
-  ['debugging', 'How does he debug unfamiliar code?', /read|debug|small|document/i],
+  ['debugging', 'How does he debug unfamiliar code?', /debugging.*cloud troubleshooting|isolat.*(?:logs|docs)|reproduc.*(?:logs|docs)/i],
   ['people skills', 'Is he good with people?', /customer|communicat|team|people/i],
   ['learning', 'Does he pick things up quickly?', /learn|adapt|feedback|documentation/i],
   ['role fit', 'Is he a fit for a junior frontend role?', /good fit.*junior frontend.*(javascript|react|html|css)/i],
@@ -177,6 +177,33 @@ async function main() {
   if ((naturalReplies.at(-1) || '').split(/\s+/).length > 55) {
     failedCases.add('short coding question');
     failures.push('short coding question: response exceeded 55 words');
+  }
+
+  const unknownTechSession = `eval-unknown-tech-${Date.now()}`;
+  const unknownTechTurns = [
+    ['frustration repair', 'YOUR MAKING ME MAD!', /right.*generic.*direct assessment/i],
+    ['unknown tech debugging', 'Can he debug cobol?', /COBOL.*not.*verified|COBOL.*not in.*stack/i],
+    ['unknown tech learning', 'Can he learn cobol?', /can learn COBOL/i],
+    ['unknown tech confirmation', 'yeah but he CAN learn cobol right?', /COBOL.*can learn|can learn.*COBOL/i],
+    ['literal technology response', 'say cobol', /^COBOL\b/],
+    ['specific feedback repair', 'I want REAL feedback about Brad, not a generic answer', /COBOL.*(?:trainable|learning|mentorship)/i],
+  ];
+  const unknownTechReplies = [];
+  for (const [name, message, expected] of unknownTechTurns) {
+    await pause();
+    const result = await ask(message, unknownTechSession);
+    record(name, result);
+    const reply = String(result.body.reply || '');
+    unknownTechReplies.push(reply);
+    if (!expected.test(reply)) {
+      failedCases.add(name);
+      failures.push(`${name}: missing a direct unknown-technology assessment ${JSON.stringify(reply)}`);
+    }
+  }
+  extraCaseCount += unknownTechTurns.length;
+  if (/I stick to what I can verify|Junior Software Engineer based in Davis/i.test(unknownTechReplies.join(' '))) {
+    failedCases.add('unknown technology boilerplate');
+    failures.push('unknown technology boilerplate: generic recruiter pitch replaced the requested subject');
   }
 
   const sorted = [...latencies].sort((a, b) => a - b);

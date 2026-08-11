@@ -27,6 +27,8 @@ test('natural recruiter phrasing expands into retrievable concepts', () => {
   assert.match(expandQueryAliases('Is he good with people?'), /communication customer service teamwork/);
   assert.match(expandQueryAliases('Does he pick things up quickly?'), /learning adaptability unfamiliar code feedback/);
   assert.match(expandQueryAliases('Is he worth an interview?'), /role fit strengths gaps evidence/);
+  assert.match(expandQueryAliases('Can he learn COBOL?'), /adaptability unfamiliar code documentation mentorship/);
+  assert.match(expandQueryAliases('Can he debug COBOL?'), /troubleshooting logs documentation codebase/);
 });
 
 test('damerauLevenshtein computes edit distance', () => {
@@ -44,6 +46,13 @@ test('correctTypos fixes misspelled words against vocabulary', () => {
   assert.equal(correctTypos('react', vocab), 'react');
   // Short words are unchanged
   assert.equal(correctTypos('aws', vocab), 'aws');
+});
+
+test('correctTypos preserves unfamiliar technology names outside the profile vocabulary', () => {
+  const vocab = new Set(['cool', 'learning', 'javascript']);
+  assert.equal(correctTypos('cobol', vocab), 'cobol');
+  assert.equal(correctTypos('fortran', vocab), 'fortran');
+  assert.equal(correctTypos('rust', vocab), 'rust');
 });
 
 test('buildVocabulary extracts words > 3 chars from chunks', () => {
@@ -78,6 +87,10 @@ test('classifyIntent identifies experience queries', () => {
 test('classifyIntent identifies smalltalk', () => {
   assert.equal(classifyIntent('hi there'), 'smalltalk');
   assert.equal(classifyIntent('hey'), 'smalltalk');
+});
+
+test('classifyIntent identifies frustration before generic role language', () => {
+  assert.equal(classifyIntent('I want real feedback, not a generic answer'), 'frustration');
 });
 
 test('classifyIntent defaults to factual-lookup', () => {

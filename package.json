@@ -11,7 +11,7 @@
     "reset-stats:remote": "node scripts/reset-stats.js --remote",
     "test": "node --test test/**/*.test.js",
     "test:ledger": "node --test test/cost-ledger.test.js test/cost-insights.test.js",
-    "test:retrieval": "node --test test/bm25.test.js test/query-understanding.test.js",
+    "test:retrieval": "node --test test/bm25.test.js test/query-understanding.test.js test/rrf.test.js",
     "eval-retrieval": "node scripts/eval-retrieval.js",
     "eval:local-api": "node scripts/eval-local-api.js",
     "eval:production-conversations": "python3 test-production-conversations.py"

@@ -11,6 +11,7 @@ const { CostLedger } = require('./lib/cost-ledger');
 const { buildRagChunks } = require('./lib/rag-chunks');
 const { BM25Index } = require('./lib/bm25');
 const { understandQuery } = require('./lib/query-understanding');
+const { searchBm25WithRrf } = require('./lib/rrf');
 const { executeAgentTool, getAgentToolDefinitions, selectAgentToolNames } = require('./lib/agent-tools');
 const { buildDeterministicAgentResult, parseLocalStyleResponse, shouldUseDeterministicAgent } = require('./lib/agent-fallback');
 const { buildLocalConversationMemory, extractCompleteSentences, validateLocalConversationReply } = require('./lib/local-conversation');
@@ -256,7 +257,11 @@ app.get('/api/retrieve', async (req, res) => {
     if (!knowledge) return res.json({ ok: false, error: 'Knowledge not loaded' });
     const history = req.query.h ? JSON.parse(req.query.h) : [];
     const understood = understandQuery(q, history, ragChunks || buildRagChunks(knowledge));
-    const bm25Results = bm25Index ? bm25Index.search(understood.rewritten, 6) : [];
+    const bm25Results = bm25Index
+      ? (history.length > 0
+          ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 6)
+          : bm25Index.search(understood.rewritten, 6))
+      : [];
     const legacyResults = retrieveChunks(q, ragChunks || buildRagChunks(knowledge), 6);
     res.json({
       ok: true,
@@ -264,7 +269,8 @@ app.get('/api/retrieve', async (req, res) => {
       rewritten: understood.rewritten,
       normalized: understood.normalized,
       intent: understood.intent,
-      bm25: bm25Results.map(r => ({ tag: r.tag, text: r.text.slice(0, 120), score: r.score })),
+      retrievalMethod: history.length > 0 ? 'local-bm25-rrf' : 'local-bm25',
+      bm25: bm25Results.map(r => ({ tag: r.tag, text: r.text.slice(0, 120), score: r.score, ranks: r.rrfRanks })),
       legacy: legacyResults.map(r => ({ tag: r.tag, text: r.text.slice(0, 120), score: r.score })),
     });
   } catch (e) {
@@ -1181,6 +1187,58 @@ function buildPrompt(knowledge, question, history, provider) {
   return context;
 }
 
+const TECHNOLOGY_TOPICS = [
+  ['COBOL', /\bcobol\b/i],
+  ['FORTRAN', /\bfortran\b/i],
+  ['C++', /\bc\+\+/i],
+  ['C#', /\bc#/i],
+  ['.NET', /(?:\b|\.)dotnet\b|\.net\b/i],
+  ['Golang', /\bgolang\b|\bgo language\b/i],
+  ['Rust', /\brust\b/i],
+  ['Ruby on Rails', /\bruby on rails\b|\brails\b/i],
+  ['Ruby', /\bruby\b/i],
+  ['Java', /\bjava\b(?!script)/i],
+  ['PHP', /\bphp\b/i],
+  ['Swift', /\bswift\b/i],
+  ['Kotlin', /\bkotlin\b/i],
+  ['Salesforce', /\bsalesforce\b/i],
+  ['SAP', /\bsap\b/i],
+  ['mainframe systems', /\bmainframes?\b/i],
+];
+
+function findTechnologyTopic(question, history) {
+  const current = String(question || '');
+  const priorUsers = (Array.isArray(history) ? history : [])
+    .slice(-5)
+    .reverse()
+    .map(turn => String(turn?.user || ''));
+  for (const text of [current, ...priorUsers]) {
+    for (const [name, pattern] of TECHNOLOGY_TOPICS) {
+      if (pattern.test(text)) return name;
+    }
+  }
+
+  const captured = current.match(/\b(?:debug|learn|use|know|say|work with)\s+([a-z][a-z0-9+#.-]{1,24})\b/i)?.[1];
+  if (!captured || /^(it|that|this|things?|code|issues?|problems?|quickly|anything|something|more|unfamiliar|unknown|broken|existing|new|cloud)$/i.test(captured)) return '';
+  return captured.length <= 5 ? captured.toUpperCase() : captured;
+}
+
+function hasVerifiedTechnologyExperience(knowledge, technology) {
+  if (!technology) return false;
+  const skills = knowledge?.skills || {};
+  const evidence = [
+    ...(skills.languagesAndFrameworks || []),
+    ...(skills.cloudAndInfrastructure || []),
+    ...(skills.toolsAndWorkflows || []),
+    ...(skills.aiAndAutomation || []),
+    ...(knowledge?.projects || []).flatMap(project => project.tech || []),
+    ...(knowledge?.experience || []).flatMap(item => item.skills || []),
+  ].map(value => String(value).toLowerCase());
+  const needle = technology.toLowerCase();
+  return evidence.some(value => value === needle
+    || value.split(/[^a-z0-9+#.]+/).includes(needle));
+}
+
 function buildGroundedFallbackPayload(knowledge, question, history) {
   const { identity, summary, goals, skills, projects, experience, education, certifications, rulesForAssistant, faq, interviewStories, blogCatalog } = knowledge || {};
   const name = identity?.name || 'Bradley Matera';
@@ -1225,6 +1283,31 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
   const priorPizzaClaim = (history || []).some(turn =>
     /\b(?:he|brad(?:ley)?|his)\b.*\b(?:likes?|fav(?:ou?rite|erate)(?:\s+is)?)\b.*\bpizza\b/i.test(String(turn?.user || ''))
   );
+  const technologyTopic = findTechnologyTopic(question, history);
+  const hasVerifiedTechnology = hasVerifiedTechnologyExperience(knowledge, technologyTopic);
+
+  // Directly address frustration instead of treating it as a new factual
+  // query. If the visitor has been discussing an unfamiliar technology, keep
+  // that subject and give a bounded assessment rather than a generic pitch.
+  if (/you'?re making me mad|your making me mad|making me angry|real feedback|not (?:some|a) generic|generic answer|talk to you spe?cif/i.test(lowerQuestion)) {
+    if (technologyTopic && !hasVerifiedTechnology) {
+      return { reply: `You're right — the generic answer was not useful. Specifically on ${technologyTopic}: Bradley does not have verified ${technologyTopic} experience today, but his record supports learning unfamiliar systems through documentation, hands-on practice, debugging, and mentorship. I would consider him trainable, not immediately independent.` };
+    }
+    return { reply: `You're right — I was repeating a generic pitch instead of engaging with what you asked. Give me the specific technology or job concern and I'll give you a direct assessment, including what is proven, transferable, and still a gap.` };
+  }
+
+  if (technologyTopic && /\bsay\b/.test(lowerQuestion)) {
+    return { reply: `${technologyTopic}. And to be clear: I can discuss it directly even when it is not part of Bradley's verified stack.` };
+  }
+  if (technologyTopic && !hasVerifiedTechnology && /\bdebug\b/.test(lowerQuestion)) {
+    return { reply: `Not independently on day one. ${technologyTopic} is not in Bradley's verified stack, so I would not claim he can already debug it. His troubleshooting process transfers, but he would first need the codebase, toolchain, documentation, hands-on practice, and some mentorship.` };
+  }
+  if (technologyTopic && !hasVerifiedTechnology && /\bcan\b.*\blearn\b|\blearn\b.*\bright\b/.test(lowerQuestion)) {
+    if (/\byeah but\b|\bright\b/.test(lowerQuestion)) {
+      return { reply: `Yes. Specifically, ${technologyTopic} is something Bradley can learn; the honest boundary is that he would begin as a trainee, use documentation and practice, and need review before working independently.` };
+    }
+    return { reply: `Yes — Bradley can learn ${technologyTopic}. His history supports learning unfamiliar systems through documentation, hands-on work, testing, and mentorship. That is a realistic assessment of his learning ability, not a claim that he already knows ${technologyTopic}.` };
+  }
 
   // Small general-knowledge and repair cases seen in real conversations. These
   // are intentionally deterministic: they are instant, free, and cannot invent
@@ -2290,6 +2373,10 @@ function buildContextualGroundedReply(groundedReply, question, history) {
     return groundedReply;
   }
 
+  // Literal language requests should not be lowercased or decorated by a
+  // repetition transition (for example, "say COBOL").
+  if (/^say\b/.test(qLower)) return groundedReply;
+
   // Repeated nearly-identical question — answer briefly and refer back.
   const lastQNorm = String(lastTurn.user || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
   const qNorm = qLower.replace(/[^a-z0-9\s]/g, '').trim();
@@ -2395,7 +2482,8 @@ function retrieveChunks(question, chunks, k = 5) {
 }
 
 // Local retrieval uses query understanding (typo correction, intent detection,
-// contextual rewrite) plus BM25, with a substring scorer as the safe fallback.
+// contextual rewrite) and RRF-fused BM25 views, with a substring scorer as the
+// safe fallback. All retrieval remains local and dependency-free.
 async function retrieveWithBM25(question, history, k = 6) {
   if (!USE_BM25_RETRIEVAL || !bm25Index || !ragChunks) {
     return retrieveChunks(question, ragChunks || buildRagChunks(knowledgeCache || {}), k);
@@ -2403,8 +2491,17 @@ async function retrieveWithBM25(question, history, k = 6) {
   // Query understanding: normalize, correct typos, contextual rewrite
   const understood = understandQuery(question, history, ragChunks);
 
-  // BM25 search using the rewritten query
-  const bm25Results = bm25Index.search(understood.rewritten, k);
+  // Fuse literal, alias-expanded, and conversation-aware BM25 rankings. The
+  // literal view preserves an explicit subject such as COBOL while the context
+  // view contributes relevant learning/debugging evidence from prior turns.
+  const bm25Results = Array.isArray(history) && history.length > 0
+    ? searchBm25WithRrf(
+        bm25Index,
+        [understood.normalized, understood.expanded, understood.rewritten],
+        k,
+        { smoothing: 60 }
+      )
+    : bm25Index.search(understood.rewritten, k);
 
   if (bm25Results.length === 0) {
     return retrieveChunks(question, ragChunks, k);
@@ -2697,6 +2794,7 @@ async function generateWithAgent(knowledge, question, history) {
 // Everything else may flow to the local RAG conversation layer for natural phrasing.
 function mustStayGrounded(question, history) {
   const q = String(question || '').toLowerCase();
+  const technologyTopic = findTechnologyTopic(question, history);
   const recentContext = (history || []).slice(-5)
     .map(turn => `${turn?.user || ''} ${turn?.assistant || ''}`)
     .join(' ')
@@ -2704,6 +2802,8 @@ function mustStayGrounded(question, history) {
   if (/^(hey|hi|hello|yo|sup)\b|how are you|how.?s it going|you good|see how you.*doing|pizza|fav(?:ou?rite|erate)|do you like|can (?:he|brad|bradley) (?:actually )?code/.test(q)) return true;
   // Production-derived conversational cases with explicit local answers.
   if (/2\s*(?:plus|\+)\s*2|can(?:not|'?t) do math|quantum computing|\bqubits?\b|relate it to brad|not the ans|not the aswer|ai wrapper|^what do you mean/.test(q)) return true;
+  if (technologyTopic && /\b(debug|learn|say|real feedback|generic answer)\b/.test(q)) return true;
+  if (/you'?re making me mad|your making me mad|making me angry|real feedback|not (?:some|a) generic|generic answer|talk to you spe?cif/.test(q)) return true;
   if (/\blinks?\??$/.test(q) && /blog|post|article|dev\.to/.test(recentContext)) return true;
   if (/^\s*what\??\s*$/.test(q) && /army|military|68w|combat medic/.test(recentContext)) return true;
   if (/are you a penis|do you poop|learned anything|i love you|another agent|agent.*refuses to work|what.?s up.*butter|my name.?s brad|i\s+am brad|i'm brad/.test(q)) return true;

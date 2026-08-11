@@ -4,7 +4,8 @@
 The production export contained 81 complete turns across 26 retained sessions,
 40 older prompt-only records whose order can be reconstructed from timestamps,
 and five older complete requests not represented in the session log. Duplicate
-and truncated backup mirrors are not replayed twice. Session identifiers,
+and truncated backup mirrors are not replayed twice. Six additional turns
+reproduce a user-reported unknown-technology failure. Session identifiers,
 timestamps, referrers, contact details, and old replies are intentionally
 omitted. Assertions describe the behavior Scout should preserve or improve;
 they do not treat flawed historical responses as golden output.
@@ -183,6 +184,14 @@ PRODUCTION_CONVERSATIONS = [
     ("Archived complete remote request two", ["What is his availability for a remote role?"]),
     ("Archived complete AWS request", ["Does he have AWS experience?"]),
     ("Archived complete strongest-skill request", ["What is Bradley strongest technical skill?"]),
+    ("Unknown technology and frustration regression", [
+        "YOUR MAKING ME MAD!",
+        "Can he debug cobol?",
+        "Can he learn cobol?",
+        "yeah but he CAN learn cobol right?",
+        "say cobol",
+        "And as i said i want to talk to you spefcicaly about somthing and get REAL feeback about brad not some generic answer",
+    ]),
 ]
 
 
@@ -251,6 +260,11 @@ def expectations_for(message):
     add_rule(rules, r"not the aswer|what do you mean|^what\?$", ("sorry", "mean", "clarify", "you said", "more directly"), max_words=65)
     add_rule(rules, r"relate it to brad", ("learning", "cloud", "software", "not part of his verified"), max_words=85)
     add_rule(rules, r"debug issues", ("debug", "code", "test", "logs", "documentation"))
+    add_rule(rules, r"making me mad", ("right", "sorry", "repeating", "direct"), max_words=65)
+    add_rule(rules, r"debug cobol", ("not independently", "not in", "not verified", "would not claim"), ("cobol",), max_words=90)
+    add_rule(rules, r"learn cobol", ("can learn", "yes"), ("cobol", "learn"), max_words=85)
+    add_rule(rules, r"say cobol", ("cobol",), max_words=45)
+    add_rule(rules, r"real feeback|real feedback", ("learn", "trainable", "mentorship", "not immediately independent"), ("cobol",), max_words=100)
     add_rule(rules, r"ai wrapper", ("wrapper", "api", "model", "interface", "layer"))
     add_rule(rules, r"2 plus 2|2\+2|cant do math", ("4",), max_words=30)
     add_rule(rules, r"military training|army training|dd214|listed trainings", ("army", "68w", "combat medic", "medical", "training", "award"), forbidden=("scanned",))
@@ -330,6 +344,8 @@ def check_reply(message, reply, response, prior_reply, latency):
         issues.append("irrelevant generic candidate pitch")
     if re.search(r"\bbradley matera\b", text) and "Bradley Matera" not in text:
         issues.append("Bradley Matera is not capitalized")
+    if re.search(r"say cobol", message, re.I) and "COBOL" not in text:
+        issues.append("COBOL is not capitalized")
     if re.search(r"api[_ -]?key|bearer\s+[a-z0-9]|password=|system prompt:", lower):
         issues.append("sensitive implementation output")
     if prior_reply and word_overlap(prior_reply, text) > 0.92 and message.lower() not in {"what is 2 plus 2?"}:

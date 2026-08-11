@@ -45,7 +45,7 @@
 ## Run Retrieval Tests
 
 ```bash
-# Run all local retrieval unit tests (BM25 and query understanding)
+# Run all local retrieval unit tests (BM25, query understanding, and RRF)
 npm run test:retrieval
 
 # Evaluate retrieval quality against the 40-query golden set (Recall@k, MRR@k)
@@ -63,7 +63,7 @@ curl 'https://dev.projecthub-chat.bradleymatera.dev/api/retrieve?q=what+is+his+t
 curl 'https://dev.projecthub-chat.bradleymatera.dev/api/retrieve?q=tell+me+more+about+that&h=%5B%7B%22user%22%3A%22tell+me+about+his+projects%22%2C%22assistant%22%3A%22...%22%7D%5D'
 ```
 
-Returns the rewritten query, normalized query, classified intent, and BM25 results.
+Returns the rewritten query, normalized query, classified intent, retrieval method, and BM25 results. Requests with history use local RRF-fused BM25 views.
 
 ## Test the Widget Locally
 
@@ -195,12 +195,14 @@ npm run test:retrieval
 # Or run individually
 node --test test/bm25.test.js
 node --test test/query-understanding.test.js
+node --test test/rrf.test.js
 ```
 
 | Module | File | Tests |
 |--------|------|-------|
 | BM25 index | `test/bm25.test.js` | 8 |
-| Query understanding | `test/query-understanding.test.js` | 15 |
+| Query understanding | `test/query-understanding.test.js` | 17 |
+| Reciprocal Rank Fusion | `test/rrf.test.js` | 3 |
 
 ### Conversation Tests
 
@@ -217,8 +219,8 @@ python3 test-conversations-full.py
 # Run one conversation with verbose output
 python3 test-conversations-full.py --only "Follow-up heavy conversation" -v
 
-# Replay 126 production-retained inputs: 81 turns from 26 complete sessions,
-# a 40-prompt older sequence, and five older complete request records.
+# Replay 132 inputs: 126 production-retained prompts plus the six-turn
+# unknown-technology and frustration regression.
 # This defaults to the local API and checks improved semantic behavior rather
 # than treating old production replies as golden text.
 npm run eval:production-conversations
@@ -234,7 +236,8 @@ The production-derived fixture is sanitized: it preserves meaningful visitor
 prompt text and recoverable order, but excludes production session IDs,
 timestamps, referrers, contact details from logs, and historical Scout replies.
 It covers all 81 complete turns in the retained session log plus 45 meaningful
-older request records recovered from backups. One duplicate record and one
+older request records recovered from backups, followed by a six-turn
+user-reported COBOL/frustration regression. One duplicate record and one
 truncated mirror of a complete prompt are not replayed twice. Production retains
 capped logs, so this is the full recoverable retained corpus, not every request
 ever counted by the service. Results are written outside the repository to

@@ -4,8 +4,8 @@ Scout performs model inference only through Ollama on the ProjectHub VM. The def
 
 ## How Scout stays useful with a small model
 
-1. Query understanding normalizes text, corrects common typos, classifies intent, and rewrites short follow-ups with conversation context.
-2. BM25 retrieves verified facts from the bundled recruiter knowledge file.
+1. Query understanding normalizes text, corrects common typos, classifies intent (including frustration), expands transferable-skill language, and rewrites short follow-ups with conversation context.
+2. BM25 retrieves verified facts from the bundled recruiter knowledge file. Standalone questions use the best direct ranking; follow-ups use local RRF (k=60) to fuse literal, expanded, and context-rewritten BM25 rankings so an explicit subject such as COBOL survives contextual retrieval.
 3. Five recent turns and retained topic stances preserve conversational coherence.
 4. Read-only local tools handle comparisons, role evidence, recruiter briefs, and interview-question workflows deterministically.
 5. Ollama phrases open-ended answers. Safety, source overlap, entity, number, length, and overclaim validators reject weak generations.
@@ -42,6 +42,8 @@ curl http://127.0.0.1:3000/health
 curl http://127.0.0.1:3000/api/diagnose
 ```
 
-The checked-in suites currently cover 58 deterministic unit tests, a 40-query retrieval golden set, a 55-request local API evaluation, and 126 production-retained inputs. The production corpus includes 81 complete turns across 26 sessions, one reconstructed 40-prompt older sequence, and five older complete request records; duplicate and truncated backup mirrors are not replayed twice. The API evaluation includes a casual-dialogue regression that checks pronoun handling, user-provided context, response variety, and concise answers. The production-derived suite removes session metadata and old replies; its assertions require improved semantic behavior, local-only providers, useful uncertainty, response variety, and the 15-second latency ceiling. The longer recruiter conversation scripts exercise 107 additional multi-turn prompts and should be run against the private preview before promotion.
+The checked-in suites currently cover 63 deterministic unit tests, a 40-query retrieval golden set, a 61-request local API evaluation, and a 132-input conversation regression. The retained production corpus contributes 81 complete turns across 26 sessions, one reconstructed 40-prompt older sequence, and five older complete request records; duplicate and truncated backup mirrors are not replayed twice. Six additional turns reproduce the reported COBOL/frustration failure. The API evaluation checks pronoun handling, user-provided context, response variety, concise answers, and direct assessments of unfamiliar technologies. The production-derived suite removes session metadata and old replies; its assertions require improved semantic behavior, local-only providers, useful uncertainty, response variety, and the 15-second latency ceiling. The longer recruiter conversation scripts exercise 107 additional multi-turn prompts and should be run against the private preview before promotion.
+
+The RRF design follows the useful part of current retrieval research while respecting ProjectHub's local-only constraint: RRF is applied only where multiple contextual BM25 views exist. Offline evaluation showed that applying those correlated views to every standalone query reduced MRR, so standalone retrieval deliberately remains plain BM25. No hosted embedding model, neural reranker, HyDE query generation, or cloud API is required.
 
 No design can truthfully guarantee correct factual knowledge for every possible question. ProjectHub's contract is narrower and testable: every request receives a useful response, unknown facts are identified honestly, and unsupported claims are never presented as verified facts.

@@ -13,13 +13,13 @@ ProjectHub is an embeddable, AI-powered chat widget that showcases Bradley Mater
 - **AI backend:** Recruiter chat API at `https://projecthub-chat.bradleymatera.dev/api/chat` on a free GCP e2-micro VM with Caddy HTTPS. Inference is exclusively a pre-warmed local `qwen2.5:0.5b` model through Ollama. Deterministic evidence tools, BM25 retrieval, bundled knowledge, memory, stance consistency, and strict validation compensate for the small model. Invalid or slow generations fall back to a useful grounded answer from `data/recruiter-knowledge.json`.
 - **Session memory:** Browser sends a per-tab session id and recent turns. The local RAG layer uses the five newest sanitized turns; the browser keeps up to 10.
 - **Generative usage:** Grounded-first deterministic logic answers factual and safety-sensitive queries. Evidence-heavy requests execute five read-only tools deterministically. Open-ended recruiter conversation uses local Ollama RAG with up to five recent turns plus per-topic stances. Generated replies must pass safety, entity, number, length, source-overlap, and overclaim validation; otherwise the grounded answer is returned. Unknown tools fail closed and no public tool performs writes or arbitrary web access. 15s end-to-end response budget. Out-of-scope questions are forced to grounded replies.
-- **Retrieval pipeline:** Local Okapi BM25 (`lib/bm25.js`) with query understanding (`lib/query-understanding.js` — typo correction, intent classification, contextual rewriting). BM25 Recall@6=1.000 on the current 40-query golden eval set.
+- **Retrieval pipeline:** Local Okapi BM25 (`lib/bm25.js`) with query understanding (`lib/query-understanding.js` — typo correction, intent classification, contextual rewriting). Standalone questions use the strongest BM25 view; conversational follow-ups fuse literal, alias-expanded, and context-rewritten BM25 rankings with local Reciprocal Rank Fusion (`lib/rrf.js`, k=60) so the explicit subject is not lost. BM25 Recall@6=1.000 on the current 40-query golden eval set.
 - **Stance consistency:** Per-session topic stances injected into local prompts to prevent contradictions across turns. 60-minute TTL, cap 12 per session.
 - **Agent name & persona:** The assistant is named **Scout**: helpful, calm, concise, honest, and never over-hype.
 - **Widget UX:** Header shows "Scout" as the assistant title and "Bradley Matera · Recruiter assistant". Placeholder and welcome messages are from Scout. Each session starts by asking the visitor's name.
 - **Data sources:** `data.js` (projects/CodePens), `data/recruiter-knowledge.json` (canonical facts), and `sourceMaterial` (ingested blog posts, pages, and resume guardrails from `scripts/build-knowledge.js`).
 - **Think Mode:** A local self-improvement loop runs every 20 minutes. It stashes weak answers, asks Ollama for improved grounded wording, scores and judges candidates, and retains only validated improvements in the local learned file. It never writes to GitHub or another external system.
-- **Test suites:** 6 legacy API suites (adversarial, coverage, load/stress, regression, edge cases, full system verification) plus 58 checked-in Node unit tests, a 55-request local API evaluation, a sanitized 126-input production regression (81 complete turns across 26 retained sessions plus 45 older request records), and a 40-query retrieval golden set.
+- **Test suites:** 6 legacy API suites (adversarial, coverage, load/stress, regression, edge cases, full system verification) plus 63 checked-in Node unit tests, a 61-request local API evaluation, a 132-input conversation regression (126 production-retained inputs plus a six-turn unknown-technology repair), and a 40-query retrieval golden set.
 - **Current branch/focus:** `feat/agent-systems-network` — local-only Ollama conversation, grounded agent tools, coherent memory, strict validation, and a private SSH-tunneled preview
 
 ---
@@ -100,6 +100,7 @@ Live widget URL for embedding:
 | `server-gemini.js` | Backend server — local Ollama chat, Think Mode, safety, analytics, BM25 retrieval, and memory |
 | `lib/rag-chunks.js` | Shared RAG chunk builder — flattens knowledge JSON into retrievable fact chunks |
 | `lib/bm25.js` | Okapi BM25 retrieval index — TF saturation, IDF weighting, document-length normalization |
+| `lib/rrf.js` | Dependency-free Reciprocal Rank Fusion for local literal, expanded, and contextual BM25 rankings |
 | `lib/query-understanding.js` | Query understanding pipeline — normalization, typo correction, intent classification, contextual rewriting |
 | `lib/agent-tools.js` | Allowlisted read-only agent tools for portfolio search, project comparison, role matching, and public profile evidence |
 | `lib/agent-fallback.js` | Deterministic local agent planning and evidence-based answers |
@@ -109,8 +110,8 @@ Live widget URL for embedding:
 | `data/recruiter-knowledge.json` | Canonical bundled knowledge base |
 | `data/eval-golden.json` | Golden set of 40 queries for retrieval evaluation |
 | `scripts/eval-retrieval.js` | Retrieval evaluation harness — measures Recall@k and MRR@k |
-| `scripts/eval-local-api.js` | Local API acceptance harness — 55 requests covering facts, safety, NLP, memory, project references, answer variety, and natural casual dialogue |
-| `test-production-conversations.py` | Sanitized replay of 126 production-retained inputs: 81 complete turns across 26 sessions plus 45 meaningful older request records, with semantic quality, local-provider, repetition, privacy, and latency assertions |
+| `scripts/eval-local-api.js` | Local API acceptance harness — 61 requests covering facts, safety, NLP, memory, project references, answer variety, natural dialogue, and unknown-technology feedback |
+| `test-production-conversations.py` | Sanitized replay of 126 production-retained inputs plus a six-turn user-reported regression, with semantic quality, local-provider, repetition, privacy, and latency assertions |
 | `test/bm25.test.js` | BM25 index unit tests (8 tests) |
 | `test/query-understanding.test.js` | Query understanding unit tests (15 tests) |
 | `test/agent-tools.test.js` | Read-only agent tool selection, evidence, privacy, and fail-closed tests |
