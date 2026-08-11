@@ -17,25 +17,25 @@ ProjectHub stays grounded-first and free-provider-first:
 1. Browser widget calls `https://projecthub-chat.bradleymatera.dev/api/chat` directly from any allowed origin.
 2. GCP VM API (`server-gemini.js`) always returns deterministic recruiter-safe answers for factual/profile/project questions.
 3. For open-ended questions, the API walks a priority network of free providers:
-   - Groq (`llama-3.1-8b-instant`)
    - Cloudflare Workers AI (`@cf/meta/llama-3.2-3b-instruct`)
    - GitHub Models (`openai/gpt-4o-mini`)
    - Google Gemini (`gemini-2.0-flash`)
    - xAI Grok (`grok-4.3`) optional
    - OpenAI-compatible (configurable) optional
+   - Groq optional, disabled by default, with an explicitly configured current model
 4. If all free providers are exhausted or fail validation, the API returns a fast, deterministic grounded answer from `data/recruiter-knowledge.json`.
 5. Every provider reply is validated against the grounded source facts before it is returned.
 6. Safety and false-claim checks run BEFORE learned answers to block injection, XSS, social engineering, and exaggerated claims.
 7. In-memory session cache keeps the last 3 turns per tab. Frontend sends 5 turns and keeps 10.
 8. Response caches avoid repeated work, but context-dependent follow-ups bypass the global cache.
 9. Out-of-scope questions are forced to grounded replies by `mustStayGrounded` to prevent LLM hallucinations.
-10. Evidence-heavy requests may use a bounded Groq tool loop over local verified data. The loop is capped at two rounds and three calls, and falls back to the normal provider network if it fails.
+10. Evidence-heavy requests use deterministic bounded tools over local verified data. An opt-in Groq planner can use the same tools, but it is disabled by default.
 
 This keeps the widget useful even if every free provider tier is temporarily exhausted.
 
-The agent model defaults to the same `llama-3.1-8b-instant` model as normal Groq chat so it shares the higher free allowance. `GROQ_AGENT_MODEL` can be changed independently after quota and quality validation. Groq has announced that `llama-3.1-8b-instant` will shut down on August 16, 2026; migration must be validated against free-tier headroom before deployment rather than silently changing the default.
+`llama-3.1-8b-instant` was removed from all runtime defaults before its August 16, 2026 shutdown. ProjectHub does not silently replace it with GPT-OSS because Groq's published free allowance drops from 14,400 requests and 500,000 tokens per day for Llama 8B to 1,000 requests and 200,000 tokens per day for current replacements. The default network now begins with Cloudflare. Groq requires `GROQ_ENABLED=true` plus an explicit non-retired `GROQ_MODEL`; `lib/model-policy.js` blocks known retired model IDs even when an old environment still names one.
 
-Groq is not a single point of failure for agent workflows. When its agent lane is unavailable, ProjectHub deterministically selects and executes the same local knowledge tools. `OLLAMA_AGENT_ENABLED=true` may use the already-installed local Ollama engine to format that evidence, but the small local model is never treated as authoritative and its output must pass the normal grounded validator. If formatting fails, the deterministic answer is returned directly. General conversation continues through Cloudflare Workers AI, GitHub Models, Gemini, Grok, and the grounded fallback.
+Groq is not a single point of failure for agent workflows. ProjectHub deterministically selects and executes local knowledge tools. `OLLAMA_AGENT_ENABLED=true` may use the already-installed local Ollama engine to format that evidence, but the small local model is never treated as authoritative and its output must pass the normal grounded validator. If formatting fails, the deterministic answer is returned directly. General conversation continues through Cloudflare Workers AI, GitHub Models, Gemini, Grok, and the grounded fallback.
 
 ---
 

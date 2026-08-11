@@ -5,10 +5,11 @@
   "egressOverheadFactor": 1.08,
   "sources": {
     "groq": {
-      "label": "Groq (llama-3.1-8b-instant)",
+      "label": "Groq (opt-in, model required)",
       "kind": "llm",
-      "freeLimits": { "requestsPerDay": 14400, "tokensPerDay": 500000, "tokensPerMinute": 6000 },
-      "shadowRates": { "inputPerMillionTokensMicroUsd": 50000, "outputPerMillionTokensMicroUsd": 80000 },
+      "freeLimits": {},
+      "shadowRates": {},
+      "estimated": true,
       "citation": "https://console.groq.com/docs/rate-limits",
       "lastVerified": "2026-08-10"
     },

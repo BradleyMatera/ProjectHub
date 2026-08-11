@@ -266,8 +266,8 @@ Every chat request goes through a deterministic pipeline. The `pipeline` field i
    └── false → try LLM network
 
 8. LLM network (if needed)
-   ├── Try providers in order: groq → cloudflare → github → gemini → grok → ollama
-   ├── First valid reply wins → use it (pipeline: ["network:groq:success"])
+   ├── Try free overflow providers: cloudflare → github → gemini → grok
+   ├── First valid reply wins → use it (pipeline: ["network:cloudflare:success"])
    └── All fail → use grounded answer (pipeline: ["network:all-failed"])
 
 9. Reply shaping
@@ -290,7 +290,7 @@ Every chat request goes through a deterministic pipeline. The `pipeline` field i
 
 - `["cache-hit"]` — served from response cache
 - `["cache-miss", "knowledge-loaded", "learned-check:miss", "mustStayGrounded:true", "shaped"]` — grounded answer, no LLM needed
-- `["cache-miss", "knowledge-loaded", "learned-check:miss", "mustStayGrounded:false", "network:groq:success", "shaped"]` — LLM via Groq
+- `["cache-miss", "knowledge-loaded", "learned-check:miss", "mustStayGrounded:false", "network:cloudflare:success", "shaped"]` — LLM via Cloudflare Workers AI
 - `["cache-miss", "knowledge-loaded", "learned-check:hit"]` — answered from learned answers
 
 ---
@@ -301,17 +301,17 @@ Scout never relies on a single paid API. It rotates through free providers:
 
 | Provider | Type | Model | Daily Limit | Cooldown on failure |
 |----------|------|-------|-------------|---------------------|
-| **Groq** | OpenAI-compatible | `llama-3.1-8b-instant` | 1000 | 60s (rate limit), 24h (credits) |
 | **Cloudflare Workers AI** | Cloudflare | `@cf/meta/llama-3.2-3b-instruct` | 300 | 60s (rate limit), 24h (credits) |
 | **GitHub Models** | OpenAI-compatible | `openai/gpt-4o-mini` | 150 | 60s (rate limit), 24h (credits) |
 | **Google Gemini** | Gemini | `gemini-2.0-flash` | 1500 | 60s (rate limit), 24h (credits) |
 | **xAI Grok** | OpenAI-compatible | `grok-4.3` | 1000 | 60s (rate limit), 24h (credits) |
+| **Groq** | OpenAI-compatible | Explicit model required; disabled by default | Model-specific | 60s (rate limit), 24h (credits) |
 | **OpenAI-compatible** | OpenAI-compatible | configurable | 200 | 60s (rate limit), 24h (credits) |
 | **Local Ollama** | Ollama | `smollm2:135m` | ∞ | N/A (runs on VM CPU) |
 
 ### Provider order
 
-Configurable via `PROVIDER_ORDER` env var. Default: `groq,cloudflare,github,gemini,grok,ollama`
+Configurable via `PROVIDER_ORDER` env var. Default: `cloudflare,github,gemini,grok`. Groq is opt-in and rejects retired model IDs.
 
 The server tracks success/failure/avg latency per provider in `stats.json` and exposes it on the dashboard:
 
@@ -689,7 +689,9 @@ GITHUB_TOKEN=...          # Used for both GitHub Models LLM AND knowledge JSON p
 GEMINI_API_KEY=...
 XAI_API_KEY=...
 KNOWLEDGE_URL=https://raw.githubusercontent.com/BradleyMatera/ProjectHub/master/data/recruiter-knowledge.json
-PROVIDER_ORDER=groq,cloudflare,github,gemini,grok,ollama
+PROVIDER_ORDER=cloudflare,github,gemini,grok
+GROQ_ENABLED=false
+GROQ_MODEL=
 ```
 
 > The `GITHUB_TOKEN` is dual-purpose: it authenticates to GitHub Models for LLM calls AND authorizes think mode to push learned answers back to the knowledge JSON via the GitHub Contents API.

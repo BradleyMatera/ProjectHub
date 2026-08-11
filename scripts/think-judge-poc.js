@@ -17,6 +17,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { groqModelPolicy } = require('../lib/model-policy');
 
 const KNOWLEDGE_PATH = path.join(__dirname, '..', 'data', 'recruiter-knowledge.json');
 
@@ -138,8 +139,11 @@ function parseJudgeOutput(text) {
 async function callOpenAIJudge(system, user) {
   const baseUrl = process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1';
   const apiKey = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
-  const model = process.env.GROQ_MODEL || process.env.OPENAI_MODEL || 'llama-3.1-8b-instant';
-  if (!apiKey) return null;
+  const model = process.env.GROQ_MODEL || process.env.OPENAI_MODEL || '';
+  if (!apiKey || !model) return null;
+  if (baseUrl.includes('api.groq.com') && !groqModelPolicy(model).allowed) {
+    throw new Error('Groq judge model is retired or not configured; choose a current model explicitly.');
+  }
   const res = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },

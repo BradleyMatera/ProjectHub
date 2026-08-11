@@ -32,7 +32,7 @@ flowchart LR
   A[ProjectHub widget] -- HTTPS POST /api/chat --> B[projecthub-chat.bradleymatera.dev]
   B -- Netlify DNS A record --> C[GCP VM 35.208.20.1]
   C -- Caddy HTTPS reverse proxy --> D[Node API 127.0.0.1:3000]
-  D -- OpenAI-compatible REST --> E1[Groq]
+  D -- local evidence formatting --> E1[Ollama]
   D -- Cloudflare REST --> E2[Cloudflare Workers AI]
   D -- OpenAI-compatible REST --> E3[GitHub Models]
   D -- Gemini REST --> E4[Google Gemini]
@@ -81,7 +81,7 @@ The backend uses a rotating network of free LLM providers. You need keys for the
 
 | Provider | Signup / Token source | Model used |
 |----------|----------------------|------------|
-| Groq | https://console.groq.com/keys | `llama-3.1-8b-instant` |
+| Groq | https://console.groq.com/keys | Optional; disabled until a current model is explicitly selected |
 | Cloudflare Workers AI | https://dash.cloudflare.com/profile/api-tokens | `@cf/meta/llama-3.2-3b-instruct` |
 | GitHub Models | GitHub Settings → Developer settings → Personal access tokens → `models:read` | `openai/gpt-4o-mini` |
 | Google Gemini | https://aistudio.google.com/app/apikey | `gemini-2.0-flash` |
@@ -116,8 +116,9 @@ ALLOWED_ORIGINS=https://bradleymatera.dev,https://www.bradleymatera.dev,https://
 
 XAI_API_KEY=xai-...
 XAI_MODEL=grok-4.3
-GROQ_API_KEY=gsk_...
-GROQ_MODEL=llama-3.1-8b-instant
+GROQ_ENABLED=false
+GROQ_API_KEY=
+GROQ_MODEL=
 GITHUB_MODELS_TOKEN=ghp_...
 GITHUB_MODELS_MODEL=openai/gpt-4o-mini
 CLOUDFLARE_API_TOKEN=...
@@ -126,7 +127,7 @@ CLOUDFLARE_MODEL=@cf/meta/llama-3.2-3b-instruct
 GEMINI_API_KEY=AIza...
 GEMINI_MODEL=gemini-2.0-flash
 
-PROVIDER_ORDER=groq,cloudflare,github,gemini,grok
+PROVIDER_ORDER=cloudflare,github,gemini,grok
 GEN_MODEL=smollm2:135m
 GEN_TIMEOUT_MS=8000
 

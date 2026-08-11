@@ -108,6 +108,9 @@ Check the browser console for errors. Verify:
 The agent preview is a separate loopback-only service on the staging VM. It does not replace the staging API and has no public Caddy route.
 
 ```bash
+# One-time: installs loopback-only Ollama, bounded swap, and gemma3:270m
+bash scripts/setup-ollama-preview.sh
+
 # Requires a clean, committed feat/* branch
 bash deploy-agent-preview.sh
 

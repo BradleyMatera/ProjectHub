@@ -13,6 +13,7 @@ const { BM25Index } = require('./lib/bm25');
 const { understandQuery } = require('./lib/query-understanding');
 const { VectorIndex, embedQuery } = require('./lib/vector-index');
 const { hybridRetrieve } = require('./lib/hybrid-retrieve');
+const { groqModelPolicy } = require('./lib/model-policy');
 const { executeAgentTool, getAgentToolDefinitions, selectAgentToolNames } = require('./lib/agent-tools');
 const { buildDeterministicAgentResult } = require('./lib/agent-fallback');
 const { runAgentLoop } = require('./lib/agent-runtime');
@@ -80,16 +81,20 @@ const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma3:1b';
 const OLLAMA_AGENT_ENABLED = process.env.OLLAMA_AGENT_ENABLED === 'true';
 const OLLAMA_AGENT_MODEL = process.env.OLLAMA_AGENT_MODEL || OLLAMA_MODEL;
-const OLLAMA_AGENT_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.OLLAMA_AGENT_TIMEOUT_MS || '10000', 10), 15000));
+const OLLAMA_AGENT_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.OLLAMA_AGENT_TIMEOUT_MS || '12000', 10), 15000));
+const OLLAMA_AGENT_CONTEXT = Math.max(512, Math.min(parseInt(process.env.OLLAMA_AGENT_CONTEXT || '1024', 10), 4096));
+const OLLAMA_AGENT_KEEP_ALIVE = process.env.OLLAMA_AGENT_KEEP_ALIVE || '60s';
 
 // Free multi-provider network keys
 const XAI_API_KEY = process.env.XAI_API_KEY || '';
 const XAI_MODEL = process.env.XAI_MODEL || 'grok-4.3';
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
-const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
+const GROQ_ENABLED = process.env.GROQ_ENABLED === 'true';
+const GROQ_MODEL = process.env.GROQ_MODEL || '';
+const GROQ_MODEL_POLICY = groqModelPolicy(GROQ_MODEL);
 const GROQ_AGENT_MODEL = process.env.GROQ_AGENT_MODEL || GROQ_MODEL;
 const AGENT_ENABLED = process.env.AGENT_ENABLED !== 'false';
-const AGENT_GROQ_ENABLED = process.env.AGENT_GROQ_ENABLED !== 'false';
+const AGENT_GROQ_ENABLED = process.env.AGENT_GROQ_ENABLED === 'true';
 const AGENT_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.AGENT_TIMEOUT_MS || '6000', 10), 10000));
 const FEATURE_PREVIEW_ENABLED = process.env.FEATURE_PREVIEW_ENABLED === 'true';
 const GITHUB_MODELS_TOKEN = process.env.GITHUB_MODELS_TOKEN || '';
@@ -97,7 +102,7 @@ const GITHUB_MODELS_MODEL = process.env.GITHUB_MODELS_MODEL || 'openai/gpt-4o-mi
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || '';
 const CLOUDFLARE_MODEL = process.env.CLOUDFLARE_MODEL || '@cf/meta/llama-3.2-3b-instruct';
-const PROVIDER_ORDER = (process.env.PROVIDER_ORDER || 'groq,cloudflare,github,gemini,grok')
+const PROVIDER_ORDER = (process.env.PROVIDER_ORDER || 'cloudflare,github,gemini,grok')
   .split(',')
   .map(s => s.trim())
   .filter(Boolean)
@@ -261,6 +266,7 @@ function resetDailyIfNeeded(state) {
 function isProviderEnabled(slug) {
   const def = PROVIDER_DEFS[slug];
   if (!def) return false;
+  if (slug === 'groq') return GROQ_ENABLED && GROQ_MODEL_POLICY.allowed && def.apiKey.length > 10;
   if (def.type === 'openai') return def.apiKey.length > 10;
   if (def.type === 'cloudflare') return def.apiToken.length > 10 && def.accountId.length > 10;
   if (def.type === 'gemini') return def.apiKey.length > 10;
@@ -296,6 +302,7 @@ function providerStatus() {
       slug,
       enabled: isProviderEnabled(slug),
       available: isProviderAvailable(slug),
+      blockedReason: slug === 'groq' && !GROQ_MODEL_POLICY.allowed ? GROQ_MODEL_POLICY.reason : null,
       exhausted: Date.now() < state.exhaustedUntil,
       usedToday: state.count,
       limit: PROVIDER_DEFS[slug].dailyLimit,
@@ -378,8 +385,8 @@ app.get('/health', async (req, res) => {
     providers,
     agent: {
       enabled: AGENT_ENABLED,
-      groqPlannerEnabled: AGENT_GROQ_ENABLED,
-      groqModel: GROQ_AGENT_MODEL,
+      groqPlannerEnabled: GROQ_ENABLED && AGENT_GROQ_ENABLED && groqModelPolicy(GROQ_AGENT_MODEL).allowed,
+      groqModel: GROQ_ENABLED && groqModelPolicy(GROQ_AGENT_MODEL).allowed ? GROQ_AGENT_MODEL : null,
       ollamaFormatterEnabled: OLLAMA_AGENT_ENABLED,
       ollamaModel: OLLAMA_AGENT_MODEL,
       deterministicFallback: true,
@@ -1259,6 +1266,9 @@ Verified baseline: ${JSON.stringify(baseline)}`;
 }
 
 async function callGroqAgentCompletion(request) {
+  const agentModelPolicy = groqModelPolicy(GROQ_AGENT_MODEL);
+  if (!GROQ_ENABLED || !AGENT_GROQ_ENABLED) throw new Error('Groq agent planning is disabled');
+  if (!agentModelPolicy.allowed) throw new Error(`Groq agent model blocked: ${agentModelPolicy.reason}`);
   if (!GROQ_API_KEY || GROQ_API_KEY.length < 10) throw new Error('Groq API key not configured');
   if (!isProviderAvailable('groq')) throw new Error('Groq is not currently available');
   recordProviderAttempt('groq');
@@ -1301,7 +1311,8 @@ async function formatLocalAgentWithOllama(question, localResult, knowledge) {
   const evidence = localResult.toolResults.map(item => item.result).slice(0, 3);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), OLLAMA_AGENT_TIMEOUT_MS);
-  const prompt = `Verified evidence: ${JSON.stringify(evidence)}\n\nDeterministic answer: ${localResult.reply}\n\nUser question: ${String(question || '').slice(0, 600)}`;
+  const compactEvidence = JSON.stringify(evidence).slice(0, 2000);
+  const prompt = `Verified evidence: ${compactEvidence}\n\nDeterministic answer: ${localResult.reply}\n\nUser question: ${String(question || '').slice(0, 600)}`;
   const startedAt = Date.now();
   try {
     const res = await fetch(`${OLLAMA_URL}/api/chat`, {
@@ -1318,7 +1329,8 @@ async function formatLocalAgentWithOllama(question, localResult, knowledge) {
           { role: 'user', content: prompt }
         ],
         stream: false,
-        options: { temperature: 0.1, top_p: 0.9, num_predict: 160 }
+        keep_alive: OLLAMA_AGENT_KEEP_ALIVE,
+        options: { temperature: 0.1, top_p: 0.9, num_ctx: OLLAMA_AGENT_CONTEXT, num_predict: 120 }
       })
     });
     if (!res.ok) throw new Error(`Ollama agent formatter failed: ${res.status}`);
@@ -1842,7 +1854,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${agentName} covers ${name}'s projects, skills, AWS background, education, certifications, role fit, honest limitations, and how to contact him.` };
   }
   if (/what model|what provider|what llm|what ai|which model|which provider/.test(lowerQuestion)) {
-    return { reply: `${agentName} uses a free multi-provider network (Groq, Cloudflare Workers AI, GitHub Models, Google Gemini) and falls back to fast, grounded answers from ${name}'s verified recruiter data.` };
+    return { reply: `${agentName} uses deterministic grounded tools with optional local Ollama formatting, plus a free overflow network of Cloudflare Workers AI, GitHub Models, Google Gemini, and xAI Grok. Groq is disabled by default.` };
   }
   if (/what is this chatbot using|does this use ollama|is this ai local|is my chat private|what data do you use/.test(lowerQuestion)) {
     return { reply: `${agentName} is grounded in ${name}'s public recruiter data file. Nothing private is stored beyond short session context.` };
@@ -1854,7 +1866,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `${agentName} doesn't connect to external systems or databases. I answer from ${name}'s public recruiter data file — his projects, skills, AWS training, education, and contact info. I can't make changes, send emails, or access repos.` };
   }
   if (/can you tell me.*(your|you.?re).*model name|what.?s your model name|what is your model name|what model are you/.test(lowerQuestion)) {
-    return { reply: `${agentName} routes open-ended questions through free LLM providers in priority order: Groq (Llama), Cloudflare Workers AI, GitHub Models, Google Gemini, and xAI Grok. If all providers are unavailable, the fallback is a deterministic answer from ${name}'s verified recruiter data. The full provider config is public in the GitHub repo.` };
+    return { reply: `${agentName} uses deterministic grounded tools and can format their evidence with local Ollama. Open-ended overflow routes through Cloudflare Workers AI, GitHub Models, Google Gemini, and xAI Grok. Groq is disabled by default, and the full provider configuration is public in the GitHub repo.` };
   }
   if (/what limits|what can.*this chatbot|limits are in place|what can you not do/.test(lowerQuestion)) {
     return { reply: `${agentName} only answers recruiter questions about ${name}. I can't access external systems, make changes to repos, send messages, or answer questions unrelated to his background. I stick to his verified public data.` };
@@ -1866,7 +1878,7 @@ function buildGroundedFallbackPayload(knowledge, question, history) {
     return { reply: `No, ${agentName} runs on GCP (Google Cloud Platform) — a free-tier e2-micro VM runs the Node API, and GitHub Pages hosts the widget. No AWS infrastructure is involved in running this chat.` };
   }
   if (/how is this chat free|how do you stay free|what powers you|what is your stack|free tier|free providers/.test(lowerQuestion)) {
-    return { reply: `${agentName} runs entirely on free tiers: GitHub Pages hosts the widget, a GCP free-tier VM runs the Node API, open-ended questions route through free LLM providers (Groq, Cloudflare Workers AI, GitHub Models, Gemini), and the final fallback is a fast, grounded answer from ${name}'s verified recruiter data. No paid AI subscriptions are needed.` };
+    return { reply: `${agentName} runs entirely on free systems: GitHub Pages hosts the widget, a GCP free-tier VM runs the Node API and local Ollama formatter, open-ended overflow uses Cloudflare Workers AI, GitHub Models, Gemini, and Grok, and the final answer can always come from ${name}'s verified recruiter data. No paid AI subscription is required.` };
   }
   if (/daily cap|daily limit|rate limit|cooldown|how.*handle.*limit|run 24|24.?7|24x7|always available|what if.*provider|exhausted|out of quota/.test(lowerQuestion)) {
     return { reply: `${agentName} is designed to stay online 24/7 without paid AI. Each free provider has its own daily request cap and rate limit. When a provider hits its cap, returns a rate-limit error, or reports exhausted credits, ${agentName} pauses that provider (60 seconds for rate limits, 24 hours for credit exhaustion) and tries the next free provider in priority order. If every free provider is unavailable, the final fallback is a fast, grounded answer from ${name}'s verified recruiter data. That layered fallback means the widget keeps working as long as the VM and GitHub Pages are up.` };
@@ -2988,7 +3000,7 @@ async function generateWithAgent(knowledge, question, history) {
   const toolNames = selectAgentToolNames(question);
   const tools = getAgentToolDefinitions(toolNames);
   if (tools.length === 0) return null;
-  if (AGENT_GROQ_ENABLED && isProviderAvailable('groq')) {
+  if (GROQ_ENABLED && AGENT_GROQ_ENABLED && groqModelPolicy(GROQ_AGENT_MODEL).allowed && isProviderAvailable('groq')) {
     const startedAt = Date.now();
     try {
       const result = await runAgentLoop({
@@ -4065,9 +4077,9 @@ app.post('/api/chat', async (req, res) => {
     let provider = learnedAns ? 'learned' : 'grounded';
     let model = learnedAns ? 'think-mode' : 'knowledge-json';
 
-    // 2. For bounded evidence workflows, let Groq call only ProjectHub's read-only
-    //    local tools. If the agent path is unavailable or rejected, preserve the
-    //    existing free-provider network and grounded fallback behavior.
+    // 2. For bounded evidence workflows, execute ProjectHub's read-only local
+    //    tools and optionally format their evidence with Ollama. An explicitly
+    //    enabled current Groq model may plan calls, but it is never required.
     let generated = false;
     let agentMeta = null;
     currentStanceContext = getStanceContext(sessionId);

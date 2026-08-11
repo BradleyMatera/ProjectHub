@@ -55,6 +55,7 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   set -euo pipefail
   test -f '$SOURCE_ENV'
   test -d /opt/recruiter-chat-api-dev/node_modules
+  curl --fail --silent http://127.0.0.1:11434/api/tags | node -e \"let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const d=JSON.parse(s);if(!(d.models||[]).some(m=>m.name.startsWith('gemma3:270m')))process.exit(1)})\"
 
   sudo install -d -m 755 '$REMOTE_DIR' '$REMOTE_DIR/data' '$REMOTE_DIR/backups'
   if [ -f '$REMOTE_DIR/server.js' ]; then
@@ -72,13 +73,21 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   sudo install -m 644 '$REMOTE_TMP/free-tier-limits.json' '$REMOTE_DIR/data/free-tier-limits.json'
   sudo ln -sfn /opt/recruiter-chat-api-dev/node_modules '$REMOTE_DIR/node_modules'
 
-  sudo grep -Ev '^(PORT|FEATURE_PREVIEW_ENABLED|AGENT_ENABLED|AGENT_GROQ_ENABLED|OLLAMA_AGENT_ENABLED|OLLAMA_URL|THINK_PUSH_ENABLED|THINK_|GITHUB_TOKEN|GITHUB_PAT|STATS_FILE|LEARNED_FILE|COST_FILE|USE_VECTOR_RETRIEVAL)=' '$SOURCE_ENV' > /tmp/projecthub-agent-preview.env
+  sudo grep -Ev '^(PORT|PROVIDER_ORDER|FEATURE_PREVIEW_ENABLED|AGENT_ENABLED|AGENT_GROQ_ENABLED|GROQ_ENABLED|GROQ_MODEL|GROQ_AGENT_MODEL|OLLAMA_AGENT_ENABLED|OLLAMA_AGENT_MODEL|OLLAMA_AGENT_CONTEXT|OLLAMA_AGENT_KEEP_ALIVE|OLLAMA_URL|THINK_PUSH_ENABLED|THINK_|GITHUB_TOKEN|GITHUB_PAT|STATS_FILE|LEARNED_FILE|COST_FILE|USE_VECTOR_RETRIEVAL)=' '$SOURCE_ENV' > /tmp/projecthub-agent-preview.env
   printf '%s\n' \
     'PORT=$PREVIEW_PORT' \
+    'PROVIDER_ORDER=cloudflare,github,gemini,grok' \
     'FEATURE_PREVIEW_ENABLED=true' \
     'AGENT_ENABLED=true' \
+    'GROQ_ENABLED=false' \
+    'GROQ_MODEL=' \
+    'GROQ_AGENT_MODEL=' \
     'AGENT_GROQ_ENABLED=false' \
-    'OLLAMA_AGENT_ENABLED=false' \
+    'OLLAMA_AGENT_ENABLED=true' \
+    'OLLAMA_AGENT_MODEL=gemma3:270m' \
+    'OLLAMA_AGENT_TIMEOUT_MS=12000' \
+    'OLLAMA_AGENT_CONTEXT=1024' \
+    'OLLAMA_AGENT_KEEP_ALIVE=60s' \
     'THINK_PUSH_ENABLED=false' \
     'USE_VECTOR_RETRIEVAL=false' \
     'STATS_FILE=stats-feature.json' \
@@ -100,7 +109,7 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   done
   systemctl is-active --quiet $SERVICE_NAME
   curl --fail --silent 'http://127.0.0.1:$PREVIEW_PORT/preview/' >/dev/null
-  node -e \"const h=require('/tmp/projecthub-agent-health.json'); if(!h.ok || !h.agent?.enabled || h.agent.groqPlannerEnabled || !h.agent.deterministicFallback) process.exit(1); console.log(JSON.stringify({ok:h.ok, agent:h.agent, providers:h.providers.map(p=>({slug:p.slug,available:p.available}))}, null, 2))\"
+  node -e \"const h=require('/tmp/projecthub-agent-health.json'); if(!h.ok || !h.agent?.enabled || h.agent.groqPlannerEnabled || !h.agent.ollamaFormatterEnabled || h.agent.groqModel || !h.agent.deterministicFallback || h.providerOrder.includes('groq')) process.exit(1); console.log(JSON.stringify({ok:h.ok, agent:h.agent, providerOrder:h.providerOrder, providers:h.providers.map(p=>({slug:p.slug,enabled:p.enabled,blockedReason:p.blockedReason}))}, null, 2))\"
   rm -rf '$REMOTE_TMP' /tmp/projecthub-agent-health.json
 "
 

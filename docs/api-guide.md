@@ -57,12 +57,12 @@ Response body:
 ```json
 {
   "reply": "Recruiter-safe answer text",
-  "provider": "groq",
-  "model": "llama-3.1-8b-instant",
+  "provider": "cloudflare",
+  "model": "@cf/meta/llama-3.2-3b-instruct",
   "grounded": false,
   "fallback": false,
   "cached": false,
-  "pipeline": ["cache-miss", "knowledge-loaded", "learned-check:miss", "mustStayGrounded:false", "network:groq:success", "shaped"],
+  "pipeline": ["cache-miss", "knowledge-loaded", "learned-check:miss", "mustStayGrounded:false", "network:cloudflare:success", "shaped"],
   "followUps": ["What about his AWS certifications?", "Did he do real production work at AWS?"],
   "agent": {
     "used": true,
@@ -78,11 +78,11 @@ The optional `agent` object is present only when Scout completes a bounded tool 
 
 ## Bounded Agent Workflows
 
-Project comparisons, job-description matching, role evidence, recruiter briefs, and interview-question requests can use Groq function calling before the normal provider fallback. The orchestration remains inside ProjectHub:
+Project comparisons, job-description matching, role evidence, recruiter briefs, and interview-question requests use provider-independent bounded tools before the normal provider fallback. The orchestration remains inside ProjectHub:
 
 1. `lib/agent-tools.js` selects up to five task-relevant read-only tools and executes them against the verified in-memory knowledge cache.
 2. `lib/agent-runtime.js` validates tool names and JSON arguments, caps execution at two rounds and three tool calls, and fails closed on unknown tools.
-3. Groq may propose tool calls and synthesize the final answer. ProjectHub never enables Groq built-in web search, code execution, remote MCP, or write-capable tools on the public route.
+3. An explicitly enabled, non-retired Groq model may propose tool calls and synthesize the final answer. Groq planning is disabled by default, and ProjectHub never enables Groq built-in web search, code execution, remote MCP, or write-capable tools on the public route.
 4. If Groq is disabled, unavailable, deprecated, out of quota, or rejected, ProjectHub deterministically selects and executes the same tools itself. This removes Groq as a single point of failure.
 5. Optional local Ollama formatting can rewrite the deterministic answer using `OLLAMA_AGENT_MODEL`; the rewrite is rejected unless it passes the same grounded validator. The deterministic answer remains authoritative.
 6. The final text runs through the existing false-claim, slop, number, and grounded-source validator.
@@ -162,11 +162,11 @@ The browser should treat `reply` as the primary answer. The current widget rende
 
 Open-ended questions are routed through a priority network of free providers:
 
-1. **Groq** (`llama-3.1-8b-instant`)
-2. **Cloudflare Workers AI** (`@cf/meta/llama-3.2-3b-instruct`)
-3. **GitHub Models** (`openai/gpt-4o-mini`)
-4. **Google Gemini** (`gemini-2.0-flash`)
-5. **xAI Grok** (`grok-4.3`) — optional, free credits can be exhausted quickly
+1. **Cloudflare Workers AI** (`@cf/meta/llama-3.2-3b-instruct`)
+2. **GitHub Models** (`openai/gpt-4o-mini`)
+3. **Google Gemini** (`gemini-2.0-flash`)
+4. **xAI Grok** (`grok-4.3`) — optional, free credits can be exhausted quickly
+5. **Groq** — disabled by default; requires an explicit current model
 6. **OpenAI-compatible** (configurable) — optional, for custom endpoints
 
 If every free provider is unavailable or the reply fails validation, the final fallback is a fast, deterministic grounded answer from `data/recruiter-knowledge.json`.
@@ -195,14 +195,18 @@ Key variables on the GCP VM (`.env`):
 
 | Variable | Purpose |
 |----------|---------|
-| `GROQ_API_KEY` | Groq API key |
+| `GROQ_ENABLED` | Opt in to Groq after explicitly choosing a current model (default `false`) |
+| `GROQ_MODEL` | Explicit Groq model ID; empty by default and rejected when retired |
+| `GROQ_API_KEY` | Groq API key; ignored while Groq is disabled |
 | `AGENT_ENABLED` | Enable bounded read-only agent workflows (default `true`) |
-| `AGENT_GROQ_ENABLED` | Allow Groq to plan bounded tool calls; disable to test the provider-independent fallback (default `true`) |
+| `AGENT_GROQ_ENABLED` | Allow an opted-in Groq provider to plan bounded tool calls (default `false`) |
 | `GROQ_AGENT_MODEL` | Groq tool-calling model; defaults to `GROQ_MODEL` |
 | `AGENT_TIMEOUT_MS` | Timeout for each Groq agent-model request, clamped to 1-10 seconds (default `6000`) |
-| `OLLAMA_AGENT_ENABLED` | Allow local Ollama to format deterministic agent evidence; never required for correctness (default `false`) |
-| `OLLAMA_AGENT_MODEL` | Local evidence formatter model (default `OLLAMA_MODEL`, currently `gemma3:1b`) |
-| `OLLAMA_AGENT_TIMEOUT_MS` | Local formatter timeout, clamped to 1-15 seconds (default `10000`) |
+| `OLLAMA_AGENT_ENABLED` | Allow local Ollama to format deterministic agent evidence; never required for correctness (enabled on prepared hosts) |
+| `OLLAMA_AGENT_MODEL` | Local evidence formatter model (prepared hosts use `gemma3:270m`) |
+| `OLLAMA_AGENT_TIMEOUT_MS` | Local formatter timeout, clamped to 1-15 seconds (default `12000`) |
+| `OLLAMA_AGENT_CONTEXT` | Formatter context window, clamped to 512-4096 tokens (default `1024`) |
+| `OLLAMA_AGENT_KEEP_ALIVE` | Short model retention window; default `60s` for fast follow-ups without long-lived memory pressure |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare Workers AI token |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
 | `GITHUB_MODELS_TOKEN` | GitHub personal access token with `models:read` |
@@ -211,7 +215,7 @@ Key variables on the GCP VM (`.env`):
 | `OPENAI_API_KEY` | OpenAI-compatible API key (optional) |
 | `OPENAI_BASE_URL` | OpenAI-compatible base URL (optional) |
 | `OPENAI_MODEL` | OpenAI-compatible model name (optional) |
-| `PROVIDER_ORDER` | Comma-separated provider slugs, e.g. `groq,cloudflare,github,gemini,grok,ollama` |
+| `PROVIDER_ORDER` | Comma-separated provider slugs; default `cloudflare,github,gemini,grok` |
 | `GEN_MODEL` | Local Ollama fallback model, default `smollm2:135m` |
 | `GEN_TIMEOUT_MS` | Per-provider timeout in ms, default `8000` |
 | `USE_BM25_RETRIEVAL` | Enable BM25 + query understanding retrieval (default `true`) |

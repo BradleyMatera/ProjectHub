@@ -10,11 +10,11 @@ function makeLedger(nowFn) {
 }
 
 test('micro-USD pricing: LLM tokens round up, never undercount', () => {
-  // groq: input 50000 micro-USD per 1M tokens -> 100 tokens = ceil(100*50000/1e6) = ceil(5) = 5
-  const micro = priceEventMicroUsd('groq', { tokensIn: 100, tokensOut: 0 }, registry);
-  assert.strictEqual(micro, 5);
+  // github: input 150000 micro-USD per 1M tokens -> 100 tokens = ceil(15) = 15
+  const micro = priceEventMicroUsd('github', { tokensIn: 100, tokensOut: 0 }, registry);
+  assert.strictEqual(micro, 15);
   // 1 token must cost at least 1 micro-USD (ceil), not 0
-  const tiny = priceEventMicroUsd('groq', { tokensIn: 1 }, registry);
+  const tiny = priceEventMicroUsd('github', { tokensIn: 1 }, registry);
   assert.strictEqual(tiny, 1);
 });
 
@@ -79,7 +79,7 @@ test('headroom percentages', () => {
 
 test('snapshot reports free=true within limits and correct USD string', () => {
   const ledger = makeLedger();
-  ledger.record({ source: 'groq', tokensIn: 1000, tokensOut: 500 });
+  ledger.record({ source: 'github', tokensIn: 1000, tokensOut: 500 });
   const snap = ledger.snapshot();
   assert.strictEqual(snap.free, true);
   assert.strictEqual(snap.shadowCost.actualUsd, '0.000000');
