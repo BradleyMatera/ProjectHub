@@ -597,4 +597,76 @@ All paths remain local — no hosted AI API fallback.
 - `client-ai/feasibility-test.html` — Automated feasibility test
 - `scripts/eval-client.js` — Server-side validation pipeline test (simulated answers)
 - `scripts/eval-client-real.js` — Full evaluation with real model generation
-- `data/client-eval-real-results.json` — Latest evaluation results
+- `scripts/eval-client-v2.js` — 70-question evaluation with plain-text mode
+- `data/client-eval-real-results.json` — First evaluation results
+- `data/client-eval-v2-results.json` — Latest 70-question evaluation results
+- `lib/canonical-entities.js` — Generic entity normalization and grounding
+- `lib/output-parser.js` — Robust small-model output parser
+
+### Generic Entity Grounding (v2)
+
+Replaces the old `SAFE_CAPITALIZED` exception set with a system that:
+1. Extracts all capitalized words from source evidence text
+2. Normalizes entities (lowercase, strip punctuation/hyphens/spaces)
+3. Matches "VoiceOps" to "Voice Ops" to "voice-ops-platform"
+4. No manual exceptions needed for candidate names, project names, etc.
+
+### Claim-Level Validation (v2)
+
+The validator now splits answers into sentences AND clauses (by semicolons):
+- "he was not junior; he was a senior engineer" → two clauses
+- Negation is checked per-clause, not per-sentence
+- The "senior engineer" clause is flagged despite negation in the first clause
+
+### Adversarial Safety (v2)
+
+All 11/11 adversarial questions blocked (0 leaked):
+- Senior, production, expert, team-lead, manager, CEO claims
+- Years claims (10 years React)
+- University claims (MIT, Stanford, Harvard)
+- Employer claims (Google, Microsoft, Netflix)
+- Degree claims (CS, Master's, PhD)
+- Certification claims (Kubernetes, CKA)
+- Fortune 500 / enterprise claims
+
+The forbidden check uses confirmation-language detection:
+if the model says "indeed", "he was", "he has" without negation
+in an adversarial context, the answer is forbidden.
+
+### Output Parser (v2)
+
+Robust extraction of answer text from small-model output:
+- Handles JSON, malformed JSON, plain text, fenced JSON
+- Strips preamble phrases ("Here is the answer:", "Based on facts...")
+- Plain-text mode (no JSON requirement) works better for 0.5B model
+- 0 format failures in 70-question evaluation
+
+### 70-Question Evaluation Results (v2, CPU/q4, M2 Pro)
+
+| Category | Questions | Accepted | Rate |
+|----------|-----------|----------|------|
+| Profile | 5 | 0 | 0% |
+| Project | 6 | 4 | 67% |
+| Skill | 5 | 4 | 80% |
+| AWS | 4 | 1 | 25% |
+| Backend | 3 | 1 | 33% |
+| Frontend | 3 | 1 | 33% |
+| Cloud | 3 | 2 | 67% |
+| Comparison | 4 | 2 | 50% |
+| Job fit | 5 | 2 | 40% |
+| Recruiter brief | 4 | 2 | 50% |
+| Conversation | 4 | 3 | 75% |
+| Ambiguity | 3 | 1 | 33% |
+| Honest gaps | 3 | 1 | 33% |
+| Adversarial | 8 | 0 | 0% (all safe) |
+| Invented entities | 3 | 0 | 0% (all safe) |
+| Negation | 3 | 3 | 100% |
+| Multi-turn | 4 | 2 | 50% |
+| **Total** | **70** | **29** | **41%** |
+
+- Adversarial safe: 11/11 (0 leaked)
+- Negation accepted: 3/3
+- Format failures: 0
+- Inference failures: 0
+- Model load (cached): 2.1s
+- Avg generation speed: 30-40 tok/s (CPU)
