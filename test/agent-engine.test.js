@@ -747,3 +747,126 @@ test('has_experience maps to worked_at for valid experience claims', () => {
   // has_experience in "cloud support engineering" should map to worked_at/interned_at
   assert.ok(!result.reasons.some(r => r.startsWith('unsupported_relationship:')), 'has_experience should map to worked_at');
 });
+
+// === Negated invented entity regression tests ===
+
+test('negated invented entity "did not work at Microsoft" is ACCEPTED', () => {
+  const { validateAnswer } = require('../lib/grounding-validator');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const source = 'Bradley worked at Amazon Web Services (AWS), CIRIS Ethical AI, and the United States Army.';
+  const result = validateAnswer(
+    'No, he did not work at Microsoft.',
+    source,
+    'Tell me about his time at Microsoft.',
+    knowledge
+  );
+  assert.equal(result.valid, true, 'Negated invented entity should be accepted as a valid refutation');
+  assert.ok(!result.reasons.some(r => r.startsWith('entity_not_grounded:')), 'Should not flag negated entity as ungrounded');
+  assert.ok(!result.reasons.some(r => r.startsWith('fabricated_entity:')), 'Should not flag negated entity as fabricated');
+});
+
+test('affirmative invented entity "he worked at Google" is REJECTED', () => {
+  const { validateAnswer } = require('../lib/grounding-validator');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const source = 'Bradley worked at Amazon Web Services (AWS), CIRIS Ethical AI, and the United States Army.';
+  const result = validateAnswer(
+    'Yes, he worked at Google.',
+    source,
+    'He worked at Google, right?',
+    knowledge
+  );
+  assert.equal(result.valid, false, 'Affirmative invented entity should be rejected');
+});
+
+test('claim extractor does not parse "is an AI assistant that" as subject', () => {
+  const { extractClaims } = require('../lib/claim-extractor');
+  const { buildRelationshipGraph } = require('../lib/relationship-graph');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const graph = buildRelationshipGraph(knowledge);
+  const claims = extractClaims(
+    'ProjectHub is an AI recruiter assistant that uses JavaScript, Node.js, and Express.',
+    graph,
+    'Tell me about ProjectHub.'
+  );
+  const badSubject = claims.find(c => c.subject && /is an AI/i.test(c.subject));
+  assert.ok(!badSubject, 'Should not extract "is an AI recruiter assistant that" as subject');
+});
+
+test('claim extractor does not parse "includes working" as subject', () => {
+  const { extractClaims } = require('../lib/claim-extractor');
+  const { buildRelationshipGraph } = require('../lib/relationship-graph');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const graph = buildRelationshipGraph(knowledge);
+  const claims = extractClaims(
+    'His experience includes working on projects that use React and JavaScript.',
+    graph,
+    'What does he actually do?'
+  );
+  const badSubject = claims.find(c => c.subject && /includes working/i.test(c.subject));
+  assert.ok(!badSubject, 'Should not extract "includes working" as subject');
+});
+
+// === Completeness check tests ===
+
+test('completeness check classifies yes/no intent correctly', () => {
+  const { classifyIntent } = require('../lib/completeness-check');
+  assert.equal(classifyIntent('Does he know React?'), 'SKILL');
+  assert.equal(classifyIntent('Is he a senior engineer?'), 'YES_NO');
+  assert.equal(classifyIntent('Compare ProjectHub and Voice Ops.'), 'COMPARISON');
+  assert.equal(classifyIntent('How does he fit a junior developer role?'), 'JOB_FIT');
+  assert.equal(classifyIntent('Give me the quick recruiter version.'), 'RECRUITER');
+  assert.equal(classifyIntent('He was a senior AWS engineer, right?'), 'ADVERSARIAL');
+  assert.equal(classifyIntent('Tell me about ProjectHub.'), 'PROJECT');
+  assert.equal(classifyIntent('What about the backend?'), 'FOLLOW_UP');
+});
+
+test('completeness check detects terse yes/no answer', () => {
+  const { evaluateCompleteness } = require('../lib/completeness-check');
+  const result = evaluateCompleteness('Yes.', 'Does he know React?', []);
+  assert.equal(result.complete, false);
+  // "Yes." is < 3 words so it hits the generic TOO_SHORT check
+  assert.ok(result.reason === 'TOO_SHORT' || result.reason === 'YES_NO_TOO_TERSE');
+});
+
+test('completeness check accepts good yes/no answer', () => {
+  const { evaluateCompleteness } = require('../lib/completeness-check');
+  const result = evaluateCompleteness(
+    'Yes. React is part of his verified skill set and appears in his web development work.',
+    'Does he know React?',
+    [{ description: 'React is in his skills alongside JavaScript and TypeScript' }]
+  );
+  assert.equal(result.complete, true);
+});
+
+test('completeness check detects generic filler', () => {
+  const { evaluateCompleteness } = require('../lib/completeness-check');
+  const result = evaluateCompleteness(
+    'Based on the information provided, I would need more context to answer.',
+    'Tell me about ProjectHub.',
+    []
+  );
+  assert.equal(result.complete, false);
+  assert.equal(result.reason, 'GENERIC_FILLER');
+});
+
+test('completeness check detects question repetition', () => {
+  const { evaluateCompleteness } = require('../lib/completeness-check');
+  const result = evaluateCompleteness(
+    'ProjectHub is a project.',
+    'Tell me about ProjectHub.',
+    []
+  );
+  assert.equal(result.complete, false);
+});
+
+test('completeness check detects adversarial without refutation', () => {
+  const { evaluateCompleteness } = require('../lib/completeness-check');
+  const result = evaluateCompleteness(
+    'Yes, he has 10 years of React experience.',
+    'He has 10 years of React experience, right?',
+    []
+  );
+  assert.equal(result.complete, false);
+  // May be caught by question repetition or adversarial no refutation
+  assert.ok(result.reason === 'ADVERSARIAL_NO_REFUTATION' || result.reason === 'QUESTION_REPETITION');
+});
