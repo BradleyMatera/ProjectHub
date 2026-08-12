@@ -670,3 +670,144 @@ Robust extraction of answer text from small-model output:
 - Inference failures: 0
 - Model load (cached): 2.1s
 - Avg generation speed: 30-40 tok/s (CPU)
+
+---
+
+## Conversation Parity Evaluation (v3)
+
+**Added:** 2026-08-11
+
+The conversation parity suite measures CONVERSATION QUALITY, not just
+grounding. It contains 68 prompts across 15 multi-turn conversations
+covering profile, projects, skills, AWS, follow-ups, comparisons,
+job fit, recruiter briefs, ambiguity, natural wording, personality,
+adversarial, negation, invented entities, and explanation.
+
+### Golden Baseline
+
+The golden baseline was captured from the current production Scout
+(which uses a mix of Groq, Cloudflare, grounded, and GitHub providers).
+It is stored in `data/current-scout-golden-baseline.json`.
+
+**Important:** The golden baseline is a CONVERSATIONAL QUALITY REFERENCE,
+not a factual authority. Current verified Scout knowledge remains the
+factual authority. If the historical Scout gave stale or incomplete
+answers, the local Scout should use current verified knowledge and
+beat the historical response.
+
+### Identity Configuration
+
+Scout's identity is centralized in `data/scout-identity.json`:
+
+```json
+{
+  "assistantName": "Scout",
+  "subjectName": "Bradley Matera",
+  "domain": "professional-portfolio",
+  "purpose": "Help visitors understand Bradley's work and experience",
+  "tone": ["friendly", "direct", "knowledgeable"],
+  "subjectPronouns": { "subject": "he", "object": "him", "possessive": "his" }
+}
+```
+
+Used by `lib/scout-identity.js` to build prompts dynamically.
+Changing Scout to represent a tire shop/SaaS/restaurant only requires
+changing the identity config + knowledge file.
+
+### Profile Summary
+
+`lib/profile-summary.js` builds a clean domain-neutral summary from
+the active knowledge package. Format:
+
+```
+IDENTITY: [name]
+TITLE: [headline]
+TYPE: [domain]
+PRIMARY: [skills]
+KEY_PROJECTS: [projects]
+EXPERIENCE: [experience]
+BOUNDARIES: [what not to claim]
+```
+
+All fields are derived from the knowledge file, not hardcoded.
+
+### Generic Entity Detection
+
+Replaces the COMMON_ENGLISH whack-a-mole list with generic logic:
+
+1. Multi-word capitalized phrases are checked against the entity registry
+2. Single capitalized words at sentence start are NOT flagged (English capitalization)
+3. All-caps acronyms (AWS, API, HTML) are always checked
+4. Entity registry is built from the active knowledge package
+
+This means "During his internship...", "Please note...", "After the project..."
+no longer require manual safe-list entries.
+
+### Persona Separation
+
+The system prompt explicitly establishes:
+- "You are Scout, an AI assistant. You are NOT [subject]."
+- "NEVER say I/my/me when talking about [subject]."
+- "ALWAYS say he/his/him when talking about [subject]."
+
+The validator detects persona confusion (first-person claims about the
+subject's experience) and rejects them as hard fails.
+
+### Conversation Quality Metrics
+
+The eval script now distinguishes:
+- **Conversationally good**: Accepted + natural + specific + correct persona
+- **Generic but valid**: Accepted but vague/boilerplate/restates question
+- **Fallback**: Deterministic grounded response
+- **Unsafe blocked**: Adversarial/forbidden claim detected
+- **Format failure**: Output parsing failed
+
+### 1.5B Evaluation Results (v3, CPU/q4)
+
+| Category | Rate | Notes |
+|----------|------|-------|
+| Profile | 67% | Good, some entity false rejections |
+| Follow-ups | 67% | Good multi-turn context |
+| Skills | 100% | Structured skill evidence works well |
+| Comparison | 75% | Natural comparison answers |
+| Ambiguity | 100% | Reference resolution works |
+| Natural | 60% | Some generic answers |
+| Job fit | 75% | Improved with structured match format |
+| Recruiter | 67% | Good but some persona confusion |
+| Personality | 50% | Mixed — some good, some persona confusion |
+| Honest gaps | 33% | Needs improvement |
+| Adversarial | 12/12 safe | 0 leaks — all correctly refuted or blocked |
+| Negation | 100% | Correctly refutes false claims |
+
+Overall: 56-71% accepted (varies by run), 12/12 adversarial safe.
+
+### Generation Settings
+
+Current: temperature=0.4, top_p=0.9, max_new_tokens=120, repetition_penalty=1.1
+
+These settings balance naturalness with determinism. Lower temperature
+(0.2) makes the model more deterministic but also more robotic. Higher
+temperature (0.7) increases creativity but also increases hallucination.
+
+### Remaining Issues
+
+1. **Persona confusion** — the 1.5B model sometimes says "As a software
+   engineer..." instead of "He is a software engineer..." This is a
+   prompting issue, not a capacity issue.
+
+2. **Entity false rejections** — some common words (WebGL, Redux, GraphQL,
+   Cognito, LinkedIn, IAM, VPCs) are flagged as ungrounded because they
+   appear in the model's answer but not in the compressed evidence. These
+   are correct rejections of hallucinated entities, but they show the model
+   is still hallucinating.
+
+3. **Speed** — 1.5B is 10-12 tok/s on CPU, which is slow (6-10s per answer).
+   WebGPU should improve this to 30-50 tok/s (2-3s per answer).
+
+4. **Stability** — the model is stochastic. Different runs produce different
+   acceptance rates (56-71%). The persona check and entity detection have
+   reduced variance, but more work is needed.
+
+5. **Specificity** — the model still gives generic answers for some
+   questions ("To better assist you, could you please specify...") instead
+   of using the specific evidence in the packet.
