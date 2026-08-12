@@ -1482,6 +1482,38 @@ test('regression: leaked relation name (uses_tech) is rejected', () => {
   assert.ok(result.reasons.includes('leaked_relation_syntax'), `Should flag leaked relation name, got: ${result.reasons.join(', ')}`);
 });
 
+test('regression: leaked tech= syntax is rejected', () => {
+  const result = validateAnswer(
+    'ProjectHub is more technically complex. It has tech=JavaScript, Node.js, and Express.',
+    'ProjectHub uses JavaScript, Node.js, and Express.',
+    'Which one would impress you more?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.includes('leaked_relation_syntax'), `Should flag tech= syntax, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: "my ability" is persona confusion', () => {
+  const result = validateAnswer(
+    'I believe ProjectHub is quite interesting. It involves creating a chat widget that can be embedded on any website, which adds value to the user experience and showcases my ability to work with various technologies.',
+    'Bradley built ProjectHub. Scout is the assistant.',
+    'What project do you think is the most interesting?',
+    testKnowledge
+  );
+  assert.ok(result.reasons.some(r => r.includes('persona_confusion')),
+    `"my ability" should be persona confusion, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: "project management system" is wrong type for ProjectHub', () => {
+  const result = validateAnswer(
+    "ProjectHub is a platform that helps people share, manage, and collaborate on projects. It's like having your own personal project management system.",
+    'ProjectHub is an AI recruiter assistant named Scout.',
+    "Explain ProjectHub like I'm not technical.",
+    testKnowledge
+  );
+  assert.equal(result.valid, false, `"project management system" should be rejected as wrong type for ProjectHub`);
+});
+
 test('regression: leaked internal phrase (connecting entities) is rejected', () => {
   const result = validateAnswer(
     'He is best at connecting entities.',
