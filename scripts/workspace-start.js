@@ -74,8 +74,11 @@ function main() {
     } else if (hasRemote) {
       runGit(['switch', '--track', '-c', branch, `origin/${branch}`]);
     } else {
-      if (!refExists('refs/remotes/origin/develop')) fail('origin/develop does not exist.');
-      runGit(['switch', '-c', branch, 'origin/develop']);
+      // New portable workspaces are based on current GitHub production history.
+      // Do NOT use origin/develop here: develop is intentionally preserved while
+      // its older staging-only history is reconciled with current master.
+      if (!refExists('refs/remotes/origin/master')) fail('origin/master does not exist.');
+      runGit(['switch', '-c', branch, 'origin/master']);
       runGit(['push', '-u', 'origin', branch]);
     }
   } catch (error) {
