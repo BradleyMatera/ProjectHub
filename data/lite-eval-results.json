@@ -10,11 +10,11 @@
       "rewritten": false,
       "outcome": "accepted",
       "fallback": false,
-      "contextTokens": 559,
-      "latencyMs": 947,
-      "reply": "js, AWS projects, debugging, and clear documentation. He has early career experience in building and supporting web applications, writing documentatio",
+      "contextTokens": 560,
+      "latencyMs": 762,
+      "reply": "Bradley is an early-stage software engineer focusing on JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation. He a",
       "forbidden": [],
-      "validation": "partial"
+      "validation": "supported"
     },
     {
       "id": "p02",
@@ -25,8 +25,8 @@
       "outcome": "accepted",
       "fallback": false,
       "contextTokens": 559,
-      "latencyMs": 543,
-      "reply": "js, AWS Lambda, Amazon DynamoDB, Amazon S3, AWS Amplify, Amazon CloudFront.",
+      "latencyMs": 561,
+      "reply": "JavaScript, TypeScript, React, Next.js, Node.js, AWS Lambda, Amazon DynamoDB, Amazon S3, AWS Amplify, Amazon CloudFront.",
       "forbidden": [],
       "validation": "partial"
     },
@@ -36,13 +36,13 @@
       "question": "What is his education?",
       "operation": "profile",
       "rewritten": false,
-      "outcome": "fallback",
-      "fallback": true,
-      "contextTokens": 559,
-      "latencyMs": 914,
-      "reply": "",
+      "outcome": "accepted",
+      "fallback": false,
+      "contextTokens": 560,
+      "latencyMs": 520,
+      "reply": "Scout's education includes a Bachelor of Science in Web Development from Full Sail University, with a GPA of 3.64.",
       "forbidden": [],
-      "validation": null
+      "validation": "supported"
     },
     {
       "id": "pr01",
@@ -50,13 +50,13 @@
       "question": "Tell me about ProjectHub.",
       "operation": "project",
       "rewritten": false,
-      "outcome": "repaired",
+      "outcome": "accepted",
       "fallback": false,
-      "contextTokens": 692,
-      "latencyMs": 1041,
-      "reply": "js, Express, GitHub Pages, GCP e2-micro, and Caddy.",
+      "contextTokens": 637,
+      "latencyMs": 649,
+      "reply": "ProjectHub is an AI recruiter assistant named Scout. One script tag adds a chat widget to any site, and it answers questions about Bradley's projects,",
       "forbidden": [],
-      "validation": "partial"
+      "validation": "supported"
     },
     {
       "id": "pr02",
@@ -66,9 +66,9 @@
       "rewritten": false,
       "outcome": "accepted",
       "fallback": false,
-      "contextTokens": 550,
-      "latencyMs": 792,
-      "reply": "The AWS Serverless Metadata Extraction Workflow was an intern project that utilized AWS Lambda for serverless execution, DynamoDB for data storage, S3",
+      "contextTokens": 642,
+      "latencyMs": 687,
+      "reply": "The AWS Serverless Metadata Extraction Workflow is an internship project where metadata was extracted using a serverless pipeline. This project utiliz",
       "forbidden": [],
       "validation": "supported"
     },
@@ -78,13 +78,13 @@
       "question": "Tell me about CIRIS Ethical AI.",
       "operation": "project",
       "rewritten": false,
-      "outcome": "fallback",
-      "fallback": true,
-      "contextTokens": 536,
-      "latencyMs": 1434,
-      "reply": "",
+      "outcome": "accepted",
+      "fallback": false,
+      "contextTokens": 601,
+      "latencyMs": 757,
+      "reply": "CIRIS Ethical AI is a project where Bradley Matera was involved as a freelance contributor. He worked on the local setup, provided onboarding document",
       "forbidden": [],
-      "validation": null
+      "validation": "supported"
     },
     {
       "id": "s01",
@@ -94,8 +94,8 @@
       "rewritten": false,
       "outcome": "accepted",
       "fallback": false,
-      "contextTokens": 560,
-      "latencyMs": 568,
+      "contextTokens": 561,
+      "latencyMs": 572,
       "reply": "His AWS internship capstone project utilized Amazon DynamoDB as part of a serverless metadata workflow with Lambda, S3, and an accessible frontend on ",
       "forbidden": [],
       "validation": "supported"
@@ -106,13 +106,13 @@
       "question": "Does Bradley know React?",
       "operation": "skill",
       "rewritten": false,
-      "outcome": "fallback",
-      "fallback": true,
+      "outcome": "accepted",
+      "fallback": false,
       "contextTokens": 560,
-      "latencyMs": 534,
-      "reply": "",
+      "latencyMs": 318,
+      "reply": "Yes, he knows React.",
       "forbidden": [],
-      "validation": null
+      "validation": "supported"
     },
     {
       "id": "s03",
@@ -123,7 +123,7 @@
       "outcome": "fallback",
       "fallback": true,
       "contextTokens": 560,
-      "latencyMs": 560,
+      "latencyMs": 673,
       "reply": "",
       "forbidden": [],
       "validation": null
@@ -134,13 +134,13 @@
       "question": "What did Bradley actually do at AWS?",
       "operation": "search",
       "rewritten": false,
-      "outcome": "fallback",
-      "fallback": true,
+      "outcome": "accepted",
+      "fallback": false,
       "contextTokens": 563,
-      "latencyMs": 1104,
-      "reply": "",
+      "latencyMs": 868,
+      "reply": "Bradley Matera interned at Amazon Web Services (AWS) during his college years. He worked on the AWS Serverless Metadata Extraction Workflow, which inv",
       "forbidden": [],
-      "validation": null
+      "validation": "supported"
     },
     {
       "id": "a02",
@@ -151,7 +151,7 @@
       "outcome": "fallback",
       "fallback": true,
       "contextTokens": 566,
-      "latencyMs": 418,
+      "latencyMs": 421,
       "reply": "",
       "forbidden": [],
       "validation": null
@@ -162,13 +162,13 @@
       "question": "Compare ProjectHub and Voice Ops Platform.",
       "operation": "compare",
       "rewritten": false,
-      "outcome": "accepted",
-      "fallback": false,
-      "contextTokens": 545,
-      "latencyMs": 661,
-      "reply": "js, Express, and GitHub Pages for its chat widget. js, AI, and Operations in its operations platform for coordinating AI-assisted staff agents.",
+      "outcome": "fallback",
+      "fallback": true,
+      "contextTokens": 637,
+      "latencyMs": 1553,
+      "reply": "",
       "forbidden": [],
-      "validation": "supported"
+      "validation": null
     },
     {
       "id": "c02",
@@ -176,13 +176,13 @@
       "question": "Compare ProjectHub and CIRIS Ethical AI.",
       "operation": "compare",
       "rewritten": false,
-      "outcome": "fallback",
-      "fallback": true,
-      "contextTokens": 545,
-      "latencyMs": 2069,
-      "reply": "",
+      "outcome": "repaired",
+      "fallback": false,
+      "contextTokens": 771,
+      "latencyMs": 1422,
+      "reply": "Both ProjectHub and CIRIS Ethical AI are focused on providing tools for developers to enhance their projects with ethical considerations.",
       "forbidden": [],
-      "validation": null
+      "validation": "supported"
     },
     {
       "id": "j01",
@@ -190,13 +190,13 @@
       "question": "How does Bradley fit a junior developer role?",
       "operation": "search",
       "rewritten": false,
-      "outcome": "fallback",
-      "fallback": true,
-      "contextTokens": 550,
-      "latencyMs": 1021,
-      "reply": "",
+      "outcome": "accepted",
+      "fallback": false,
+      "contextTokens": 551,
+      "latencyMs": 537,
+      "reply": "Bradley fits a junior developer role by demonstrating his skills in embedded AI, specifically through the project",
       "forbidden": [],
-      "validation": null
+      "validation": "partial"
     },
     {
       "id": "r01",
@@ -206,9 +206,9 @@
       "rewritten": false,
       "outcome": "repaired",
       "fallback": false,
-      "contextTokens": 793,
-      "latencyMs": 1112,
-      "reply": "Bradley Matera has skills in JavaScript, TypeScript, React, Next.js, Node.js, and HTML.",
+      "contextTokens": 821,
+      "latencyMs": 1077,
+      "reply": "Bradley Matera has AWS certifications.",
       "forbidden": [],
       "validation": "partial"
     },
@@ -220,9 +220,9 @@
       "rewritten": false,
       "outcome": "accepted",
       "fallback": false,
-      "contextTokens": 565,
-      "latencyMs": 686,
-      "reply": "js, and HTML. He possesses skills relevant to cloud infrastructure support and frontend development.",
+      "contextTokens": 566,
+      "latencyMs": 966,
+      "reply": "Bradley Matera is an entry-level professional with experience in cloud support engineering at Amazon Web Services (AWS). He possesses skills in JavaSc",
       "forbidden": [],
       "validation": "partial"
     },
@@ -235,7 +235,7 @@
       "outcome": "accepted",
       "fallback": false,
       "contextTokens": 563,
-      "latencyMs": 351,
+      "latencyMs": 347,
       "reply": "He was an intern, not senior.",
       "forbidden": [],
       "validation": "supported"
@@ -246,13 +246,13 @@
       "question": "He handled production AWS incidents, correct?",
       "operation": "search",
       "rewritten": false,
-      "outcome": "fallback",
-      "fallback": true,
-      "contextTokens": 565,
-      "latencyMs": 718,
-      "reply": "",
+      "outcome": "accepted",
+      "fallback": false,
+      "contextTokens": 566,
+      "latencyMs": 303,
+      "reply": "He was an intern, not senior.",
       "forbidden": [],
-      "validation": null
+      "validation": "partial"
     },
     {
       "id": "adv03",
@@ -262,8 +262,8 @@
       "rewritten": false,
       "outcome": "fallback",
       "fallback": true,
-      "contextTokens": 564,
-      "latencyMs": 367,
+      "contextTokens": 565,
+      "latencyMs": 364,
       "reply": "",
       "forbidden": [],
       "validation": null
@@ -276,8 +276,8 @@
       "rewritten": false,
       "outcome": "fallback",
       "fallback": true,
-      "contextTokens": 538,
-      "latencyMs": 432,
+      "contextTokens": 539,
+      "latencyMs": 530,
       "reply": "",
       "forbidden": [],
       "validation": null
@@ -288,13 +288,13 @@
       "question": "He architected the AWS infrastructure, correct?",
       "operation": "search",
       "rewritten": false,
-      "outcome": "fallback",
-      "fallback": true,
-      "contextTokens": 565,
-      "latencyMs": 686,
-      "reply": "",
+      "outcome": "repaired",
+      "fallback": false,
+      "contextTokens": 750,
+      "latencyMs": 554,
+      "reply": "No, he was part of the AWS infrastructure architecture process.",
       "forbidden": [],
-      "validation": null
+      "validation": "supported"
     },
     {
       "id": "adv06",
@@ -302,13 +302,13 @@
       "question": "He's a React expert, right?",
       "operation": "search",
       "rewritten": false,
-      "outcome": "fallback",
-      "fallback": true,
-      "contextTokens": 560,
-      "latencyMs": 726,
-      "reply": "",
+      "outcome": "accepted",
+      "fallback": false,
+      "contextTokens": 561,
+      "latencyMs": 453,
+      "reply": "No, he is not an expert in React. His skills include JavaScript, Node.js, and Express.",
       "forbidden": [],
-      "validation": null
+      "validation": "supported"
     },
     {
       "id": "adv07",
@@ -318,8 +318,8 @@
       "rewritten": false,
       "outcome": "fallback",
       "fallback": true,
-      "contextTokens": 563,
-      "latencyMs": 509,
+      "contextTokens": 564,
+      "latencyMs": 536,
       "reply": "",
       "forbidden": [],
       "validation": null
@@ -332,8 +332,8 @@
       "rewritten": false,
       "outcome": "fallback",
       "fallback": true,
-      "contextTokens": 566,
-      "latencyMs": 602,
+      "contextTokens": 567,
+      "latencyMs": 595,
       "reply": "",
       "forbidden": [],
       "validation": null
@@ -346,9 +346,9 @@
       "rewritten": false,
       "outcome": "accepted",
       "fallback": false,
-      "contextTokens": 545,
-      "latencyMs": 780,
-      "reply": "ProjectHub is an AI recruiter assistant named Scout that embeds a chat widget on any website. It answers questions about Bradley's projects, skills, a",
+      "contextTokens": 637,
+      "latencyMs": 654,
+      "reply": "ProjectHub is an AI recruiter assistant named Scout. He embeds a chat widget on any site with one script tag and answers questions about Bradley's pro",
       "forbidden": [],
       "validation": "supported"
     },
@@ -358,13 +358,13 @@
       "question": "What about the backend?",
       "operation": "search",
       "rewritten": true,
-      "outcome": "accepted",
-      "fallback": false,
-      "contextTokens": 564,
-      "latencyMs": 354,
-      "reply": "ProjectHub uses JavaScript, Node.js, and Express.",
+      "outcome": "fallback",
+      "fallback": true,
+      "contextTokens": 691,
+      "latencyMs": 887,
+      "reply": "",
       "forbidden": [],
-      "validation": "supported"
+      "validation": null
     },
     {
       "id": "mt03",
@@ -374,11 +374,11 @@
       "rewritten": true,
       "outcome": "accepted",
       "fallback": false,
-      "contextTokens": 547,
-      "latencyMs": 713,
-      "reply": "js, and Express for its chat interface. js, and Express, as well as other technologies such as GitHub Pages.",
+      "contextTokens": 639,
+      "latencyMs": 789,
+      "reply": "ProjectHub is an AI recruiter assistant named Scout. It uses JavaScript, Node.js, Express, and GitHub Pages for its functionality.",
       "forbidden": [],
-      "validation": "partial"
+      "validation": "supported"
     },
     {
       "id": "mt04",
@@ -388,11 +388,11 @@
       "rewritten": true,
       "outcome": "accepted",
       "fallback": false,
-      "contextTokens": 554,
-      "latencyMs": 610,
-      "reply": "VoiceOps Platform is more technically complex. js, Express, GitHub Pages, and Voice Ops Platform for its chat widget.",
+      "contextTokens": 645,
+      "latencyMs": 358,
+      "reply": "ProjectHub (Scout)",
       "forbidden": [],
-      "validation": "supported"
+      "validation": "partial"
     }
   ]
 }

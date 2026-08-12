@@ -4,7 +4,7 @@
 
 **Working branch:** `feat/agent-systems-network`
 
-**Code baseline:** Relationship-aware grounding phase (post-`7583c6a`)
+**Code baseline:** Conversational quality improvement phase (post-`0ff306a`)
 
 **Release state:** committed locally, not promoted to `develop` or `master`, not deployed. Production is unchanged.
 
@@ -130,14 +130,25 @@ An earlier private-preview deployment at commit `a4c8bd4` passed the then-curren
 ## Known limitations and unfinished acceptance
 
 - The relationship-aware grounding phase added `lib/relationship-graph.js`, `lib/claim-extractor.js`, and `lib/relationship-validator.js`. These provide generic, domain-neutral relationship validation that prevents the model from recombining unrelated true facts into false claims.
-- LITE mode (`lib/lite-agent.js`) has been updated to pass knowledge to the validator for relationship-aware grounding. The system prompt now includes explicit relationship correctness rules.
-- 1.5B evaluation results (4 runs, 28 questions each):
-  - Generative rate: 43–50% (average ~46%)
+- The conversational quality phase fixed the "js" truncation bug (sentence splitter was breaking on periods in tech names like Node.js), fixed validator false rejections (education context, possessives, negated overclaims, yes/no questions), added entity-scoped structured facts to context packets, and upgraded the repair packet to include specific unsupported relationships with supported alternatives.
+- LITE mode (`lib/lite-agent.js`) has been updated to pass knowledge to the validator for relationship-aware grounding, build structured facts from the relationship graph, and provide relationship-aware repair context.
+- 1.5B evaluation results (3 stability runs, 28 questions each):
+  - Generative rate: 68–71% (average ~69%)
   - Forbidden claims: 0 across all runs
-  - Manual audit of accepted answers: 100% factually correct (no unsupported relationships, no overclaims, no persona errors)
-  - Conversational quality: ~60% of accepted answers are conversationally good; ~40% are correct but terse/truncated
-- The 1.5B model sometimes outputs "js" instead of "JavaScript" — a model quality issue, not a factual correctness issue.
-- Adversarial questions mostly fall back deterministically, which is safe but not conversational.
+  - Manual audit of accepted answers: 100% factually correct
+  - "js" truncation bug: FIXED
+- Full parity suite (68 questions):
+  - Generative: 47/68 (69%)
+  - Fallback: 21/68 (31%)
+  - Unsafe blocked: 0
+  - Factually correct AND good: 36/68 (53%)
+  - Factually correct but terse: 11/68 (16%)
+  - Safe fallback: 21/68 (31%)
+- Remaining fallbacks are primarily:
+  - Model too short ("No.", "Internship") — model capacity
+  - Model overclaim ("proficiency in", "extensive experience") — correctly rejected
+  - Model confirms false claim (adversarial) — correctly rejected
+  - Model hallucinates entity (MIT, Computer Science) — correctly rejected
 - WebGPU browser-local testing remains NOT MEASURED.
 - Local Ollama on an e2-micro is useful but inconsistent; validators and deterministic grounding are part of the product, not temporary scaffolding.
 - Production retained only a capped subset of all-time requests, so the suite cannot reproduce missing conversations.

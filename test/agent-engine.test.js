@@ -573,3 +573,177 @@ test('relationship graph works for restaurant allergen domain', () => {
   const crossResult = checkRelationship(graph, 'Burger A', 'uses_tech', 'peanuts');
   assert.equal(crossResult.supported, false, 'Should NOT transfer peanut allergen from Dessert B to Burger A');
 });
+
+// === Regression tests for false positive fixes ===
+
+test('extractCompleteSentences does not truncate at Node.js period', () => {
+  const input = 'No, he is not an expert in React. His skills include JavaScript, Node.js, and Express, but React is listed as part of his skill set.';
+  const result = extractCompleteSentences(input, 2);
+  // The bug was: "His skills include JavaScript, Node." became "js, and Express..."
+  // The fix: sentence splitter only splits on . ! ? followed by space + capital letter
+  assert.ok(result.includes('Node.js'), 'Should preserve Node.js in output');
+  assert.ok(!result.startsWith('js,'), 'Should NOT start with "js," (truncation bug)');
+  assert.ok(result.includes('His skills include'), 'Should preserve second sentence');
+});
+
+test('extractCompleteSentences preserves multi-sentence answers with tech names', () => {
+  const input = 'ProjectHub uses JavaScript, Node.js, and Express for its backend. It also uses GitHub Pages for hosting.';
+  const result = extractCompleteSentences(input, 2);
+  assert.ok(result.includes('Node.js'), 'Should preserve Node.js');
+  assert.ok(result.includes('Express'), 'Should preserve Express');
+  assert.ok(result.includes('GitHub Pages'), 'Should preserve second sentence');
+});
+
+test('cleanEntityName strips possessive and rejects non-entity phrases', () => {
+  const { cleanEntityName } = require('../lib/claim-extractor');
+  // Possessive stripping
+  assert.equal(cleanEntityName("ProjectHub's"), 'ProjectHub');
+  assert.equal(cleanEntityName("Scout's"), 'Scout');
+  // Non-entity rejection
+  assert.equal(cleanEntityName('that focused'), null);
+  assert.equal(cleanEntityName('tech stack'), null);
+  assert.equal(cleanEntityName('backend'), null);
+  assert.equal(cleanEntityName('project'), null);
+});
+
+test('claim extractor does not false-positive on education context', () => {
+  const { extractClaims } = require('../lib/claim-extractor');
+  const { buildRelationshipGraph } = require('../lib/relationship-graph');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const graph = buildRelationshipGraph(knowledge);
+
+  // "Scout's education includes a Bachelor of Science..." should NOT produce a uses_tech claim
+  const claims = extractClaims(
+    "Scout's education includes a Bachelor of Science in Web Development from Full Sail University, with a GPA of 3.64.",
+    graph,
+    "What is his education?"
+  );
+  const usesTechClaims = claims.filter(c => c.relation === 'uses_tech');
+  assert.equal(usesTechClaims.length, 0, 'Education context should NOT produce uses_tech claims');
+});
+
+test('claim extractor does not false-positive on "that focused" pattern', () => {
+  const { extractClaims } = require('../lib/claim-extractor');
+  const { buildRelationshipGraph } = require('../lib/relationship-graph');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const graph = buildRelationshipGraph(knowledge);
+
+  const claims = extractClaims(
+    'Bradley Matera was involved in an AWS internship capstone project that focused on extracting metadata using a serverless pipeline.',
+    graph,
+    'What did Bradley actually do at AWS?'
+  );
+  // "that focused" should NOT be extracted as a subject
+  const badClaims = claims.filter(c => c.subject && /that focused/i.test(c.subject));
+  assert.equal(badClaims.length, 0, '"that focused" should NOT be extracted as entity');
+});
+
+test('claim extractor does not false-positive on "tech stack includes" pattern', () => {
+  const { extractClaims } = require('../lib/claim-extractor');
+  const { buildRelationshipGraph } = require('../lib/relationship-graph');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const graph = buildRelationshipGraph(knowledge);
+
+  const claims = extractClaims(
+    'CIRIS Ethical AI has a tech stack that includes JavaScript, Docker Compose, GitHub, and JWT.',
+    graph,
+    'Tell me about CIRIS Ethical AI.'
+  );
+  // "tech stack" should NOT be extracted as a subject
+  const badClaims = claims.filter(c => c.subject && /tech stack/i.test(c.subject));
+  assert.equal(badClaims.length, 0, '"tech stack" should NOT be extracted as entity');
+});
+
+test('validator accepts short adversarial refutation with negation', () => {
+  const { validateAnswer } = require('../lib/grounding-validator');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const source = 'Bradley was a Cloud Support Engineer Intern at AWS. He was an intern, not a senior engineer. He did not handle production incidents.';
+  // "No. He was an intern, not senior." was being rejected for insufficient_content_overlap
+  const result = validateAnswer(
+    'No. He was an intern, not senior.',
+    source,
+    'He handled production AWS incidents, correct?',
+    knowledge
+  );
+  assert.equal(result.valid, true, 'Short negation refutation should be accepted');
+});
+
+test('validator does not flag GPA as fabricated entity', () => {
+  const { validateAnswer } = require('../lib/grounding-validator');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const source = 'Bradley has a Bachelor of Science in Web Development from Full Sail University. GPA 3.64. Graduated October 2025.';
+  const result = validateAnswer(
+    "Bradley's education includes a Bachelor of Science in Web Development from Full Sail University, with a GPA of 3.64.",
+    source,
+    'What is his education?',
+    knowledge
+  );
+  assert.ok(!result.reasons.some(r => r.includes('GPA')), 'GPA should NOT be flagged as fabricated');
+});
+
+test('relationship graph indexes education properties (GPA, location)', () => {
+  const { buildRelationshipGraph } = require('../lib/relationship-graph');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const graph = buildRelationshipGraph(knowledge);
+  // GPA should now be in the entity index
+  const hasGpa = graph.entityIndex.has('gpa') ||
+    Array.from(graph.entityIndex.keys()).some(k => k.includes('gpa'));
+  assert.ok(hasGpa, 'GPA should be in entity index');
+});
+
+// === Overclaim negation regression tests ===
+
+test('overclaim in "No, he has extensive experience" is REJECTED', () => {
+  const { validateAnswer } = require('../lib/grounding-validator');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const source = 'Bradley worked on AWS projects. He was an intern.';
+  const result = validateAnswer(
+    'No, he has extensive experience with AWS projects.',
+    source,
+    'He architected the AWS infrastructure, correct?',
+    knowledge
+  );
+  assert.equal(result.valid, false, 'Should reject "extensive experience" even after "No"');
+  assert.ok(result.reasons.some(r => r.startsWith('expanded_overclaim:')), 'Should flag overclaim');
+});
+
+test('overclaim in "not an expert in" is ACCEPTED (negation)', () => {
+  const { validateAnswer } = require('../lib/grounding-validator');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const source = 'Bradley has skills in JavaScript, React, Node.js. He is entry-level.';
+  const result = validateAnswer(
+    'No, he is not an expert in React.',
+    source,
+    'He is a React expert, right?',
+    knowledge
+  );
+  assert.equal(result.valid, true, 'Negated overclaim "not an expert" should be accepted');
+});
+
+test('overclaim in positive context is REJECTED', () => {
+  const { validateAnswer } = require('../lib/grounding-validator');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const source = 'Bradley has skills in JavaScript, React, Node.js. He is entry-level.';
+  const result = validateAnswer(
+    'He has extensive experience with JavaScript and React.',
+    source,
+    'What are his skills?',
+    knowledge
+  );
+  assert.equal(result.valid, false, 'Positive "extensive experience" should be rejected');
+  assert.ok(result.reasons.some(r => r.startsWith('expanded_overclaim:')), 'Should flag overclaim');
+});
+
+test('has_experience maps to worked_at for valid experience claims', () => {
+  const { validateAnswer } = require('../lib/grounding-validator');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const source = 'Bradley was a Cloud Support Engineer Intern at Amazon Web Services (AWS). He worked on serverless projects.';
+  const result = validateAnswer(
+    'Bradley Matera has experience in cloud support engineering at Amazon Web Services (AWS) as a Cloud Support Engineer Intern.',
+    source,
+    'Give me the quick recruiter version.',
+    knowledge
+  );
+  // has_experience in "cloud support engineering" should map to worked_at/interned_at
+  assert.ok(!result.reasons.some(r => r.startsWith('unsupported_relationship:')), 'has_experience should map to worked_at');
+});

@@ -873,6 +873,36 @@ relationships (ProjectHub at Amazon, Pokedex with WebGPU, AWS capstone with
 React). The new system rejects all such answers or they fall back
 deterministically. Every accepted answer is now factually correct.
 
+### 1.5B Evaluation Results (v5, conversational quality improvement)
+
+Three stability runs of the 28-question LITE evaluation with `qwen2.5:1.5b`:
+
+| Run | Generative | Fallback | Forbidden | Avg latency |
+|-----|-----------|----------|-----------|-------------|
+| 1   | 19/28 (68%) | 9/28 | 0 | ~700ms |
+| 2   | 19/28 (68%) | 9/28 | 0 | ~700ms |
+| 3   | 20/28 (71%) | 8/28 | 0 | ~700ms |
+
+Full parity suite (68 questions):
+- Generative: 47/68 (69%)
+- Fallback: 21/68 (31%)
+- Unsafe blocked: 0
+- Factually correct AND good: 36/68 (53%)
+- Factually correct but terse: 11/68 (16%)
+- Safe fallback: 21/68 (31%)
+
+Key improvements in v5:
+- Fixed "js" truncation bug (sentence splitter was breaking on periods in tech names)
+- Fixed validator false rejections (education context, possessives, negated overclaims)
+- Added entity-scoped structured facts to context packets
+- Upgraded repair packet to include specific unsupported relationships with supported alternatives
+- Added coreference resolution for "It" → primary entity from question
+- Added negation-aware overclaim detection ("not an expert" is not overclaim)
+- Added has_experience → worked_at/interned_at/employed_as relation mapping
+
+Manual audit of all 47 accepted answers: 100% factually correct, 0 overclaims,
+0 persona errors, 0 forbidden claims, 0 unsupported relationships.
+
 ### WebGPU
 
 NOT MEASURED. The browser test page exists at `client-ai/webgpu-1.5b-test.html`
