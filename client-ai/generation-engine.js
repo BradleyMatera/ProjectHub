@@ -17,6 +17,54 @@
  *   - Browser cannot invoke tools or modify server state
  */
 
+// --- Output Parser (inlined for browser use) ---
+// Robust extraction of answer text from small-model output.
+function parseModelOutput(raw) {
+  if (!raw) return '';
+  let text = String(raw).trim();
+  if (!text) return '';
+  text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  // Try JSON {"answer":"..."}
+  const match = text.match(/"answer"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  if (match) {
+    return cleanAnswerText(match[1].replace(/\\"/g, '"').replace(/\\n/g, ' ').trim());
+  }
+  // Try JSON repair
+  if (text.startsWith('{') || text.includes('"answer"')) {
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start >= 0 && end > start) {
+      try {
+        const parsed = JSON.parse(text.slice(start, end + 1));
+        if (parsed && parsed.answer) return cleanAnswerText(parsed.answer);
+      } catch {
+        try {
+          const repaired = JSON.parse(text.slice(start, end + 1).replace(/,\s*([}\]])/g, '$1'));
+          if (repaired && repaired.answer) return cleanAnswerText(repaired.answer);
+        } catch {}
+      }
+    }
+  }
+  // Plain text — strip common preambles
+  return cleanAnswerText(text
+    .replace(/^(?:here(?:'s| is) the answer\s*[::]?\s*)/i, '')
+    .replace(/^(?:based on the (?:facts|evidence|information)\s*(?:provided|given)?\s*[::]?\s*)/i, '')
+    .replace(/^(?:answer\s*[::]\s*)/i, '')
+    .trim());
+}
+
+function cleanAnswerText(text) {
+  if (!text) return '';
+  let cleaned = String(text).trim();
+  if ((cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+      (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+  if (cleaned.length > 0 && !/[.!?]$/.test(cleaned)) cleaned += '.';
+  return cleaned;
+}
+
 class ScoutGenerationEngine {
   constructor() {
     this.model = null;
@@ -136,10 +184,11 @@ class ScoutGenerationEngine {
 
   /**
    * Generate an answer from a server-prepared packet.
+   * Uses the output parser to handle JSON, malformed JSON, and plain text.
    *
    * @param {object} packet - Server-prepared evidence packet
-   * @param {object} options - Generation options
-   * @returns {Promise<string>} - Generated answer text
+   * @param {object} options - Generation options (outputMode: 'json'|'text')
+   * @returns {Promise<string>} - Generated answer text (parsed)
    */
   async generate(packet, options = {}) {
     if (!this.initialized) {
@@ -149,11 +198,19 @@ class ScoutGenerationEngine {
     const genStart = performance.now();
     const maxNewTokens = options.maxNewTokens || 80;
     const temperature = options.temperature ?? 0.25;
+    const outputMode = options.outputMode || 'text'; // 'text' is default (better for small models)
 
     try {
       // Build chat messages from the packet
+      // If outputMode is 'text', strip JSON instructions from the system prompt
+      let systemPrompt = packet.systemPrompt;
+      if (outputMode === 'text') {
+        systemPrompt = systemPrompt
+          .replace(/Return JSON: \{"answer":"<text>"\}/gi, 'Answer in 1-2 sentences.')
+          .replace(/Return JSON.*$/gim, 'Answer in 1-2 sentences.');
+      }
       const messages = [
-        { role: 'system', content: packet.systemPrompt },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: packet.userPrompt }
       ];
 
@@ -183,7 +240,11 @@ class ScoutGenerationEngine {
       // Decode output (skip input tokens)
       const inputLen = inputs.input_ids.dims()[1];
       const generatedTokens = output[0].slice(null, [inputLen, null]);
-      const answer = this.tokenizer.decode(generatedTokens, { skip_special_tokens: true }).trim();
+      const rawAnswer = this.tokenizer.decode(generatedTokens, { skip_special_tokens: true }).trim();
+
+      // Parse the model output using the robust output parser
+      // This handles JSON, malformed JSON, plain text, and preamble stripping
+      const answer = parseModelOutput(rawAnswer);
 
       this.metrics.generateMs = performance.now() - genStart;
       const tokenCount = output[0].dims()[1] - inputLen;
@@ -217,11 +278,11 @@ class ScoutGenerationEngine {
     if (!packetRes.ok) throw new Error(`Packet request failed: ${packetRes.status}`);
     const { runId, packet, fallback } = await packetRes.json();
 
-    // 2. Generate answer locally
+    // 2. Generate answer locally (use plain-text mode for better small-model output)
     let generatedAnswer = null;
     let generateError = null;
     try {
-      generatedAnswer = await this.generate(packet);
+      generatedAnswer = await this.generate(packet, { outputMode: 'text' });
     } catch (err) {
       generateError = err.message;
     }

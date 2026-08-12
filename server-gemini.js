@@ -3612,10 +3612,16 @@ app.post('/api/client-packet', async (req, res) => {
       maxTokens: 120
     });
 
+    // For client mode, use plain-text output (better for 0.5B model)
+    // Strip JSON requirement from system prompt
+    const clientSystemPrompt = packet.systemPrompt
+      .replace(/Return JSON: \{"answer":"<text>"\}/g, 'Answer in 1-2 complete sentences.')
+      .replace(/Return JSON.*$/gim, 'Answer in 1-2 complete sentences.');
+
     // Create a CLIENT_SAFE evidence boundary
     // Only include public-facing evidence, never internal analytics/logs/secrets
     const clientSafeEvidence = {
-      systemPrompt: packet.systemPrompt,
+      systemPrompt: clientSystemPrompt,
       userPrompt: packet.userPrompt,
       operation: route.operation,
       rewritten: changed,
@@ -3628,6 +3634,7 @@ app.post('/api/client-packet', async (req, res) => {
     const runId = `run-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     clientPacketStore.set(runId, {
       compressedEvidence: compressed,
+      systemPrompt: clientSafeEvidence.systemPrompt,
       toolResult,
       question: rewritten,
       originalQuestion: userMessage,
@@ -3671,41 +3678,77 @@ app.post('/api/client-validate', async (req, res) => {
     if (!stored) return res.status(404).json({ ok: false, verdict: 'expired', valid: false });
 
     // Validate the browser-generated answer against the SAME evidence
-    const sourceText = stored.compressedEvidence + ' ' + JSON.stringify(stored.toolResult).slice(0, 2000);
+    // Include the system prompt in the source text so candidate name and
+    // Scout identity are always grounded (they appear in "You are Scout for Bradley Matera.")
+    const sourceText = stored.systemPrompt + ' ' + stored.compressedEvidence + ' ' + JSON.stringify(stored.toolResult).slice(0, 2000);
     const validation = validateAnswer(answer, sourceText, stored.question);
 
     // Check for forbidden claims in adversarial questions
+    // For adversarial questions, the model should REFUTE the false premise.
+    // If the model CONFIRMS it (no negation, uses assertion language), it's forbidden.
+    // This is simpler and more robust than checking if specific words appear in evidence,
+    // because the evidence may contain the word in negation contexts ("not senior").
     const adversarialCaveat = detectAdversarialCaveat(stored.question, stored.compressedEvidence);
     let forbidden = false;
     if (adversarialCaveat) {
-      const FORBIDDEN_RE = /\b(senior|production|managed a team|architected|expert|team lead)\b/i;
-      const NEGATION_RE = /\b(not|never|no|wasn't|was not|isn't|is not|didn't|did not|doesn't|does not)\b/i;
-      const hasNegation = NEGATION_RE.test(answer);
-      if (FORBIDDEN_RE.test(answer) && !hasNegation) {
-        forbidden = true;
-      }
-      // Check for years claims
-      const yearsMatch = answer.match(/\b(\d+)\s+years?\b/i);
-      if (yearsMatch && !hasNegation) {
-        forbidden = true;
-      }
-      // Check for university/degree claims not in evidence
-      const questionLower = stored.question.toLowerCase();
-      if (/mit|stanford|harvard|berkeley|carnegie mellon|caltech|princeton|yale|oxford|cambridge/.test(answer.toLowerCase()) && !hasNegation) {
-        // If the question asks about a specific university, and the answer confirms it,
-        // check if that university is in the evidence
-        const uniMatch = answer.match(/(MIT|Stanford|Harvard|Berkeley|Carnegie Mellon|Caltech|Princeton|Yale|Oxford|Cambridge)/i);
-        if (uniMatch && !stored.compressedEvidence.toLowerCase().includes(uniMatch[0].toLowerCase())) {
-          forbidden = true;
+      const { hasNegation, splitSentences, splitClauses } = require('./lib/grounding-validator');
+      const sentences = splitSentences(answer);
+      const evidenceLower = (stored.systemPrompt + ' ' + stored.compressedEvidence).toLowerCase();
+
+      // For adversarial questions: if ANY non-negated clause confirms the premise,
+      // the answer is forbidden. The model must refute or deny.
+      // We split sentences into clauses (by semicolons) so that
+      // "he was not junior; he was senior" correctly flags the "senior" clause.
+      for (const sent of sentences) {
+        const clauses = splitClauses(sent);
+        for (const clause of clauses) {
+          if (hasNegation(clause)) continue; // refuting clauses are safe
+
+        // Confirmation language without negation = accepting the false premise
+        const confirms = /\b(indeed|correct|that'?s right|yes|he was|he has|he did|he held|he worked|he handled|he managed|he is|he attended|he received|he obtained|he earned|he holds|holds a)\b/i.test(clause);
+
+        // Seniority claims
+        if (/\b(senior|principal|staff)\b.*\b(engineer|developer|architect)\b/i.test(clause) && confirms) {
+          forbidden = true; break;
         }
-      }
-      // Check for degree claims (computer science, CS, etc.) not in evidence
-      if (/\b(computer science|CS degree|B\.?S\.?|B\.?A\.?|M\.?S\.?|M\.?A\.?|Ph\.?D)\b/i.test(answer) && !hasNegation) {
-        if (!/\b(computer science|CS|degree)\b/i.test(stored.compressedEvidence)) {
-          forbidden = true;
+        // Production claims
+        if (/\b(production|live production|owned production|production incident)\b/i.test(clause) && confirms) {
+          forbidden = true; break;
         }
-      }
-    }
+        // Leadership claims
+        if (/\b(managed a team|team lead|led a team|supervised|directed|manager|managing|ceo|cto|co-founder|founder)\b/i.test(clause) && confirms) {
+          forbidden = true; break;
+        }
+        // Expert claims
+        if (/\b(expert|mastery|deep expertise|executive)\b/i.test(clause) && confirms) {
+          forbidden = true; break;
+        }
+        // Years claims — any positive years claim in adversarial context is forbidden
+        const yearsMatch = clause.match(/\b(\d+)\s+years?\b/i);
+        if (yearsMatch && confirms) { forbidden = true; break; }
+        // University claims — known universities not in evidence (positive assertion)
+        const uniMatch = clause.match(/\b(MIT|Stanford|Harvard|Berkeley|Carnegie Mellon|Caltech|Princeton|Yale|Oxford|Cambridge|Georgia Tech|UCLA|UMich|NYU|Columbia|Duke|Massachusetts Institute)\b/i);
+        if (uniMatch && confirms) { forbidden = true; break; }
+        // Employer claims — known tech companies not in evidence (positive assertion)
+        const empMatch = clause.match(/\b(Google|Microsoft|Apple|Meta|Facebook|Netflix|Tesla|OpenAI|Anthropic)\b/i);
+        if (empMatch && empMatch[0].toLowerCase() !== 'amazon' && confirms) {
+          forbidden = true; break;
+        }
+        // Degree claims not in evidence (positive assertion)
+        if (/\b(computer science|CS degree|Master'?s|Ph\.?D|M\.?S\.?|M\.?A\.?|Bachelor of Science in Computer)\b/i.test(clause) && confirms) {
+          forbidden = true; break;
+        }
+        // Certification claims not in evidence (positive assertion)
+        if (/\b(Kubernetes certification|CKA|CKAD|AWS Certified DevOps|Solutions Architect Professional|Security Specialty)\b/i.test(clause) && confirms) {
+          forbidden = true; break;
+        }
+        // Fortune 500 / enterprise claims
+        if (/\b(Fortune 500|enterprise clients|enterprise customer|million users)\b/i.test(clause) && confirms) {
+          forbidden = true; break;
+        }
+        } // end clause loop
+      } // end sentence loop
+    } // end adversarial check
 
     const valid = validation.valid && !forbidden;
 

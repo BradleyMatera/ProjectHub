@@ -31,6 +31,20 @@
       <article><span>Last route</span><strong id="last-route">None</strong></article>
     </section>
 
+    <section class="mode-selector" aria-label="Execution mode">
+      <article>
+        <span>Execution mode</span>
+        <select id="mode-select">
+          <option value="server">Server (FULL/LITE Ollama)</option>
+          <option value="client">Client Local (Browser WebGPU)</option>
+        </select>
+      </article>
+      <article><span>Client AI status</span><strong id="client-status">uninitialized</strong></article>
+      <article><span>Client backend</span><strong id="client-backend">n/a</strong></article>
+      <article><span>Model load</span><strong id="client-load-pct">n/a</strong></article>
+      <article><button id="client-init-btn" type="button" style="display:none">Initialize Client AI</button></article>
+    </section>
+
     <section class="workspace">
       <aside class="examples">
         <h2>Test workflows</h2>
@@ -73,6 +87,7 @@
       </section>
     </section>
   </main>
+  <script src="../client-ai/generation-engine.js" defer></script>
   <script src="./app.js" defer></script>
 </body>
 </html>

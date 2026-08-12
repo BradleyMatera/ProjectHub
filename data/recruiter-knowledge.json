@@ -418,7 +418,11 @@
         "HTML",
         "CSS"
       ],
-      "category": "Frontend demo"
+      "category": "Frontend demo",
+      "aliases": [
+        "Pokedex",
+        "pokedex"
+      ]
     },
     {
       "name": "CheeseMath",
@@ -473,7 +477,13 @@
         "S3",
         "AWS Amplify"
       ],
-      "category": "Cloud / internship project"
+      "category": "Cloud / internship project",
+      "aliases": [
+        "AWS Serverless",
+        "Metadata Extraction",
+        "Serverless Metadata",
+        "metadata extraction workflow"
+      ]
     },
     {
       "name": "AWS Infrastructure Cost-Analysis Model",
@@ -496,7 +506,11 @@
         "GitHub",
         "JWT"
       ],
-      "category": "Open-source / freelance contributor"
+      "category": "Open-source / freelance contributor",
+      "aliases": [
+        "CIRIS",
+        "ciris"
+      ]
     },
     {
       "name": "ProjectHub (Scout)",
@@ -517,14 +531,43 @@
         "RAG",
         "Conversational memory"
       ],
-      "category": "Portfolio / AI recruiter assistant"
+      "category": "Portfolio / AI recruiter assistant",
+      "aliases": [
+        "ProjectHub",
+        "Scout",
+        "projecthub",
+        "scout"
+      ]
     },
     {
       "name": "Fallen Knight: Requiem of Honor",
       "url": "https://itch.io/jam/kajam/rate/3114394",
       "description": "KAJAM game jam project built with classmates, ranked #9 in Artstyle.",
       "tech": [],
-      "category": "Game jam / school project"
+      "category": "Game jam / school project",
+      "aliases": [
+        "Fallen Knight",
+        "Requiem of Honor"
+      ]
+    },
+    {
+      "name": "Voice Ops Platform",
+      "aliases": [
+        "VoiceOps",
+        "Voice Ops",
+        "voice-ops-platform",
+        "voice ops platform"
+      ],
+      "url": "https://github.com/BradleyMatera/voice-ops-platform",
+      "description": "Authenticated operations platform for coordinating AI-assisted staff agents, conversations, reports, status controls, model routing, quota handling, and tested pause/resume behavior.",
+      "tech": [
+        "JavaScript",
+        "Node.js",
+        "AI",
+        "Operations"
+      ],
+      "category": "Full-stack platform",
+      "type": "platform"
     }
   ],
   "interviewStories": [

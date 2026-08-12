@@ -2,7 +2,10 @@
 
 const state = {
   sessionId: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `preview_${Date.now()}`,
-  history: []
+  history: [],
+  mode: 'server', // 'server' (FULL/LITE) or 'client' (CLIENT LOCAL)
+  clientEngine: null,
+  clientStatus: 'uninitialized' // uninitializing, loading, ready, error
 };
 
 const elements = {
@@ -20,7 +23,12 @@ const elements = {
   providers: document.querySelector('#providers'),
   lastRoute: document.querySelector('#last-route'),
   probeBtn: document.querySelector('#probe-btn'),
-  probeResult: document.querySelector('#probe-result')
+  probeResult: document.querySelector('#probe-result'),
+  modeSelect: document.querySelector('#mode-select'),
+  clientStatus: document.querySelector('#client-status'),
+  clientBackend: document.querySelector('#client-backend'),
+  clientLoadPct: document.querySelector('#client-load-pct'),
+  clientInitBtn: document.querySelector('#client-init-btn')
 };
 
 function addMessage(role, text, trace) {
@@ -192,12 +200,119 @@ async function runWorkflow(message) {
   }
 }
 
+// --- CLIENT LOCAL mode ---
+
+function updateClientStatus() {
+  if (!elements.clientStatus) return;
+  const status = state.clientStatus;
+  elements.clientStatus.textContent = status;
+  elements.clientStatus.className = `client-status ${status}`;
+  if (status === 'ready' && state.clientEngine) {
+    elements.clientBackend.textContent = state.clientEngine.device || 'cpu';
+    if (elements.clientLoadPct) elements.clientLoadPct.textContent = '100%';
+  } else if (status === 'loading') {
+    if (elements.clientLoadPct) elements.clientLoadPct.textContent = 'loading...';
+  } else if (status === 'error') {
+    if (elements.clientLoadPct) elements.clientLoadPct.textContent = 'failed';
+  }
+}
+
+async function initClientEngine() {
+  if (state.clientStatus === 'loading' || state.clientStatus === 'ready') return;
+  state.clientStatus = 'loading';
+  updateClientStatus();
+  if (elements.clientInitBtn) {
+    elements.clientInitBtn.disabled = true;
+    elements.clientInitBtn.textContent = 'Loading model...';
+  }
+  try {
+    // Load the generation engine
+    if (!state.clientEngine) {
+      state.clientEngine = new ScoutGenerationEngine();
+    }
+    await state.clientEngine.initialize({
+      onProgress: (pct) => {
+        if (elements.clientLoadPct) elements.clientLoadPct.textContent = `${Math.round(pct)}%`;
+      }
+    });
+    state.clientStatus = 'ready';
+    updateClientStatus();
+    if (elements.clientInitBtn) {
+      elements.clientInitBtn.textContent = 'Model ready';
+      elements.clientInitBtn.className = 'ok';
+    }
+  } catch (err) {
+    state.clientStatus = 'error';
+    updateClientStatus();
+    if (elements.clientInitBtn) {
+      elements.clientInitBtn.disabled = false;
+      elements.clientInitBtn.textContent = 'Retry';
+    }
+    addMessage('scout', `Client AI init failed: ${err.message}. Using server mode.`);
+  }
+}
+
+async function runClientWorkflow(message) {
+  addMessage('user', message);
+  elements.send.disabled = true;
+  elements.send.textContent = 'Generating…';
+  try {
+    if (!state.clientEngine || !state.clientEngine.initialized) {
+      await initClientEngine();
+      if (state.clientStatus !== 'ready') {
+        throw new Error('Client engine not ready');
+      }
+    }
+    const result = await state.clientEngine.ask(message, state.sessionId, '', state.history.slice(-5));
+    const trace = {
+      route: `client-local / ${result.source}`,
+      latencyMs: result.genMs || 0,
+      pipeline: ['client-packet', 'browser-generate', 'client-validate'],
+      agent: {
+        engine: 'client-local',
+        validation: result.validated ? 'valid' : 'invalid',
+        outcome: result.source
+      },
+      contextTokens: result.packetTokens
+    };
+    addMessage('scout', result.answer, trace);
+    elements.lastRoute.textContent = `client-local / ${result.source}`;
+    state.history.push({ user: message, assistant: result.answer });
+    state.history = state.history.slice(-5);
+  } catch (error) {
+    addMessage('scout', `Client workflow failed: ${error.message}`);
+  } finally {
+    elements.send.disabled = false;
+    elements.send.textContent = 'Send';
+    elements.input.focus();
+  }
+}
+
+// Mode selector
+if (elements.modeSelect) {
+  elements.modeSelect.addEventListener('change', (e) => {
+    state.mode = e.target.value;
+    if (state.mode === 'client' && state.clientStatus === 'uninitialized') {
+      // Don't auto-init; let user click the init button
+      if (elements.clientInitBtn) elements.clientInitBtn.style.display = '';
+    }
+  });
+}
+
+if (elements.clientInitBtn) {
+  elements.clientInitBtn.addEventListener('click', initClientEngine);
+}
+
 elements.form.addEventListener('submit', event => {
   event.preventDefault();
   const message = elements.input.value.trim();
   if (!message) return;
   elements.input.value = '';
-  runWorkflow(message);
+  if (state.mode === 'client') {
+    runClientWorkflow(message);
+  } else {
+    runWorkflow(message);
+  }
 });
 
 for (const button of document.querySelectorAll('[data-prompt]')) {
