@@ -4,7 +4,7 @@
 
 **Working branch:** `feat/agent-systems-network`
 
-**Code baseline:** Conversational quality improvement phase (post-`0ff306a`)
+**Code baseline:** Conversational completion and parity phase (post-`e12ff86`)
 
 **Release state:** committed locally, not promoted to `develop` or `master`, not deployed. Production is unchanged.
 
