@@ -27,12 +27,12 @@ const projects = [
     apiEndpoint: null
   },
   {
-    name: "ProjectHub",
-    desc: "Embeddable AI-powered chat widget that showcases Bradley's web development projects and CodePens. Served from GitHub Pages as a single script.",
+    name: "ProjectHub (Scout)",
+    desc: "Embeddable AI recruiter assistant named Scout. One script tag adds a chat widget to any site. It answers questions about Bradley's projects, skills, AWS experience, and target roles from a grounded knowledge base, with multi-provider LLM failover, safety checks, Think Mode self-improvement, and a live analytics dashboard. Frontend is vanilla JS on GitHub Pages; backend runs on a free GCP e2-micro VM.",
     url: "https://bradleymatera.github.io/ProjectHub/",
     platform: "GitHub Pages",
     repo: "https://github.com/BradleyMatera/ProjectHub",
-    tech: ["JavaScript", "GitHub Pages"],
+    tech: ["JavaScript", "Node.js", "GitHub Pages", "GCP e2-micro", "Caddy", "Vite", "Carbon Design System"],
     apiEndpoint: null
   },
   {
@@ -166,52 +166,18 @@ async function fetchAllGitHubData(projects) {
     }
   })).catch(() => {});
   return projectData;
-}// Function to summarize Bradley Matera as a junior software engineer
-function summarizeBradleyAsWebDev(projects, codePens) {
-  const allTech = [...new Set(projects.flatMap(p => p.tech).filter(Boolean))];
-  const projectCount = projects.length;
-  const codePenCount = codePens.length;
-  const frontEndTech = ["JavaScript", "TypeScript", "React", "Next.js", "HTML", "CSS"].filter(t => allTech.includes(t));
-  const cloudTech = ["AWS Lambda", "Amazon DynamoDB", "Amazon S3", "AWS Amplify", "AWS usage metrics"].filter(t => allTech.includes(t));
-
-  let summary = "Bradley Matera is a junior software engineer based in Davis, Illinois, open to relocation. He graduated with a B.S. in Web Development from Full Sail University (GPA 3.64) and is certified as an AWS Solutions Architect - Associate and AWS Certified AI Practitioner.<br><br>";
-  summary += `He has worked on ${projectCount} portfolio projects and ${codePenCount} CodePen demos, with a focus on JavaScript, React/Next.js, Node.js, SQL, and AWS serverless services.<br><br>`;
-
-  if (frontEndTech.length > 0) {
-    summary += `<strong>Frontend work:</strong> ${frontEndTech.join(", ")} — building accessible UIs, interactive demos, and clear documentation.<br><br>`;
-  }
-
-  if (cloudTech.length > 0) {
-    summary += `<strong>Cloud and support engineering:</strong> ${cloudTech.join(", ")} — including an AWS Cloud Support Engineer internship with guided troubleshooting labs, a serverless metadata extraction capstone, and an infrastructure cost-analysis model.<br><br>`;
-  }
-
-  summary += `<strong>Recent experience:</strong> Freelance junior frontend contributor at CIRIS Ethical AI (setup docs, JWT debugging, small merged updates, GitHub Issues) and prior roles in case management, construction, and the U.S. Army.<br><br>`;
-  summary += `<strong>What he is looking for:</strong> Junior software engineering, frontend/backend/web development, cloud support, software support, application support, and technical support roles where he can learn production systems, debug carefully, document clearly, and grow into a well-rounded engineer.`;
-  return summary;
-}
-
-// Function to provide a short summary of Bradley Matera
-function shortSummaryBradleyAsWebDev(projects, codePens) {
-  return "Bradley Matera is a junior software engineer in Davis, Illinois, open to relocation. He holds a B.S. in Web Development from Full Sail University, AWS Solutions Architect - Associate and AWS Certified AI Practitioner certifications, and has experience with JavaScript, TypeScript, React, Node.js, AWS serverless services, debugging, documentation, and AI-assisted development workflows.";
-}
-
-// Function to handle user queries
+}// Function to handle user queries
+// The client is a thin pass-through: all routing, grounded answers, and LLM
+// generation happen on the server. This keeps answers consistent, contextual,
+// and conversation-aware instead of fragmented across client and server.
 async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData, chatSession = {}) {
-  const query = userQuery.toLowerCase();
-  const normalizedQuery = query.replace(/\bbrads\b|\bbrad\b/g, "bradley");
-  let reply = "I don’t know that one. Try asking about Bradley Matera's current work — projects like ProjectHub, the AWS serverless workflow, or CIRIS Ethical AI; his GitHub or LinkedIn; the roles he's targeting; or his strongest technical skills. You can also ask for a summary of Bradley as a junior software engineer.";
   let newTopic = lastQueryTopic;
 
-  // Architecture:
-  // - bradleymatera.dev (production): use Netlify Functions with Gemini Flash
-  //   /.netlify/functions/recruiter-chat = smart, fast, free tier
-  // - Other domains / local dev: use GCP Ollama API as fallback
-  // - Manual override: window.__PROJECTHUB_CHAT_API__
   const CHAT_API_URL = window.__PROJECTHUB_CHAT_API__
     || (/^(^|\.)bradleymatera\.dev$/.test(window.location.hostname)
       ? "/.netlify/functions/recruiter-chat"
       : "https://projecthub-chat.bradleymatera.dev/api/chat");
-  const AI_TIMEOUT_MS = 16000;
+  const AI_TIMEOUT_MS = 18000;
   const AI_RETRIES = 1;
 
   async function askAIBackend() {
@@ -225,6 +191,15 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+        const history = (Array.isArray(chatSession.context) ? chatSession.context : []).reduce((acc, turn) => {
+          if (turn.role === 'user') {
+            acc.push({ user: turn.content, assistant: '' });
+          } else if (turn.role === 'bot' && acc.length > 0) {
+            acc[acc.length - 1].assistant = turn.content;
+          }
+          return acc;
+        }, []).slice(-5);
+
         const res = await fetch(CHAT_API_URL, {
           method: "POST",
           signal: controller.signal,
@@ -232,7 +207,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
           body: JSON.stringify({
             message: userQuery,
             sessionId: chatSession.sessionId,
-            context: Array.isArray(chatSession.context) ? chatSession.context.slice(-6) : [],
+            history,
             options: chatSession.options || {}
           })
         });
@@ -250,215 +225,37 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
           }
         } else {
           lastError = `HTTP ${res.status}`;
-          console.warn(`AI fallback attempt ${attempt} failed: ${lastError}`);
+          console.warn(`AI backend attempt ${attempt} failed: ${lastError}`);
         }
       } catch (error) {
         lastError = error.name === "AbortError" ? "timeout" : error.message;
-        console.warn(`AI fallback attempt ${attempt} error: ${lastError}`);
+        console.warn(`AI backend attempt ${attempt} error: ${lastError}`);
       }
     }
 
     return { reply: null, error: lastError || "no response" };
   }
 
-  function wantsGenerativeAnswer() {
-    const utilityPatterns = [
-      /\b(github|linkedin|contact|email|phone)\b/,
-      /\b(list|all)\b.*\b(projects?|codepens?)\b/,
-      /\b(most stars)\b/
-    ];
+  // Every question goes to the server. The server handles:
+  // - Safety/injection blocking
+  // - False-claim refusal
+  // - Grounded deterministic answers (contact, projects, role-fit, etc.)
+  // - LLM provider network for conversational questions
+  // - Follow-up suggestions
+  // - Session memory and conversation context
+  const aiResult = await askAIBackend();
 
-    if (utilityPatterns.some(pattern => pattern.test(query))) return false;
-
-    const projectMention = projects.some(project => {
-      const projectName = project.name.toLowerCase();
-      return query.includes(projectName) || query.includes(projectName.replace(/\s+/g, ""));
-    });
-    const richProjectQuestion = /\b(tech stack|stack|built with|use|uses|tradeoff|improve|compare|job|role|recruiter|hire|candidate|matter|prove|show)\b/.test(query);
-    if (projectMention && richProjectQuestion) return true;
-
-    const conversationalPatterns = [
-      /\b(why|how|what makes|would|could|should|explain|tell me|summarize|summary|background|experience|skills?|strengths?|fit|candidate|hire|good|ready|role|targeting|aws|cloud|ciris|ethical ai|ats|screen|screening|ramp|onboard|sdlc|api|crud|ticket|support|red flags?|downside|jargon)\b/,
-      /\b(bradley|matera)\b/
-    ];
-
-    return conversationalPatterns.some(pattern => pattern.test(query));
+  if (aiResult.reply) {
+    return { reply: aiResult.reply, newTopic: "ai" };
   }
 
-  if (wantsGenerativeAnswer()) {
-    const aiResult = await askAIBackend();
-    if (aiResult.reply) {
-      return { reply: aiResult.reply, newTopic: "ai" };
-    }
-  }
-
-  if ((query.includes("bradley") || query.includes("who is") || query.includes("tell me about") || query.includes("about you") || query.includes("about bradley")) && (query.includes("web dev") || query.includes("developer") || query.includes("software engineer") || query.includes("engineer") || query.includes("summarize") || query.includes("summary") || query.includes("background"))) {
-    if (query.includes("full") || (lastQueryTopic === "summary" && (query.includes("more") || query.includes("full")))) {
-      reply = summarizeBradleyAsWebDev(projects, codePens);
-    } else if (query.includes("short") || query.includes("paragraph")) {
-      reply = shortSummaryBradleyAsWebDev(projects, codePens);
-    } else {
-      reply = shortSummaryBradleyAsWebDev(projects, codePens) + " Would you like a more detailed summary? Just ask for the 'full summary'!";
-    }
-    newTopic = "summary";
-    return { reply, newTopic };
-  }
-
-  if (query.includes("contact") || query.includes("email") || query.includes("phone") || query.includes("reach")) {
-    reply = "You can reach Bradley Matera at bradmatera@gmail.com or (360) 970-0581. You can also connect on LinkedIn at https://www.linkedin.com/in/bradmatera or view his portfolio at https://bradleymatera.dev/.";
-    newTopic = "contact";
-    return { reply, newTopic };
-  }
-
-  if (query.includes("education") || query.includes("degree") || query.includes("full sail") || query.includes("school") || query.includes("gpa")) {
-    reply = "Bradley earned a B.S. in Web Development from Full Sail University in Winter Park, Florida, graduating October 30, 2025 with a 3.64 GPA. Relevant coursework included Database Systems, Server-Side Languages, Cloud Application Development, and Web Application Integration.";
-    newTopic = "education";
-    return { reply, newTopic };
-  }
-
-  if (query.includes("certification") || query.includes("aws certified") || query.includes("certificate")) {
-    reply = "Bradley holds AWS Certified Solutions Architect - Associate (SAA-C03, issued July 2025, expires July 2028) and AWS Certified AI Practitioner (AIF-C01, issued August 2025, expires August 2028). He also completed freeCodeCamp certificates in JavaScript Algorithms and Data Structures and Responsive Web Design.";
-    newTopic = "certifications";
-    return { reply, newTopic };
-  }
-
-  if (query.includes("location") || query.includes("where") || query.includes("based") || query.includes("relocation")) {
-    reply = "Bradley is based in Davis, Illinois and is open to relocation.";
-    newTopic = "location";
-    return { reply, newTopic };
-  }
-
-  if (query.includes("github")) {
-    reply = "Bradley Matera's GitHub profile is at https://github.com/BradleyMatera. You can explore his repositories there, including ProjectHub, Interactive Pokedex, CheeseMath, the Triangle Shader Lab, and more.";
-    newTopic = "github";
-    return { reply, newTopic };
-  }
-
-  if (query.includes("linkedin")) {
-    reply = "Bradley Matera's LinkedIn profile is at https://www.linkedin.com/in/bradmatera. It highlights his transition into software engineering, AWS internship, freelance frontend work, education, and target roles.";
-    newTopic = "linkedin";
-    return { reply, newTopic };
-  }
-
-  const asksForSingleStrongestRole = /\b(strongest|best|most|pick one|one role|if you had to pick|had to pick|which one|which role)\b/.test(normalizedQuery)
-    && /\b(role|job|position|fit|those|one)\b/.test(normalizedQuery);
-  if (asksForSingleStrongestRole) {
-    reply = "If I had to pick one strongest role for Bradley right now, I’d pick junior frontend/web developer. That is the cleanest fit because his strongest evidence is visible JavaScript/React/Next.js UI work, deployable portfolio projects, documentation, debugging, and enough backend/cloud exposure to be useful without overselling him as a production cloud engineer yet. Cloud support or software support are good adjacent fits, but frontend/web development is the strongest primary lane.";
-    newTopic = "strongest-role";
-    return { reply, newTopic };
-  }
-
-  if (query.includes("role") || query.includes("targeting") || query.includes("looking for") || query.includes("job")) {
-    reply = "Bradley is targeting junior software engineering, junior web/frontend/backend development, cloud support engineering, software support, application support, and technical support roles. He is based in Davis, Illinois and open to relocation.";
-    newTopic = "roles";
-    return { reply, newTopic };
-  }
-
-  if (query.includes("strongest") || query.includes("technical background") || query.includes("skills") || query.includes("tech stack")) {
-    reply = "Bradley's strongest technical background is in JavaScript, TypeScript, React, Next.js, Node.js, HTML, CSS, and SQL, plus AWS support training and project work with Lambda, DynamoDB, S3, and Amplify. He is also comfortable with debugging, documentation, GitHub, Docker, API integration, and AI-assisted development workflows.";
-    newTopic = "skills";
-    return { reply, newTopic };
-  }
-
-  if (query.includes("aws")) {
-    reply = "Bradley completed an AWS Cloud Support Engineer internship and holds AWS Certified Solutions Architect - Associate and AWS Certified AI Practitioner certifications. The internship focused on guided support training, troubleshooting labs, networking concepts, and a serverless capstone project using Lambda, DynamoDB, S3, and Amplify. It did not involve live customer ticket work.";
-    newTopic = "aws";
-    return { reply, newTopic };
-  }
-
-  if (query.includes("ciris") || query.includes("ethical ai")) {
-    reply = "Bradley worked as a freelance junior frontend contributor at CIRIS Ethical AI from October 2024 to June 2025. He improved onboarding and setup documentation, added JWT token-verification logging, contributed small merged code updates and lint fixes, created Docker Compose config for local development, and documented larger improvements as GitHub Issues.";
-    newTopic = "ciris";
-    return { reply, newTopic };
-  }
-
-  for (const p of projects) {
-    const projectNameLower = p.name.toLowerCase();
-    if (query.includes(projectNameLower) || query.includes(projectNameLower.replace(" ", "")) || query.includes(projectNameLower.replace("_", ""))) {
-      const githubData = await fetchGitHubRepoData(p.repo);
-      reply = `${p.name}: ${p.desc} It’s hosted on ${p.platform}${p.url !== p.repo ? ` (${p.url})` : ""}. Source: ${p.repo} (Stars: ${githubData.stars}, Last Commit: ${githubData.lastCommit}). Tech used: ${p.tech.join(", ")}.`;
-      newTopic = "project";
-      break;
-    }
-  }
-
-  for (const cp of codePens) {
-    const codePenNameLower = cp.name.toLowerCase();
-    if (query.includes(codePenNameLower) || query.includes(codePenNameLower.replace(" ", ""))) {
-      reply = `${cp.name}: A CodePen project by Bradley Matera. Check it out here: ${cp.url}.`;
-      newTopic = "codepen";
-      break;
-    }
-  }
-
-  const platforms = [...new Set(projects.map(p => p.platform.toLowerCase()))];
-  for (const platform of platforms) {
-    if (query.includes(platform)) {
-      const platformProjects = projects.filter(p => p.platform.toLowerCase() === platform);
-      reply = `Bradley Matera has ${platformProjects.length} project(s) on ${platform}: ${platformProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
-      if (platform === "github" && query.includes("codepen")) {
-        reply += ` He also has ${codePens.length} CodePen projects: ${codePens.map(cp => cp.name).join(", ")}.`;
-      }
-      newTopic = "platform";
-      break;
-    }
-  }
-
-  const techs = [...new Set(projects.flatMap(p => p.tech.map(t => t.toLowerCase())))];
-  for (const tech of techs) {
-    if (query.includes(tech)) {
-      const techProjects = projects.filter(p => p.tech.map(t => t.toLowerCase()).includes(tech));
-      reply = `Bradley Matera used ${tech} in ${techProjects.length} project(s): ${techProjects.map(p => p.name).join(", ")}. Want details on a specific one?`;
-      newTopic = "tech";
-      break;
-    }
-  }
-
-  if (query.includes("list") || query.includes("all")) {
-    if (query.includes("codepen")) {
-      reply = `Here are Bradley Matera's CodePen projects: ${codePens.map(cp => cp.name).join(", ")}. Ask about a specific one for more details!`;
-      newTopic = "codepen";
-    } else {
-      reply = `Here are Bradley Matera's projects: ${projects.map(p => p.name).join(", ")}. He also has ${codePens.length} CodePen projects—ask about those too!`;
-      newTopic = "projects";
-    }
-  }
-
-  if (query.includes("compare")) {
-    const projectNames = projects.map(p => p.name.toLowerCase());
-    const matches = projectNames.filter(name => query.includes(name));
-    if (matches.length >= 2) {
-      const p1 = projects.find(p => p.name.toLowerCase() === matches[0]);
-      const p2 = projects.find(p => p.name.toLowerCase() === matches[1]);
-      reply = `Comparing ${p1.name} and ${p2.name}:\n- ${p1.name} uses ${p1.tech.join(", ")} and is on ${p1.platform}.\n- ${p2.name} uses ${p2.tech.join(", ")} and is on ${p2.platform}.\nCommon tech: ${p1.tech.filter(t => p2.tech.includes(t)).join(", ") || "None"}.`;
-      newTopic = "compare";
-    }
-  }
-
-  if (query.includes("most stars")) {
-    const projectData = await fetchAllGitHubData(projects);
-    const sortedProjects = projectData.sort((a, b) => b.githubData.stars - a.githubData.stars);
-    const topProject = sortedProjects[0];
-    reply = `The project with the most stars is ${topProject.name} with ${topProject.githubData.stars} stars. It’s hosted on ${topProject.platform}${topProject.url !== topProject.repo ? ` (${topProject.url})` : ""}. Source: ${topProject.repo}.`;
-    newTopic = "stars";
-  }
-
-  // If no local intent matched, try the guarded recruiter chat API.
-  // The free GCP VM can be slow; we never let the UI hang forever.
-  if (reply.includes("I don’t know")) {
-    const localHelp = "I’m here to help with Bradley Matera’s work as a junior software engineer. Try asking about ProjectHub, the AWS serverless workflow, CIRIS Ethical AI, his GitHub or LinkedIn, target roles, or strongest technical skills.";
-    const aiResult = await askAIBackend();
-
-    if (aiResult.reply) {
-      reply = aiResult.reply;
-    } else {
-      reply = `${localHelp}<br><br>I can still help from Bradley's verified profile details — ask about his projects, cloud work, support background, target roles, or contact links.`;
-    }
-    newTopic = "unrelated";
-  }
-
-  return { reply, newTopic };
+  // Fallback if the server is unreachable
+  const fallbackReply = "I'm here to help with Bradley Matera's work as a junior software engineer. Try asking about ProjectHub, the AWS serverless workflow, CIRIS Ethical AI, his GitHub or LinkedIn, target roles, or strongest technical skills.";
+  return { reply: fallbackReply, newTopic: "unrelated" };
 }function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData) {
+  const isDevHost = typeof window !== "undefined" && /projecthub-dev/i.test(window.location.hostname + window.location.pathname);
+  const devLabel = isDevHost ? " (dev)" : "";
+  const botLabel = "Scout" + devLabel;
   let lastQueryTopic = null;
   let lastRequestTime = 0;
   let isRequestInFlight = false;
@@ -474,12 +271,12 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   const nameStorageKey = "projecthub-chat-user-name";
   const settingsStorageKey = "projecthub-chat-settings";
   const defaultSettings = {
-    memoryEnabled: true,
-    flavorEnabled: true,
     enterToSend: true,
-    compactMode: false,
-    personalizeReplies: true
+    compactMode: false
   };
+  const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+  const FLAVOR_ENABLED = true;
+  const MEMORY_ENABLED = true;
 
   function createSessionId() {
     return `ph_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
@@ -613,7 +410,8 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     }
 
     .projecthub-header {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
       gap: 12px;
       padding: 14px;
@@ -623,7 +421,6 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 
     .projecthub-avatar-wrap {
       position: relative;
-      flex: 0 0 auto;
     }
 
     .projecthub-avatar {
@@ -651,7 +448,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 
     .projecthub-title-block {
       min-width: 0;
-      flex: 1;
+      overflow: hidden;
     }
 
     .projecthub-kicker {
@@ -661,6 +458,9 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       letter-spacing: .08em;
       text-transform: uppercase;
       margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .projecthub-title {
@@ -672,12 +472,63 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       text-overflow: ellipsis;
     }
 
+    .projecthub-subtitle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
     .projecthub-subtitle {
       color: var(--ph-muted);
       font-size: 12px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .projecthub-minimized .projecthub-subtitle-row {
+      display: none;
+    }
+
+    .projecthub-free-badge {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: #07100c;
+      background: linear-gradient(135deg, var(--ph-accent), #a8f0c7);
+      box-shadow: 0 0 0 3px rgba(57, 217, 138, 0.14);
+      cursor: help;
+      animation: free-pulse 2.6s ease-in-out infinite;
+    }
+
+    .projecthub-free-badge::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #059669;
+      box-shadow: 0 0 8px rgba(5, 150, 105, 0.8);
+    }
+
+    @keyframes free-pulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(57, 217, 138, 0.14); transform: scale(1); }
+      50% { box-shadow: 0 0 0 6px rgba(57, 217, 138, 0.08); transform: scale(1.03); }
+    }
+
+    .projecthub-minimized .projecthub-title {
+      font-size: 15px;
+    }
+
+    .projecthub-minimized .projecthub-actions {
+      gap: 5px;
     }
 
     .projecthub-icon-button {
@@ -705,7 +556,6 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     .projecthub-actions {
       display: flex;
       gap: 7px;
-      flex: 0 0 auto;
     }
 
     .projecthub-settings-panel {
@@ -966,13 +816,6 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       font-weight: 700;
     }
 
-    .conversation-lead {
-      display: block;
-      color: #d9f7e6;
-      font-weight: 800;
-      margin-bottom: 7px;
-    }
-
     .timestamp {
       color: var(--ph-muted);
       font-size: 11px;
@@ -984,15 +827,39 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     }
 
     .projecthub-suggestions {
-      padding: 0 14px 12px;
+      padding: 0 14px 10px;
       display: flex;
       gap: 7px;
+      flex-wrap: nowrap;
       overflow-x: auto;
-      scrollbar-width: none;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+      mask-image: linear-gradient(to right, black 90%, transparent 100%);
     }
 
     .projecthub-suggestions::-webkit-scrollbar {
-      display: none;
+      height: 5px;
+    }
+    .projecthub-suggestions::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.2);
+      border-radius: 3px;
+    }
+
+    .projecthub-suggestions--collapsed {
+      overflow: hidden;
+      max-height: 38px;
+      flex-wrap: wrap;
+    }
+
+    .suggestion-toggle {
+      margin: 0 14px 8px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--ph-muted);
+      font-size: 11px;
+      cursor: pointer;
+      text-align: left;
     }
 
     .suggestion-chip,
@@ -1127,6 +994,13 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 
     .typing-dot:nth-child(2) { animation-delay: 120ms; }
     .typing-dot:nth-child(3) { animation-delay: 240ms; }
+    .thinking-tip {
+      display: block;
+      margin-top: 6px;
+      font-size: 11px;
+      opacity: 0.65;
+      font-style: italic;
+    }
 
     @keyframes typing-dot {
       0%, 80%, 100% { transform: translateY(0); opacity: .45; }
@@ -1196,18 +1070,21 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 
   const chatDiv = document.createElement("section");
   chatDiv.id = "bradley-chat";
-  chatDiv.setAttribute("aria-label", "Bradley Matera ProjectHub chat");
+  chatDiv.setAttribute("aria-label", "Scout chat");
 
   chatDiv.innerHTML = `
     <header class="projecthub-header">
       <div class="projecthub-avatar-wrap">
-        <img class="projecthub-avatar" src="${avatarUrl}" alt="Bradley Matera avatar">
+        <img class="projecthub-avatar" src="${avatarUrl}" alt="Scout avatar">
         <span class="projecthub-status-dot" aria-hidden="true"></span>
       </div>
       <div class="projecthub-title-block">
-        <div class="projecthub-kicker">Recruiter assistant</div>
-        <div class="projecthub-title">Bradley Matera ProjectHub</div>
-        <div class="projecthub-subtitle">Projects, skills, AWS, fit, and contact links</div>
+        <div class="projecthub-kicker">Bradley Matera · Recruiter assistant${devLabel}</div>
+        <div class="projecthub-title">Scout${devLabel}</div>
+        <div class="projecthub-subtitle-row">
+          <span class="projecthub-subtitle">Ask me about Bradley's projects, skills, fit, or contact info${devLabel}</span>
+          <span class="projecthub-free-badge" title="Scout runs on free GitHub Pages, a GCP free-tier VM, free LLM providers, and a local Ollama fallback — no paid AI required.">100% free</span>
+        </div>
       </div>
       <div class="projecthub-actions">
         <button class="projecthub-icon-button projecthub-settings-button" type="button" aria-label="Open chat settings" title="Chat settings">⚙</button>
@@ -1217,17 +1094,13 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     <div class="projecthub-settings-panel" role="dialog" aria-label="ProjectHub chat settings">
       <div class="settings-head">
         <div>
-          <div class="settings-title">Chat Settings</div>
-          <div class="settings-subtitle">Tune memory, personalization, and input behavior.</div>
+          <div class="settings-title">Chat Settings${devLabel}</div>
+          <div class="settings-subtitle">Input behavior and session controls.${devLabel}</div>
         </div>
         <button class="projecthub-icon-button projecthub-settings-close" type="button" aria-label="Close settings" title="Close settings">×</button>
       </div>
       <div class="settings-grid">
-        <label class="setting-row"><span><strong>Session memory</strong><span>Use recent turns for coherent follow-ups.</span></span><input class="setting-toggle" type="checkbox" data-setting="memoryEnabled"></label>
-        <label class="setting-row"><span><strong>AI flavor labels</strong><span>Add guarded 3-5 word generated notes.</span></span><input class="setting-toggle" type="checkbox" data-setting="flavorEnabled"></label>
-        <label class="setting-row"><span><strong>Personal replies</strong><span>Use your name and varied response openings.</span></span><input class="setting-toggle" type="checkbox" data-setting="personalizeReplies"></label>
         <label class="setting-row"><span><strong>Enter to send</strong><span>Shift+Enter still adds a new line.</span></span><input class="setting-toggle" type="checkbox" data-setting="enterToSend"></label>
-        <label class="setting-row"><span><strong>Compact mode</strong><span>Fits tighter screens and repeated use.</span></span><input class="setting-toggle" type="checkbox" data-setting="compactMode"></label>
       </div>
       <div class="settings-actions">
         <button class="settings-action-button danger clear-memory-button" type="button">Clear memory</button>
@@ -1236,11 +1109,12 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     </div>
     <div class="projecthub-body">
       <div id="chat-output" aria-live="polite"></div>
+      <button class="suggestion-toggle" type="button" data-action="toggle-suggestions" hidden>Show suggestions</button>
       <div class="projecthub-suggestions" aria-label="Suggested questions"></div>
     </div>
     <form class="projecthub-composer">
       <div class="composer-shell">
-        <textarea id="chat-input" rows="1" placeholder="Ask about Bradley's work, projects, skills, or roles..."></textarea>
+        <textarea id="chat-input" rows="1" placeholder="Ask Scout about Bradley's work, projects, skills, or roles..."></textarea>
         <button class="send-button" type="submit" aria-label="Send message" title="Send message">
           <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
             <path d="m22 2-7 20-4-9-9-4Z"></path>
@@ -1255,6 +1129,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 
   const chatOutput = chatDiv.querySelector("#chat-output");
   const suggestionBar = chatDiv.querySelector(".projecthub-suggestions");
+  const suggestionToggle = chatDiv.querySelector(".suggestion-toggle");
   const chatInput = chatDiv.querySelector("#chat-input");
   const sendButton = chatDiv.querySelector(".send-button");
   const settingsBtn = chatDiv.querySelector(".projecthub-settings-button");
@@ -1268,7 +1143,8 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     try {
       window.localStorage.setItem(settingsStorageKey, JSON.stringify(chatSettings));
     } catch (error) {}
-    chatDiv.classList.toggle("projecthub-compact", chatSettings.compactMode);
+    const compact = Boolean(chatSettings.compactMode) || isMobile;
+    chatDiv.classList.toggle("projecthub-compact", compact);
     chatDiv.querySelectorAll(".setting-toggle").forEach(toggle => {
       toggle.checked = Boolean(chatSettings[toggle.dataset.setting]);
     });
@@ -1286,33 +1162,10 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     const cleaned = String(value || "").trim();
     const match = cleaned.match(/(?:my name is|i am|i'm|im|this is|call me)\s+([a-z][a-z .'-]{1,32})/i);
     const rawName = (match ? match[1] : cleaned).split(/[,.!?]/)[0].trim();
-    if (!rawName || rawName.length > 32 || /\b(what|why|how|tell|about|project|bradley|aws|contact|github|linkedin)\b/i.test(rawName)) return "";
+    if (!rawName || rawName.length > 32) return "";
+    if (/\b(what|why|how|tell|about|project|bradley|aws|contact|github|linkedin|can|could|you|give|show|example|explain|describe|do|does|is|are|was|were|will|would|should|who|when|where|which|please|hey|hi|hello|test|help|question|yes|no|maybe|sure|ok|okay)\b/i.test(rawName)) return "";
+    if (rawName.split(/\s+/).length > 2 && !match) return "";
     return rawName.split(/\s+/).slice(0, 2).map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join(" ");
-  }
-
-  function conversationalLead(userQuery) {
-    if (!chatSettings.personalizeReplies) return "";
-    const namePrefix = visitorName ? `${visitorName}, ` : "";
-    const leads = visitorName ? [
-      `${namePrefix}here’s the useful read:`,
-      `Good question, ${visitorName}.`,
-      `${namePrefix}the short version is:`,
-      `For your screen, ${visitorName}:`,
-      `${namePrefix}I’d frame it this way:`
-    ] : [
-      "Here’s the direct answer:",
-      "Good question.",
-      "The short version is:",
-      "For a recruiter screen:",
-      "I’d frame it this way:"
-    ];
-    const seed = [...String(userQuery), String(turnCount)].reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    return `<span class="conversation-lead">${escapeHtml(leads[Math.abs(seed) % leads.length])}</span>`;
-  }
-
-  function personalizeReply(reply, userQuery) {
-    const lead = conversationalLead(userQuery);
-    return lead ? `${lead}${reply}` : reply;
   }
 
   async function clearRemoteMemory() {
@@ -1340,7 +1193,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       window.sessionStorage.setItem(sessionStorageKey, sessionId);
     } catch (error) {}
     chatOutput.innerHTML = "";
-    appendMessage("bot", "ProjectHub", "Memory cleared. What should I call you for this new session?");
+    appendMessage("bot", botLabel, "Memory cleared. What should I call you for this new session?");
   }
 
   function appendMessage(type, label, html, options = {}) {
@@ -1366,8 +1219,71 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     return row;
   }
 
+  // Reveal HTML reply word-by-word for a consistent, human-like typing effect.
+  // Tags (including those with spaces in attributes) are emitted whole;
+  // text tokens are emitted one whitespace-delimited piece at a time.
+  function typeHtml(contentEl, html, wordDelayMs = 32) {
+    return new Promise(resolve => {
+      const tokens = [];
+      let lastIndex = 0;
+      const tagRe = /<[^>]+>/g;
+      let m;
+      while ((m = tagRe.exec(html)) !== null) {
+        if (m.index > lastIndex) {
+          const text = html.slice(lastIndex, m.index);
+          tokens.push(...text.split(/(\s+)/).filter(Boolean));
+        }
+        tokens.push(m[0]);
+        lastIndex = m.index + m[0].length;
+      }
+      if (lastIndex < html.length) {
+        const text = html.slice(lastIndex);
+        tokens.push(...text.split(/(\s+)/).filter(Boolean));
+      }
+
+      let i = 0;
+      let buffer = '';
+      function next() {
+        if (i >= tokens.length) {
+          contentEl.innerHTML = buffer;
+          resolve();
+          return;
+        }
+        const token = tokens[i++];
+        if (token.startsWith('<')) {
+          buffer += token;
+        } else {
+          // Escape lone ampersands so partial HTML stays valid, but don't double-escape entities
+          buffer += token.replace(/&(?![a-zA-Z]+;|#[0-9]+;)/g, '&amp;');
+        }
+        contentEl.innerHTML = buffer;
+        chatOutput.scrollTop = chatOutput.scrollHeight;
+        setTimeout(next, wordDelayMs);
+      }
+      next();
+    });
+  }
+
   function appendTypingStatus() {
-    return appendMessage("bot", "ProjectHub", `<span class="typing-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span>`, { statusId: "thinking-status" });
+    const row = appendMessage("bot", botLabel, `<span class="typing-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span><span class="thinking-tip"></span>`, { statusId: "thinking-status" });
+    const tips = [
+      "Reading Bradley's project data…",
+      "Checking his AWS background…",
+      "Writing an honest answer…",
+      "Double-checking the facts…",
+      "Picking the next available free provider…"
+    ];
+    let tipIndex = 0;
+    const tipEl = row.querySelector(".thinking-tip");
+    if (tipEl) {
+      const timer = setInterval(() => {
+        if (!document.body.contains(row)) { clearInterval(timer); return; }
+        tipEl.textContent = tips[tipIndex % tips.length];
+        tipIndex++;
+      }, 3000);
+      row.dataset.tipTimer = String(timer);
+    }
+    return row;
   }
 
   function setBusy(isBusy) {
@@ -1390,7 +1306,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 
   function rememberTurn(role, content) {
     conversationContext.push({ role, content: normalizeForCompare(content).slice(0, 420), at: Date.now() });
-    conversationContext = conversationContext.slice(-8);
+    conversationContext = conversationContext.slice(-10);
   }
 
   function renderSuggestions() {
@@ -1399,10 +1315,22 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       "Tell me about ProjectHub",
       "What AWS experience does Bradley have?",
       "What concerns should a recruiter know?",
-      "How can I contact Bradley?"
+      "How can I contact Bradley?",
+      "How is this chat free?",
+      "How do daily caps and cooldowns work?"
     ];
-    const allSuggestions = [...prioritySuggestions, ...suggestions.filter(item => !prioritySuggestions.includes(item))].slice(0, 12);
+    const isNarrow = window.innerWidth <= 640;
+    const limit = isNarrow ? 6 : 12;
+    const allSuggestions = [...prioritySuggestions, ...suggestions.filter(item => !prioritySuggestions.includes(item))].slice(0, limit);
     suggestionBar.innerHTML = allSuggestions.map(item => `<button class="suggestion-chip" type="button" data-suggestion="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("");
+    updateSuggestionToggle();
+  }
+
+  function updateSuggestionToggle() {
+    if (!suggestionToggle) return;
+    const collapsed = suggestionBar.classList.contains('projecthub-suggestions--collapsed');
+    suggestionToggle.hidden = window.innerWidth > 640;
+    suggestionToggle.textContent = collapsed ? 'Show suggestions' : 'Hide suggestions';
   }
 
   minimizeBtn.addEventListener("click", () => {
@@ -1434,7 +1362,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 
   renameBtn.addEventListener("click", () => {
     saveVisitorName("");
-    appendMessage("bot", "ProjectHub", "No problem. What should I call you for this session?");
+    appendMessage("bot", botLabel, "No problem. What should I call you for this session?");
     chatDiv.classList.remove("projecthub-settings-open");
     chatInput.focus();
   });
@@ -1448,12 +1376,51 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
     submitChat();
   });
 
+  if (suggestionToggle) {
+    suggestionToggle.addEventListener('click', () => {
+      suggestionBar.classList.toggle('projecthub-suggestions--collapsed');
+      updateSuggestionToggle();
+    });
+  }
+
+  window.addEventListener('resize', () => {
+    renderSuggestions();
+  });
+
   chatOutput.addEventListener("click", event => {
     const followupButton = event.target.closest(".followup-chip");
     if (!followupButton || isRequestInFlight) return;
     setInputValue(followupButton.dataset.followup || followupButton.textContent || "");
     submitChat();
   });
+
+  const MIN_TYPING_MS = 700;
+  const WORD_DELAY_MS = 32;
+
+  function clearTypingStatus(row) {
+    const timer = row && row.dataset ? row.dataset.tipTimer : null;
+    if (timer) clearInterval(Number(timer));
+    if (row && row.parentNode) row.remove();
+  }
+
+  async function showBotReply(statusRow, html, typingStart) {
+    const elapsed = Date.now() - typingStart;
+    const wait = Math.max(0, MIN_TYPING_MS - elapsed);
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    const timer = statusRow && statusRow.dataset ? statusRow.dataset.tipTimer : null;
+    if (timer) clearInterval(Number(timer));
+    statusRow.removeAttribute("id");
+    const contentEl = statusRow.querySelector(".message-content");
+    if (contentEl) contentEl.innerHTML = "";
+    await typeHtml(contentEl || statusRow, html, WORD_DELAY_MS);
+    return statusRow;
+  }
+
+  async function typeNewBotMessage(html) {
+    const row = appendMessage("bot", botLabel, "");
+    await typeHtml(row.querySelector(".message-content"), html, WORD_DELAY_MS);
+    return row;
+  }
 
   const submitChat = async () => {
     const now = Date.now();
@@ -1487,56 +1454,48 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
       const possibleName = extractVisitorName(userQuery);
       if (possibleName) {
         saveVisitorName(possibleName);
-        appendMessage("bot", "ProjectHub", `Nice to meet you, ${escapeHtml(visitorName)}. I’ll keep this session personal and coherent. Ask me about Bradley’s projects, AWS background, role fit, gaps, or contact details.`);
+        const greetingHtml = `Nice to meet you, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask me about his projects, AWS background, role fit, honest gaps, or contact details.`;
+        await typeNewBotMessage(greetingHtml);
         rememberTurn("user", userQuery);
         rememberTurn("assistant", `Visitor name captured as ${visitorName}`);
         turnCount += 1;
         chatInput.value = "";
         resizeInput();
         setBusy(false);
+        chatInput.focus();
         return;
       }
     }
 
     const statusRow = appendTypingStatus();
+    const typingStart = Date.now();
 
     try {
       const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData, {
         sessionId,
-        context: chatSettings.memoryEnabled ? conversationContext : [],
+        context: MEMORY_ENABLED ? conversationContext : [],
         options: {
-          memoryEnabled: chatSettings.memoryEnabled,
-          flavorEnabled: chatSettings.flavorEnabled,
+          memoryEnabled: MEMORY_ENABLED,
+          flavorEnabled: FLAVOR_ENABLED,
           visitorName
         }
       });
       lastQueryTopic = newTopic;
-      const finalReply = personalizeReply(reply, userQuery);
-      const plainReply = normalizeForCompare(finalReply);
+      const finalReply = reply;
 
-      const isLocalDuplicate = newTopic !== "ai" && plainReply && plainReply === lastBotReplyText;
-      if (isLocalDuplicate) {
-        const label = visitorName ? `${escapeHtml(visitorName)}, ` : "";
-        appendMessage("bot", "ProjectHub", `${label}I already covered that locally. The useful part was: “${escapeHtml(plainReply.slice(0, 220))}${plainReply.length > 220 ? "..." : ""}” Ask for proof, tradeoffs, risks, or interview wording and I’ll take a new angle.`);
-        chatInput.value = "";
-        resizeInput();
-        return;
-      }
-
-      appendMessage("bot", "ProjectHub", finalReply);
+      await showBotReply(statusRow, linkifyHtml(finalReply), typingStart);
       rememberTurn("user", userQuery);
       rememberTurn("assistant", finalReply);
-      lastBotReplyText = plainReply;
+      lastBotReplyText = normalizeForCompare(reply);
       turnCount += 1;
       chatInput.value = "";
       resizeInput();
     } catch (error) {
       console.error("ProjectHub chat error:", error);
-      appendMessage("bot", "ProjectHub", "I can still help from Bradley’s verified profile details. Try asking about projects, AWS experience, CIRIS, target roles, skills, or contact links.");
+      if (statusRow) await showBotReply(statusRow, "I can still help from Bradley’s verified profile details. Try asking about projects, AWS experience, CIRIS, target roles, skills, or contact links.", typingStart);
     } finally {
-      statusRow.remove();
       setBusy(false);
-      chatInput.placeholder = "Ask about Bradley's work, projects, skills, or roles...";
+      chatInput.placeholder = "Ask Scout about Bradley's work, projects, skills, or roles...";
       chatInput.focus();
     }
   };
@@ -1554,10 +1513,16 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   });
 
   saveSettings();
+  window.matchMedia('(max-width: 640px)').addEventListener('change', e => {
+    chatDiv.classList.toggle("projecthub-compact", e.matches || Boolean(chatSettings.compactMode));
+  });
   renderSuggestions();
-  appendMessage("bot", "ProjectHub", visitorName
-    ? `Welcome back, ${escapeHtml(visitorName)}. Ask about Bradley’s projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.`
-    : "Hi, I’m Bradley Matera’s recruiter assistant. What should I call you for this session? A first name is enough, and then I’ll keep the conversation personal and coherent.");
+  const freeNote = `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(57,217,138,0.12);border:1px solid rgba(57,217,138,0.28);color:#b8f5d3;font-size:12px;">🟢 I run entirely on free tiers. If a provider hits its daily cap or rate limit, I automatically switch to another free provider or local Ollama on the GCP VM.</span>`;
+  const devNote = isDevHost ? `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(255,193,7,0.12);border:1px solid rgba(255,193,7,0.35);color:#ffd54f;font-size:12px;">⚠️ You are on the dev/staging environment.</span>` : "";
+  const welcomeHtml = visitorName
+    ? `Welcome back, ${escapeHtml(visitorName)}. I’m Scout${devLabel}, Bradley’s assistant. Ask about his projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.${freeNote}${devNote}`
+    : `Hi, I’m Scout${devLabel}, Bradley’s recruiter assistant. What should I call you for this session? A first name is enough, and then I’ll keep the conversation personal and coherent.${freeNote}${devNote}`;
+  typeNewBotMessage(welcomeHtml);
 
   console.log("ProjectHub loaded!");
 }

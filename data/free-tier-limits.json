@@ -1,0 +1,114 @@
+{
+  "version": "1.0.0",
+  "lastVerified": "2026-07-15",
+  "notes": "Authoritative free-tier limits and paid shadow rates for every metered source. Rates are integer micro-USD per unit unless noted. Update lastVerified when limits are re-checked against provider docs.",
+  "egressOverheadFactor": 1.08,
+  "sources": {
+    "groq": {
+      "label": "Groq (llama-3.1-8b-instant)",
+      "kind": "llm",
+      "freeLimits": { "requestsPerDay": 1000, "tokensPerMinute": 6000 },
+      "shadowRates": { "inputPerMillionTokensMicroUsd": 50000, "outputPerMillionTokensMicroUsd": 80000 },
+      "citation": "https://console.groq.com/docs/rate-limits",
+      "lastVerified": "2026-07-15"
+    },
+    "cloudflare": {
+      "label": "Cloudflare Workers AI",
+      "kind": "llm",
+      "freeLimits": { "neuronsPerDay": 10000 },
+      "shadowRates": { "perThousandNeuronsMicroUsd": 11000 },
+      "neuronEstimatesPerCall": { "@cf/meta/llama-3.2-3b-instruct": 12, "@cf/baai/bge-small-en-v1.5": 1 },
+      "citation": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+      "lastVerified": "2026-07-15"
+    },
+    "github": {
+      "label": "GitHub Models (gpt-4o-mini)",
+      "kind": "llm",
+      "freeLimits": { "requestsPerDay": 150 },
+      "shadowRates": { "inputPerMillionTokensMicroUsd": 150000, "outputPerMillionTokensMicroUsd": 600000 },
+      "citation": "https://docs.github.com/en/github-models/prototyping-with-ai-models#rate-limits",
+      "lastVerified": "2026-07-15"
+    },
+    "gemini": {
+      "label": "Google Gemini (gemini-2.0-flash)",
+      "kind": "llm",
+      "freeLimits": { "requestsPerDay": 1500, "requestsPerMinute": 15 },
+      "shadowRates": { "inputPerMillionTokensMicroUsd": 100000, "outputPerMillionTokensMicroUsd": 400000 },
+      "citation": "https://ai.google.dev/gemini-api/docs/rate-limits",
+      "lastVerified": "2026-07-15"
+    },
+    "grok": {
+      "label": "xAI Grok",
+      "kind": "llm",
+      "freeLimits": { "requestsPerDay": 1000 },
+      "shadowRates": { "inputPerMillionTokensMicroUsd": 2000000, "outputPerMillionTokensMicroUsd": 10000000 },
+      "citation": "https://docs.x.ai/docs/models",
+      "lastVerified": "2026-07-15"
+    },
+    "openai": {
+      "label": "OpenAI-compatible (disabled)",
+      "kind": "llm",
+      "freeLimits": { "requestsPerDay": 200 },
+      "shadowRates": { "inputPerMillionTokensMicroUsd": 150000, "outputPerMillionTokensMicroUsd": 600000 },
+      "citation": "https://openai.com/api/pricing/",
+      "lastVerified": "2026-07-15"
+    },
+    "ollama": {
+      "label": "Local Ollama (VM)",
+      "kind": "llm",
+      "freeLimits": {},
+      "shadowRates": { "inputPerMillionTokensMicroUsd": 0, "outputPerMillionTokensMicroUsd": 0 },
+      "citation": "local inference on the free VM; cost captured under gcp-vm",
+      "lastVerified": "2026-07-15"
+    },
+    "gcp-vm": {
+      "label": "GCP e2-micro VM (us-central1)",
+      "kind": "compute",
+      "freeLimits": { "vmHoursPerMonth": 730, "diskGb": 30 },
+      "shadowRates": { "perVmHourMicroUsd": 8400 },
+      "citation": "https://cloud.google.com/free/docs/free-cloud-features#compute",
+      "lastVerified": "2026-07-15"
+    },
+    "gcp-egress": {
+      "label": "GCP network egress (North America)",
+      "kind": "network",
+      "freeLimits": { "egressBytesPerMonth": 1073741824 },
+      "shadowRates": { "perGbMicroUsd": 120000 },
+      "citation": "https://cloud.google.com/free/docs/free-cloud-features#compute",
+      "lastVerified": "2026-07-15"
+    },
+    "github-api": {
+      "label": "GitHub REST API (Think Mode pushes)",
+      "kind": "api",
+      "freeLimits": { "requestsPerHour": 5000 },
+      "shadowRates": {},
+      "citation": "https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api",
+      "lastVerified": "2026-07-15"
+    },
+    "github-pages": {
+      "label": "GitHub Pages bandwidth (estimate)",
+      "kind": "network",
+      "freeLimits": { "bandwidthBytesPerMonth": 107374182400 },
+      "shadowRates": {},
+      "estimated": true,
+      "citation": "https://docs.github.com/en/pages/getting-started-with-github-pages/about-github-pages#usage-limits",
+      "lastVerified": "2026-07-15"
+    },
+    "github-actions": {
+      "label": "GitHub Actions minutes",
+      "kind": "compute",
+      "freeLimits": { "minutesPerMonth": 2000 },
+      "shadowRates": { "perMinuteMicroUsd": 8000 },
+      "citation": "https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions",
+      "lastVerified": "2026-07-15"
+    },
+    "disk-state": {
+      "label": "State file writes (stats/learned/costs JSON)",
+      "kind": "storage",
+      "freeLimits": {},
+      "shadowRates": {},
+      "citation": "counted within gcp-vm 30 GB disk",
+      "lastVerified": "2026-07-15"
+    }
+  }
+}

@@ -27,12 +27,12 @@ const projects = [
     apiEndpoint: null
   },
   {
-    name: "ProjectHub",
-    desc: "Embeddable AI-powered chat widget that showcases Bradley's web development projects and CodePens. Served from GitHub Pages as a single script.",
+    name: "ProjectHub (Scout)",
+    desc: "Embeddable AI recruiter assistant named Scout. One script tag adds a chat widget to any site. It answers questions about Bradley's projects, skills, AWS experience, and target roles from a grounded knowledge base, with multi-provider LLM failover, safety checks, Think Mode self-improvement, and a live analytics dashboard. Frontend is vanilla JS on GitHub Pages; backend runs on a free GCP e2-micro VM.",
     url: "https://bradleymatera.github.io/ProjectHub/",
     platform: "GitHub Pages",
     repo: "https://github.com/BradleyMatera/ProjectHub",
-    tech: ["JavaScript", "GitHub Pages"],
+    tech: ["JavaScript", "Node.js", "GitHub Pages", "GCP e2-micro", "Caddy", "Vite", "Carbon Design System"],
     apiEndpoint: null
   },
   {

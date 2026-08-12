@@ -2,4 +2,36 @@ node_modules/
 .env
 .env.*
 !.env.example
+!.env.production.example
+!.env.development.example
 .DS_Store
+aichat.md
+*.log
+.vscode/
+.netlify/
+build/
+dist/
+!analytics/dist/
+.git.backup/
+
+# AI / agent / test artifacts
+AGENTS.md
+CLAUDE.md
+.github/copilot-instructions.md
+*_test_suite*.txt
+run-tests.js
+
+# Runtime data files (generated on the VM)
+stats.json
+learned.json
+stats-dev.json
+learned-dev.json
+costs.json
+costs-dev.json
+*.backup.*
+
+# Screenshots and media clutter
+Screenshot_*.jpg
+Screenshot_*.png
+*.jpg
+*.jpeg

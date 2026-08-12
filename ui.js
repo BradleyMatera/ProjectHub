@@ -1,4 +1,7 @@
 function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData) {
+  const isDevHost = typeof window !== "undefined" && /projecthub-dev/i.test(window.location.hostname + window.location.pathname);
+  const devLabel = isDevHost ? " (dev)" : "";
+  const botLabel = "Scout" + devLabel;
   let lastQueryTopic = null;
   let lastRequestTime = 0;
   let isRequestInFlight = false;
@@ -14,12 +17,12 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   const nameStorageKey = "projecthub-chat-user-name";
   const settingsStorageKey = "projecthub-chat-settings";
   const defaultSettings = {
-    memoryEnabled: true,
-    flavorEnabled: true,
     enterToSend: true,
-    compactMode: false,
-    personalizeReplies: true
+    compactMode: false
   };
+  const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+  const FLAVOR_ENABLED = true;
+  const MEMORY_ENABLED = true;
 
   function createSessionId() {
     return `ph_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
@@ -153,7 +156,8 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     }
 
     .projecthub-header {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
       gap: 12px;
       padding: 14px;
@@ -163,7 +167,6 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
     .projecthub-avatar-wrap {
       position: relative;
-      flex: 0 0 auto;
     }
 
     .projecthub-avatar {
@@ -191,7 +194,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
     .projecthub-title-block {
       min-width: 0;
-      flex: 1;
+      overflow: hidden;
     }
 
     .projecthub-kicker {
@@ -201,6 +204,9 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       letter-spacing: .08em;
       text-transform: uppercase;
       margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .projecthub-title {
@@ -212,12 +218,63 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       text-overflow: ellipsis;
     }
 
+    .projecthub-subtitle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
     .projecthub-subtitle {
       color: var(--ph-muted);
       font-size: 12px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .projecthub-minimized .projecthub-subtitle-row {
+      display: none;
+    }
+
+    .projecthub-free-badge {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: #07100c;
+      background: linear-gradient(135deg, var(--ph-accent), #a8f0c7);
+      box-shadow: 0 0 0 3px rgba(57, 217, 138, 0.14);
+      cursor: help;
+      animation: free-pulse 2.6s ease-in-out infinite;
+    }
+
+    .projecthub-free-badge::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #059669;
+      box-shadow: 0 0 8px rgba(5, 150, 105, 0.8);
+    }
+
+    @keyframes free-pulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(57, 217, 138, 0.14); transform: scale(1); }
+      50% { box-shadow: 0 0 0 6px rgba(57, 217, 138, 0.08); transform: scale(1.03); }
+    }
+
+    .projecthub-minimized .projecthub-title {
+      font-size: 15px;
+    }
+
+    .projecthub-minimized .projecthub-actions {
+      gap: 5px;
     }
 
     .projecthub-icon-button {
@@ -245,7 +302,6 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     .projecthub-actions {
       display: flex;
       gap: 7px;
-      flex: 0 0 auto;
     }
 
     .projecthub-settings-panel {
@@ -506,13 +562,6 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       font-weight: 700;
     }
 
-    .conversation-lead {
-      display: block;
-      color: #d9f7e6;
-      font-weight: 800;
-      margin-bottom: 7px;
-    }
-
     .timestamp {
       color: var(--ph-muted);
       font-size: 11px;
@@ -524,15 +573,39 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     }
 
     .projecthub-suggestions {
-      padding: 0 14px 12px;
+      padding: 0 14px 10px;
       display: flex;
       gap: 7px;
+      flex-wrap: nowrap;
       overflow-x: auto;
-      scrollbar-width: none;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+      mask-image: linear-gradient(to right, black 90%, transparent 100%);
     }
 
     .projecthub-suggestions::-webkit-scrollbar {
-      display: none;
+      height: 5px;
+    }
+    .projecthub-suggestions::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.2);
+      border-radius: 3px;
+    }
+
+    .projecthub-suggestions--collapsed {
+      overflow: hidden;
+      max-height: 38px;
+      flex-wrap: wrap;
+    }
+
+    .suggestion-toggle {
+      margin: 0 14px 8px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--ph-muted);
+      font-size: 11px;
+      cursor: pointer;
+      text-align: left;
     }
 
     .suggestion-chip,
@@ -667,6 +740,13 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
     .typing-dot:nth-child(2) { animation-delay: 120ms; }
     .typing-dot:nth-child(3) { animation-delay: 240ms; }
+    .thinking-tip {
+      display: block;
+      margin-top: 6px;
+      font-size: 11px;
+      opacity: 0.65;
+      font-style: italic;
+    }
 
     @keyframes typing-dot {
       0%, 80%, 100% { transform: translateY(0); opacity: .45; }
@@ -736,18 +816,21 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
   const chatDiv = document.createElement("section");
   chatDiv.id = "bradley-chat";
-  chatDiv.setAttribute("aria-label", "Bradley Matera ProjectHub chat");
+  chatDiv.setAttribute("aria-label", "Scout chat");
 
   chatDiv.innerHTML = `
     <header class="projecthub-header">
       <div class="projecthub-avatar-wrap">
-        <img class="projecthub-avatar" src="${avatarUrl}" alt="Bradley Matera avatar">
+        <img class="projecthub-avatar" src="${avatarUrl}" alt="Scout avatar">
         <span class="projecthub-status-dot" aria-hidden="true"></span>
       </div>
       <div class="projecthub-title-block">
-        <div class="projecthub-kicker">Recruiter assistant</div>
-        <div class="projecthub-title">Bradley Matera ProjectHub</div>
-        <div class="projecthub-subtitle">Projects, skills, AWS, fit, and contact links</div>
+        <div class="projecthub-kicker">Bradley Matera · Recruiter assistant${devLabel}</div>
+        <div class="projecthub-title">Scout${devLabel}</div>
+        <div class="projecthub-subtitle-row">
+          <span class="projecthub-subtitle">Ask me about Bradley's projects, skills, fit, or contact info${devLabel}</span>
+          <span class="projecthub-free-badge" title="Scout runs on free GitHub Pages, a GCP free-tier VM, free LLM providers, and a local Ollama fallback — no paid AI required.">100% free</span>
+        </div>
       </div>
       <div class="projecthub-actions">
         <button class="projecthub-icon-button projecthub-settings-button" type="button" aria-label="Open chat settings" title="Chat settings">⚙</button>
@@ -757,17 +840,13 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     <div class="projecthub-settings-panel" role="dialog" aria-label="ProjectHub chat settings">
       <div class="settings-head">
         <div>
-          <div class="settings-title">Chat Settings</div>
-          <div class="settings-subtitle">Tune memory, personalization, and input behavior.</div>
+          <div class="settings-title">Chat Settings${devLabel}</div>
+          <div class="settings-subtitle">Input behavior and session controls.${devLabel}</div>
         </div>
         <button class="projecthub-icon-button projecthub-settings-close" type="button" aria-label="Close settings" title="Close settings">×</button>
       </div>
       <div class="settings-grid">
-        <label class="setting-row"><span><strong>Session memory</strong><span>Use recent turns for coherent follow-ups.</span></span><input class="setting-toggle" type="checkbox" data-setting="memoryEnabled"></label>
-        <label class="setting-row"><span><strong>AI flavor labels</strong><span>Add guarded 3-5 word generated notes.</span></span><input class="setting-toggle" type="checkbox" data-setting="flavorEnabled"></label>
-        <label class="setting-row"><span><strong>Personal replies</strong><span>Use your name and varied response openings.</span></span><input class="setting-toggle" type="checkbox" data-setting="personalizeReplies"></label>
         <label class="setting-row"><span><strong>Enter to send</strong><span>Shift+Enter still adds a new line.</span></span><input class="setting-toggle" type="checkbox" data-setting="enterToSend"></label>
-        <label class="setting-row"><span><strong>Compact mode</strong><span>Fits tighter screens and repeated use.</span></span><input class="setting-toggle" type="checkbox" data-setting="compactMode"></label>
       </div>
       <div class="settings-actions">
         <button class="settings-action-button danger clear-memory-button" type="button">Clear memory</button>
@@ -776,11 +855,12 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     </div>
     <div class="projecthub-body">
       <div id="chat-output" aria-live="polite"></div>
+      <button class="suggestion-toggle" type="button" data-action="toggle-suggestions" hidden>Show suggestions</button>
       <div class="projecthub-suggestions" aria-label="Suggested questions"></div>
     </div>
     <form class="projecthub-composer">
       <div class="composer-shell">
-        <textarea id="chat-input" rows="1" placeholder="Ask about Bradley's work, projects, skills, or roles..."></textarea>
+        <textarea id="chat-input" rows="1" placeholder="Ask Scout about Bradley's work, projects, skills, or roles..."></textarea>
         <button class="send-button" type="submit" aria-label="Send message" title="Send message">
           <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
             <path d="m22 2-7 20-4-9-9-4Z"></path>
@@ -795,6 +875,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
   const chatOutput = chatDiv.querySelector("#chat-output");
   const suggestionBar = chatDiv.querySelector(".projecthub-suggestions");
+  const suggestionToggle = chatDiv.querySelector(".suggestion-toggle");
   const chatInput = chatDiv.querySelector("#chat-input");
   const sendButton = chatDiv.querySelector(".send-button");
   const settingsBtn = chatDiv.querySelector(".projecthub-settings-button");
@@ -808,7 +889,8 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     try {
       window.localStorage.setItem(settingsStorageKey, JSON.stringify(chatSettings));
     } catch (error) {}
-    chatDiv.classList.toggle("projecthub-compact", chatSettings.compactMode);
+    const compact = Boolean(chatSettings.compactMode) || isMobile;
+    chatDiv.classList.toggle("projecthub-compact", compact);
     chatDiv.querySelectorAll(".setting-toggle").forEach(toggle => {
       toggle.checked = Boolean(chatSettings[toggle.dataset.setting]);
     });
@@ -826,33 +908,10 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     const cleaned = String(value || "").trim();
     const match = cleaned.match(/(?:my name is|i am|i'm|im|this is|call me)\s+([a-z][a-z .'-]{1,32})/i);
     const rawName = (match ? match[1] : cleaned).split(/[,.!?]/)[0].trim();
-    if (!rawName || rawName.length > 32 || /\b(what|why|how|tell|about|project|bradley|aws|contact|github|linkedin)\b/i.test(rawName)) return "";
+    if (!rawName || rawName.length > 32) return "";
+    if (/\b(what|why|how|tell|about|project|bradley|aws|contact|github|linkedin|can|could|you|give|show|example|explain|describe|do|does|is|are|was|were|will|would|should|who|when|where|which|please|hey|hi|hello|test|help|question|yes|no|maybe|sure|ok|okay)\b/i.test(rawName)) return "";
+    if (rawName.split(/\s+/).length > 2 && !match) return "";
     return rawName.split(/\s+/).slice(0, 2).map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join(" ");
-  }
-
-  function conversationalLead(userQuery) {
-    if (!chatSettings.personalizeReplies) return "";
-    const namePrefix = visitorName ? `${visitorName}, ` : "";
-    const leads = visitorName ? [
-      `${namePrefix}here’s the useful read:`,
-      `Good question, ${visitorName}.`,
-      `${namePrefix}the short version is:`,
-      `For your screen, ${visitorName}:`,
-      `${namePrefix}I’d frame it this way:`
-    ] : [
-      "Here’s the direct answer:",
-      "Good question.",
-      "The short version is:",
-      "For a recruiter screen:",
-      "I’d frame it this way:"
-    ];
-    const seed = [...String(userQuery), String(turnCount)].reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    return `<span class="conversation-lead">${escapeHtml(leads[Math.abs(seed) % leads.length])}</span>`;
-  }
-
-  function personalizeReply(reply, userQuery) {
-    const lead = conversationalLead(userQuery);
-    return lead ? `${lead}${reply}` : reply;
   }
 
   async function clearRemoteMemory() {
@@ -880,7 +939,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       window.sessionStorage.setItem(sessionStorageKey, sessionId);
     } catch (error) {}
     chatOutput.innerHTML = "";
-    appendMessage("bot", "ProjectHub", "Memory cleared. What should I call you for this new session?");
+    appendMessage("bot", botLabel, "Memory cleared. What should I call you for this new session?");
   }
 
   function appendMessage(type, label, html, options = {}) {
@@ -906,8 +965,71 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     return row;
   }
 
+  // Reveal HTML reply word-by-word for a consistent, human-like typing effect.
+  // Tags (including those with spaces in attributes) are emitted whole;
+  // text tokens are emitted one whitespace-delimited piece at a time.
+  function typeHtml(contentEl, html, wordDelayMs = 32) {
+    return new Promise(resolve => {
+      const tokens = [];
+      let lastIndex = 0;
+      const tagRe = /<[^>]+>/g;
+      let m;
+      while ((m = tagRe.exec(html)) !== null) {
+        if (m.index > lastIndex) {
+          const text = html.slice(lastIndex, m.index);
+          tokens.push(...text.split(/(\s+)/).filter(Boolean));
+        }
+        tokens.push(m[0]);
+        lastIndex = m.index + m[0].length;
+      }
+      if (lastIndex < html.length) {
+        const text = html.slice(lastIndex);
+        tokens.push(...text.split(/(\s+)/).filter(Boolean));
+      }
+
+      let i = 0;
+      let buffer = '';
+      function next() {
+        if (i >= tokens.length) {
+          contentEl.innerHTML = buffer;
+          resolve();
+          return;
+        }
+        const token = tokens[i++];
+        if (token.startsWith('<')) {
+          buffer += token;
+        } else {
+          // Escape lone ampersands so partial HTML stays valid, but don't double-escape entities
+          buffer += token.replace(/&(?![a-zA-Z]+;|#[0-9]+;)/g, '&amp;');
+        }
+        contentEl.innerHTML = buffer;
+        chatOutput.scrollTop = chatOutput.scrollHeight;
+        setTimeout(next, wordDelayMs);
+      }
+      next();
+    });
+  }
+
   function appendTypingStatus() {
-    return appendMessage("bot", "ProjectHub", `<span class="typing-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span>`, { statusId: "thinking-status" });
+    const row = appendMessage("bot", botLabel, `<span class="typing-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span><span class="thinking-tip"></span>`, { statusId: "thinking-status" });
+    const tips = [
+      "Reading Bradley's project data…",
+      "Checking his AWS background…",
+      "Writing an honest answer…",
+      "Double-checking the facts…",
+      "Picking the next available free provider…"
+    ];
+    let tipIndex = 0;
+    const tipEl = row.querySelector(".thinking-tip");
+    if (tipEl) {
+      const timer = setInterval(() => {
+        if (!document.body.contains(row)) { clearInterval(timer); return; }
+        tipEl.textContent = tips[tipIndex % tips.length];
+        tipIndex++;
+      }, 3000);
+      row.dataset.tipTimer = String(timer);
+    }
+    return row;
   }
 
   function setBusy(isBusy) {
@@ -930,7 +1052,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
   function rememberTurn(role, content) {
     conversationContext.push({ role, content: normalizeForCompare(content).slice(0, 420), at: Date.now() });
-    conversationContext = conversationContext.slice(-8);
+    conversationContext = conversationContext.slice(-10);
   }
 
   function renderSuggestions() {
@@ -939,10 +1061,22 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       "Tell me about ProjectHub",
       "What AWS experience does Bradley have?",
       "What concerns should a recruiter know?",
-      "How can I contact Bradley?"
+      "How can I contact Bradley?",
+      "How is this chat free?",
+      "How do daily caps and cooldowns work?"
     ];
-    const allSuggestions = [...prioritySuggestions, ...suggestions.filter(item => !prioritySuggestions.includes(item))].slice(0, 12);
+    const isNarrow = window.innerWidth <= 640;
+    const limit = isNarrow ? 6 : 12;
+    const allSuggestions = [...prioritySuggestions, ...suggestions.filter(item => !prioritySuggestions.includes(item))].slice(0, limit);
     suggestionBar.innerHTML = allSuggestions.map(item => `<button class="suggestion-chip" type="button" data-suggestion="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("");
+    updateSuggestionToggle();
+  }
+
+  function updateSuggestionToggle() {
+    if (!suggestionToggle) return;
+    const collapsed = suggestionBar.classList.contains('projecthub-suggestions--collapsed');
+    suggestionToggle.hidden = window.innerWidth > 640;
+    suggestionToggle.textContent = collapsed ? 'Show suggestions' : 'Hide suggestions';
   }
 
   minimizeBtn.addEventListener("click", () => {
@@ -974,7 +1108,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
   renameBtn.addEventListener("click", () => {
     saveVisitorName("");
-    appendMessage("bot", "ProjectHub", "No problem. What should I call you for this session?");
+    appendMessage("bot", botLabel, "No problem. What should I call you for this session?");
     chatDiv.classList.remove("projecthub-settings-open");
     chatInput.focus();
   });
@@ -988,12 +1122,51 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     submitChat();
   });
 
+  if (suggestionToggle) {
+    suggestionToggle.addEventListener('click', () => {
+      suggestionBar.classList.toggle('projecthub-suggestions--collapsed');
+      updateSuggestionToggle();
+    });
+  }
+
+  window.addEventListener('resize', () => {
+    renderSuggestions();
+  });
+
   chatOutput.addEventListener("click", event => {
     const followupButton = event.target.closest(".followup-chip");
     if (!followupButton || isRequestInFlight) return;
     setInputValue(followupButton.dataset.followup || followupButton.textContent || "");
     submitChat();
   });
+
+  const MIN_TYPING_MS = 700;
+  const WORD_DELAY_MS = 32;
+
+  function clearTypingStatus(row) {
+    const timer = row && row.dataset ? row.dataset.tipTimer : null;
+    if (timer) clearInterval(Number(timer));
+    if (row && row.parentNode) row.remove();
+  }
+
+  async function showBotReply(statusRow, html, typingStart) {
+    const elapsed = Date.now() - typingStart;
+    const wait = Math.max(0, MIN_TYPING_MS - elapsed);
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    const timer = statusRow && statusRow.dataset ? statusRow.dataset.tipTimer : null;
+    if (timer) clearInterval(Number(timer));
+    statusRow.removeAttribute("id");
+    const contentEl = statusRow.querySelector(".message-content");
+    if (contentEl) contentEl.innerHTML = "";
+    await typeHtml(contentEl || statusRow, html, WORD_DELAY_MS);
+    return statusRow;
+  }
+
+  async function typeNewBotMessage(html) {
+    const row = appendMessage("bot", botLabel, "");
+    await typeHtml(row.querySelector(".message-content"), html, WORD_DELAY_MS);
+    return row;
+  }
 
   const submitChat = async () => {
     const now = Date.now();
@@ -1027,56 +1200,48 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       const possibleName = extractVisitorName(userQuery);
       if (possibleName) {
         saveVisitorName(possibleName);
-        appendMessage("bot", "ProjectHub", `Nice to meet you, ${escapeHtml(visitorName)}. I’ll keep this session personal and coherent. Ask me about Bradley’s projects, AWS background, role fit, gaps, or contact details.`);
+        const greetingHtml = `Nice to meet you, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask me about his projects, AWS background, role fit, honest gaps, or contact details.`;
+        await typeNewBotMessage(greetingHtml);
         rememberTurn("user", userQuery);
         rememberTurn("assistant", `Visitor name captured as ${visitorName}`);
         turnCount += 1;
         chatInput.value = "";
         resizeInput();
         setBusy(false);
+        chatInput.focus();
         return;
       }
     }
 
     const statusRow = appendTypingStatus();
+    const typingStart = Date.now();
 
     try {
       const { reply, newTopic } = await handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData, {
         sessionId,
-        context: chatSettings.memoryEnabled ? conversationContext : [],
+        context: MEMORY_ENABLED ? conversationContext : [],
         options: {
-          memoryEnabled: chatSettings.memoryEnabled,
-          flavorEnabled: chatSettings.flavorEnabled,
+          memoryEnabled: MEMORY_ENABLED,
+          flavorEnabled: FLAVOR_ENABLED,
           visitorName
         }
       });
       lastQueryTopic = newTopic;
-      const finalReply = personalizeReply(reply, userQuery);
-      const plainReply = normalizeForCompare(finalReply);
+      const finalReply = reply;
 
-      const isLocalDuplicate = newTopic !== "ai" && plainReply && plainReply === lastBotReplyText;
-      if (isLocalDuplicate) {
-        const label = visitorName ? `${escapeHtml(visitorName)}, ` : "";
-        appendMessage("bot", "ProjectHub", `${label}I already covered that locally. The useful part was: “${escapeHtml(plainReply.slice(0, 220))}${plainReply.length > 220 ? "..." : ""}” Ask for proof, tradeoffs, risks, or interview wording and I’ll take a new angle.`);
-        chatInput.value = "";
-        resizeInput();
-        return;
-      }
-
-      appendMessage("bot", "ProjectHub", finalReply);
+      await showBotReply(statusRow, linkifyHtml(finalReply), typingStart);
       rememberTurn("user", userQuery);
       rememberTurn("assistant", finalReply);
-      lastBotReplyText = plainReply;
+      lastBotReplyText = normalizeForCompare(reply);
       turnCount += 1;
       chatInput.value = "";
       resizeInput();
     } catch (error) {
       console.error("ProjectHub chat error:", error);
-      appendMessage("bot", "ProjectHub", "I can still help from Bradley’s verified profile details. Try asking about projects, AWS experience, CIRIS, target roles, skills, or contact links.");
+      if (statusRow) await showBotReply(statusRow, "I can still help from Bradley’s verified profile details. Try asking about projects, AWS experience, CIRIS, target roles, skills, or contact links.", typingStart);
     } finally {
-      statusRow.remove();
       setBusy(false);
-      chatInput.placeholder = "Ask about Bradley's work, projects, skills, or roles...";
+      chatInput.placeholder = "Ask Scout about Bradley's work, projects, skills, or roles...";
       chatInput.focus();
     }
   };
@@ -1094,10 +1259,16 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   });
 
   saveSettings();
+  window.matchMedia('(max-width: 640px)').addEventListener('change', e => {
+    chatDiv.classList.toggle("projecthub-compact", e.matches || Boolean(chatSettings.compactMode));
+  });
   renderSuggestions();
-  appendMessage("bot", "ProjectHub", visitorName
-    ? `Welcome back, ${escapeHtml(visitorName)}. Ask about Bradley’s projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.`
-    : "Hi, I’m Bradley Matera’s recruiter assistant. What should I call you for this session? A first name is enough, and then I’ll keep the conversation personal and coherent.");
+  const freeNote = `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(57,217,138,0.12);border:1px solid rgba(57,217,138,0.28);color:#b8f5d3;font-size:12px;">🟢 I run entirely on free tiers. If a provider hits its daily cap or rate limit, I automatically switch to another free provider or local Ollama on the GCP VM.</span>`;
+  const devNote = isDevHost ? `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(255,193,7,0.12);border:1px solid rgba(255,193,7,0.35);color:#ffd54f;font-size:12px;">⚠️ You are on the dev/staging environment.</span>` : "";
+  const welcomeHtml = visitorName
+    ? `Welcome back, ${escapeHtml(visitorName)}. I’m Scout${devLabel}, Bradley’s assistant. Ask about his projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.${freeNote}${devNote}`
+    : `Hi, I’m Scout${devLabel}, Bradley’s recruiter assistant. What should I call you for this session? A first name is enough, and then I’ll keep the conversation personal and coherent.${freeNote}${devNote}`;
+  typeNewBotMessage(welcomeHtml);
 
   console.log("ProjectHub loaded!");
 }
