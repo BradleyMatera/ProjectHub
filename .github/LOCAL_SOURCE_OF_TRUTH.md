@@ -33,7 +33,16 @@ npm run workspace:start -- feat/your-branch-name
 
 If that branch already exists on GitHub, the command opens/tracks the GitHub branch and fast-forwards it safely.
 
-If it does not exist yet, the command creates it from the current `origin/develop` and immediately publishes the new branch to GitHub.
+If it does not exist yet, the command creates it from current `origin/master` and immediately publishes the new branch to GitHub.
+
+### Temporary develop quarantine
+
+`develop` contains older staging-specific history that diverged from modern `master`. It is preserved, not deleted, while that history is reconciled deliberately.
+
+- Current old develop snapshot is preserved at `archive/develop-pre-multimachine-20260717`.
+- Do not create new feature work from `develop` until reconciliation is complete.
+- Do not merge `develop` into `master` or `master` into `develop` just to make the graphs line up.
+- Portable feature work currently starts from `origin/master`.
 
 Then run:
 
@@ -74,13 +83,7 @@ When it succeeds, the committed feature branch is on GitHub and another machine 
 
 Do not push directly to `master` or `develop`. Open pull requests instead.
 
-Normal development flow:
-
-1. GitHub `develop` is the starting source.
-2. Work happens on a GitHub-backed feature branch.
-3. Feature branch is PR'd into `develop`.
-4. Staging is validated.
-5. `develop` is PR'd into `master` for production.
+Until `develop` is reconciled, active feature work should stay on GitHub-backed feature branches created from `master`. Do not promote them automatically into production merely because `master` is the base; promotion still requires an intentional PR and validation.
 
 ## If a protected local branch diverges
 

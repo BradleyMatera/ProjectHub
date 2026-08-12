@@ -18,7 +18,9 @@ npm run workspace:start -- feat/your-branch-name
 npm run workspace:check
 ```
 
-`workspace:start` always fetches GitHub first. Existing feature branches are resumed from `origin`; new feature branches are created from `origin/develop` and immediately published to GitHub.
+`workspace:start` always fetches GitHub first. Existing feature branches are resumed from `origin`; new feature branches are created from current `origin/master` and immediately published to GitHub.
+
+`develop` is currently preserved while its older staging-only history is reconciled with modern `master`. Do not use `develop` as the base for new portable workspaces until that reconciliation is explicitly completed. Its pre-reconciliation state is preserved at `archive/develop-pre-multimachine-20260717`.
 
 ## Before switching PC, IDE, or coding agent
 
@@ -44,5 +46,6 @@ npm run workspace:start -- feat/your-branch-name
 - Never merge stale local protected-branch history into GitHub.
 - Never assume uncommitted changes exist on another machine.
 - A machine switch is safe only after the feature branch is committed and `workspace:publish` succeeds.
+- Until `develop` is reconciled, new feature branches start from `origin/master`.
 
 See `.github/LOCAL_SOURCE_OF_TRUTH.md` for full recovery and divergence rules.

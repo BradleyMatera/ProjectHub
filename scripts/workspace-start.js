@@ -1,6 +1,8 @@
 'use strict';
 
 const { execFileSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
 
 function git(args, options = {}) {
   return execFileSync('git', args, {
@@ -24,6 +26,19 @@ function refExists(ref) {
     return true;
   } catch {
     return false;
+  }
+}
+
+function getWorkspaceReservation(branch) {
+  try {
+    const root = git(['rev-parse', '--show-toplevel']);
+    const registryPath = path.join(root, '.github', 'ACTIVE_WORKSPACES.json');
+    if (!fs.existsSync(registryPath)) return null;
+    const data = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+    if (!Array.isArray(data.workspaces)) return null;
+    return data.workspaces.find((entry) => entry && entry.branch === branch) || null;
+  } catch {
+    return null;
   }
 }
 
@@ -74,8 +89,16 @@ function main() {
     } else if (hasRemote) {
       runGit(['switch', '--track', '-c', branch, `origin/${branch}`]);
     } else {
-      if (!refExists('refs/remotes/origin/develop')) fail('origin/develop does not exist.');
-      runGit(['switch', '-c', branch, 'origin/develop']);
+      const reservation = getWorkspaceReservation(branch);
+      if (reservation && reservation.status === 'local-unpublished') {
+        fail(`${branch} is RESERVED for an existing local workspace that has not been published to GitHub yet. Do not create a replacement branch here. Return to the original machine/IDE, commit the intended work, and run npm run workspace:publish there first.`);
+      }
+
+      // New portable workspaces are based on current GitHub production history.
+      // Do NOT use origin/develop here: develop is intentionally preserved while
+      // its older staging-only history is reconciled with current master.
+      if (!refExists('refs/remotes/origin/master')) fail('origin/master does not exist.');
+      runGit(['switch', '-c', branch, 'origin/master']);
       runGit(['push', '-u', 'origin', branch]);
     }
   } catch (error) {
