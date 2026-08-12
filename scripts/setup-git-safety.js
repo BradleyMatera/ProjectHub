@@ -14,17 +14,32 @@ function setConfig(key, value) {
 }
 
 function main() {
+  const installOnly = process.argv.includes('--install-only');
+
+  if (installOnly && process.env.CI) {
+    console.log('Skipping local Git workspace setup in CI.');
+    return;
+  }
+
   try {
     git(['rev-parse', '--show-toplevel']);
   } catch {
+    if (installOnly) {
+      console.log('No Git worktree detected; skipping ProjectHub local Git safety setup.');
+      return;
+    }
     console.error('Not inside a Git repository.');
     process.exit(1);
   }
 
   setConfig('core.hooksPath', '.githooks');
   setConfig('pull.ff', 'only');
+  setConfig('merge.ff', 'only');
   setConfig('fetch.prune', 'true');
+  setConfig('fetch.pruneTags', 'true');
   setConfig('push.default', 'simple');
+  setConfig('push.autoSetupRemote', 'true');
+  setConfig('remote.pushDefault', 'origin');
   setConfig('branch.master.remote', 'origin');
   setConfig('branch.master.merge', 'refs/heads/master');
   setConfig('branch.develop.remote', 'origin');
@@ -32,9 +47,12 @@ function main() {
 
   console.log('Installed ProjectHub Git safety settings:');
   console.log('  - GitHub/origin is authoritative');
-  console.log('  - pulls are fast-forward only');
-  console.log('  - stale remote refs are pruned');
+  console.log('  - pulls and local merges are fast-forward only');
+  console.log('  - stale remote refs/tags are pruned');
+  console.log('  - new feature branches auto-track origin on first push');
   console.log('  - .githooks/pre-push blocks direct pushes to master/develop');
+
+  if (installOnly) return;
 
   try {
     console.log('\nFetching latest GitHub state...');
@@ -54,7 +72,7 @@ function main() {
 
   if (branch !== 'master' && branch !== 'develop') {
     console.log(`\nCurrent branch: ${branch || '(detached HEAD)'}`);
-    console.log('No protected branch pull needed. Create work from an up-to-date origin/develop.');
+    console.log('No protected branch pull needed. Run `npm run workspace:check` before editing.');
     return;
   }
 
