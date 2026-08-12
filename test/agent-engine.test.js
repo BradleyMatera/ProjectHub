@@ -1699,6 +1699,28 @@ test('regression: negated technology mention is not flagged as fabricated', () =
     `Negated MongoDB should not be flagged as fabricated, got: ${result.reasons.join(', ')}`);
 });
 
+test('regression: fabricated entity description is rejected', () => {
+  const result = validateAnswer(
+    'ProjectHub is a web application that allows users to search and apply for developer roles based on their skills and experience.',
+    'ProjectHub is an embeddable AI recruiter assistant named Scout.',
+    'Tell me about ProjectHub.',
+    testKnowledge
+  );
+  assert.equal(result.valid, false, 'Fabricated description should be rejected');
+  assert.ok(result.reasons.some(r => r.includes('unsupported_description')),
+    `Should flag unsupported description, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: correct entity description is accepted', () => {
+  const result = validateAnswer(
+    'ProjectHub is an AI assistant named Scout that answers questions about projects and skills.',
+    'ProjectHub is an embeddable AI recruiter assistant named Scout.',
+    'Tell me about ProjectHub.',
+    testKnowledge
+  );
+  assert.equal(result.valid, true, `Correct description should be accepted, got: ${result.reasons.join(', ')}`);
+});
+
 test('regression: leaked internal phrase (connecting entities) is rejected', () => {
   const result = validateAnswer(
     'He is best at connecting entities.',
