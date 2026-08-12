@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Scout 1.5B WebGPU Test</title>
+<style>
+body { font-family: monospace; padding: 20px; max-width: 900px; margin: auto; background: #07100d; color: #eef8f2; }
+.log { white-space: pre-wrap; font-size: 12px; line-height: 1.4; }
+.ok { color: #46e39a; }
+.err { color: #ff6b6b; }
+.info { color: #74b9ff; }
+.warn { color: #f59e0b; }
+button { background: #16251f; color: #46e39a; border: 1px solid #29443a; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; margin: 10px 0; }
+button:hover { background: #29443a; }
+button:disabled { opacity: 0.5; cursor: wait; }
+</style>
+</head>
+<body>
+<h2>Scout 1.5B WebGPU Test</h2>
+<p style="color: #9db4a9;">This page tests the Qwen2.5-1.5B-Instruct model with WebGPU in your browser. The model is ~1.3GB (q4f16) and will be downloaded on first use.</p>
+<button id="start-btn" onclick="runTest()">Start WebGPU Test</button>
+<div id="log" class="log"></div>
+
+<script>
+const log = (msg, cls = '') => {
+  const el = document.getElementById('log');
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  el.appendChild(span);
+  el.scrollTop = el.scrollHeight;
+};
+
+const SERVER_URL = 'http://localhost:3199';
+const MODEL_ID = 'onnx-community/Qwen2.5-1.5B-Instruct';
+
+async function runTest() {
+  document.getElementById('start-btn').disabled = true;
+  document.getElementById('start-btn').textContent = 'Running...';
+
+  // 1. Capability detection
+  log('=== Capability Detection ===');
+  const hasWebGPU = !!(navigator.gpu);
+  log(`WebGPU: ${hasWebGPU ? 'YES' : 'NO'}`, hasWebGPU ? 'ok' : 'warn');
+  if (hasWebGPU) {
+    try {
+      const adapter = await navigator.gpu.requestAdapter();
+      log(`GPU adapter: ${adapter ? adapter.info?.description || 'available' : 'null'}`, adapter ? 'ok' : 'err');
+      if (adapter) {
+        const info = adapter.info || {};
+        log(`  vendor: ${info.vendor || 'unknown'}`, 'info');
+        log(`  architecture: ${info.architecture || 'unknown'}`, 'info');
+        log(`  device: ${info.device || 'unknown'}`, 'info');
+      }
+    } catch (e) {
+      log(`GPU adapter error: ${e.message}`, 'err');
+    }
+  }
+  log(`WebAssembly: ${typeof WebAssembly !== 'undefined' ? 'YES' : 'NO'}`);
+  log(`UserAgent: ${navigator.userAgent.slice(0, 120)}`, 'info');
+  log('');
+
+  if (!hasWebGPU) {
+    log('WebGPU not available. This browser cannot run the 1.5B model efficiently.', 'warn');
+    log('Chrome 113+ is required for WebGPU. Safari 26+ and Firefox are behind flags.', 'warn');
+    document.getElementById('start-btn').disabled = false;
+    document.getElementById('start-btn').textContent = 'Start WebGPU Test';
+    return;
+  }
+
+  // 2. Load Transformers.js
+  log('=== Loading Transformers.js v4 ===');
+  const t0 = performance.now();
+  try {
+    const tf = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0');
+    const t1 = performance.now();
+    log(`Transformers.js loaded in ${(t1 - t0).toFixed(0)}ms`, 'ok');
+    log(`Version: ${tf.env.version || 'unknown'}`, 'info');
+
+    tf.env.allowLocalModels = false;
+    tf.env.allowRemoteModels = true;
+
+    // 3. Load model with WebGPU
+    log('');
+    log('=== Loading Qwen2.5-1.5B-Instruct (ONNX, WebGPU) ===');
+    log('This will download ~1.3GB on first use...', 'warn');
+    log('Model: ' + MODEL_ID, 'info');
+    log('Device: webgpu', 'info');
+    log('Dtype: q4f16', 'info');
+
+    const t2 = performance.now();
+    log('Loading tokenizer...');
+    const tokenizer = await tf.AutoTokenizer.from_pretrained(MODEL_ID);
+    const t3 = performance.now();
+    log(`Tokenizer loaded in ${(t3 - t2).toFixed(0)}ms`, 'ok');
+
+    log('Loading model (this is the big download)...');
+    const t4 = performance.now();
+    const model = await tf.AutoModelForCausalLM.from_pretrained(MODEL_ID, {
+      device: 'webgpu',
+      dtype: 'q4f16',
+    });
+    const t5 = performance.now();
+    log(`Model loaded in ${((t5 - t4) / 1000).toFixed(1)}s`, 'ok');
+    log(`Total model load: ${((t5 - t2) / 1000).toFixed(1)}s`, 'ok');
+
+    // 4. Test generation with Scout packet
+    log('');
+    log('=== Scout Server Packet Test ===');
+    const packetRes = await fetch(`${SERVER_URL}/api/client-packet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Tell me about Bradley.', sessionId: 'webgpu-test' })
+    });
+    const { runId, packet, fallback } = await packetRes.json();
+    log(`Packet: tokens=${packet.contextTokens} operation=${packet.operation}`, 'info');
+
+    const messages = [
+      { role: 'system', content: packet.systemPrompt },
+      { role: 'user', content: packet.userPrompt }
+    ];
+    const prompt = tokenizer.apply_chat_template(messages, {
+      tokenize: false,
+      add_generation_prompt: true
+    });
+    log(`Prompt length: ${prompt.length} chars`, 'info');
+
+    const inputs = tokenizer(prompt, {
+      return_tensors: 'webgpu',
+      max_length: 768,
+      truncation: true
+    });
+
+    log('Generating with WebGPU...');
+    const t6 = performance.now();
+    const output = await model.generate({
+      ...inputs,
+      max_new_tokens: 100,
+      temperature: 0.4,
+      top_p: 0.9,
+      do_sample: true,
+      repetition_penalty: 1.1
+    });
+    const t7 = performance.now();
+
+    const inputLen = inputs.input_ids.dims()[1];
+    const outputLen = output[0].dims()[1];
+    const genLen = outputLen - inputLen;
+    const genTime = (t7 - t6) / 1000;
+    const tps = genLen / genTime;
+
+    const genTokens = Array.from(output[0].data).slice(inputLen);
+    const answer = tokenizer.decode(genTokens, { skip_special_tokens: true }).trim();
+
+    log(`Generation: ${genTime.toFixed(1)}s for ${genLen} tokens (${tps.toFixed(1)} tok/s)`, 'ok');
+    log(`Answer: ${answer}`, 'info');
+
+    // 5. Validate with server
+    const valRes = await fetch(`${SERVER_URL}/api/client-validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ runId, answer, sessionId: 'webgpu-test' })
+    });
+    const validation = await valRes.json();
+    log(`Validation: valid=${validation.valid} verdict=${validation.verdict}`, validation.valid ? 'ok' : 'warn');
+    if (validation.reasons?.length) log(`Reasons: ${validation.reasons.join(', ')}`, 'warn');
+
+    // 6. Second generation (warm)
+    log('');
+    log('=== Warm Generation Test ===');
+    const packet2 = await fetch(`${SERVER_URL}/api/client-packet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'What are his skills?', sessionId: 'webgpu-test' })
+    }).then(r => r.json());
+
+    const messages2 = [
+      { role: 'system', content: packet2.packet.systemPrompt },
+      { role: 'user', content: packet2.packet.userPrompt }
+    ];
+    const prompt2 = tokenizer.apply_chat_template(messages2, { tokenize: false, add_generation_prompt: true });
+    const inputs2 = tokenizer(prompt2, { return_tensors: 'webgpu', max_length: 768, truncation: true });
+
+    const t8 = performance.now();
+    const output2 = await model.generate({
+      ...inputs2,
+      max_new_tokens: 100,
+      temperature: 0.4,
+      top_p: 0.9,
+      do_sample: true,
+      repetition_penalty: 1.1
+    });
+    const t9 = performance.now();
+
+    const inputLen2 = inputs2.input_ids.dims()[1];
+    const genLen2 = output2[0].dims()[1] - inputLen2;
+    const genTime2 = (t9 - t8) / 1000;
+    const tps2 = genLen2 / genTime2;
+    const answer2 = tokenizer.decode(
+      Array.from(output2[0].data).slice(inputLen2),
+      { skip_special_tokens: true }
+    ).trim();
+
+    log(`Warm generation: ${genTime2.toFixed(1)}s for ${genLen2} tokens (${tps2.toFixed(1)} tok/s)`, 'ok');
+    log(`Answer: ${answer2}`, 'info');
+
+    // 7. Summary
+    log('');
+    log('=== Summary ===');
+    log(`Model: ${MODEL_ID}`);
+    log(`Device: webgpu`);
+    log(`Dtype: q4f16`);
+    log(`Model load: ${((t5 - t2) / 1000).toFixed(1)}s`);
+    log(`First generation: ${genTime.toFixed(1)}s (${tps.toFixed(1)} tok/s)`);
+    log(`Warm generation: ${genTime2.toFixed(1)}s (${tps2.toFixed(1)} tok/s)`);
+    log(`Validation: ${validation.valid ? 'PASSED' : 'FAILED'}`);
+    log(`Browser: ${navigator.userAgent.slice(0, 80)}`);
+    log('', '');
+    log('WebGPU 1.5B inference is WORKING.', 'ok');
+
+  } catch (err) {
+    log(`ERROR: ${err.message}`, 'err');
+    log(`Stack: ${err.stack}`, 'err');
+  }
+
+  document.getElementById('start-btn').disabled = false;
+  document.getElementById('start-btn').textContent = 'Start WebGPU Test';
+}
+
+window.runTest = runTest;
+</script>
+</body>
+</html>
