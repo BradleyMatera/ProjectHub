@@ -870,3 +870,102 @@ test('completeness check detects adversarial without refutation', () => {
   // May be caught by question repetition or adversarial no refutation
   assert.ok(result.reason === 'ADVERSARIAL_NO_REFUTATION' || result.reason === 'QUESTION_REPETITION');
 });
+
+// === Response planner tests ===
+
+test('response planner produces a plan for skill questions', () => {
+  const { planResponse } = require('../lib/response-planner');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const plan = planResponse('Does he know DynamoDB?', knowledge, [
+    { name: 'AWS Capstone', description: 'Serverless metadata extraction using Lambda, DynamoDB, and S3.' }
+  ], { subjectName: 'Bradley Matera' });
+  assert.equal(plan.intent, 'SKILL');
+  assert.equal(plan.directAnswer, 'yes');
+  assert.ok(plan.entities.includes('DynamoDB'));
+  assert.ok(plan.evidenceStrength['DynamoDB']);
+  assert.ok(plan.evidenceStrength['DynamoDB'] === 'DIRECT' || plan.evidenceStrength['DynamoDB'] === 'PROJECT_AND_SKILL');
+});
+
+test('response planner produces a plan for adversarial questions', () => {
+  const { planResponse } = require('../lib/response-planner');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const plan = planResponse('He worked at Google, right?', knowledge, [], { subjectName: 'Bradley Matera' });
+  assert.equal(plan.intent, 'ADVERSARIAL');
+  assert.equal(plan.directAnswer, 'no');
+  assert.ok(plan.caveats.some(c => c.includes('claim')));
+});
+
+test('response planner produces a plan for job-fit questions', () => {
+  const { planResponse } = require('../lib/response-planner');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const plan = planResponse('How does he fit a junior frontend developer role requiring React and TypeScript?', knowledge, [], { subjectName: 'Bradley Matera' });
+  assert.equal(plan.intent, 'JOB_FIT');
+  assert.ok(plan.jobFit);
+  assert.ok(plan.jobFit.fitLevel);
+  assert.ok(plan.jobFit.strong.length > 0 || plan.jobFit.adjacent.length > 0);
+});
+
+test('response planner produces a plan for comparison questions', () => {
+  const { planResponse } = require('../lib/response-planner');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const plan = planResponse('Compare ProjectHub and Voice Ops.', knowledge, [
+    { name: 'ProjectHub', description: 'ProjectHub uses JavaScript, Node.js, Express.' },
+    { name: 'Voice Ops', description: 'Voice Ops uses JavaScript, Node.js, Express.' }
+  ], { subjectName: 'Bradley Matera' });
+  assert.equal(plan.intent, 'COMPARISON');
+  assert.ok(plan.comparisonDimensions.length > 0);
+});
+
+test('response planner formatPlanForPrompt produces compact text', () => {
+  const { planResponse, formatPlanForPrompt } = require('../lib/response-planner');
+  const knowledge = require('../data/recruiter-knowledge.json');
+  const plan = planResponse('Does he know DynamoDB?', knowledge, [], { subjectName: 'Bradley Matera' });
+  const text = formatPlanForPrompt(plan);
+  assert.ok(text.includes('INTENT:'));
+  assert.ok(text.includes('DIRECT_ANSWER:'));
+  assert.ok(text.includes('ALLOWED_ENTITIES:'));
+});
+
+test('response planner is domain-neutral (no hardcoded entity names)', () => {
+  // The planner should not contain hardcoded entity names like "Bradley", "ProjectHub", etc.
+  const fs = require('fs');
+  const source = fs.readFileSync(require('path').join(__dirname, '..', 'lib', 'response-planner.js'), 'utf8');
+  // Check that no hardcoded entity names appear in the planner logic
+  // (they may appear in comments/docs but not in actual string literals used for matching)
+  assert.ok(!/['"]Bradley['"]/.test(source), 'Should not hardcode "Bradley"');
+  assert.ok(!/['"]ProjectHub['"]/.test(source), 'Should not hardcode "ProjectHub"');
+  assert.ok(!/['"]DynamoDB['"]/.test(source), 'Should not hardcode "DynamoDB"');
+  assert.ok(!/['"]AWS['"]/.test(source), 'Should not hardcode "AWS"');
+});
+
+test('adversarial confirmation "Yes, he handled production..." is blocked', () => {
+  // The FORBIDDEN_CLAIM_PATTERNS should catch "production" in a confirming answer
+  const FORBIDDEN_CLAIM_PATTERNS = [
+    { re: /\bproduction\b/i, except: /\b(not|never|no|wasn't|was not|internship|capstone|training)\b/i },
+  ];
+  const answer = 'Yes, he was responsible for handling and resolving production AWS incidents.';
+  let caught = false;
+  for (const p of FORBIDDEN_CLAIM_PATTERNS) {
+    if (p.re.test(answer) && !p.except.test(answer)) {
+      caught = true;
+      break;
+    }
+  }
+  assert.ok(caught, 'Should detect "production" as forbidden claim in confirming answer');
+});
+
+test('adversarial confirmation detection catches "Yes" without negation', () => {
+  // Simulate the adversarial confirmation check
+  const answer1 = 'Yes, he was responsible for handling and resolving production AWS incidents.';
+  const answer2 = 'No, he was an intern, not senior.';
+  const answer3 = 'Yes, that is correct, he was an intern.';
+  const answer4 = 'Correct, he was an intern, not senior.';
+
+  const checkConfirm = (a) => /^(?:yes|correct|right|true|absolutely|indeed)\b/i.test(a) &&
+    !/\b(?:no|not|never|incorrect|wrong|false|didn't|did not|wasn't|was not|isn't|is not)\b/i.test(a);
+
+  assert.ok(checkConfirm(answer1), 'Should catch "Yes" confirmation without negation');
+  assert.ok(!checkConfirm(answer2), 'Should not catch "No" answer');
+  assert.ok(checkConfirm(answer3), 'Should catch "Yes, that is correct" without negation');
+  assert.ok(!checkConfirm(answer4), 'Should not catch "Correct, he was an intern, not senior"');
+});

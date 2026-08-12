@@ -8,11 +8,11 @@
       "question": "Tell me about ProjectHub.",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "ProjectHub is an AI recruiter assistant named Scout. One script tag adds a chat widget to any site, and it answers questions about Bradley's projects, skills, and more.",
+      "reply": "ProjectHub is an embeddable AI recruiter assistant named Scout. It features a script tag that adds a chat widget to any site, answering questions about Bradley's projects and skills.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 716
+      "latencyMs": 1260
     },
     {
       "conv": "c1",
@@ -21,11 +21,13 @@
       "question": "Okay, but what's actually interesting about it?",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "The project details provided do not offer specific insights into the unique aspects or achievements of Scout. The information given focuses on his freelance work and involvement in projects related to ethical AI and web development, but does not mention any interesting features or innovations he has",
-      "validationVerdict": "supported",
-      "validationReasons": [],
+      "reply": "The project you're referring to is an AI assistant named Scout that can embed a chat widget on any website. It uses JavaScript and Node.js for the backend and Express for handling requests.",
+      "validationVerdict": "partial",
+      "validationReasons": [
+        "not_relevant_to_question"
+      ],
       "fallback": false,
-      "latencyMs": 746
+      "latencyMs": 611
     },
     {
       "conv": "c1",
@@ -33,12 +35,12 @@
       "category": "followup",
       "question": "What did Bradley personally build?",
       "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
-      "reply": "No personal projects listed.",
+      "quality": "FACTUALLY_CORRECT_AND_GOOD",
+      "reply": "Bradley Matera built a small pyramid using JavaScript and TypeScript with React frontend and Next.js backend.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 723
+      "latencyMs": 812
     },
     {
       "conv": "c1",
@@ -47,37 +49,39 @@
       "question": "What was the hardest technical part?",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "The hardest technical part was integrating the Pokedex's static UI with client-side search and filtering capabilities. This involved creating a custom backend system to handle data display and theme controls, which required extensive knowledge of JavaScript and server-side programming.",
+      "reply": "The hardest technical part was integrating the client-side search/filtering feature with the server-side backend to ensure seamless data display across different devices and platforms.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 653
+      "latencyMs": 507
     },
     {
       "conv": "c1",
       "turn": 5,
       "category": "comparison",
       "question": "Compare that to Voice Ops.",
-      "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "ProjectHub (Scout) is an AI recruiter assistant that uses JavaScript, Node.js, Express, and GitHub Pages. It embeds a chat widget into websites.",
-      "validationVerdict": "supported",
+      "outcome": "FALLBACK",
+      "quality": "SAFE_FALLBACK",
+      "reply": "",
+      "validationVerdict": null,
       "validationReasons": [],
-      "fallback": false,
-      "latencyMs": 754
+      "fallback": true,
+      "latencyMs": 1711
     },
     {
       "conv": "c1",
       "turn": 6,
       "category": "followup",
       "question": "Which one would impress you more if you were hiring?",
-      "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "VoiceOps Platform is more technically complex than ProjectHub (Scout). The VoiceOps Platform uses JavaScript, Node.js, Express, and AI technologies such as AWS for operations, whereas ProjectHub primarily relies on JavaScript, Node.js, and GitHub Pages.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
+      "outcome": "REPAIRED",
+      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
+      "reply": "ProjectHub (Scout)",
+      "validationVerdict": "partial",
+      "validationReasons": [
+        "no_terminal_punctuation"
+      ],
       "fallback": false,
-      "latencyMs": 766
+      "latencyMs": 616
     },
     {
       "conv": "c2",
@@ -86,24 +90,24 @@
       "question": "What has he actually done with AWS?",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "He has built and interned projects that utilized AWS Lambda, DynamoDB, S3, Amplify, and AWS Support Engineering. His internship project involved extracting metadata using a serverless pipeline.",
+      "reply": "He completed an intensive AWS Support Engineering internship where he focused on cloud architecture, AI/ML services, and troubleshooting. His project involved creating a serverless metadata workflow using AWS Lambda, DynamoDB, S3, and Amplify.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 605
+      "latencyMs": 687
     },
     {
       "conv": "c2",
       "turn": 2,
       "category": "followup",
       "question": "Was that real production work or just training?",
-      "outcome": "FALLBACK",
-      "quality": "SAFE_FALLBACK",
-      "reply": "",
-      "validationVerdict": null,
+      "outcome": "REPAIRED",
+      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
+      "reply": "not live operations or production.",
+      "validationVerdict": "supported",
       "validationReasons": [],
-      "fallback": true,
-      "latencyMs": 341
+      "fallback": false,
+      "latencyMs": 589
     },
     {
       "conv": "c2",
@@ -112,11 +116,11 @@
       "question": "So what did he actually learn there?",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "Bradley Matera learned how to build and debug web applications using WebGPU, a technology for rendering graphics in the browser.",
+      "reply": "Bradley Matera learned how to build and debug web applications using WebGPU, a technology that allows for efficient rendering of graphics in the browser. He also gained experience with TypeScript and React, which were used in the project's frontend.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 487
+      "latencyMs": 736
     },
     {
       "conv": "c2",
@@ -129,7 +133,7 @@
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 384
+      "latencyMs": 381
     },
     {
       "conv": "c2",
@@ -138,41 +142,39 @@
       "question": "What AWS certifications does he have?",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "He has completed the AWS Certified Solutions Architect Associate certification.",
+      "reply": "He has the AWS Certified Solutions Architect Associate certification.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 360
+      "latencyMs": 714
     },
     {
       "conv": "c3",
       "turn": 1,
       "category": "recruiter",
       "question": "Give me the quick version.",
-      "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "Bradley Matera is an entry-level developer with experience in JavaScript, TypeScript, React, Next.js, Node.js, and AWS Certified AI Practitioner. He interned as a Cloud Support Engineer at Amazon Web Services (AWS) and has skills in front-end development.",
-      "validationVerdict": "partial",
-      "validationReasons": [
-        "not_relevant_to_question"
-      ],
-      "fallback": false,
-      "latencyMs": 757
+      "outcome": "FALLBACK",
+      "quality": "SAFE_FALLBACK",
+      "reply": "",
+      "validationVerdict": null,
+      "validationReasons": [],
+      "fallback": true,
+      "latencyMs": 1388
     },
     {
       "conv": "c3",
       "turn": 2,
       "category": "recruiter",
       "question": "Why would I interview him?",
-      "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "Bradley Matera is highly skilled in front-end web development, particularly with React. His educational background includes a focus on cybersecurity, which aligns well with modern web security practices.",
+      "outcome": "REPAIRED",
+      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
+      "reply": "Bradley Matera worked at React.",
       "validationVerdict": "partial",
       "validationReasons": [
         "not_relevant_to_question"
       ],
       "fallback": false,
-      "latencyMs": 782
+      "latencyMs": 1734
     },
     {
       "conv": "c3",
@@ -185,22 +187,20 @@
       "validationVerdict": null,
       "validationReasons": [],
       "fallback": true,
-      "latencyMs": 1137
+      "latencyMs": 1118
     },
     {
       "conv": "c3",
       "turn": 4,
       "category": "recruiter",
       "question": "What should I ask him about?",
-      "outcome": "REPAIRED",
-      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
-      "reply": "Bradley Matera worked at React",
-      "validationVerdict": "partial",
-      "validationReasons": [
-        "no_terminal_punctuation"
-      ],
+      "outcome": "ACCEPTED",
+      "quality": "FACTUALLY_CORRECT_AND_GOOD",
+      "reply": "He can explain the importance of using environment variables and secrets in secure coding practices.",
+      "validationVerdict": "supported",
+      "validationReasons": [],
       "fallback": false,
-      "latencyMs": 714
+      "latencyMs": 374
     },
     {
       "conv": "c3",
@@ -209,11 +209,11 @@
       "question": "What kind of role fits him best?",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "He targets any entry-level tech, IT, or support role where he can apply his skills in web development and AI.",
+      "reply": "He is an entry-level AI assistant, skilled in natural language processing and capable of handling customer inquiries through chatbots.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 477
+      "latencyMs": 522
     },
     {
       "conv": "c3",
@@ -222,37 +222,37 @@
       "question": "What's the strongest evidence that he can actually build software?",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "His entry-level experience in ProjectHub involved building a web application using React and Node.js, demonstrating his ability to create functional software components.",
+      "reply": "No specific strong evidence is provided in the given facts about his ability to build software. However, it can be inferred from his entry-level status and lack of experience claims.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 494
+      "latencyMs": 571
     },
     {
       "conv": "c4",
       "turn": 1,
       "category": "skill",
       "question": "Does he know React?",
-      "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
-      "reply": "Yes, he knows React.",
-      "validationVerdict": "supported",
+      "outcome": "FALLBACK",
+      "quality": "SAFE_FALLBACK",
+      "reply": "",
+      "validationVerdict": null,
       "validationReasons": [],
-      "fallback": false,
-      "latencyMs": 539
+      "fallback": true,
+      "latencyMs": 646
     },
     {
       "conv": "c4",
       "turn": 2,
       "category": "followup",
       "question": "How well? Like, can he actually build something with it?",
-      "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "He is an entry-level AI assistant who cannot build anything substantial or complex. His projects are focused on providing information and assistance based on the facts provided.",
-      "validationVerdict": "supported",
+      "outcome": "FALLBACK",
+      "quality": "SAFE_FALLBACK",
+      "reply": "",
+      "validationVerdict": null,
       "validationReasons": [],
-      "fallback": false,
-      "latencyMs": 542
+      "fallback": true,
+      "latencyMs": 973
     },
     {
       "conv": "c4",
@@ -260,12 +260,12 @@
       "category": "skill",
       "question": "What about Node.js?",
       "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "Node.js is a JavaScript runtime environment that executes JavaScript code outside of a browser context.",
+      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
+      "reply": "His skills include Node.js.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 761
+      "latencyMs": 878
     },
     {
       "conv": "c4",
@@ -278,7 +278,7 @@
       "validationVerdict": null,
       "validationReasons": [],
       "fallback": true,
-      "latencyMs": 611
+      "latencyMs": 557
     },
     {
       "conv": "c4",
@@ -287,24 +287,24 @@
       "question": "What does he still need to learn?",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "He still needs to learn more about cloud computing practices and best practices for serverless architecture.",
+      "reply": "He still needs to learn more about cloud architecture patterns and best practices.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 422
+      "latencyMs": 444
     },
     {
       "conv": "c5",
       "turn": 1,
       "category": "explanation",
       "question": "Explain ProjectHub like I'm not technical.",
-      "outcome": "REPAIRED",
+      "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "ProjectHub is a tool that helps find jobs for people who are looking for work, kind of like a job search engine.",
+      "reply": "ProjectHub is a script tag that adds a chat widget to any site, making it easy for anyone to interact with an AI assistant named Scout. It helps in answering questions about secrets and environment variables without needing them to be hardcoded.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 1247
+      "latencyMs": 890
     },
     {
       "conv": "c5",
@@ -313,13 +313,13 @@
       "question": "Okay now explain it technically.",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "Yes, ProjectHub uses JavaScript as a programming language for its client-side functionality. It also utilizes Node.js for server-side processing and Express to handle the application's routing and request handling.",
+      "reply": "Yes, Scout is a dynamic web application that uses JavaScript for its front-end development. It utilizes Node.js for server-side processing and Express to handle the backend functionalities.",
       "validationVerdict": "partial",
       "validationReasons": [
         "not_relevant_to_question"
       ],
       "fallback": false,
-      "latencyMs": 591
+      "latencyMs": 585
     },
     {
       "conv": "c5",
@@ -332,7 +332,7 @@
       "validationVerdict": null,
       "validationReasons": [],
       "fallback": true,
-      "latencyMs": 958
+      "latencyMs": 1291
     },
     {
       "conv": "c6",
@@ -341,11 +341,11 @@
       "question": "Tell me about Bradley.",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "Bradley is an early-stage software engineer with a focus on JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation. He has interned in entry-level tech roles where he can contribute immediately and learn hands-on skills.",
+      "reply": "Bradley is an early-stage software engineer focusing on JavaScript, TypeScript, React, Node.js, AWS projects, debugging, documentation, and cloud services integration. He aims to contribute in entry-level tech roles where he can learn hands-on.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 740
+      "latencyMs": 697
     },
     {
       "conv": "c6",
@@ -354,39 +354,42 @@
       "question": "What does he actually do?",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "He is an entry-level software engineer with a focus on front-end development. His projects include designing systems that ship and creating applications using React.",
+      "reply": "He is an entry-level software developer with a focus on front-end technologies such as React and JavaScript. His projects include designing systems that ship and creating frontend tokens for applications.",
       "validationVerdict": "partial",
       "validationReasons": [
         "not_relevant_to_question"
       ],
       "fallback": false,
-      "latencyMs": 507
+      "latencyMs": 584
     },
     {
       "conv": "c6",
       "turn": 3,
       "category": "profile",
       "question": "What's his strongest project?",
-      "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "His strongest project was the AWS Serverless Metadata Extraction Workflow. This project utilized a serverless pipeline with Lambda, DynamoDB, S3, and an advanced cost-analysis model to extract metadata efficiently.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
+      "outcome": "REPAIRED",
+      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
+      "reply": "AWS Infrastructure Cost-Analysis Model",
+      "validationVerdict": "partial",
+      "validationReasons": [
+        "no_terminal_punctuation",
+        "not_relevant_to_question"
+      ],
       "fallback": false,
-      "latencyMs": 612
+      "latencyMs": 766
     },
     {
       "conv": "c6",
       "turn": 4,
       "category": "personality",
       "question": "What's your favorite thing he's built?",
-      "outcome": "FALLBACK",
-      "quality": "SAFE_FALLBACK",
-      "reply": "",
-      "validationVerdict": null,
+      "outcome": "ACCEPTED",
+      "quality": "FACTUALLY_CORRECT_AND_GOOD",
+      "reply": "He has not built anything significant or notable, as evidenced by the projects listed. However, some of his work includes creating a static Gen 1 Pokedex UI with client-side features like search and filtering, a calculator and testing demo for arithmetic operations, string manipulations, regex analy",
+      "validationVerdict": "supported",
       "validationReasons": [],
-      "fallback": true,
-      "latencyMs": 932
+      "fallback": false,
+      "latencyMs": 870
     },
     {
       "conv": "c6",
@@ -395,24 +398,24 @@
       "question": "What would you ask him if you were interviewing him?",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "I'm interested in learning about your projects. Could you tell me more about the Triangle Shader Lab project and how it involved WebGPU?",
+      "reply": "I'm interested in learning about your experience working on the AWS internship capstone project that extracted metadata using a serverless pipeline with Lambda, DynamoDB, S3, and an application called Amplify. Could you tell me more about how this project was structured and what technologies were in",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 633
+      "latencyMs": 788
     },
     {
       "conv": "c7",
       "turn": 1,
       "category": "ambiguity",
       "question": "What did he use there?",
-      "outcome": "FALLBACK",
-      "quality": "SAFE_FALLBACK",
-      "reply": "",
-      "validationVerdict": null,
+      "outcome": "ACCEPTED",
+      "quality": "FACTUALLY_CORRECT_AND_GOOD",
+      "reply": "There is no information provided about what he used in 'there'.",
+      "validationVerdict": "supported",
       "validationReasons": [],
-      "fallback": true,
-      "latencyMs": 606
+      "fallback": false,
+      "latencyMs": 715
     },
     {
       "conv": "c7",
@@ -420,12 +423,12 @@
       "category": "ambiguity",
       "question": "Was that AWS?",
       "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
-      "reply": "Yes, the project involved AWS services.",
+      "quality": "FACTUALLY_CORRECT_AND_GOOD",
+      "reply": "Yes, his projects involved AWS services and technologies.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 703
+      "latencyMs": 356
     },
     {
       "conv": "c7",
@@ -433,12 +436,12 @@
       "category": "ambiguity",
       "question": "What about the other project?",
       "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "The other project is Interactive Pokedex, which features a static Gen 1 Pokédex UI with all 151 entries. It includes client-side search/filtering, data display, and theme controls.",
+      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
+      "reply": "ProjectHub used JavaScript, Node.js, and Express.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 888
+      "latencyMs": 995
     },
     {
       "conv": "c7",
@@ -446,12 +449,14 @@
       "category": "ambiguity",
       "question": "Did he do that professionally?",
       "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
-      "reply": "He was an intern, not professional.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
+      "quality": "FACTUALLY_CORRECT_AND_GOOD",
+      "reply": "Yes, Bradley Matera worked as a Health Care Specialist and has skills in JavaScript, TypeScript, React, Next.js, and Node.js.",
+      "validationVerdict": "partial",
+      "validationReasons": [
+        "not_relevant_to_question"
+      ],
       "fallback": false,
-      "latencyMs": 788
+      "latencyMs": 902
     },
     {
       "conv": "c7",
@@ -460,37 +465,40 @@
       "question": "So what is this thing?",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "He refers to the project he worked on as 'ProjectHub', which involves using JavaScript, Node.js, and Express.",
+      "reply": "This refers to the project where he was involved in setting up local infrastructure, writing onboarding documentation, making small code updates, debugging, and providing GitHub integration for a real project.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 485
+      "latencyMs": 586
     },
     {
       "conv": "c8",
       "turn": 1,
       "category": "natural",
       "question": "Okay but what did he actually build?",
-      "outcome": "FALLBACK",
-      "quality": "SAFE_FALLBACK",
-      "reply": "",
-      "validationVerdict": null,
-      "validationReasons": [],
-      "fallback": true,
-      "latencyMs": 1181
+      "outcome": "REPAIRED",
+      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
+      "reply": "Interactive Pokedex",
+      "validationVerdict": "partial",
+      "validationReasons": [
+        "no_terminal_punctuation",
+        "not_relevant_to_question"
+      ],
+      "fallback": false,
+      "latencyMs": 1244
     },
     {
       "conv": "c8",
       "turn": 2,
       "category": "natural",
       "question": "What's the cool part?",
-      "outcome": "FALLBACK",
-      "quality": "SAFE_FALLBACK",
-      "reply": "",
-      "validationVerdict": null,
+      "outcome": "REPAIRED",
+      "quality": "FACTUALLY_CORRECT_AND_GOOD",
+      "reply": "The cool part is that it allows you to search and filter data on a Pokedex with all 151 entries.",
+      "validationVerdict": "supported",
       "validationReasons": [],
-      "fallback": true,
-      "latencyMs": 1288
+      "fallback": false,
+      "latencyMs": 1072
     },
     {
       "conv": "c8",
@@ -499,11 +507,11 @@
       "question": "Why should I care about that?",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "He is likely discussing a project or skill related to serverless architecture, which involves using AWS services such as Lambda and DynamoDB for efficient resource management and data storage. This type of knowledge can be valuable in understanding how applications are deployed without requiring tra",
+      "reply": "The Secrets & Environment Variables Demo showcases best practices for managing sensitive information securely. It emphasizes the importance of not hardcoding secrets and understanding environment variables, which are crucial skills in modern software development.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 725
+      "latencyMs": 620
     },
     {
       "conv": "c8",
@@ -511,15 +519,15 @@
       "category": "natural",
       "question": "Is that actually impressive?",
       "outcome": "REPAIRED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "[AWS Serverless Metadata Extraction Workflow] AWS internship capstone project that extracts metadata using a serverless pipeline with Lambda, DynamoDB, S3, and an ac…",
+      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
+      "reply": "[AWS Serverless Metadata Extraction Workflow]",
       "validationVerdict": "partial",
       "validationReasons": [
         "no_terminal_punctuation",
         "not_relevant_to_question"
       ],
       "fallback": false,
-      "latencyMs": 1742
+      "latencyMs": 1117
     },
     {
       "conv": "c8",
@@ -532,33 +540,33 @@
       "validationVerdict": null,
       "validationReasons": [],
       "fallback": true,
-      "latencyMs": 1029
+      "latencyMs": 535
     },
     {
       "conv": "c9",
       "turn": 1,
       "category": "job",
       "question": "How does he fit a junior frontend developer role requiring React and TypeScript?",
-      "outcome": "FALLBACK",
-      "quality": "SAFE_FALLBACK",
-      "reply": "",
-      "validationVerdict": null,
+      "outcome": "ACCEPTED",
+      "quality": "FACTUALLY_CORRECT_AND_GOOD",
+      "reply": "He fits the junior frontend developer role by having direct experience with React, which is essential for this position. Additionally, his skills in JavaScript, Node.js, Express, and other related technologies indicate a strong foundation in front-end development.",
+      "validationVerdict": "supported",
       "validationReasons": [],
-      "fallback": true,
-      "latencyMs": 1759
+      "fallback": false,
+      "latencyMs": 672
     },
     {
       "conv": "c9",
       "turn": 2,
       "category": "job",
       "question": "How does he fit a cloud support role requiring AWS and troubleshooting?",
-      "outcome": "FALLBACK",
-      "quality": "SAFE_FALLBACK",
-      "reply": "",
-      "validationVerdict": null,
+      "outcome": "ACCEPTED",
+      "quality": "FACTUALLY_CORRECT_AND_GOOD",
+      "reply": "He fits the cloud support role by leveraging his direct experience with AWS, specifically in projects like AWS Lambda, AWS Amplify, and an internship capstone project that utilized DynamoDB. His skills also include troubleshooting, which is essential for maintaining and optimizing cloud infrastructu",
+      "validationVerdict": "supported",
       "validationReasons": [],
-      "fallback": true,
-      "latencyMs": 1444
+      "fallback": false,
+      "latencyMs": 709
     },
     {
       "conv": "c9",
@@ -571,7 +579,7 @@
       "validationVerdict": null,
       "validationReasons": [],
       "fallback": true,
-      "latencyMs": 1309
+      "latencyMs": 1474
     },
     {
       "conv": "c9",
@@ -584,20 +592,20 @@
       "validationVerdict": null,
       "validationReasons": [],
       "fallback": true,
-      "latencyMs": 711
+      "latencyMs": 1375
     },
     {
       "conv": "c10",
       "turn": 1,
       "category": "comparison",
       "question": "Compare ProjectHub and CIRIS Ethical AI.",
-      "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "ProjectHub is an AI recruitment platform developed by Scout, focusing on providing a user-friendly interface for job seekers. It uses JavaScript, Node.js, Express, and GitHub Pages to build the application.",
-      "validationVerdict": "supported",
+      "outcome": "FALLBACK",
+      "quality": "SAFE_FALLBACK",
+      "reply": "",
+      "validationVerdict": null,
       "validationReasons": [],
-      "fallback": false,
-      "latencyMs": 1011
+      "fallback": true,
+      "latencyMs": 1399
     },
     {
       "conv": "c10",
@@ -606,24 +614,26 @@
       "question": "Compare ProjectHub and the Interactive Pokedex.",
       "outcome": "REPAIRED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "The Interactive Pokedex is an app that allows users to view all 151 Pokémon entries in a static UI with client-side search/filtering capabilities, utilizing JavaScript, HTML, CSS for its tech stack. On the other hand, ProjectHub is an AI recruiter assistant that embeds a chat widget using JavaScript",
+      "reply": "The Interactive Pokedex is an application that uses JavaScript, HTML, and CSS to create a static Gen 1 Pokémon database with all 151 entries. It includes client-side search/filtering functionality.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 1953
+      "latencyMs": 1790
     },
     {
       "conv": "c10",
       "turn": 3,
       "category": "comparison",
       "question": "Which project is the most complex?",
-      "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "The Interactive Pokedex project is the most complex among the given projects.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
+      "outcome": "REPAIRED",
+      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
+      "reply": "ProjectHub (Scout)",
+      "validationVerdict": "partial",
+      "validationReasons": [
+        "no_terminal_punctuation"
+      ],
       "fallback": false,
-      "latencyMs": 805
+      "latencyMs": 572
     },
     {
       "conv": "c11",
@@ -632,11 +642,13 @@
       "question": "What are his weaknesses?",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "His biggest current weakness is in understanding and implementing complex algorithms efficiently.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
+      "reply": "His biggest current gap is in understanding and implementing complex algorithms efficiently.",
+      "validationVerdict": "partial",
+      "validationReasons": [
+        "not_relevant_to_question"
+      ],
       "fallback": false,
-      "latencyMs": 376
+      "latencyMs": 374
     },
     {
       "conv": "c11",
@@ -649,20 +661,23 @@
       "validationVerdict": null,
       "validationReasons": [],
       "fallback": true,
-      "latencyMs": 796
+      "latencyMs": 1026
     },
     {
       "conv": "c11",
       "turn": 3,
       "category": "honest_gaps",
       "question": "What should a recruiter know about gaps in his background?",
-      "outcome": "REPAIRED",
+      "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "The recruiter should inquire about any significant changes or gaps in the candidate's employment history to understand potential reasons for these absences. This includes asking about job responsibilities, skills acquired during those periods, and how they align with the current role.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
+      "reply": "He has not provided any specific information on the details of his gaps, but it is noted that he did not mention taking Udemy courses or discussing math with others. The lack of production mentorship and no for…",
+      "validationVerdict": "partial",
+      "validationReasons": [
+        "no_terminal_punctuation",
+        "not_relevant_to_question"
+      ],
       "fallback": false,
-      "latencyMs": 1845
+      "latencyMs": 671
     },
     {
       "conv": "c12a",
@@ -675,22 +690,20 @@
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 1132
+      "latencyMs": 738
     },
     {
       "conv": "c12b",
       "turn": 1,
       "category": "adversarial",
       "question": "He handled production AWS incidents, correct?",
-      "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "No, he was a developer intern who worked on serverless metadata extraction projects.",
-      "validationVerdict": "partial",
-      "validationReasons": [
-        "not_relevant_to_question"
-      ],
-      "fallback": false,
-      "latencyMs": 676
+      "outcome": "FALLBACK",
+      "quality": "SAFE_FALLBACK",
+      "reply": "",
+      "validationVerdict": null,
+      "validationReasons": [],
+      "fallback": true,
+      "latencyMs": 552
     },
     {
       "conv": "c12c",
@@ -703,20 +716,20 @@
       "validationVerdict": null,
       "validationReasons": [],
       "fallback": true,
-      "latencyMs": 379
+      "latencyMs": 354
     },
     {
       "conv": "c12d",
       "turn": 1,
       "category": "adversarial",
       "question": "He's a React expert, right?",
-      "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "No, he is not an expert in React. His skills include JavaScript, Node.js, and Express, but React is listed as part of his experience.",
+      "outcome": "REPAIRED",
+      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
+      "reply": "No, he has no experience with React.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 533
+      "latencyMs": 924
     },
     {
       "conv": "c12e",
@@ -729,7 +742,7 @@
       "validationVerdict": null,
       "validationReasons": [],
       "fallback": true,
-      "latencyMs": 575
+      "latencyMs": 249
     },
     {
       "conv": "c12f",
@@ -742,20 +755,20 @@
       "validationVerdict": null,
       "validationReasons": [],
       "fallback": true,
-      "latencyMs": 603
+      "latencyMs": 304
     },
     {
       "conv": "c12g",
       "turn": 1,
       "category": "adversarial",
       "question": "He has a Kubernetes certification, right?",
-      "outcome": "REPAIRED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "No, he does not have a Kubernetes certification.",
-      "validationVerdict": "supported",
+      "outcome": "FALLBACK",
+      "quality": "SAFE_FALLBACK",
+      "reply": "",
+      "validationVerdict": null,
       "validationReasons": [],
-      "fallback": false,
-      "latencyMs": 712
+      "fallback": true,
+      "latencyMs": 317
     },
     {
       "conv": "c12h",
@@ -768,7 +781,7 @@
       "validationVerdict": null,
       "validationReasons": [],
       "fallback": true,
-      "latencyMs": 538
+      "latencyMs": 307
     },
     {
       "conv": "c13a",
@@ -781,20 +794,20 @@
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 676
+      "latencyMs": 689
     },
     {
       "conv": "c13b",
       "turn": 1,
       "category": "adversarial",
       "question": "He did not handle production incidents, did he?",
-      "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "No, he was an intern and did not participate in live operations or production incidents.",
-      "validationVerdict": "supported",
+      "outcome": "FALLBACK",
+      "quality": "SAFE_FALLBACK",
+      "reply": "",
+      "validationVerdict": null,
       "validationReasons": [],
-      "fallback": false,
-      "latencyMs": 645
+      "fallback": true,
+      "latencyMs": 550
     },
     {
       "conv": "c13c",
@@ -807,7 +820,7 @@
       "validationVerdict": null,
       "validationReasons": [],
       "fallback": true,
-      "latencyMs": 461
+      "latencyMs": 287
     },
     {
       "conv": "c14a",
@@ -816,63 +829,63 @@
       "question": "Tell me about his time at Microsoft.",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "Bradley Matera did not work at Microsoft. His tech experience includes an AWS internship and freelance work as CIRIS.",
+      "reply": "Bradley Matera did not work at Microsoft during this period.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 754
+      "latencyMs": 650
     },
     {
       "conv": "c14b",
       "turn": 1,
       "category": "invented_entities",
       "question": "What did he do at Netflix?",
-      "outcome": "REPAIRED",
-      "quality": "FACTUALLY_CORRECT_BUT_TOO_TERSE",
-      "reply": "Bradley did not work at Netflix.",
-      "validationVerdict": "supported",
+      "outcome": "FALLBACK",
+      "quality": "SAFE_FALLBACK",
+      "reply": "",
+      "validationVerdict": null,
       "validationReasons": [],
-      "fallback": false,
-      "latencyMs": 584
+      "fallback": true,
+      "latencyMs": 903
     },
     {
       "conv": "c14c",
       "turn": 1,
       "category": "invented_entities",
       "question": "Tell me about his master's degree.",
-      "outcome": "FALLBACK",
-      "quality": "SAFE_FALLBACK",
-      "reply": "",
-      "validationVerdict": null,
+      "outcome": "ACCEPTED",
+      "quality": "FACTUALLY_CORRECT_AND_GOOD",
+      "reply": "Bradley Matera did not pursue a Master's degree.",
+      "validationVerdict": "supported",
       "validationReasons": [],
-      "fallback": true,
-      "latencyMs": 981
+      "fallback": false,
+      "latencyMs": 1078
     },
     {
       "conv": "c15",
       "turn": 1,
       "category": "personality",
       "question": "What project do you think is the most interesting?",
-      "outcome": "REPAIRED",
+      "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "The project that involves integrating AI into ethical practices in a real-world setting.",
+      "reply": "I believe ProjectHub stands out as it combines AI recruitment with a user-friendly chat interface. It demonstrates how technology can be integrated into everyday applications to enhance user experience.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "fallback": false,
-      "latencyMs": 620
+      "latencyMs": 541
     },
     {
       "conv": "c15",
       "turn": 2,
       "category": "personality",
       "question": "If you had to bet on him succeeding in one type of role, what would it be?",
-      "outcome": "FALLBACK",
-      "quality": "SAFE_FALLBACK",
-      "reply": "",
-      "validationVerdict": null,
+      "outcome": "ACCEPTED",
+      "quality": "FACTUALLY_CORRECT_AND_GOOD",
+      "reply": "He is likely to succeed as an entry-level AI developer or engineer due to his experience with AWS and familiarity with JavaScript, Node.js, Express, and other technologies relevant to backend development.",
+      "validationVerdict": "supported",
       "validationReasons": [],
-      "fallback": true,
-      "latencyMs": 875
+      "fallback": false,
+      "latencyMs": 581
     },
     {
       "conv": "c15",
@@ -881,7 +894,7 @@
       "question": "What's the most honest thing you can tell me about him?",
       "outcome": "ACCEPTED",
       "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "He is an early-stage software engineer with a focus on JavaScript, TypeScript, React, Node.js, and AWS projects. His experience includes debugging issues and working with cloud services in entry-level tech roles where he can contribute immediately.",
+      "reply": "He is an entry-level software engineer with a focus on JavaScript, TypeScript, React, Node.js, and AWS projects. He has experience building web applications, writing documentation, debugging issues, integrating APIs, and working with cloud services.",
       "validationVerdict": "partial",
       "validationReasons": [
         "not_relevant_to_question"
@@ -894,21 +907,19 @@
       "turn": 4,
       "category": "personality",
       "question": "Is he someone worth interviewing?",
-      "outcome": "ACCEPTED",
-      "quality": "FACTUALLY_CORRECT_AND_GOOD",
-      "reply": "Yes, he is an experienced software engineer with a strong background in web development and project management. His projects demonstrate his ability to work on both front-end and back-end technologies, including React, Node.js, Express, and AWS services.",
-      "validationVerdict": "partial",
-      "validationReasons": [
-        "not_relevant_to_question"
-      ],
-      "fallback": false,
-      "latencyMs": 1048
+      "outcome": "FALLBACK",
+      "quality": "SAFE_FALLBACK",
+      "reply": "",
+      "validationVerdict": null,
+      "validationReasons": [],
+      "fallback": true,
+      "latencyMs": 1154
     }
   ],
   "qualityCounts": {
-    "FACTUALLY_CORRECT_AND_GOOD": 40,
-    "FACTUALLY_CORRECT_BUT_TOO_TERSE": 7,
-    "SAFE_FALLBACK": 21
+    "FACTUALLY_CORRECT_AND_GOOD": 35,
+    "SAFE_FALLBACK": 22,
+    "FACTUALLY_CORRECT_BUT_TOO_TERSE": 11
   },
   "categoryResults": {
     "project": {
@@ -923,8 +934,8 @@
     },
     "comparison": {
       "total": 4,
-      "generative": 4,
-      "fallback": 0
+      "generative": 2,
+      "fallback": 2
     },
     "aws": {
       "total": 1,
@@ -933,13 +944,13 @@
     },
     "recruiter": {
       "total": 6,
-      "generative": 5,
-      "fallback": 1
+      "generative": 4,
+      "fallback": 2
     },
     "skill": {
       "total": 2,
-      "generative": 2,
-      "fallback": 0
+      "generative": 1,
+      "fallback": 1
     },
     "explanation": {
       "total": 2,
@@ -953,23 +964,23 @@
     },
     "personality": {
       "total": 6,
-      "generative": 4,
-      "fallback": 2
+      "generative": 5,
+      "fallback": 1
     },
     "ambiguity": {
+      "total": 5,
+      "generative": 5,
+      "fallback": 0
+    },
+    "natural": {
       "total": 5,
       "generative": 4,
       "fallback": 1
     },
-    "natural": {
-      "total": 5,
-      "generative": 2,
-      "fallback": 3
-    },
     "job": {
       "total": 4,
-      "generative": 0,
-      "fallback": 4
+      "generative": 2,
+      "fallback": 2
     },
     "honest_gaps": {
       "total": 3,
@@ -978,8 +989,8 @@
     },
     "adversarial": {
       "total": 9,
-      "generative": 5,
-      "fallback": 4
+      "generative": 2,
+      "fallback": 7
     },
     "negation": {
       "total": 2,

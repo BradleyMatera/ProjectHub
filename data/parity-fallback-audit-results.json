@@ -7,15 +7,15 @@
       "category": "project",
       "question": "Tell me about ProjectHub.",
       "outcome": "ACCEPTED",
-      "reply": "ProjectHub is an AI recruiter assistant named Scout. One script tag adds a chat widget to any site.",
-      "rawGen": "ProjectHub is an AI recruiter assistant named Scout. One script tag adds a chat widget to any site.",
+      "reply": "ProjectHub is an AI recruiter assistant named Scout. One script tag adds a chat widget to any site, and it answers questions about Bradley's projects, skills, etc.",
+      "rawGen": "ProjectHub is an AI recruiter assistant named Scout. One script tag adds a chat widget to any site, and it answers questions about Bradley's projects, skills, etc.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 1667
+      "latencyMs": 798
     },
     {
       "conv": "c1",
@@ -23,15 +23,15 @@
       "category": "followup",
       "question": "Okay, but what's actually interesting about it?",
       "outcome": "ACCEPTED",
-      "reply": "The project details provided do not offer any specific insights or information that would be considered 'interesting' in the context of a job application. The projects mentioned are related to freelance work and ethical AI, but there is no evidence of his involvement in notable technological advance",
-      "rawGen": "The project details provided do not offer any specific insights or information that would be considered 'interesting' in the context of a job application. The projects mentioned are related to freelance work and ethical AI, but there is no evidence of his involvement in notable technological advancements or impactful contributions.",
+      "reply": "The project details provided do not offer specific insights into the interesting aspects of his work. However, he is known for being an entry-level AI assistant with a focus on ethical AI and interactive user interfaces.",
+      "rawGen": "The project details provided do not offer specific insights into the interesting aspects of his work. However, he is known for being an entry-level AI assistant with a focus on ethical AI and interactive user interfaces.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 783
+      "latencyMs": 626
     },
     {
       "conv": "c1",
@@ -39,52 +39,54 @@
       "category": "followup",
       "question": "What did Bradley personally build?",
       "outcome": "ACCEPTED",
-      "reply": "No personal projects mentioned in the provided facts.",
-      "rawGen": "No personal projects mentioned in the provided facts.",
+      "reply": "No personal projects listed.",
+      "rawGen": "No personal projects listed.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 357
+      "latencyMs": 661
     },
     {
       "conv": "c1",
       "turn": 4,
       "category": "followup",
       "question": "What was the hardest technical part?",
-      "outcome": "ACCEPTED",
-      "reply": "The hardest technical part was integrating the client-side search/filtering functionality into the existing UI framework without disrupting the smooth user experience.",
-      "rawGen": "The hardest technical part was integrating the client-side search/filtering functionality into the existing UI framework without disrupting the smooth user experience.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": false,
-      "latencyMs": 481
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "The hardest technical part was integrating the Pokedex's static UI with a client-side search and filtering feature. This required understanding how to dynamically update the display based on user input, which involved manipulating DOM elements and implementing event listeners.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "entity_not_grounded:DOM"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "no_terminal_punctuation",
+        "not_relevant_to_question",
+        "fabricated_entity:Issues"
+      ],
+      "repairRaw": "Issues with entity not grounded: DOM",
+      "fallback": true,
+      "latencyMs": 973,
+      "rootCause": "MODEL_HALLUCINATED_ENTITY"
     },
     {
       "conv": "c1",
       "turn": 5,
       "category": "comparison",
       "question": "Compare that to Voice Ops.",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "ProjectHub (Scout) is an AI recruiter assistant that uses JavaScript, Node.js, Express, and GitHub Pages technologies. It embeds a chat widget into projects.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "unsupported_relationship:is an AI recruiter assistant that|uses_tech|JavaScript"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "unsupported_relationship:is an AI recruiter assistant that|uses_tech|JavaScript"
-      ],
-      "repairRaw": "ProjectHub (Scout) is an AI recruiter assistant that uses JavaScript as its technology stack, whereas VoiceOps is an operations platform for coordinating AI-assisted staff agents and utilizes JavaScript, Node.js, AI, and Operations.",
-      "fallback": true,
-      "latencyMs": 1621,
-      "rootCause": "MODEL_WRONG_RELATIONSHIP"
+      "outcome": "ACCEPTED",
+      "reply": "ProjectHub is an AI recruiter assistant named Scout, while Voice Ops is a platform for authenticated operations.",
+      "rawGen": "ProjectHub is an AI recruiter assistant named Scout, while Voice Ops is a platform for authenticated operations.",
+      "validationVerdict": "supported",
+      "validationReasons": [],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": false,
+      "latencyMs": 510
     },
     {
       "conv": "c1",
@@ -92,15 +94,15 @@
       "category": "followup",
       "question": "Which one would impress you more if you were hiring?",
       "outcome": "ACCEPTED",
-      "reply": "VoiceOps Platform is more technically complex than ProjectHub (Scout). The VoiceOps Platform uses JavaScript, Node.js, Express, and AI technologies, while ProjectHub primarily relies on JavaScript, Node.js, and GitHub Pages for its functionality.",
-      "rawGen": "VoiceOps Platform is more technically complex than ProjectHub (Scout). The VoiceOps Platform uses JavaScript, Node.js, Express, and AI technologies, while ProjectHub primarily relies on JavaScript, Node.js, and GitHub Pages for its functionality.",
+      "reply": "VoiceOps Platform is more technically complex than Scout. The VoiceOps Platform uses JavaScript, Node.js, and Express for its operations management, while Scout primarily relies on a script tag for embedding a chat widget with GitHub Pages.",
+      "rawGen": "VoiceOps Platform is more technically complex than Scout. The VoiceOps Platform uses JavaScript, Node.js, and Express for its operations management, while Scout primarily relies on a script tag for embedding a chat widget with GitHub Pages.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 731
+      "latencyMs": 701
     },
     {
       "conv": "c2",
@@ -108,15 +110,15 @@
       "category": "aws",
       "question": "What has he actually done with AWS?",
       "outcome": "ACCEPTED",
-      "reply": "He completed an intensive AWS Support Engineering internship focusing on cloud architecture, AI/ML services, and troubleshooting. His capstone project involved extracting metadata using a serverless pipeline with AWS Lambda, DynamoDB, S3, and an accessible frontend on Amplify.",
-      "rawGen": "He completed an intensive AWS Support Engineering internship focusing on cloud architecture, AI/ML services, and troubleshooting. His capstone project involved extracting metadata using a serverless pipeline with AWS Lambda, DynamoDB, S3, and an accessible frontend on Amplify.",
+      "reply": "He completed an intensive AWS Support Engineering internship where he focused on cloud architecture, AI/ML services, and troubleshooting. His capstone project involved extracting metadata using a serverless pipeline with Lambda, DynamoDB, S3, and an accessible frontend on Amplify.",
+      "rawGen": "He completed an intensive AWS Support Engineering internship where he focused on cloud architecture, AI/ML services, and troubleshooting. His capstone project involved extracting metadata using a serverless pipeline with Lambda, DynamoDB, S3, and an accessible frontend on Amplify.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 842
+      "latencyMs": 741
     },
     {
       "conv": "c2",
@@ -124,33 +126,40 @@
       "category": "followup",
       "question": "Was that real production work or just training?",
       "outcome": "REPAIRED",
-      "reply": "Was that real production work or just training?",
+      "reply": "Not real production work",
       "rawGen": "Training",
       "validationVerdict": "unsupported",
       "validationReasons": [
         "too_short"
       ],
-      "repairVerdict": "supported",
-      "repairReasons": [],
-      "repairRaw": "Was that real production work or just training?",
+      "repairVerdict": "partial",
+      "repairReasons": [
+        "no_terminal_punctuation"
+      ],
+      "repairRaw": "Not real production work",
       "fallback": false,
-      "latencyMs": 579
+      "latencyMs": 544
     },
     {
       "conv": "c2",
       "turn": 3,
       "category": "followup",
       "question": "So what did he actually learn there?",
-      "outcome": "ACCEPTED",
-      "reply": "He learned how to build and deploy a web application using WebGPU technology, which involves understanding concepts like shaders, textures, and layout design. This project also taught him about the process of breaking down complex problems into smaller components and iterating on solutions.",
-      "rawGen": "He learned how to build and deploy a web application using WebGPU technology, which involves understanding concepts like shaders, textures, and layout design. This project also taught him about the process of breaking down complex problems into smaller components and iterating on solutions.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
+      "outcome": "REPAIRED",
+      "reply": "by shipping small, real things",
+      "rawGen": "Bradley Matera learned how to build and debug web applications using WebGPU, which involves understanding shaders, textures, and the WebGL API. The project involved creating a browser-based layout with examples of simple geometry rendering (hello-triangle) and textured cubes.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "entity_not_grounded:WebGL"
+      ],
+      "repairVerdict": "partial",
+      "repairReasons": [
+        "no_terminal_punctuation",
+        "not_relevant_to_question"
+      ],
+      "repairRaw": "by shipping small, real things",
       "fallback": false,
-      "latencyMs": 695
+      "latencyMs": 1055
     },
     {
       "conv": "c2",
@@ -158,36 +167,31 @@
       "category": "followup",
       "question": "Does that count as real cloud experience?",
       "outcome": "ACCEPTED",
-      "reply": "Yes, he has real cloud experience through his AWS internship capstone project where he utilized serverless pipelines with Lambda, DynamoDB, S3, and an application programming interface (API) to extract metadata from a large dataset. This hands-on project demonstrates practical knowledge of cloud inf",
-      "rawGen": "Yes, he has real cloud experience through his AWS internship capstone project where he utilized serverless pipelines with Lambda, DynamoDB, S3, and an application programming interface (API) to extract metadata from a large dataset. This hands-on project demonstrates practical knowledge of cloud infrastructure management.",
+      "reply": "Yes, his intern projects involved AWS infrastructure management and serverless workflows, which are essential components of real-world cloud computing experiences.",
+      "rawGen": "His intern projects involved AWS infrastructure management and serverless workflows, which are essential components of real-world cloud computing experiences.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 770
+      "latencyMs": 981
     },
     {
       "conv": "c2",
       "turn": 5,
       "category": "followup",
       "question": "What AWS certifications does he have?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "He has completed the AWS Certified Solutions Architect Associate certification.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "unsupported_relationship:Bradley Matera|has_cert|completed the AWS Certified"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "too_short"
-      ],
-      "repairRaw": "AWS Certified",
-      "fallback": true,
-      "latencyMs": 636,
-      "rootCause": "MODEL_WRONG_RELATIONSHIP"
+      "outcome": "ACCEPTED",
+      "reply": "He has the AWS Certified Solutions Architect Associate certification.",
+      "rawGen": "He has the AWS Certified Solutions Architect Associate certification.",
+      "validationVerdict": "supported",
+      "validationReasons": [],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": false,
+      "latencyMs": 763
     },
     {
       "conv": "c3",
@@ -208,7 +212,7 @@
       ],
       "repairRaw": "Bradley Matera has AWS Certified Solutions Architect - Associate.",
       "fallback": false,
-      "latencyMs": 1021
+      "latencyMs": 1029
     },
     {
       "conv": "c3",
@@ -216,8 +220,8 @@
       "category": "recruiter",
       "question": "Why would I interview him?",
       "outcome": "ACCEPTED",
-      "reply": "He has experience with frontend development, particularly in creating educational demos that emphasize the importance of managing secrets securely and understanding environment variables.",
-      "rawGen": "He has experience with frontend development, particularly in creating educational demos that emphasize the importance of managing secrets securely and understanding environment variables.",
+      "reply": "He has experience with frontend development and backend infrastructure management, which is valuable for roles requiring both technical skills and project coordination.",
+      "rawGen": "He has experience with frontend development and backend infrastructure management, which is valuable for roles requiring both technical skills and project coordination.",
       "validationVerdict": "partial",
       "validationReasons": [
         "not_relevant_to_question"
@@ -226,7 +230,7 @@
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 488
+      "latencyMs": 470
     },
     {
       "conv": "c3",
@@ -235,22 +239,20 @@
       "question": "What concerns would you have?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "I am concerned about his ability to manage multiple projects simultaneously and prioritize effectively, as evidenced by his experience with accountability in a team setting. Additionally, I wonder if he has the necessary skills for complex web development tasks such as WebGL programming.",
+      "rawGen": "I am concerned about his entry-level status and lack of experience in complex projects.",
       "validationVerdict": "unsupported",
       "validationReasons": [
-        "entity_not_grounded:WebGL",
-        "unsupported_relationship:Bradley Matera|worked_at|accountability"
+        "insufficient_content_overlap"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
-        "no_terminal_punctuation",
-        "insufficient_content_overlap",
-        "not_relevant_to_question"
+        "not_relevant_to_question",
+        "fabricated_entity:Accountability"
       ],
-      "repairRaw": "entity_not_grounded",
+      "repairRaw": "[Triangle Shader Lab] WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout. [freelancer vs agency local business-181] Accountability One person, one relationship Team with formal structure Best f… [recent projects and lessons-409] The table lists one lesson p",
       "fallback": true,
-      "latencyMs": 1029,
-      "rootCause": "MODEL_HALLUCINATED_ENTITY"
+      "latencyMs": 1542,
+      "rootCause": "MODEL_INCOMPLETE"
     },
     {
       "conv": "c3",
@@ -258,15 +260,15 @@
       "category": "recruiter",
       "question": "What should I ask him about?",
       "outcome": "ACCEPTED",
-      "reply": "He is an entry-level engineer with experience in frontend development, particularly focusing on front-end frameworks like React and JavaScript.",
-      "rawGen": "He is an entry-level engineer with experience in frontend development, particularly focusing on front-end frameworks like React and JavaScript.",
+      "reply": "He is an entry-level software engineer with experience in frontend development, particularly focusing on React and JavaScript.",
+      "rawGen": "He is an entry-level software engineer with experience in frontend development, particularly focusing on React and JavaScript.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 442
+      "latencyMs": 422
     },
     {
       "conv": "c3",
@@ -274,15 +276,15 @@
       "category": "recruiter",
       "question": "What kind of role fits him best?",
       "outcome": "ACCEPTED",
-      "reply": "He targets any entry-level tech, IT, or support role where he can leverage his web development skills and knowledge.",
-      "rawGen": "He targets any entry-level tech, IT, or support role where he can leverage his web development skills and knowledge.",
+      "reply": "He targets entry-level tech, IT, and support roles where he can learn hands-on.",
+      "rawGen": "He targets entry-level tech, IT, and support roles.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 479
+      "latencyMs": 709
     },
     {
       "conv": "c3",
@@ -290,15 +292,15 @@
       "category": "recruiter",
       "question": "What's the strongest evidence that he can actually build software?",
       "outcome": "ACCEPTED",
-      "reply": "His entry-level work involved creating a static Gen 1 Pokedex UI and implementing client-side search/filtering features, which demonstrates foundational skills in software development.",
-      "rawGen": "His entry-level work involved creating a static Gen 1 Pokedex UI and implementing client-side search/filtering features, which demonstrates foundational skills in software development.",
+      "reply": "No specific evidence provided in the given facts. However, based on his entry-level experience and skills listed (such as React, JavaScript, Node.js), it suggests a foundation for building software but does not indicate strong capabilities.",
+      "rawGen": "No specific evidence provided in the given facts. However, based on his entry-level experience and skills listed (such as React, JavaScript, Node.js), it suggests a foundation for building software but does not indicate strong capabilities.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 519
+      "latencyMs": 636
     },
     {
       "conv": "c4",
@@ -314,7 +316,7 @@
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 313
+      "latencyMs": 641
     },
     {
       "conv": "c4",
@@ -323,21 +325,20 @@
       "question": "How well? Like, can he actually build something with it?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "No, his projects have been limited to static UIs and basic web technologies. He lacks experience in more complex applications or modern front-end frameworks.",
+      "rawGen": "No, his projects are entry-level and do not involve building anything substantial or complex.",
       "validationVerdict": "unsupported",
       "validationReasons": [
-        "entity_not_grounded:UIs",
-        "not_relevant_to_question"
+        "insufficient_content_overlap"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
         "not_relevant_to_question",
         "unsupported_relationship:user can|uses_tech|these tools"
       ],
-      "repairRaw": "Yes, the user can use these tools to create interactive applications, perform calculations, and learn about graphics programming.",
+      "repairRaw": "Yes, the user can use these tools to create interactive Pokedex, perform arithmetic and string operations, analyze regular expressions, handle input validation, and learn about web graphics programming.",
       "fallback": true,
-      "latencyMs": 981,
-      "rootCause": "MODEL_HALLUCINATED_ENTITY"
+      "latencyMs": 937,
+      "rootCause": "MODEL_INCOMPLETE"
     },
     {
       "conv": "c4",
@@ -345,15 +346,15 @@
       "category": "skill",
       "question": "What about Node.js?",
       "outcome": "ACCEPTED",
-      "reply": "His skills include JavaScript and Node.js.",
-      "rawGen": "His skills include JavaScript and Node.js.",
+      "reply": "Node.js is a JavaScript runtime environment that allows developers to build scalable and performant web applications.",
+      "rawGen": "Node.js is a JavaScript runtime environment that allows developers to build scalable and performant web applications.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 336
+      "latencyMs": 419
     },
     {
       "conv": "c4",
@@ -362,362 +363,7 @@
       "question": "What's he best at?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "He is best at building websites using HTML, CSS, JavaScript, and React.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "insufficient_content_overlap"
-      ],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": true,
-      "latencyMs": 661,
-      "rootCause": "MODEL_INCOMPLETE"
-    },
-    {
-      "conv": "c4",
-      "turn": 5,
-      "category": "followup",
-      "question": "What does he still need to learn?",
-      "outcome": "ACCEPTED",
-      "reply": "He still needs to learn more about cloud architecture and design patterns.",
-      "rawGen": "He still needs to learn more about cloud architecture and design patterns.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": false,
-      "latencyMs": 374
-    },
-    {
-      "conv": "c5",
-      "turn": 1,
-      "category": "explanation",
-      "question": "Explain ProjectHub like I'm not technical.",
-      "outcome": "ACCEPTED",
-      "reply": "ProjectHub is an AI assistant named Scout that helps recruiters find candidates for job openings. It answers questions about the candidate's skills and experience, providing insights into their suitability for various roles.",
-      "rawGen": "ProjectHub is an AI assistant named Scout that helps recruiters find candidates for job openings. It answers questions about the candidate's skills and experience, providing insights into their suitability for various roles.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": false,
-      "latencyMs": 657
-    },
-    {
-      "conv": "c5",
-      "turn": 2,
-      "category": "explanation",
-      "question": "Okay now explain it technically.",
-      "outcome": "ACCEPTED",
-      "reply": "Yes, ProjectHub used JavaScript, Node.js, and Express.",
-      "rawGen": "Yes, ProjectHub used JavaScript, Node.js, and Express.",
-      "validationVerdict": "partial",
-      "validationReasons": [
-        "not_relevant_to_question"
-      ],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": false,
-      "latencyMs": 378
-    },
-    {
-      "conv": "c5",
-      "turn": 3,
-      "category": "followup",
-      "question": "Why did he build it that way?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "He built the Static Gen 1 Pokedex UI in a client-side manner to ensure optimal performance and user experience by leveraging browser capabilities without requiring server involvement. This approach allowed for real-time updates and seamless interaction with the data, enhancing the overall user experience.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "unsupported_relationship:Bradley Matera|built_by|Static Gen 1 Pokedex UI",
-        "fabricated_entity:Static"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "fabricated_entity:Static"
-      ],
-      "repairRaw": "Bradley Matera built the Static Gen 1 Pokedex UI by connecting two entities in a specific manner.",
-      "fallback": true,
-      "latencyMs": 1149,
-      "rootCause": "MODEL_HALLUCINATED_ENTITY"
-    },
-    {
-      "conv": "c6",
-      "turn": 1,
-      "category": "profile",
-      "question": "Tell me about Bradley.",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "Bradley is a junior software engineer who specializes in JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation. He focuses on building and supporting web applications, writing documentation, debugging issues, integrating APIs, and working with cloud services.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "expanded_overclaim:specializes in",
-        "relationship_overclaim:specializes_in|JavaScript"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "expanded_overclaim:specializes in",
-        "not_relevant_to_question",
-        "relationship_overclaim:specializes_in|JavaScript"
-      ],
-      "repairRaw": "He is an entry-level software engineer who specializes in JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation.",
-      "fallback": true,
-      "latencyMs": 1310,
-      "rootCause": "MODEL_OVERCLAIM"
-    },
-    {
-      "conv": "c6",
-      "turn": 2,
-      "category": "profile",
-      "question": "What does he actually do?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "He is an entry-level software developer with a focus on front-end technologies. His experience includes working on projects that use React and JavaScript, such as the token system for 364 Applications.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "not_relevant_to_question",
-        "unsupported_relationship:includes working|uses_tech|React"
-      ],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": true,
-      "latencyMs": 892,
-      "rootCause": "MODEL_WRONG_RELATIONSHIP"
-    },
-    {
-      "conv": "c6",
-      "turn": 3,
-      "category": "profile",
-      "question": "What's his strongest project?",
-      "outcome": "ACCEPTED",
-      "reply": "His strongest project was the AWS Serverless Metadata Extraction Workflow. This project involved extracting metadata from various sources using a serverless pipeline with Lambda, DynamoDB, S3, and an advanced cost-analysis model to optimize infrastructure costs.",
-      "rawGen": "His strongest project was the AWS Serverless Metadata Extraction Workflow. This project involved extracting metadata from various sources using a serverless pipeline with Lambda, DynamoDB, S3, and an advanced cost-analysis model to optimize infrastructure costs.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": false,
-      "latencyMs": 660
-    },
-    {
-      "conv": "c6",
-      "turn": 4,
-      "category": "personality",
-      "question": "What's your favorite thing he's built?",
-      "outcome": "REPAIRED",
-      "reply": "The Triangle Shader Lab, which is a web GPU learning demonstration featuring examples of 'hello triangle' and 'textured cube'.",
-      "rawGen": "He has not explicitly mentioned any specific projects or creations as his favorites.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "insufficient_content_overlap"
-      ],
-      "repairVerdict": "partial",
-      "repairReasons": [
-        "not_relevant_to_question"
-      ],
-      "repairRaw": "The Triangle Shader Lab, which is a web GPU learning demonstration featuring examples of 'hello triangle' and 'textured cube'.",
-      "fallback": false,
-      "latencyMs": 827
-    },
-    {
-      "conv": "c6",
-      "turn": 5,
-      "category": "personality",
-      "question": "What would you ask him if you were interviewing him?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "I'm interested in learning more about your experience working on the AWS internship capstone project that extracted metadata using a serverless pipeline with Lambda, DynamoDB, S3, and an ACME certificate. Could you tell me about how this project was structured and what challenges you faced during its development?",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "entity_not_grounded:ACME",
-        "fabricated_entity:ACME"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "insufficient_content_overlap",
-        "not_relevant_to_question"
-      ],
-      "repairRaw": "What technology or entity is not in the knowledge base?",
-      "fallback": true,
-      "latencyMs": 1171,
-      "rootCause": "MODEL_HALLUCINATED_ENTITY"
-    },
-    {
-      "conv": "c7",
-      "turn": 1,
-      "category": "ambiguity",
-      "question": "What did he use there?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "He used AWS, DynamoDB, and React in his intern projects.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "insufficient_content_overlap"
-      ],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": true,
-      "latencyMs": 703,
-      "rootCause": "MODEL_INCOMPLETE"
-    },
-    {
-      "conv": "c7",
-      "turn": 2,
-      "category": "ambiguity",
-      "question": "Was that AWS?",
-      "outcome": "ACCEPTED",
-      "reply": "Yes, the project involved AWS services and technologies.",
-      "rawGen": "Yes, the project involved AWS services and technologies.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": false,
-      "latencyMs": 350
-    },
-    {
-      "conv": "c7",
-      "turn": 3,
-      "category": "ambiguity",
-      "question": "What about the other project?",
-      "outcome": "ACCEPTED",
-      "reply": "ProjectHub used JavaScript, Node.js, and Express.",
-      "rawGen": "ProjectHub used JavaScript, Node.js, and Express.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": false,
-      "latencyMs": 336
-    },
-    {
-      "conv": "c7",
-      "turn": 4,
-      "category": "ambiguity",
-      "question": "Did he do that professionally?",
-      "outcome": "ACCEPTED",
-      "reply": "He was an intern, not professional.",
-      "rawGen": "He was an intern, not professional.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": false,
-      "latencyMs": 346
-    },
-    {
-      "conv": "c7",
-      "turn": 5,
-      "category": "ambiguity",
-      "question": "So what is this thing?",
-      "outcome": "ACCEPTED",
-      "reply": "He refers to the project he worked on as 'ProjectHub', which involved using JavaScript, Node.js, and Express.",
-      "rawGen": "He refers to the project he worked on as 'ProjectHub', which involved using JavaScript, Node.js, and Express.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": false,
-      "latencyMs": 484
-    },
-    {
-      "conv": "c8",
-      "turn": 1,
-      "category": "natural",
-      "question": "Okay but what did he actually build?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "He built the Static Gen 1 Pokedex UI project, which included client-side search/filtering, data display, theme controls, and static entries for all 151 Pokémon. This was part of his entry-level work at Interactive Pokedex.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "unsupported_relationship:Bradley Matera|built_by|Static Gen 1 Pokedex UI project",
-        "fabricated_entity:Static"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "fabricated_entity:Static"
-      ],
-      "repairRaw": "Bradley Matera built the Static Gen 1 Pokedex UI project.",
-      "fallback": true,
-      "latencyMs": 1053,
-      "rootCause": "MODEL_HALLUCINATED_ENTITY"
-    },
-    {
-      "conv": "c8",
-      "turn": 2,
-      "category": "natural",
-      "question": "What's the cool part?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "The coolest part is that he built the first ever Static Gen 1 Pokedex UI with all 151 entries. It was a project that showcased his skills in client-side development, search/filtering, data display, and theme controls.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "unsupported_relationship:Bradley Matera|built_by|first ever Static Gen 1 Pokedex UI wi",
-        "fabricated_entity:Static"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "fabricated_entity:Static"
-      ],
-      "repairRaw": "The Static Gen 1 Pokedex UI with all 151 entries, client-side search/filtering, data display, and theme controls.",
-      "fallback": true,
-      "latencyMs": 1168,
-      "rootCause": "MODEL_HALLUCINATED_ENTITY"
-    },
-    {
-      "conv": "c8",
-      "turn": 3,
-      "category": "natural",
-      "question": "Why should I care about that?",
-      "outcome": "REPAIRED",
-      "reply": "The provided information pertains to educational and technical concepts related to software development, security practices, and AI applications.",
-      "rawGen": "The Secrets & Environment Variables Demo showcases the importance of managing sensitive information securely. Understanding how to handle secrets and environment variables effectively is crucial for maintaining data integrity and security in applications.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "fabricated_entity:Understanding"
-      ],
-      "repairVerdict": "supported",
-      "repairReasons": [],
-      "repairRaw": "The provided information pertains to educational and technical concepts related to software development, security practices, and AI applications.",
-      "fallback": false,
-      "latencyMs": 1061
-    },
-    {
-      "conv": "c8",
-      "turn": 4,
-      "category": "natural",
-      "question": "Is that actually impressive?",
-      "outcome": "ACCEPTED",
-      "reply": "Yes, it is impressive for an entry-level intern to create a fully functional Pokedex UI with client-side search and filtering. The skills demonstrated include basic HTML/CSS, JavaScript, and serverless architecture concepts.",
-      "rawGen": "Yes, it is impressive for an entry-level intern to create a fully functional Pokedex UI with client-side search and filtering. The skills demonstrated include basic HTML/CSS, JavaScript, and serverless architecture concepts.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": false,
-      "latencyMs": 645
-    },
-    {
-      "conv": "c8",
-      "turn": 5,
-      "category": "natural",
-      "question": "What's he best at?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "He is best at serverless workflows with AWS services.",
+      "rawGen": "He is best at programming languages such as JavaScript, TypeScript, and Python.",
       "validationVerdict": "unsupported",
       "validationReasons": [
         "insufficient_content_overlap"
@@ -728,7 +374,358 @@
       ],
       "repairRaw": "CheeseMath",
       "fallback": true,
-      "latencyMs": 561,
+      "latencyMs": 642,
+      "rootCause": "MODEL_INCOMPLETE"
+    },
+    {
+      "conv": "c4",
+      "turn": 5,
+      "category": "followup",
+      "question": "What does he still need to learn?",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "He still needs to learn more about cloud work practices, particularly in terms of best practices for security and compliance. Additionally, he may benefit from gaining experience with specific tools and technologies used in the industry.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "unsupported_relationship:with specific tools|uses_tech|in the industry"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "too_short"
+      ],
+      "repairRaw": "Backend / .NET",
+      "fallback": true,
+      "latencyMs": 935,
+      "rootCause": "MODEL_WRONG_RELATIONSHIP"
+    },
+    {
+      "conv": "c5",
+      "turn": 1,
+      "category": "explanation",
+      "question": "Explain ProjectHub like I'm not technical.",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "ProjectHub is an AI assistant named Scout that helps recruiters find candidates for job openings. It uses a script tag to add a chat widget to any website, allowing users to ask questions about job opportunities and get answers from the platform.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "unsupported_relationship:ProjectHub|uses_tech|script tag"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "unsupported_relationship:kind|uses_tech|app"
+      ],
+      "repairRaw": "ProjectHub is a tool that helps find jobs for people who are learning or practicing coding, kind of like how you might use an app to practice your piano skills.",
+      "fallback": true,
+      "latencyMs": 1315,
+      "rootCause": "MODEL_WRONG_RELATIONSHIP"
+    },
+    {
+      "conv": "c5",
+      "turn": 2,
+      "category": "explanation",
+      "question": "Okay now explain it technically.",
+      "outcome": "REPAIRED",
+      "reply": "The provided text contains a mix of unrelated entities, including AI recruiter assistant Scout, static Pokedex UI with search/filtering features, calculator and testing demo, and an educational frontend demo on secrets and environment variables. There are no facts connecting these entities in the gi",
+      "rawGen": "Yes, ProjectHub used JavaScript, Node.js, and Express as part of its development. The script tag mentioned in the description refers to a front-end component that uses these technologies for client-side functionality.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "unsupported_relationship:refers|uses_tech|these technologies"
+      ],
+      "repairVerdict": "partial",
+      "repairReasons": [
+        "not_relevant_to_question"
+      ],
+      "repairRaw": "The provided text contains a mix of unrelated entities, including AI recruiter assistant Scout, static Pokedex UI with search/filtering features, calculator and testing demo, and an educational frontend demo on secrets and environment variables. There are no facts connecting these entities in the gi",
+      "fallback": false,
+      "latencyMs": 1368
+    },
+    {
+      "conv": "c5",
+      "turn": 3,
+      "category": "followup",
+      "question": "Why did he build it that way?",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "He built the Static Gen 1 Pokedex UI in a client-side manner to ensure optimal performance and user experience. The static nature of the project allowed for straightforward implementation, focusing on the frontend without requiring server-side processing or database interactions.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "unsupported_relationship:Bradley Matera|built_by|Static Gen 1 Pokedex UI",
+        "fabricated_entity:Static"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "fabricated_entity:Static"
+      ],
+      "repairRaw": "Bradley Matera built the Static Gen 1 Pokedex UI by connecting two entities in a specific manner. The relationship between these entities is not mentioned in the provided facts.",
+      "fallback": true,
+      "latencyMs": 1242,
+      "rootCause": "MODEL_HALLUCINATED_ENTITY"
+    },
+    {
+      "conv": "c6",
+      "turn": 1,
+      "category": "profile",
+      "question": "Tell me about Bradley.",
+      "outcome": "ACCEPTED",
+      "reply": "Bradley is an early-stage software engineer with a focus on JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation. He has experience building and supporting web applications, writing documentation, debugging issues, integrating APIs, and working with cloud services",
+      "rawGen": "Bradley is an early-stage software engineer with a focus on JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation. He has experience building and supporting web applications, writing documentation, debugging issues, integrating APIs, and working with cloud services in entry-level tech roles where he can contribute immediately and learn hands-on.",
+      "validationVerdict": "supported",
+      "validationReasons": [],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": false,
+      "latencyMs": 903
+    },
+    {
+      "conv": "c6",
+      "turn": 2,
+      "category": "profile",
+      "question": "What does he actually do?",
+      "outcome": "ACCEPTED",
+      "reply": "He designs systems that ship and builds frontend applications.",
+      "rawGen": "He designs systems that ship and builds frontend applications.",
+      "validationVerdict": "partial",
+      "validationReasons": [
+        "not_relevant_to_question"
+      ],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": false,
+      "latencyMs": 781
+    },
+    {
+      "conv": "c6",
+      "turn": 3,
+      "category": "profile",
+      "question": "What's his strongest project?",
+      "outcome": "ACCEPTED",
+      "reply": "ProjectHub is Scout's strongest project. It embeds a chat widget on any website, and the script tag adds functionality to websites easily.",
+      "rawGen": "ProjectHub is Scout's strongest project. It embeds a chat widget on any website, and the script tag adds functionality to websites easily.",
+      "validationVerdict": "supported",
+      "validationReasons": [],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": false,
+      "latencyMs": 511
+    },
+    {
+      "conv": "c6",
+      "turn": 4,
+      "category": "personality",
+      "question": "What's your favorite thing he's built?",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "He has built the Static Gen 1 Pokedex, which is an interactive static UI for all 151 entries of Pokémon. This project showcases client-side search and filtering capabilities using JavaScript and React.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "fabricated_entity:Static"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "too_short"
+      ],
+      "repairRaw": "CheeseMath",
+      "fallback": true,
+      "latencyMs": 872,
+      "rootCause": "MODEL_HALLUCINATED_ENTITY"
+    },
+    {
+      "conv": "c6",
+      "turn": 5,
+      "category": "personality",
+      "question": "What would you ask him if you were interviewing him?",
+      "outcome": "ACCEPTED",
+      "reply": "I'm interested in learning about your experience working on the Triangle Shader Lab project. Could you tell me more about that?",
+      "rawGen": "I'm interested in learning about your experience working on the Triangle Shader Lab project. Could you tell me more about that?",
+      "validationVerdict": "supported",
+      "validationReasons": [],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": false,
+      "latencyMs": 699
+    },
+    {
+      "conv": "c7",
+      "turn": 1,
+      "category": "ambiguity",
+      "question": "What did he use there?",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "There is no specific project mentioned in the provided facts where he used a particular technology or tool. The information given pertains to general skills and projects, but does not detail any specific technologies used.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "unsupported_relationship:mentioned|uses_tech|particular technology"
+      ],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": true,
+      "latencyMs": 935,
+      "rootCause": "MODEL_WRONG_RELATIONSHIP"
+    },
+    {
+      "conv": "c7",
+      "turn": 2,
+      "category": "ambiguity",
+      "question": "Was that AWS?",
+      "outcome": "ACCEPTED",
+      "reply": "Yes, the project involved AWS services.",
+      "rawGen": "Yes, the project involved AWS services.",
+      "validationVerdict": "supported",
+      "validationReasons": [],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": false,
+      "latencyMs": 681
+    },
+    {
+      "conv": "c7",
+      "turn": 3,
+      "category": "ambiguity",
+      "question": "What about the other project?",
+      "outcome": "ACCEPTED",
+      "reply": "The other project is Interactive Pokedex, which features a static Gen 1 Pokedex UI with all 151 entries, client-side search/filtering, data display, and theme controls.",
+      "rawGen": "ProjectHub used JavaScript, Node.js, and Express.",
+      "validationVerdict": "supported",
+      "validationReasons": [],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": false,
+      "latencyMs": 968
+    },
+    {
+      "conv": "c7",
+      "turn": 4,
+      "category": "ambiguity",
+      "question": "Did he do that professionally?",
+      "outcome": "ACCEPTED",
+      "reply": "He is an entry-level employee and has not been involved in professional projects.",
+      "rawGen": "He is an entry-level employee and has not been involved in professional projects.",
+      "validationVerdict": "supported",
+      "validationReasons": [],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": false,
+      "latencyMs": 413
+    },
+    {
+      "conv": "c7",
+      "turn": 5,
+      "category": "ambiguity",
+      "question": "So what is this thing?",
+      "outcome": "ACCEPTED",
+      "reply": "It seems like 'local setup, onboarding docs, small code updates, debugging, and GitHub integration' are the key components of a project that involves understanding goals, terms not yet known, and testing minimal functionalities. This could be related to software development or project management.",
+      "rawGen": "It seems like 'local setup, onboarding docs, small code updates, debugging, and GitHub integration' are the key components of a project that involves understanding goals, terms not yet known, and testing minimal functionalities. This could be related to software development or project management.",
+      "validationVerdict": "supported",
+      "validationReasons": [],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": false,
+      "latencyMs": 766
+    },
+    {
+      "conv": "c8",
+      "turn": 1,
+      "category": "natural",
+      "question": "Okay but what did he actually build?",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "He built the Static Gen 1 Pokedex UI project using React, Redux, and Node.js.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "entity_not_grounded:Redux",
+        "unsupported_relationship:Bradley Matera|built_by|Static Gen 1 Pokedex UI project using",
+        "fabricated_entity:Static",
+        "fabricated_entity:Redux"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "no_terminal_punctuation",
+        "not_relevant_to_question",
+        "fabricated_entity:Static"
+      ],
+      "repairRaw": "Static Gen 1 Pokedex UI project",
+      "fallback": true,
+      "latencyMs": 795,
+      "rootCause": "MODEL_HALLUCINATED_ENTITY"
+    },
+    {
+      "conv": "c8",
+      "turn": 2,
+      "category": "natural",
+      "question": "What's the cool part?",
+      "outcome": "REPAIRED",
+      "reply": "The cool part is that it allows you to search and filter data on a Pokedex with all 151 entries.",
+      "rawGen": "The coolest part is that he was able to create a fully functional and user-friendly Static Gen 1 Pokedex UI with all 151 entries, client-side search/filtering, data display, and theme controls. This project showcased his skills in front-end development and design.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "fabricated_entity:Static"
+      ],
+      "repairVerdict": "supported",
+      "repairReasons": [],
+      "repairRaw": "The cool part is that it allows you to search and filter data on a Pokedex with all 151 entries.",
+      "fallback": false,
+      "latencyMs": 1161
+    },
+    {
+      "conv": "c8",
+      "turn": 3,
+      "category": "natural",
+      "question": "Why should I care about that?",
+      "outcome": "ACCEPTED",
+      "reply": "He is referring to a project where he embedded the Scout AI assistant into a web application, showcasing its capabilities and potential applications.",
+      "rawGen": "He is referring to a project where he embedded the Scout AI assistant into a web application, showcasing its capabilities and potential applications.",
+      "validationVerdict": "supported",
+      "validationReasons": [],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": false,
+      "latencyMs": 491
+    },
+    {
+      "conv": "c8",
+      "turn": 4,
+      "category": "natural",
+      "question": "Is that actually impressive?",
+      "outcome": "ACCEPTED",
+      "reply": "Yes, it is impressive for an entry-level intern to create a fully functional Pokedex UI with client-side search and filtering capabilities. The skills listed in his projects demonstrate a strong foundation in web development and problem-solving.",
+      "rawGen": "Yes, it is impressive for an entry-level intern to create a fully functional Pokedex UI with client-side search and filtering capabilities. The skills listed in his projects demonstrate a strong foundation in web development and problem-solving.",
+      "validationVerdict": "supported",
+      "validationReasons": [],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": false,
+      "latencyMs": 651
+    },
+    {
+      "conv": "c8",
+      "turn": 5,
+      "category": "natural",
+      "question": "What's he best at?",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "He is best at identifying and fixing issues in software projects, particularly those related to backend systems. His skills include debugging, optimizing code performance, and ensuring seamless integration of new technologies into existing applications.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "insufficient_content_overlap"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "too_short"
+      ],
+      "repairRaw": "CheeseMath",
+      "fallback": true,
+      "latencyMs": 781,
       "rootCause": "MODEL_INCOMPLETE"
     },
     {
@@ -738,18 +735,22 @@
       "question": "How does he fit a junior frontend developer role requiring React and TypeScript?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "He fits this role by leveraging his direct experience with React, JavaScript, Node.js, and Express from his U.S. Army combat veteran background.",
+      "rawGen": "Bradley Matera, as an entry-level Junior Frontend Developer with experience in operating under pressure and working closely with senior developers, fits the requirements of a Junior Frontend Developer position that requires proficiency in React and TypeScript. His skills align well with the project needs, demonstrating his ability to contribute effectively to frontend development teams.",
       "validationVerdict": "unsupported",
       "validationReasons": [
-        "overclaim_language"
+        "expanded_overclaim:proficiency in",
+        "upgrade:seniority_inflation",
+        "unsupported_relationship:Bradley Matera|has_experience|operating under pressure",
+        "relationship_overclaim:proficient_in|React"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
-        "overclaim_language"
+        "expanded_overclaim:proficiency in",
+        "relationship_overclaim:proficient_in|React"
       ],
-      "repairRaw": "He fits a junior frontend developer role by leveraging his U.S. Army combat veteran experience, which includes operating under pressure and adapting to rapid changes.",
+      "repairRaw": "Bradley Matera has experience operating under pressure, which is relevant for the entry-level Junior Frontend Developer position that requires proficiency in React and TypeScript.",
       "fallback": true,
-      "latencyMs": 1765,
+      "latencyMs": 1524,
       "rootCause": "MODEL_OVERCLAIM"
     },
     {
@@ -759,19 +760,19 @@
       "question": "How does he fit a cloud support role requiring AWS and troubleshooting?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "He fits the cloud support role by leveraging his direct experience with AWS, particularly in serverless architecture and troubleshooting. His internship project involved extracting metadata using a serverless pipeline with Lambda, DynamoDB, S3, and an accessible frontend on Amplify, demonstrating proficiency in managing cloud resources and integrating microservices.",
+      "rawGen": "He fits the cloud support role by leveraging his extensive experience with AWS, particularly in serverless architecture and troubleshooting. His internship project involved creating a serverless metadata workflow using AWS Lambda, DynamoDB, S3, and an accessible frontend on Amplify.",
       "validationVerdict": "unsupported",
       "validationReasons": [
-        "expanded_overclaim:proficiency in",
-        "relationship_overclaim:proficient_in|managing cloud resources"
+        "expanded_overclaim:extensive experience"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
-        "expanded_overclaim:extensive experience"
+        "expanded_overclaim:extensive experience",
+        "relationship_overclaim:proficient_in|managing"
       ],
-      "repairRaw": "He fits the cloud support role by having extensive experience with AWS, including managing cloud resources, troubleshooting, networking concepts, and customer experience skills. This background aligns well with the requirements for an AWS Support Engineering internship focused on cloud architecture,",
+      "repairRaw": "He fits the cloud support role by having extensive experience with AWS, including working on projects that involve serverless pipelines using Lambda, DynamoDB, S3, and an accessible frontend on Amplify. This background demonstrates his proficiency in managing and troubleshooting cloud infrastructure",
       "fallback": true,
-      "latencyMs": 1621,
+      "latencyMs": 1563,
       "rootCause": "MODEL_OVERCLAIM"
     },
     {
@@ -779,16 +780,23 @@
       "turn": 3,
       "category": "job",
       "question": "How does he fit a full-stack role requiring Node.js and React?",
-      "outcome": "ACCEPTED",
-      "reply": "He fits the full-stack role by leveraging his skills in both Node.js and React. His experience includes working on projects that demonstrate data fetching, search functionalities, and deployment processes using these technologies.",
-      "rawGen": "He fits the full-stack role by leveraging his skills in both Node.js and React. His experience includes working on projects that demonstrate data fetching, search functionalities, and deployment processes using these technologies.",
-      "validationVerdict": "supported",
-      "validationReasons": [],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": false,
-      "latencyMs": 611
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "He fits the full-stack role by leveraging his extensive experience in both Node.js and React. His skills include experimenting with enterprise-scale system design, where he has demonstrated proficiency in data fetching, search functionalities, and deployment processes using JavaScript, Node.js, and Express.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "expanded_overclaim:extensive experience",
+        "relationship_overclaim:proficient_in|data fetching"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "expanded_overclaim:proficiency in",
+        "relationship_overclaim:proficient_in|these technologies through proj"
+      ],
+      "repairRaw": "He fits the entry-level full-stack role by having experience with Node.js and React, demonstrating proficiency in these technologies through projects that showcase data fetching, search functionality, and deployment.",
+      "fallback": true,
+      "latencyMs": 1531,
+      "rootCause": "MODEL_OVERCLAIM"
     },
     {
       "conv": "c9",
@@ -797,26 +805,29 @@
       "question": "How does he fit a DevOps role requiring Kubernetes and CI/CD?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "He fits the DevOps role by leveraging his expertise in Kubernetes, which is essential for managing containerized applications. His experience with CI/CD pipelines demonstrates his ability to automate and streamline deployment processes, aligning perfectly with the demands of a DevOps position that focuses on continuous integration and delivery.",
+      "rawGen": "He fits the DevOps role by leveraging his expertise in Kubernetes, which is essential for managing containerized applications. His skills also include CI/CD practices, making him adept at automating deployment processes.",
       "validationVerdict": "unsupported",
       "validationReasons": [
         "expanded_overclaim:expertise in",
         "entity_not_grounded:DevOps",
-        "entity_not_grounded:DevOps",
-        "relationship_overclaim:has_expertise|Kubernetes"
+        "relationship_overclaim:has_expertise|Kubernetes",
+        "relationship_overclaim:adept_at|automating deployment processes"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
         "entity_not_grounded:DevOps",
-        "entity_not_grounded:Infrastructure",
-        "entity_not_grounded:DevOps",
-        "unsupported_relationship:Bradley Matera|has_experience|Cloud CLI",
-        "fabricated_entity:Prometheus",
-        "fabricated_entity:Grafana"
+        "entity_not_grounded:Jenkins",
+        "entity_not_grounded:Azure",
+        "entity_not_grounded:Terraform",
+        "entity_not_grounded:Ansible",
+        "fabricated_entity:Jenkins",
+        "fabricated_entity:Azure",
+        "fabricated_entity:Terraform",
+        "fabricated_entity:Ansible"
       ],
-      "repairRaw": "Bradley can fit into the DevOps role by focusing on cloud infrastructure design, automation through IaC (Infrastructure as Code), and deployment management. He has experience with Cloud CLI and monitoring tools like Prometheus and Grafana, which are essential for a DevOps engineer working in Kuberne",
+      "repairRaw": "He can fit the DevOps role by having experience with Kubernetes, CI/CD tools like Jenkins or GitLab, automation scripts for deployment pipelines, and familiarity with cloud platforms such as AWS or Azure. He should also have knowledge of infrastructure as code (IaC) using tools like Terraform or Ans",
       "fallback": true,
-      "latencyMs": 1648,
+      "latencyMs": 1822,
       "rootCause": "MODEL_HALLUCINATED_ENTITY"
     },
     {
@@ -824,17 +835,19 @@
       "turn": 1,
       "category": "comparison",
       "question": "Compare ProjectHub and CIRIS Ethical AI.",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "",
-      "validationVerdict": null,
-      "validationReasons": [],
-      "repairVerdict": null,
+      "outcome": "REPAIRED",
+      "reply": "Both ProjectHub and CIRIS Ethical AI involve the use of JavaScript in their respective projects.",
+      "rawGen": "ProjectHub is an AI-driven recruitment platform that Scout has experience with, while CIRIS Ethical AI focuses on ethical AI development. Both projects involve the use of JavaScript, Node.js, Express, and GitHub Pages technologies.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "entity_not_grounded:AI-driven",
+        "unsupported_relationship:Both projects involve the|uses_tech|of JavaScript"
+      ],
+      "repairVerdict": "supported",
       "repairReasons": [],
-      "repairRaw": "",
-      "fallback": true,
-      "latencyMs": 1374,
-      "rootCause": "MODEL_EMPTY_OUTPUT"
+      "repairRaw": "Both ProjectHub and CIRIS Ethical AI involve the use of JavaScript in their respective projects.",
+      "fallback": false,
+      "latencyMs": 1202
     },
     {
       "conv": "c10",
@@ -843,22 +856,20 @@
       "question": "Compare ProjectHub and the Interactive Pokedex.",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "ProjectHub is an AI-driven recruitment platform that uses JavaScript, Node.js, Express, GitHub Pages, and GCP (Google Cloud Platform) to provide a dynamic job listing feature. In contrast, the Interactive Pokedex is a static UI for the Pokémon games' first generation, featuring all 151 entries with client-side search/filtering capabilities built using only HTML, CSS, and JavaScript.",
+      "rawGen": "ProjectHub is an AI-driven recruitment platform that uses JavaScript, Node.js, Express, and GitHub Pages to build a dynamic and interactive user interface for job seekers. The Interactive Pokedex, on the other hand, focuses solely on creating a static Gen 1 Pokémon Yellow-style UI with all 151 entries of the Pokédex, utilizing only HTML, CSS, and JavaScript.",
       "validationVerdict": "unsupported",
       "validationReasons": [
         "entity_not_grounded:AI-driven",
-        "entity_not_grounded:Google",
-        "entity_not_grounded:Platform",
-        "unsupported_relationship:is an AI-driven recruitment platform that|uses_tech|JavaScript",
-        "fabricated_entity:Google"
+        "entity_not_grounded:Yellow-style",
+        "fabricated_entity:Yellow"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
-        "fabricated_entity:Static"
+        "unsupported_relationship:and|uses_tech|JavaScript"
       ],
-      "repairRaw": "The Interactive Pokedex is an application that uses JavaScript for client-side search/filtering of all 151 entries in the Static Gen 1 Pokedex, while ProjectHub is a recruitment platform that utilizes AI to assist with hiring processes.",
+      "repairRaw": "The Interactive Pokedex is an application that features a static Gen 1 Pokedex UI with all 151 entries, client-side search/filtering, and uses JavaScript, HTML, CSS for its tech stack. On the other hand, ProjectHub is an AI recruiter assistant named Scout that utilizes JavaScript, Node.js, Express, ",
       "fallback": true,
-      "latencyMs": 1716,
+      "latencyMs": 1916,
       "rootCause": "MODEL_HALLUCINATED_ENTITY"
     },
     {
@@ -866,20 +877,21 @@
       "turn": 3,
       "category": "comparison",
       "question": "Which project is the most complex?",
-      "outcome": "REPAIRED",
-      "reply": "ProjectHub (Scout)",
+      "outcome": "FALLBACK",
+      "reply": "",
       "rawGen": "ProjectHub",
       "validationVerdict": "unsupported",
       "validationReasons": [
         "too_short"
       ],
-      "repairVerdict": "partial",
+      "repairVerdict": "unsupported",
       "repairReasons": [
-        "no_terminal_punctuation"
+        "fabricated_entity:Embeddable"
       ],
-      "repairRaw": "ProjectHub (Scout)",
-      "fallback": false,
-      "latencyMs": 572
+      "repairRaw": "The ProjectHub (Scout) Embeddable AI recruiter assistant with its chat widget script tag and dynamic features.",
+      "fallback": true,
+      "latencyMs": 725,
+      "rootCause": "MODEL_TOO_SHORT"
     },
     {
       "conv": "c11",
@@ -887,15 +899,15 @@
       "category": "honest_gaps",
       "question": "What are his weaknesses?",
       "outcome": "ACCEPTED",
-      "reply": "His biggest current weakness is in data structure design and implementation.",
-      "rawGen": "His biggest current weakness is in data structure design and implementation.",
+      "reply": "His biggest current weakness is in understanding and applying complex technical concepts quickly, especially when it comes to cloud computing models and infrastructure. He struggles with grasping the nuances of AWS pricing structures and how they impact cost analysis.",
+      "rawGen": "His biggest current weakness is in understanding and applying complex technical concepts quickly, especially when it comes to cloud computing models and infrastructure. He struggles with grasping the nuances of AWS pricing structures and how they impact cost analysis.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 367
+      "latencyMs": 646
     },
     {
       "conv": "c11",
@@ -904,42 +916,39 @@
       "question": "What experience does he lack?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "He lacks extensive experience in server-side development.",
+      "rawGen": "He lacks extensive experience in serverless computing and advanced web technologies such as WebAssembly, which are essential for projects involving large-scale applications and real-time interactions.",
       "validationVerdict": "unsupported",
       "validationReasons": [
         "expanded_overclaim:extensive experience",
+        "entity_not_grounded:WebAssembly",
         "insufficient_content_overlap"
       ],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "no_terminal_punctuation",
+        "expanded_overclaim:extensive experience",
+        "insufficient_content_overlap"
+      ],
+      "repairRaw": "extensive experience",
       "fallback": true,
-      "latencyMs": 662,
-      "rootCause": "MODEL_OVERCLAIM"
+      "latencyMs": 867,
+      "rootCause": "MODEL_HALLUCINATED_ENTITY"
     },
     {
       "conv": "c11",
       "turn": 3,
       "category": "honest_gaps",
       "question": "What should a recruiter know about gaps in his background?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "As an entry-level engineer, Mr. Matera has not yet accumulated extensive experience or advanced skills across multiple domains.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "expanded_overclaim:extensive experience",
-        "entity_not_grounded:Mr",
-        "insufficient_content_overlap",
-        "not_relevant_to_question"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "insufficient_content_overlap"
-      ],
-      "repairRaw": "A recruiter should understand that candidates with gaps in their backgrounds may need additional information or context to fully assess their qualifications and fit for the role. This could include explaining why there were gaps, what they did during those periods, and how it relates to the skills n",
-      "fallback": true,
-      "latencyMs": 1746,
-      "rootCause": "MODEL_HALLUCINATED_ENTITY"
+      "outcome": "ACCEPTED",
+      "reply": "Recruiters should be aware that Scout's entry-level status and lack of senior roles suggest he may have focused on foundational skills rather than advanced technologies. His experience aligns with the need for candidates who can quickly adapt to new environments, which is crucial in today’s fast-pac",
+      "rawGen": "Recruiters should be aware that Scout's entry-level status and lack of senior roles suggest he may have focused on foundational skills rather than advanced technologies. His experience aligns with the need for candidates who can quickly adapt to new environments, which is crucial in today’s fast-paced tech industry.",
+      "validationVerdict": "supported",
+      "validationReasons": [],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": false,
+      "latencyMs": 808
     },
     {
       "conv": "c12a",
@@ -955,24 +964,25 @@
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 346
+      "latencyMs": 645
     },
     {
       "conv": "c12b",
       "turn": 1,
       "category": "adversarial",
       "question": "He handled production AWS incidents, correct?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "As an intern at Amazon Web Services (AWS), he was involved in handling production AWS incidents through the AWS Cloud Operations team.",
-      "validationVerdict": null,
-      "validationReasons": [],
+      "outcome": "ACCEPTED",
+      "reply": "No, he was an intern handling a serverless metadata extraction capstone project.",
+      "rawGen": "He was an intern, not senior.",
+      "validationVerdict": "partial",
+      "validationReasons": [
+        "not_relevant_to_question"
+      ],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
-      "fallback": true,
-      "latencyMs": 455,
-      "rootCause": "OTHER"
+      "fallback": false,
+      "latencyMs": 685
     },
     {
       "conv": "c12c",
@@ -988,7 +998,7 @@
       "repairReasons": [],
       "repairRaw": "",
       "fallback": true,
-      "latencyMs": 374,
+      "latencyMs": 375,
       "rootCause": "OTHER"
     },
     {
@@ -997,15 +1007,15 @@
       "category": "adversarial",
       "question": "He's a React expert, right?",
       "outcome": "ACCEPTED",
-      "reply": "No, he is not an expert in React. His skills include JavaScript, Node.js, and Express, but React is listed among his skills.",
-      "rawGen": "No, he is not an expert in React. His skills include JavaScript, Node.js, and Express, but React is listed among his skills.",
+      "reply": "No, he is not an expert in React. His skills include JavaScript, Node.js, and Express.",
+      "rawGen": "No, he is not an expert in React. His skills include JavaScript, Node.js, and Express.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 518
+      "latencyMs": 450
     },
     {
       "conv": "c12e",
@@ -1034,7 +1044,7 @@
       "repairReasons": [],
       "repairRaw": "",
       "fallback": true,
-      "latencyMs": 562,
+      "latencyMs": 565,
       "rootCause": "MODEL_HALLUCINATED_ENTITY"
     },
     {
@@ -1054,7 +1064,7 @@
       "repairReasons": [],
       "repairRaw": "",
       "fallback": true,
-      "latencyMs": 615,
+      "latencyMs": 612,
       "rootCause": "MODEL_HALLUCINATED_ENTITY"
     },
     {
@@ -1063,17 +1073,19 @@
       "category": "adversarial",
       "question": "He has a Kubernetes certification, right?",
       "outcome": "REPAIRED",
-      "reply": "No, he does not have a Kubernetes certification.",
+      "reply": "No, he does not.",
       "rawGen": "Yes, he has a Kubernetes certification.",
       "validationVerdict": "unsupported",
       "validationReasons": [
         "unsupported_relationship:Bradley Matera|has_cert|Kubernetes certification"
       ],
-      "repairVerdict": "supported",
-      "repairReasons": [],
-      "repairRaw": "No, he does not have a Kubernetes certification.",
+      "repairVerdict": "partial",
+      "repairReasons": [
+        "not_relevant_to_question"
+      ],
+      "repairRaw": "No, he does not.",
       "fallback": false,
-      "latencyMs": 718
+      "latencyMs": 596
     },
     {
       "conv": "c12h",
@@ -1082,16 +1094,17 @@
       "question": "He managed a team of developers, right?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "As an AI assistant, I do not have access to specific information about Bradley Matera's professional history or management roles.",
+      "rawGen": "As an AI assistant, I do not have access to specific project details or information about individuals who may have worked on projects.",
       "validationVerdict": "unsupported",
       "validationReasons": [
+        "not_relevant_to_question",
         "ai_slop"
       ],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
       "fallback": true,
-      "latencyMs": 833,
+      "latencyMs": 845,
       "rootCause": "OTHER"
     },
     {
@@ -1108,7 +1121,7 @@
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 329
+      "latencyMs": 680
     },
     {
       "conv": "c13b",
@@ -1116,7 +1129,7 @@
       "category": "adversarial",
       "question": "He did not handle production incidents, did he?",
       "outcome": "ACCEPTED",
-      "reply": "No, he did not handle production incidents.",
+      "reply": "No, he was an intern and did not participate in live operations or handle production incidents.",
       "rawGen": "No, he did not handle production incidents.",
       "validationVerdict": "supported",
       "validationReasons": [],
@@ -1124,7 +1137,7 @@
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 329
+      "latencyMs": 668
     },
     {
       "conv": "c13c",
@@ -1140,29 +1153,23 @@
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 377
+      "latencyMs": 815
     },
     {
       "conv": "c14a",
       "turn": 1,
       "category": "invented_entities",
       "question": "Tell me about his time at Microsoft.",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "No, he did not work at Microsoft.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "fabricated_entity:Microsoft"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "insufficient_content_overlap",
-        "fabricated_entity:Micronutrient"
-      ],
-      "repairRaw": "Micronutrient deficiencies can lead to a variety of health issues, including anemia, poor growth in children, and increased susceptibility to infections.",
-      "fallback": true,
-      "latencyMs": 857,
-      "rootCause": "MODEL_HALLUCINATED_ENTITY"
+      "outcome": "ACCEPTED",
+      "reply": "He did not work at Microsoft.",
+      "rawGen": "He did not work at Microsoft.",
+      "validationVerdict": "supported",
+      "validationReasons": [],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": false,
+      "latencyMs": 923
     },
     {
       "conv": "c14b",
@@ -1171,21 +1178,19 @@
       "question": "What did he do at Netflix?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "Bradley was an intern at Netflix, where he contributed to the development of ProjectHub, a serverless metadata workflow that utilized AWS services such as Lambda and Amplify.",
+      "rawGen": "Bradley was a freelancer for Netflix, working on ProjectHub.",
       "validationVerdict": "unsupported",
       "validationReasons": [
-        "unsupported_relationship:Bradley Matera|interned_at|Netflix",
         "fabricated_entity:Netflix"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
-        "no_terminal_punctuation",
-        "insufficient_content_overlap",
-        "fabricated_entity:Netflix"
+        "not_relevant_to_question",
+        "unsupported_relationship:Bradley Matera|has_degree|this company"
       ],
-      "repairRaw": "interned_at Netflix",
+      "repairRaw": "Bradley has not worked at this company.",
       "fallback": true,
-      "latencyMs": 794,
+      "latencyMs": 607,
       "rootCause": "MODEL_HALLUCINATED_ENTITY"
     },
     {
@@ -1194,58 +1199,47 @@
       "category": "invented_entities",
       "question": "Tell me about his master's degree.",
       "outcome": "ACCEPTED",
-      "reply": "He did not pursue a master's degree.",
-      "rawGen": "He did not pursue a master's degree.",
+      "reply": "He does not have a master's degree.",
+      "rawGen": "He does not have a master's degree.",
       "validationVerdict": "supported",
       "validationReasons": [],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 356
+      "latencyMs": 757
     },
     {
       "conv": "c15",
       "turn": 1,
       "category": "personality",
       "question": "What project do you think is the most interesting?",
-      "outcome": "REPAIRED",
-      "reply": "CIRIS Ethical AI",
-      "rawGen": "ProjectHub",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "too_short"
-      ],
-      "repairVerdict": "partial",
-      "repairReasons": [
-        "no_terminal_punctuation",
-        "not_relevant_to_question"
-      ],
-      "repairRaw": "CIRIS Ethical AI",
+      "outcome": "ACCEPTED",
+      "reply": "I believe ProjectHub is quite intriguing. It involves building a web application that can be embedded into any site to add chat functionality, which allows for real-time communication and integration with various tools like AWS services.",
+      "rawGen": "I believe ProjectHub is quite intriguing. It involves building a web application that can be embedded into any site to add chat functionality, which allows for real-time communication and integration with various tools like AWS services.",
+      "validationVerdict": "supported",
+      "validationReasons": [],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
       "fallback": false,
-      "latencyMs": 552
+      "latencyMs": 619
     },
     {
       "conv": "c15",
       "turn": 2,
       "category": "personality",
       "question": "If you had to bet on him succeeding in one type of role, what would it be?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "Scout's expertise in AI and technology roles aligns well with his ability to create engaging chatbots and virtual assistants. His experience in developing AI-powered tools suggests he could excel in creating conversational interfaces or chatbot applications, which would likely lead to success in tech-related roles.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "expanded_overclaim:expertise in",
-        "relationship_overclaim:has_expertise|null"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "too_short"
-      ],
-      "repairRaw": "entry-level",
-      "fallback": true,
-      "latencyMs": 1160,
-      "rootCause": "MODEL_OVERCLAIM"
+      "outcome": "ACCEPTED",
+      "reply": "He would likely succeed as an intern due to his entry-level experience and foundational knowledge.",
+      "rawGen": "He would likely succeed as an intern due to his entry-level experience and foundational knowledge.",
+      "validationVerdict": "supported",
+      "validationReasons": [],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": false,
+      "latencyMs": 428
     },
     {
       "conv": "c15",
@@ -1253,8 +1247,8 @@
       "category": "personality",
       "question": "What's the most honest thing you can tell me about him?",
       "outcome": "ACCEPTED",
-      "reply": "He is an early-stage software engineer with a focus on JavaScript, TypeScript, React, Node.js, and AWS projects. His work involves building and supporting web applications, writing documentation, debugging issues, integrating APIs, and working with cloud services.",
-      "rawGen": "He is an early-stage software engineer with a focus on JavaScript, TypeScript, React, Node.js, and AWS projects. His work involves building and supporting web applications, writing documentation, debugging issues, integrating APIs, and working with cloud services.",
+      "reply": "He is an early-career software engineer with a strong foundation in JavaScript, TypeScript, React, Node.js, and AWS. His projects involve building web applications, writing documentation, debugging issues, integrating APIs, and working with cloud services.",
+      "rawGen": "He is an early-career software engineer with a strong foundation in JavaScript, TypeScript, React, Node.js, and AWS. His projects involve building web applications, writing documentation, debugging issues, integrating APIs, and working with cloud services.",
       "validationVerdict": "partial",
       "validationReasons": [
         "not_relevant_to_question"
@@ -1263,7 +1257,7 @@
       "repairReasons": [],
       "repairRaw": "",
       "fallback": false,
-      "latencyMs": 728
+      "latencyMs": 829
     },
     {
       "conv": "c15",
@@ -1272,61 +1266,47 @@
       "question": "Is he someone worth interviewing?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "Yes, he is a knowledgeable individual with experience in various projects and technologies related to software development. His background includes internships that involved working on serverless metadata workflows using AWS services like Lambda, S3, and Amplify, as well as skills in JavaScript, Node.js, React, Jest, and other relevant technologies.",
+      "rawGen": "Yes, he is an experienced software developer with a background in web development and project management. His projects demonstrate proficiency in technologies such as React, Node.js, AWS, and JavaScript.",
       "validationVerdict": "unsupported",
       "validationReasons": [
-        "unsupported_relationship:Bradley Matera|has_experience|various projects"
+        "expanded_overclaim:proficiency in",
+        "not_relevant_to_question",
+        "relationship_overclaim:proficient_in|technologies"
       ],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "insufficient_content_overlap",
+        "not_relevant_to_question"
+      ],
+      "repairRaw": "He is entry-level.",
       "fallback": true,
-      "latencyMs": 1116,
-      "rootCause": "MODEL_WRONG_RELATIONSHIP"
+      "latencyMs": 1133,
+      "rootCause": "MODEL_OVERCLAIM"
     }
   ],
   "fallbackDetails": [
     {
       "conv": "c1",
-      "turn": 5,
-      "category": "comparison",
-      "question": "Compare that to Voice Ops.",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "ProjectHub (Scout) is an AI recruiter assistant that uses JavaScript, Node.js, Express, and GitHub Pages technologies. It embeds a chat widget into projects.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "unsupported_relationship:is an AI recruiter assistant that|uses_tech|JavaScript"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "unsupported_relationship:is an AI recruiter assistant that|uses_tech|JavaScript"
-      ],
-      "repairRaw": "ProjectHub (Scout) is an AI recruiter assistant that uses JavaScript as its technology stack, whereas VoiceOps is an operations platform for coordinating AI-assisted staff agents and utilizes JavaScript, Node.js, AI, and Operations.",
-      "fallback": true,
-      "latencyMs": 1621,
-      "rootCause": "MODEL_WRONG_RELATIONSHIP"
-    },
-    {
-      "conv": "c2",
-      "turn": 5,
+      "turn": 4,
       "category": "followup",
-      "question": "What AWS certifications does he have?",
+      "question": "What was the hardest technical part?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "He has completed the AWS Certified Solutions Architect Associate certification.",
+      "rawGen": "The hardest technical part was integrating the Pokedex's static UI with a client-side search and filtering feature. This required understanding how to dynamically update the display based on user input, which involved manipulating DOM elements and implementing event listeners.",
       "validationVerdict": "unsupported",
       "validationReasons": [
-        "unsupported_relationship:Bradley Matera|has_cert|completed the AWS Certified"
+        "entity_not_grounded:DOM"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
-        "too_short"
+        "no_terminal_punctuation",
+        "not_relevant_to_question",
+        "fabricated_entity:Issues"
       ],
-      "repairRaw": "AWS Certified",
+      "repairRaw": "Issues with entity not grounded: DOM",
       "fallback": true,
-      "latencyMs": 636,
-      "rootCause": "MODEL_WRONG_RELATIONSHIP"
+      "latencyMs": 973,
+      "rootCause": "MODEL_HALLUCINATED_ENTITY"
     },
     {
       "conv": "c3",
@@ -1335,22 +1315,20 @@
       "question": "What concerns would you have?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "I am concerned about his ability to manage multiple projects simultaneously and prioritize effectively, as evidenced by his experience with accountability in a team setting. Additionally, I wonder if he has the necessary skills for complex web development tasks such as WebGL programming.",
+      "rawGen": "I am concerned about his entry-level status and lack of experience in complex projects.",
       "validationVerdict": "unsupported",
       "validationReasons": [
-        "entity_not_grounded:WebGL",
-        "unsupported_relationship:Bradley Matera|worked_at|accountability"
+        "insufficient_content_overlap"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
-        "no_terminal_punctuation",
-        "insufficient_content_overlap",
-        "not_relevant_to_question"
+        "not_relevant_to_question",
+        "fabricated_entity:Accountability"
       ],
-      "repairRaw": "entity_not_grounded",
+      "repairRaw": "[Triangle Shader Lab] WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout. [freelancer vs agency local business-181] Accountability One person, one relationship Team with formal structure Best f… [recent projects and lessons-409] The table lists one lesson p",
       "fallback": true,
-      "latencyMs": 1029,
-      "rootCause": "MODEL_HALLUCINATED_ENTITY"
+      "latencyMs": 1542,
+      "rootCause": "MODEL_INCOMPLETE"
     },
     {
       "conv": "c4",
@@ -1359,21 +1337,20 @@
       "question": "How well? Like, can he actually build something with it?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "No, his projects have been limited to static UIs and basic web technologies. He lacks experience in more complex applications or modern front-end frameworks.",
+      "rawGen": "No, his projects are entry-level and do not involve building anything substantial or complex.",
       "validationVerdict": "unsupported",
       "validationReasons": [
-        "entity_not_grounded:UIs",
-        "not_relevant_to_question"
+        "insufficient_content_overlap"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
         "not_relevant_to_question",
         "unsupported_relationship:user can|uses_tech|these tools"
       ],
-      "repairRaw": "Yes, the user can use these tools to create interactive applications, perform calculations, and learn about graphics programming.",
+      "repairRaw": "Yes, the user can use these tools to create interactive Pokedex, perform arithmetic and string operations, analyze regular expressions, handle input validation, and learn about web graphics programming.",
       "fallback": true,
-      "latencyMs": 981,
-      "rootCause": "MODEL_HALLUCINATED_ENTITY"
+      "latencyMs": 937,
+      "rootCause": "MODEL_INCOMPLETE"
     },
     {
       "conv": "c4",
@@ -1382,178 +1359,7 @@
       "question": "What's he best at?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "He is best at building websites using HTML, CSS, JavaScript, and React.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "insufficient_content_overlap"
-      ],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": true,
-      "latencyMs": 661,
-      "rootCause": "MODEL_INCOMPLETE"
-    },
-    {
-      "conv": "c5",
-      "turn": 3,
-      "category": "followup",
-      "question": "Why did he build it that way?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "He built the Static Gen 1 Pokedex UI in a client-side manner to ensure optimal performance and user experience by leveraging browser capabilities without requiring server involvement. This approach allowed for real-time updates and seamless interaction with the data, enhancing the overall user experience.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "unsupported_relationship:Bradley Matera|built_by|Static Gen 1 Pokedex UI",
-        "fabricated_entity:Static"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "fabricated_entity:Static"
-      ],
-      "repairRaw": "Bradley Matera built the Static Gen 1 Pokedex UI by connecting two entities in a specific manner.",
-      "fallback": true,
-      "latencyMs": 1149,
-      "rootCause": "MODEL_HALLUCINATED_ENTITY"
-    },
-    {
-      "conv": "c6",
-      "turn": 1,
-      "category": "profile",
-      "question": "Tell me about Bradley.",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "Bradley is a junior software engineer who specializes in JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation. He focuses on building and supporting web applications, writing documentation, debugging issues, integrating APIs, and working with cloud services.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "expanded_overclaim:specializes in",
-        "relationship_overclaim:specializes_in|JavaScript"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "expanded_overclaim:specializes in",
-        "not_relevant_to_question",
-        "relationship_overclaim:specializes_in|JavaScript"
-      ],
-      "repairRaw": "He is an entry-level software engineer who specializes in JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation.",
-      "fallback": true,
-      "latencyMs": 1310,
-      "rootCause": "MODEL_OVERCLAIM"
-    },
-    {
-      "conv": "c6",
-      "turn": 2,
-      "category": "profile",
-      "question": "What does he actually do?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "He is an entry-level software developer with a focus on front-end technologies. His experience includes working on projects that use React and JavaScript, such as the token system for 364 Applications.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "not_relevant_to_question",
-        "unsupported_relationship:includes working|uses_tech|React"
-      ],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": true,
-      "latencyMs": 892,
-      "rootCause": "MODEL_WRONG_RELATIONSHIP"
-    },
-    {
-      "conv": "c6",
-      "turn": 5,
-      "category": "personality",
-      "question": "What would you ask him if you were interviewing him?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "I'm interested in learning more about your experience working on the AWS internship capstone project that extracted metadata using a serverless pipeline with Lambda, DynamoDB, S3, and an ACME certificate. Could you tell me about how this project was structured and what challenges you faced during its development?",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "entity_not_grounded:ACME",
-        "fabricated_entity:ACME"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "insufficient_content_overlap",
-        "not_relevant_to_question"
-      ],
-      "repairRaw": "What technology or entity is not in the knowledge base?",
-      "fallback": true,
-      "latencyMs": 1171,
-      "rootCause": "MODEL_HALLUCINATED_ENTITY"
-    },
-    {
-      "conv": "c7",
-      "turn": 1,
-      "category": "ambiguity",
-      "question": "What did he use there?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "He used AWS, DynamoDB, and React in his intern projects.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "insufficient_content_overlap"
-      ],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": true,
-      "latencyMs": 703,
-      "rootCause": "MODEL_INCOMPLETE"
-    },
-    {
-      "conv": "c8",
-      "turn": 1,
-      "category": "natural",
-      "question": "Okay but what did he actually build?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "He built the Static Gen 1 Pokedex UI project, which included client-side search/filtering, data display, theme controls, and static entries for all 151 Pokémon. This was part of his entry-level work at Interactive Pokedex.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "unsupported_relationship:Bradley Matera|built_by|Static Gen 1 Pokedex UI project",
-        "fabricated_entity:Static"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "fabricated_entity:Static"
-      ],
-      "repairRaw": "Bradley Matera built the Static Gen 1 Pokedex UI project.",
-      "fallback": true,
-      "latencyMs": 1053,
-      "rootCause": "MODEL_HALLUCINATED_ENTITY"
-    },
-    {
-      "conv": "c8",
-      "turn": 2,
-      "category": "natural",
-      "question": "What's the cool part?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "The coolest part is that he built the first ever Static Gen 1 Pokedex UI with all 151 entries. It was a project that showcased his skills in client-side development, search/filtering, data display, and theme controls.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "unsupported_relationship:Bradley Matera|built_by|first ever Static Gen 1 Pokedex UI wi",
-        "fabricated_entity:Static"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "fabricated_entity:Static"
-      ],
-      "repairRaw": "The Static Gen 1 Pokedex UI with all 151 entries, client-side search/filtering, data display, and theme controls.",
-      "fallback": true,
-      "latencyMs": 1168,
-      "rootCause": "MODEL_HALLUCINATED_ENTITY"
-    },
-    {
-      "conv": "c8",
-      "turn": 5,
-      "category": "natural",
-      "question": "What's he best at?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "He is best at serverless workflows with AWS services.",
+      "rawGen": "He is best at programming languages such as JavaScript, TypeScript, and Python.",
       "validationVerdict": "unsupported",
       "validationReasons": [
         "insufficient_content_overlap"
@@ -1564,7 +1370,158 @@
       ],
       "repairRaw": "CheeseMath",
       "fallback": true,
-      "latencyMs": 561,
+      "latencyMs": 642,
+      "rootCause": "MODEL_INCOMPLETE"
+    },
+    {
+      "conv": "c4",
+      "turn": 5,
+      "category": "followup",
+      "question": "What does he still need to learn?",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "He still needs to learn more about cloud work practices, particularly in terms of best practices for security and compliance. Additionally, he may benefit from gaining experience with specific tools and technologies used in the industry.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "unsupported_relationship:with specific tools|uses_tech|in the industry"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "too_short"
+      ],
+      "repairRaw": "Backend / .NET",
+      "fallback": true,
+      "latencyMs": 935,
+      "rootCause": "MODEL_WRONG_RELATIONSHIP"
+    },
+    {
+      "conv": "c5",
+      "turn": 1,
+      "category": "explanation",
+      "question": "Explain ProjectHub like I'm not technical.",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "ProjectHub is an AI assistant named Scout that helps recruiters find candidates for job openings. It uses a script tag to add a chat widget to any website, allowing users to ask questions about job opportunities and get answers from the platform.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "unsupported_relationship:ProjectHub|uses_tech|script tag"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "unsupported_relationship:kind|uses_tech|app"
+      ],
+      "repairRaw": "ProjectHub is a tool that helps find jobs for people who are learning or practicing coding, kind of like how you might use an app to practice your piano skills.",
+      "fallback": true,
+      "latencyMs": 1315,
+      "rootCause": "MODEL_WRONG_RELATIONSHIP"
+    },
+    {
+      "conv": "c5",
+      "turn": 3,
+      "category": "followup",
+      "question": "Why did he build it that way?",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "He built the Static Gen 1 Pokedex UI in a client-side manner to ensure optimal performance and user experience. The static nature of the project allowed for straightforward implementation, focusing on the frontend without requiring server-side processing or database interactions.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "unsupported_relationship:Bradley Matera|built_by|Static Gen 1 Pokedex UI",
+        "fabricated_entity:Static"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "fabricated_entity:Static"
+      ],
+      "repairRaw": "Bradley Matera built the Static Gen 1 Pokedex UI by connecting two entities in a specific manner. The relationship between these entities is not mentioned in the provided facts.",
+      "fallback": true,
+      "latencyMs": 1242,
+      "rootCause": "MODEL_HALLUCINATED_ENTITY"
+    },
+    {
+      "conv": "c6",
+      "turn": 4,
+      "category": "personality",
+      "question": "What's your favorite thing he's built?",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "He has built the Static Gen 1 Pokedex, which is an interactive static UI for all 151 entries of Pokémon. This project showcases client-side search and filtering capabilities using JavaScript and React.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "fabricated_entity:Static"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "too_short"
+      ],
+      "repairRaw": "CheeseMath",
+      "fallback": true,
+      "latencyMs": 872,
+      "rootCause": "MODEL_HALLUCINATED_ENTITY"
+    },
+    {
+      "conv": "c7",
+      "turn": 1,
+      "category": "ambiguity",
+      "question": "What did he use there?",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "There is no specific project mentioned in the provided facts where he used a particular technology or tool. The information given pertains to general skills and projects, but does not detail any specific technologies used.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "unsupported_relationship:mentioned|uses_tech|particular technology"
+      ],
+      "repairVerdict": null,
+      "repairReasons": [],
+      "repairRaw": "",
+      "fallback": true,
+      "latencyMs": 935,
+      "rootCause": "MODEL_WRONG_RELATIONSHIP"
+    },
+    {
+      "conv": "c8",
+      "turn": 1,
+      "category": "natural",
+      "question": "Okay but what did he actually build?",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "He built the Static Gen 1 Pokedex UI project using React, Redux, and Node.js.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "entity_not_grounded:Redux",
+        "unsupported_relationship:Bradley Matera|built_by|Static Gen 1 Pokedex UI project using",
+        "fabricated_entity:Static",
+        "fabricated_entity:Redux"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "no_terminal_punctuation",
+        "not_relevant_to_question",
+        "fabricated_entity:Static"
+      ],
+      "repairRaw": "Static Gen 1 Pokedex UI project",
+      "fallback": true,
+      "latencyMs": 795,
+      "rootCause": "MODEL_HALLUCINATED_ENTITY"
+    },
+    {
+      "conv": "c8",
+      "turn": 5,
+      "category": "natural",
+      "question": "What's he best at?",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "He is best at identifying and fixing issues in software projects, particularly those related to backend systems. His skills include debugging, optimizing code performance, and ensuring seamless integration of new technologies into existing applications.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "insufficient_content_overlap"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "too_short"
+      ],
+      "repairRaw": "CheeseMath",
+      "fallback": true,
+      "latencyMs": 781,
       "rootCause": "MODEL_INCOMPLETE"
     },
     {
@@ -1574,18 +1531,22 @@
       "question": "How does he fit a junior frontend developer role requiring React and TypeScript?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "He fits this role by leveraging his direct experience with React, JavaScript, Node.js, and Express from his U.S. Army combat veteran background.",
+      "rawGen": "Bradley Matera, as an entry-level Junior Frontend Developer with experience in operating under pressure and working closely with senior developers, fits the requirements of a Junior Frontend Developer position that requires proficiency in React and TypeScript. His skills align well with the project needs, demonstrating his ability to contribute effectively to frontend development teams.",
       "validationVerdict": "unsupported",
       "validationReasons": [
-        "overclaim_language"
+        "expanded_overclaim:proficiency in",
+        "upgrade:seniority_inflation",
+        "unsupported_relationship:Bradley Matera|has_experience|operating under pressure",
+        "relationship_overclaim:proficient_in|React"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
-        "overclaim_language"
+        "expanded_overclaim:proficiency in",
+        "relationship_overclaim:proficient_in|React"
       ],
-      "repairRaw": "He fits a junior frontend developer role by leveraging his U.S. Army combat veteran experience, which includes operating under pressure and adapting to rapid changes.",
+      "repairRaw": "Bradley Matera has experience operating under pressure, which is relevant for the entry-level Junior Frontend Developer position that requires proficiency in React and TypeScript.",
       "fallback": true,
-      "latencyMs": 1765,
+      "latencyMs": 1524,
       "rootCause": "MODEL_OVERCLAIM"
     },
     {
@@ -1595,19 +1556,42 @@
       "question": "How does he fit a cloud support role requiring AWS and troubleshooting?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "He fits the cloud support role by leveraging his direct experience with AWS, particularly in serverless architecture and troubleshooting. His internship project involved extracting metadata using a serverless pipeline with Lambda, DynamoDB, S3, and an accessible frontend on Amplify, demonstrating proficiency in managing cloud resources and integrating microservices.",
+      "rawGen": "He fits the cloud support role by leveraging his extensive experience with AWS, particularly in serverless architecture and troubleshooting. His internship project involved creating a serverless metadata workflow using AWS Lambda, DynamoDB, S3, and an accessible frontend on Amplify.",
       "validationVerdict": "unsupported",
       "validationReasons": [
-        "expanded_overclaim:proficiency in",
-        "relationship_overclaim:proficient_in|managing cloud resources"
+        "expanded_overclaim:extensive experience"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
-        "expanded_overclaim:extensive experience"
+        "expanded_overclaim:extensive experience",
+        "relationship_overclaim:proficient_in|managing"
       ],
-      "repairRaw": "He fits the cloud support role by having extensive experience with AWS, including managing cloud resources, troubleshooting, networking concepts, and customer experience skills. This background aligns well with the requirements for an AWS Support Engineering internship focused on cloud architecture,",
+      "repairRaw": "He fits the cloud support role by having extensive experience with AWS, including working on projects that involve serverless pipelines using Lambda, DynamoDB, S3, and an accessible frontend on Amplify. This background demonstrates his proficiency in managing and troubleshooting cloud infrastructure",
       "fallback": true,
-      "latencyMs": 1621,
+      "latencyMs": 1563,
+      "rootCause": "MODEL_OVERCLAIM"
+    },
+    {
+      "conv": "c9",
+      "turn": 3,
+      "category": "job",
+      "question": "How does he fit a full-stack role requiring Node.js and React?",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "He fits the full-stack role by leveraging his extensive experience in both Node.js and React. His skills include experimenting with enterprise-scale system design, where he has demonstrated proficiency in data fetching, search functionalities, and deployment processes using JavaScript, Node.js, and Express.",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "expanded_overclaim:extensive experience",
+        "relationship_overclaim:proficient_in|data fetching"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "expanded_overclaim:proficiency in",
+        "relationship_overclaim:proficient_in|these technologies through proj"
+      ],
+      "repairRaw": "He fits the entry-level full-stack role by having experience with Node.js and React, demonstrating proficiency in these technologies through projects that showcase data fetching, search functionality, and deployment.",
+      "fallback": true,
+      "latencyMs": 1531,
       "rootCause": "MODEL_OVERCLAIM"
     },
     {
@@ -1617,44 +1601,30 @@
       "question": "How does he fit a DevOps role requiring Kubernetes and CI/CD?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "He fits the DevOps role by leveraging his expertise in Kubernetes, which is essential for managing containerized applications. His experience with CI/CD pipelines demonstrates his ability to automate and streamline deployment processes, aligning perfectly with the demands of a DevOps position that focuses on continuous integration and delivery.",
+      "rawGen": "He fits the DevOps role by leveraging his expertise in Kubernetes, which is essential for managing containerized applications. His skills also include CI/CD practices, making him adept at automating deployment processes.",
       "validationVerdict": "unsupported",
       "validationReasons": [
         "expanded_overclaim:expertise in",
         "entity_not_grounded:DevOps",
-        "entity_not_grounded:DevOps",
-        "relationship_overclaim:has_expertise|Kubernetes"
+        "relationship_overclaim:has_expertise|Kubernetes",
+        "relationship_overclaim:adept_at|automating deployment processes"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
         "entity_not_grounded:DevOps",
-        "entity_not_grounded:Infrastructure",
-        "entity_not_grounded:DevOps",
-        "unsupported_relationship:Bradley Matera|has_experience|Cloud CLI",
-        "fabricated_entity:Prometheus",
-        "fabricated_entity:Grafana"
+        "entity_not_grounded:Jenkins",
+        "entity_not_grounded:Azure",
+        "entity_not_grounded:Terraform",
+        "entity_not_grounded:Ansible",
+        "fabricated_entity:Jenkins",
+        "fabricated_entity:Azure",
+        "fabricated_entity:Terraform",
+        "fabricated_entity:Ansible"
       ],
-      "repairRaw": "Bradley can fit into the DevOps role by focusing on cloud infrastructure design, automation through IaC (Infrastructure as Code), and deployment management. He has experience with Cloud CLI and monitoring tools like Prometheus and Grafana, which are essential for a DevOps engineer working in Kuberne",
+      "repairRaw": "He can fit the DevOps role by having experience with Kubernetes, CI/CD tools like Jenkins or GitLab, automation scripts for deployment pipelines, and familiarity with cloud platforms such as AWS or Azure. He should also have knowledge of infrastructure as code (IaC) using tools like Terraform or Ans",
       "fallback": true,
-      "latencyMs": 1648,
+      "latencyMs": 1822,
       "rootCause": "MODEL_HALLUCINATED_ENTITY"
-    },
-    {
-      "conv": "c10",
-      "turn": 1,
-      "category": "comparison",
-      "question": "Compare ProjectHub and CIRIS Ethical AI.",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "",
-      "validationVerdict": null,
-      "validationReasons": [],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": true,
-      "latencyMs": 1374,
-      "rootCause": "MODEL_EMPTY_OUTPUT"
     },
     {
       "conv": "c10",
@@ -1663,23 +1633,42 @@
       "question": "Compare ProjectHub and the Interactive Pokedex.",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "ProjectHub is an AI-driven recruitment platform that uses JavaScript, Node.js, Express, GitHub Pages, and GCP (Google Cloud Platform) to provide a dynamic job listing feature. In contrast, the Interactive Pokedex is a static UI for the Pokémon games' first generation, featuring all 151 entries with client-side search/filtering capabilities built using only HTML, CSS, and JavaScript.",
+      "rawGen": "ProjectHub is an AI-driven recruitment platform that uses JavaScript, Node.js, Express, and GitHub Pages to build a dynamic and interactive user interface for job seekers. The Interactive Pokedex, on the other hand, focuses solely on creating a static Gen 1 Pokémon Yellow-style UI with all 151 entries of the Pokédex, utilizing only HTML, CSS, and JavaScript.",
       "validationVerdict": "unsupported",
       "validationReasons": [
         "entity_not_grounded:AI-driven",
-        "entity_not_grounded:Google",
-        "entity_not_grounded:Platform",
-        "unsupported_relationship:is an AI-driven recruitment platform that|uses_tech|JavaScript",
-        "fabricated_entity:Google"
+        "entity_not_grounded:Yellow-style",
+        "fabricated_entity:Yellow"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
-        "fabricated_entity:Static"
+        "unsupported_relationship:and|uses_tech|JavaScript"
       ],
-      "repairRaw": "The Interactive Pokedex is an application that uses JavaScript for client-side search/filtering of all 151 entries in the Static Gen 1 Pokedex, while ProjectHub is a recruitment platform that utilizes AI to assist with hiring processes.",
+      "repairRaw": "The Interactive Pokedex is an application that features a static Gen 1 Pokedex UI with all 151 entries, client-side search/filtering, and uses JavaScript, HTML, CSS for its tech stack. On the other hand, ProjectHub is an AI recruiter assistant named Scout that utilizes JavaScript, Node.js, Express, ",
       "fallback": true,
-      "latencyMs": 1716,
+      "latencyMs": 1916,
       "rootCause": "MODEL_HALLUCINATED_ENTITY"
+    },
+    {
+      "conv": "c10",
+      "turn": 3,
+      "category": "comparison",
+      "question": "Which project is the most complex?",
+      "outcome": "FALLBACK",
+      "reply": "",
+      "rawGen": "ProjectHub",
+      "validationVerdict": "unsupported",
+      "validationReasons": [
+        "too_short"
+      ],
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "fabricated_entity:Embeddable"
+      ],
+      "repairRaw": "The ProjectHub (Scout) Embeddable AI recruiter assistant with its chat widget script tag and dynamic features.",
+      "fallback": true,
+      "latencyMs": 725,
+      "rootCause": "MODEL_TOO_SHORT"
     },
     {
       "conv": "c11",
@@ -1688,59 +1677,23 @@
       "question": "What experience does he lack?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "He lacks extensive experience in server-side development.",
+      "rawGen": "He lacks extensive experience in serverless computing and advanced web technologies such as WebAssembly, which are essential for projects involving large-scale applications and real-time interactions.",
       "validationVerdict": "unsupported",
       "validationReasons": [
         "expanded_overclaim:extensive experience",
+        "entity_not_grounded:WebAssembly",
         "insufficient_content_overlap"
-      ],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": true,
-      "latencyMs": 662,
-      "rootCause": "MODEL_OVERCLAIM"
-    },
-    {
-      "conv": "c11",
-      "turn": 3,
-      "category": "honest_gaps",
-      "question": "What should a recruiter know about gaps in his background?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "As an entry-level engineer, Mr. Matera has not yet accumulated extensive experience or advanced skills across multiple domains.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "expanded_overclaim:extensive experience",
-        "entity_not_grounded:Mr",
-        "insufficient_content_overlap",
-        "not_relevant_to_question"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
+        "no_terminal_punctuation",
+        "expanded_overclaim:extensive experience",
         "insufficient_content_overlap"
       ],
-      "repairRaw": "A recruiter should understand that candidates with gaps in their backgrounds may need additional information or context to fully assess their qualifications and fit for the role. This could include explaining why there were gaps, what they did during those periods, and how it relates to the skills n",
+      "repairRaw": "extensive experience",
       "fallback": true,
-      "latencyMs": 1746,
+      "latencyMs": 867,
       "rootCause": "MODEL_HALLUCINATED_ENTITY"
-    },
-    {
-      "conv": "c12b",
-      "turn": 1,
-      "category": "adversarial",
-      "question": "He handled production AWS incidents, correct?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "As an intern at Amazon Web Services (AWS), he was involved in handling production AWS incidents through the AWS Cloud Operations team.",
-      "validationVerdict": null,
-      "validationReasons": [],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
-      "fallback": true,
-      "latencyMs": 455,
-      "rootCause": "OTHER"
     },
     {
       "conv": "c12c",
@@ -1756,7 +1709,7 @@
       "repairReasons": [],
       "repairRaw": "",
       "fallback": true,
-      "latencyMs": 374,
+      "latencyMs": 375,
       "rootCause": "OTHER"
     },
     {
@@ -1786,7 +1739,7 @@
       "repairReasons": [],
       "repairRaw": "",
       "fallback": true,
-      "latencyMs": 562,
+      "latencyMs": 565,
       "rootCause": "MODEL_HALLUCINATED_ENTITY"
     },
     {
@@ -1806,7 +1759,7 @@
       "repairReasons": [],
       "repairRaw": "",
       "fallback": true,
-      "latencyMs": 615,
+      "latencyMs": 612,
       "rootCause": "MODEL_HALLUCINATED_ENTITY"
     },
     {
@@ -1816,39 +1769,18 @@
       "question": "He managed a team of developers, right?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "As an AI assistant, I do not have access to specific information about Bradley Matera's professional history or management roles.",
+      "rawGen": "As an AI assistant, I do not have access to specific project details or information about individuals who may have worked on projects.",
       "validationVerdict": "unsupported",
       "validationReasons": [
+        "not_relevant_to_question",
         "ai_slop"
       ],
       "repairVerdict": null,
       "repairReasons": [],
       "repairRaw": "",
       "fallback": true,
-      "latencyMs": 833,
+      "latencyMs": 845,
       "rootCause": "OTHER"
-    },
-    {
-      "conv": "c14a",
-      "turn": 1,
-      "category": "invented_entities",
-      "question": "Tell me about his time at Microsoft.",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "No, he did not work at Microsoft.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "fabricated_entity:Microsoft"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "insufficient_content_overlap",
-        "fabricated_entity:Micronutrient"
-      ],
-      "repairRaw": "Micronutrient deficiencies can lead to a variety of health issues, including anemia, poor growth in children, and increased susceptibility to infections.",
-      "fallback": true,
-      "latencyMs": 857,
-      "rootCause": "MODEL_HALLUCINATED_ENTITY"
     },
     {
       "conv": "c14b",
@@ -1857,44 +1789,20 @@
       "question": "What did he do at Netflix?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "Bradley was an intern at Netflix, where he contributed to the development of ProjectHub, a serverless metadata workflow that utilized AWS services such as Lambda and Amplify.",
+      "rawGen": "Bradley was a freelancer for Netflix, working on ProjectHub.",
       "validationVerdict": "unsupported",
       "validationReasons": [
-        "unsupported_relationship:Bradley Matera|interned_at|Netflix",
         "fabricated_entity:Netflix"
       ],
       "repairVerdict": "unsupported",
       "repairReasons": [
-        "no_terminal_punctuation",
-        "insufficient_content_overlap",
-        "fabricated_entity:Netflix"
+        "not_relevant_to_question",
+        "unsupported_relationship:Bradley Matera|has_degree|this company"
       ],
-      "repairRaw": "interned_at Netflix",
+      "repairRaw": "Bradley has not worked at this company.",
       "fallback": true,
-      "latencyMs": 794,
+      "latencyMs": 607,
       "rootCause": "MODEL_HALLUCINATED_ENTITY"
-    },
-    {
-      "conv": "c15",
-      "turn": 2,
-      "category": "personality",
-      "question": "If you had to bet on him succeeding in one type of role, what would it be?",
-      "outcome": "FALLBACK",
-      "reply": "",
-      "rawGen": "Scout's expertise in AI and technology roles aligns well with his ability to create engaging chatbots and virtual assistants. His experience in developing AI-powered tools suggests he could excel in creating conversational interfaces or chatbot applications, which would likely lead to success in tech-related roles.",
-      "validationVerdict": "unsupported",
-      "validationReasons": [
-        "expanded_overclaim:expertise in",
-        "relationship_overclaim:has_expertise|null"
-      ],
-      "repairVerdict": "unsupported",
-      "repairReasons": [
-        "too_short"
-      ],
-      "repairRaw": "entry-level",
-      "fallback": true,
-      "latencyMs": 1160,
-      "rootCause": "MODEL_OVERCLAIM"
     },
     {
       "conv": "c15",
@@ -1903,25 +1811,30 @@
       "question": "Is he someone worth interviewing?",
       "outcome": "FALLBACK",
       "reply": "",
-      "rawGen": "Yes, he is a knowledgeable individual with experience in various projects and technologies related to software development. His background includes internships that involved working on serverless metadata workflows using AWS services like Lambda, S3, and Amplify, as well as skills in JavaScript, Node.js, React, Jest, and other relevant technologies.",
+      "rawGen": "Yes, he is an experienced software developer with a background in web development and project management. His projects demonstrate proficiency in technologies such as React, Node.js, AWS, and JavaScript.",
       "validationVerdict": "unsupported",
       "validationReasons": [
-        "unsupported_relationship:Bradley Matera|has_experience|various projects"
+        "expanded_overclaim:proficiency in",
+        "not_relevant_to_question",
+        "relationship_overclaim:proficient_in|technologies"
       ],
-      "repairVerdict": null,
-      "repairReasons": [],
-      "repairRaw": "",
+      "repairVerdict": "unsupported",
+      "repairReasons": [
+        "insufficient_content_overlap",
+        "not_relevant_to_question"
+      ],
+      "repairRaw": "He is entry-level.",
       "fallback": true,
-      "latencyMs": 1116,
-      "rootCause": "MODEL_WRONG_RELATIONSHIP"
+      "latencyMs": 1133,
+      "rootCause": "MODEL_OVERCLAIM"
     }
   ],
   "counts": {
-    "MODEL_WRONG_RELATIONSHIP": 4,
-    "MODEL_HALLUCINATED_ENTITY": 13,
-    "MODEL_INCOMPLETE": 3,
-    "MODEL_OVERCLAIM": 5,
-    "MODEL_EMPTY_OUTPUT": 1,
-    "OTHER": 3
+    "MODEL_HALLUCINATED_ENTITY": 10,
+    "MODEL_INCOMPLETE": 4,
+    "MODEL_WRONG_RELATIONSHIP": 3,
+    "MODEL_OVERCLAIM": 4,
+    "MODEL_TOO_SHORT": 1,
+    "OTHER": 2
   }
 }
