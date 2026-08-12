@@ -98,13 +98,13 @@ async function diagnose(model) {
 
     // Run validator with BOTH source texts
     console.log(`\n--- Validator with AGENT source text (evidence + tool results) ---`);
-    const agentValidation = validateAnswer(result.reply, agentSourceText, q.question);
+    const agentValidation = validateAnswer(result.reply, agentSourceText, q.question, knowledge);
     console.log(`  verdict: ${agentValidation.verdict}`);
     console.log(`  valid: ${agentValidation.valid}`);
     console.log(`  reasons: [${agentValidation.reasons.join(', ')}]`);
 
     console.log(`\n--- Validator with EVAL source text (search + knowledge JSON) ---`);
-    const evalValidation = validateAnswer(result.reply, evalSourceText, q.question);
+    const evalValidation = validateAnswer(result.reply, evalSourceText, q.question, knowledge);
     console.log(`  verdict: ${evalValidation.verdict}`);
     console.log(`  valid: ${evalValidation.valid}`);
     console.log(`  reasons: [${evalValidation.reasons.join(', ')}]`);

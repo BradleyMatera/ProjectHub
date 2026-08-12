@@ -92,7 +92,7 @@ function scoreAnswer(answer, evalQ, sourceText) {
   if (!result.produced) return result;
 
   // Grounding validation
-  const validation = validateAnswer(answer, sourceText || '', evalQ.question);
+  const validation = validateAnswer(answer, sourceText || '', evalQ.question, knowledge);
   result.grounded = validation.valid;
   result.verdict = validation.verdict;
 

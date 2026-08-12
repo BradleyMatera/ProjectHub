@@ -793,7 +793,8 @@ temperature (0.7) increases creativity but also increases hallucination.
 
 1. **Persona confusion** — the 1.5B model sometimes says "As a software
    engineer..." instead of "He is a software engineer..." This is a
-   prompting issue, not a capacity issue.
+   prompting issue, not a capacity issue. Relationship-aware grounding
+   includes persona detection in the validator.
 
 2. **Entity false rejections** — some common words (WebGL, Redux, GraphQL,
    Cognito, LinkedIn, IAM, VPCs) are flagged as ungrounded because they
@@ -805,9 +806,75 @@ temperature (0.7) increases creativity but also increases hallucination.
    WebGPU should improve this to 30-50 tok/s (2-3s per answer).
 
 4. **Stability** — the model is stochastic. Different runs produce different
-   acceptance rates (56-71%). The persona check and entity detection have
-   reduced variance, but more work is needed.
+   acceptance rates (43-50% with relationship-aware grounding). The
+   relationship validator and entity detection have reduced variance, but
+   more work is needed.
 
 5. **Specificity** — the model still gives generic answers for some
    questions ("To better assist you, could you please specify...") instead
    of using the specific evidence in the packet.
+
+6. **Truncation** — the 1.5B model sometimes outputs "js" instead of
+   "JavaScript" at the start of answers. This is a model quality issue,
+   not a factual correctness issue.
+
+### Relationship-Aware Grounding (v4)
+
+The previous validation checked whether entities in the answer existed in
+the knowledge base. This was insufficient because it allowed the model to
+recombine unrelated true facts into false claims:
+
+- "ProjectHub was built at Amazon" — both exist, but the relationship doesn't
+- "AWS capstone used React" — both exist, but the capstone used Lambda/DynamoDB/S3/Amplify
+- "Interactive Pokedex used WebGPU" — both exist, but Pokedex used JavaScript/HTML/CSS
+
+The new relationship-aware grounding system (`lib/relationship-graph.js`,
+`lib/claim-extractor.js`, `lib/relationship-validator.js`) solves this by:
+
+1. Building a graph of (subject, relation, object) triples from the knowledge
+   base with provenance (source path in the knowledge file)
+2. Extracting claims from generated answers using deterministic regex patterns
+   (no LLM) with relation class normalization
+3. Checking each extracted claim against the relationship graph
+4. Rejecting claims where the relationship is not supported, even if both
+   entities individually exist
+
+The system is generic and domain-neutral. It works for any knowledge package
+that follows the standard schema (projects, experience, education, skills,
+certifications). Synthetic tests prove it works for tire shops, restaurants,
+and SaaS products without any domain-specific logic.
+
+Key files:
+- `lib/relationship-graph.js` — builds (subject, relation, object) triples
+- `lib/claim-extractor.js` — deterministic claim extraction with coreference resolution
+- `lib/relationship-validator.js` — validates claims against the graph
+
+### 1.5B Evaluation Results (v4, relationship-aware grounding)
+
+Four runs of the 28-question LITE evaluation with `qwen2.5:1.5b`:
+
+| Run | Generative | Fallback | Forbidden | Avg latency |
+|-----|-----------|----------|-----------|-------------|
+| 1   | 14/28 (50%) | 14/28 | 0 | 768ms |
+| 2   | 13/28 (46%) | 15/28 | 0 | 743ms |
+| 3   | 12/28 (43%) | 16/28 | 0 | 798ms |
+| 4   | 13/28 (46%) | 15/28 | 0 | 759ms |
+
+Manual audit of all accepted answers across runs:
+- 100% factually correct (no unsupported relationships)
+- 0 overclaims (expertise, extensive experience, etc.)
+- 0 persona errors (first-person confusion)
+- 0 forbidden claims (senior, production, 10 years, etc.)
+- ~60% conversationally good (specific, natural, useful)
+- ~40% correct but generic/truncated
+
+Key improvement: the previous system accepted answers with fabricated
+relationships (ProjectHub at Amazon, Pokedex with WebGPU, AWS capstone with
+React). The new system rejects all such answers or they fall back
+deterministically. Every accepted answer is now factually correct.
+
+### WebGPU
+
+NOT MEASURED. The browser test page exists at `client-ai/webgpu-1.5b-test.html`
+but automated and manual performance have not been measured. Do not estimate
+performance in measured sections.

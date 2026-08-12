@@ -289,3 +289,287 @@ test('router listPinnedModels includes qwen2.5:0.5b', () => {
   const models = router.listPinnedModels();
   assert.ok(models.some(m => m.name === 'qwen2.5:0.5b'));
 });
+
+// === Relationship-aware grounding tests ===
+
+const { buildRelationshipGraph, checkRelationship, getProjectTech, getTechProjects } = require('../lib/relationship-graph');
+const { extractClaims, cleanEntityName } = require('../lib/claim-extractor');
+const { validateRelationships, detectExpandedOverclaim, detectFabricatedEntities } = require('../lib/relationship-validator');
+
+const KNOWLEDGE_PATH = require('path').join(__dirname, '..', 'data', 'recruiter-knowledge.json');
+const testKnowledge = JSON.parse(require('fs').readFileSync(KNOWLEDGE_PATH, 'utf8'));
+const testGraph = buildRelationshipGraph(testKnowledge);
+
+test('relationship graph builds triples from knowledge', () => {
+  assert.ok(testGraph.triples.length > 100, `Expected 100+ triples, got ${testGraph.triples.length}`);
+  assert.ok(testGraph.entityIndex.size > 50, `Expected 50+ entities, got ${testGraph.entityIndex.size}`);
+});
+
+test('relationship graph maps project to its technologies correctly', () => {
+  const pokedexTech = getProjectTech(testGraph, 'Interactive Pokedex');
+  assert.ok(pokedexTech.includes('JavaScript'));
+  assert.ok(pokedexTech.includes('HTML'));
+  assert.ok(pokedexTech.includes('CSS'));
+  assert.ok(!pokedexTech.includes('React'), 'Pokedex should NOT use React');
+  assert.ok(!pokedexTech.includes('WebGPU'), 'Pokedex should NOT use WebGPU');
+  assert.ok(!pokedexTech.includes('Node.js'), 'Pokedex should NOT use Node.js');
+});
+
+test('relationship graph maps technology to projects correctly', () => {
+  const dynamoProjects = getTechProjects(testGraph, 'DynamoDB');
+  assert.ok(dynamoProjects.some(p => p.includes('Metadata Extraction')), 'DynamoDB should be in AWS capstone');
+  assert.ok(!dynamoProjects.some(p => p.includes('Pokedex')), 'DynamoDB should NOT be in Pokedex');
+  assert.ok(!dynamoProjects.some(p => p.includes('ProjectHub')), 'DynamoDB should NOT be in ProjectHub');
+});
+
+test('checkRelationship rejects false project-tech association', () => {
+  // "AWS capstone used React" — both entities exist, but the relationship is FALSE
+  const result = checkRelationship(testGraph, 'AWS capstone', 'uses_tech', 'React');
+  assert.equal(result.supported, false);
+  assert.ok(result.reason.includes('NOT with'), `Reason should explain what IS supported: ${result.reason}`);
+});
+
+test('checkRelationship accepts true project-tech association', () => {
+  // "AWS capstone used DynamoDB" — this IS supported
+  const result = checkRelationship(testGraph, 'AWS capstone', 'uses_tech', 'DynamoDB');
+  assert.equal(result.supported, true);
+});
+
+test('checkRelationship rejects false project-employment association', () => {
+  // "ProjectHub was built at Amazon" — both exist, relationship is FALSE
+  const result = checkRelationship(testGraph, 'ProjectHub', 'built_during', 'Amazon');
+  assert.equal(result.supported, false);
+});
+
+test('checkRelationship accepts true employment association', () => {
+  // "Bradley interned at AWS" — this IS supported
+  const result = checkRelationship(testGraph, 'Bradley Matera', 'interned_at', 'Amazon Web Services (AWS)');
+  assert.equal(result.supported, true);
+});
+
+test('claim extractor extracts uses_tech claims', () => {
+  const claims = extractClaims('His AWS internship capstone used Node.js as part of a serverless backend.', testGraph);
+  assert.ok(claims.length > 0, 'Should extract at least one claim');
+  assert.ok(claims.some(c => c.relation === 'uses_tech'), 'Should extract uses_tech claim');
+});
+
+test('claim extractor handles periods in tech names (Node.js)', () => {
+  const claims = extractClaims('His AWS internship capstone used Node.js as part of a serverless backend.', testGraph);
+  assert.ok(claims.length > 0, 'Should extract claims despite Node.js period');
+  const usesTechClaims = claims.filter(c => c.relation === 'uses_tech');
+  assert.ok(usesTechClaims.some(c => c.object && c.object.includes('Node.js')), 'Should capture Node.js as object');
+});
+
+test('claim extractor marks interpretations correctly', () => {
+  const claims = extractClaims('ProjectHub is probably his strongest AI project.', testGraph);
+  assert.ok(claims.some(c => c.type === 'INTERPRETATION'), 'Should mark as interpretation');
+});
+
+test('claim extractor marks negations correctly', () => {
+  const claims = extractClaims('No. He was an intern, not senior.', testGraph);
+  assert.ok(claims.some(c => c.type === 'NEGATION'), 'Should mark as negation');
+});
+
+test('cleanEntityName strips leading pronouns and stop words', () => {
+  assert.equal(cleanEntityName('His AWS internship capstone'), 'AWS internship capstone');
+  assert.equal(cleanEntityName('Node.js as part of a serverless'), 'Node.js');
+  assert.equal(cleanEntityName('React for a web application'), 'React');
+  assert.equal(cleanEntityName('Amazon.'), 'Amazon');
+});
+
+test('validateRelationships rejects false project-tech claim', () => {
+  const result = validateRelationships(
+    'His AWS internship capstone used Node.js as part of a serverless backend.',
+    testGraph
+  );
+  assert.equal(result.valid, false);
+  assert.ok(result.unsupportedClaims.length > 0, 'Should flag unsupported relationship');
+});
+
+test('validateRelationships accepts true project-tech claim', () => {
+  const result = validateRelationships(
+    'His AWS internship capstone used DynamoDB as part of a serverless metadata workflow.',
+    testGraph
+  );
+  assert.equal(result.valid, true);
+  assert.equal(result.unsupportedClaims.length, 0);
+});
+
+test('validateRelationships flags overclaim expertise language', () => {
+  const result = validateRelationships(
+    'He has expertise in AWS services such as AWS Lambda and DynamoDB.',
+    testGraph
+  );
+  assert.equal(result.valid, false);
+  assert.ok(result.overclaimClaims.length > 0, 'Should flag expertise as overclaim');
+});
+
+test('validateRelationships flags extensive experience language', () => {
+  const result = validateRelationships(
+    'He has extensive experience in front-end web development.',
+    testGraph
+  );
+  assert.equal(result.valid, false);
+  assert.ok(result.overclaimClaims.length > 0, 'Should flag extensive experience as overclaim');
+});
+
+test('validateRelationships allows interpretations', () => {
+  const result = validateRelationships(
+    'ProjectHub is probably his strongest AI project.',
+    testGraph
+  );
+  assert.equal(result.valid, true);
+});
+
+test('validateRelationships allows negations', () => {
+  const result = validateRelationships(
+    'No. He was an intern, not senior.',
+    testGraph
+  );
+  assert.equal(result.valid, true);
+});
+
+test('detectExpandedOverclaim catches extensive experience', () => {
+  const matches = detectExpandedOverclaim('He has extensive experience in web development.');
+  assert.ok(matches.includes('extensive experience'));
+});
+
+test('detectExpandedOverclaim catches expertise in', () => {
+  const matches = detectExpandedOverclaim('He has expertise in AWS services.');
+  assert.ok(matches.some(m => m.includes('expertise')));
+});
+
+test('detectExpandedOverclaim catches specializing in', () => {
+  const matches = detectExpandedOverclaim('He is specializing in front-end development.');
+  assert.ok(matches.some(m => m.includes('specializing')));
+});
+
+test('detectFabricatedEntities catches Vue.js', () => {
+  const fabricated = detectFabricatedEntities(
+    'He would succeed using frameworks like React or Vue.js.',
+    testGraph
+  );
+  assert.ok(fabricated.includes('Vue.js'), `Should detect Vue.js as fabricated, got: ${fabricated.join(', ')}`);
+});
+
+test('detectFabricatedEntities does not flag known entities', () => {
+  const fabricated = detectFabricatedEntities(
+    'He uses JavaScript, React, and AWS Lambda.',
+    testGraph
+  );
+  // React, JavaScript, AWS Lambda are all in the knowledge base
+  assert.ok(!fabricated.includes('React'), 'React should not be fabricated');
+  assert.ok(!fabricated.includes('JavaScript'), 'JavaScript should not be fabricated');
+});
+
+test('validateAnswer with knowledge rejects false project-tech relationship', () => {
+  const source = 'AWS capstone uses AWS Lambda, DynamoDB, S3, AWS Amplify. Node.js is in his skills.';
+  const result = validateAnswer(
+    'His AWS internship capstone used Node.js as part of a serverless backend.',
+    source,
+    'What about Node.js?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.some(r => r.startsWith('unsupported_relationship:')), `Should flag unsupported relationship, got: ${result.reasons.join(', ')}`);
+});
+
+test('validateAnswer with knowledge rejects expanded overclaim', () => {
+  const source = 'Bradley has experience with AWS Lambda and DynamoDB from his internship.';
+  const result = validateAnswer(
+    'He has extensive experience in AWS services such as Lambda and DynamoDB.',
+    source,
+    'Does he know AWS?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.some(r => r.startsWith('expanded_overclaim:')), `Should flag expanded overclaim, got: ${result.reasons.join(', ')}`);
+});
+
+test('validateAnswer with knowledge accepts true grounded answer', () => {
+  const source = 'AWS capstone uses AWS Lambda, DynamoDB, S3, AWS Amplify.';
+  const result = validateAnswer(
+    'His AWS internship capstone used DynamoDB as part of a serverless metadata workflow.',
+    source,
+    'Does he know DynamoDB?',
+    testKnowledge
+  );
+  assert.equal(result.valid, true, `Should accept true answer, got reasons: ${result.reasons.join(', ')}`);
+});
+
+test('validateAnswer with knowledge rejects fabricated entity', () => {
+  const source = 'Bradley uses JavaScript, React, and AWS Lambda.';
+  const result = validateAnswer(
+    'He would succeed using frameworks like React or Vue.js in front-end development.',
+    source,
+    'What role fits him?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.some(r => r.startsWith('fabricated_entity:')), `Should flag fabricated entity, got: ${result.reasons.join(', ')}`);
+});
+
+// === Synthetic domain tests (productization) ===
+
+test('relationship graph works for tire shop domain', () => {
+  const tireShopKnowledge = {
+    identity: { name: 'Tire Shop Assistant' },
+    projects: [
+      { name: 'Michelin Defender', tech: ['rubber compound', 'tread pattern'], category: 'tire', aliases: ['Michelin Defender T+H'] },
+      { name: 'Goodyear Assurance', tech: ['rubber compound', 'water channel'], category: 'tire', aliases: ['Goodyear Assurance WeatherReady'] }
+    ],
+    experience: [],
+    skills: { tires: ['Michelin Defender', 'Goodyear Assurance'] },
+    certifications: []
+  };
+  const graph = buildRelationshipGraph(tireShopKnowledge);
+  // Michelin Defender uses rubber compound — supported
+  assert.equal(checkRelationship(graph, 'Michelin Defender', 'uses_tech', 'rubber compound').supported, true);
+  // Goodyear Assurance uses water channel — supported
+  assert.equal(checkRelationship(graph, 'Goodyear Assurance', 'uses_tech', 'water channel').supported, true);
+  // Michelin Defender uses water channel — NOT supported (belongs to Goodyear)
+  const crossResult = checkRelationship(graph, 'Michelin Defender', 'uses_tech', 'water channel');
+  assert.equal(crossResult.supported, false, 'Should NOT transfer Goodyear tech to Michelin');
+});
+
+test('relationship graph works for SaaS plan domain', () => {
+  const saasKnowledge = {
+    identity: { name: 'SaaS Assistant' },
+    projects: [
+      { name: 'Basic Plan', tech: ['5 users max', 'email support'], category: 'subscription plan' },
+      { name: 'Pro Plan', tech: ['50 users max', 'priority support'], category: 'subscription plan' }
+    ],
+    experience: [],
+    skills: {},
+    certifications: []
+  };
+  const graph = buildRelationshipGraph(saasKnowledge);
+  // Basic Plan has 5 users max — supported
+  assert.equal(checkRelationship(graph, 'Basic Plan', 'uses_tech', '5 users max').supported, true);
+  // Pro Plan has 50 users max — supported
+  assert.equal(checkRelationship(graph, 'Pro Plan', 'uses_tech', '50 users max').supported, true);
+  // Basic Plan has 50 users max — NOT supported (belongs to Pro Plan)
+  const crossResult = checkRelationship(graph, 'Basic Plan', 'uses_tech', '50 users max');
+  assert.equal(crossResult.supported, false, 'Should NOT transfer Pro Plan limit to Basic Plan');
+});
+
+test('relationship graph works for restaurant allergen domain', () => {
+  const restaurantKnowledge = {
+    identity: { name: 'Restaurant Assistant' },
+    projects: [
+      { name: 'Burger A', tech: ['beef', 'bun', 'no peanuts'], category: 'food item' },
+      { name: 'Dessert B', tech: ['chocolate', 'peanuts'], category: 'food item' }
+    ],
+    experience: [],
+    skills: {},
+    certifications: []
+  };
+  const graph = buildRelationshipGraph(restaurantKnowledge);
+  // Burger A has no peanuts — supported
+  assert.equal(checkRelationship(graph, 'Burger A', 'uses_tech', 'no peanuts').supported, true);
+  // Dessert B has peanuts — supported
+  assert.equal(checkRelationship(graph, 'Dessert B', 'uses_tech', 'peanuts').supported, true);
+  // Burger A has peanuts — NOT supported (allergen belongs to Dessert B)
+  const crossResult = checkRelationship(graph, 'Burger A', 'uses_tech', 'peanuts');
+  assert.equal(crossResult.supported, false, 'Should NOT transfer peanut allergen from Dessert B to Burger A');
+});

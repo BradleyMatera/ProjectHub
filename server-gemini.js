@@ -3686,7 +3686,8 @@ app.post('/api/client-validate', async (req, res) => {
     // Include the system prompt in the source text so candidate name and
     // Scout identity are always grounded (they appear in "You are Scout for Bradley Matera.")
     const sourceText = stored.systemPrompt + ' ' + stored.compressedEvidence + ' ' + JSON.stringify(stored.toolResult).slice(0, 2000);
-    const validation = validateAnswer(answer, sourceText, stored.question);
+    const knowledge = knowledgeCache || await fetchKnowledge();
+    const validation = validateAnswer(answer, sourceText, stored.question, knowledge);
 
     // Check for forbidden claims in adversarial questions
     // For adversarial questions, the model should REFUTE the false premise.

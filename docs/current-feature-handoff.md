@@ -1,12 +1,12 @@
 # Scout Local-Only Feature Handoff
 
-**Updated:** 2026-08-11
+**Updated:** 2026-08-12
 
 **Working branch:** `feat/agent-systems-network`
 
-**Code baseline:** `9312995 feat: add LITE agent mode for e2-micro with compact packets and adversarial safety` (LITE mode committed; CLIENT LOCAL mode in progress)
+**Code baseline:** Relationship-aware grounding phase (post-`7583c6a`)
 
-**Release state:** committed locally, not promoted to `develop` or `master`, and the newest commit has not been deployed to the private preview. Production is unchanged.
+**Release state:** committed locally, not promoted to `develop` or `master`, not deployed. Production is unchanged.
 
 This is the continuation source of truth for the local-only Scout work. Read `AGENTS.md` first, then this file before changing or deploying the feature.
 
@@ -129,9 +129,16 @@ An earlier private-preview deployment at commit `a4c8bd4` passed the then-curren
 
 ## Known limitations and unfinished acceptance
 
-- Commit `0e0c606` still needs the 132-input live private-preview run described above.
-- LITE mode (`lib/lite-agent.js`) has been implemented, tested on M2 Pro and e2-micro, and committed. It is selected by `SCOUT_AGENT_MODE=lite`. FULL mode remains the default.
-- LITE mode on the e2-micro achieves 32% generative rate (project and skill questions work at 2–5s; larger packets and adversarial questions fall back deterministically). 0 forbidden claims in final output across all tested adversarial cases.
+- The relationship-aware grounding phase added `lib/relationship-graph.js`, `lib/claim-extractor.js`, and `lib/relationship-validator.js`. These provide generic, domain-neutral relationship validation that prevents the model from recombining unrelated true facts into false claims.
+- LITE mode (`lib/lite-agent.js`) has been updated to pass knowledge to the validator for relationship-aware grounding. The system prompt now includes explicit relationship correctness rules.
+- 1.5B evaluation results (4 runs, 28 questions each):
+  - Generative rate: 43–50% (average ~46%)
+  - Forbidden claims: 0 across all runs
+  - Manual audit of accepted answers: 100% factually correct (no unsupported relationships, no overclaims, no persona errors)
+  - Conversational quality: ~60% of accepted answers are conversationally good; ~40% are correct but terse/truncated
+- The 1.5B model sometimes outputs "js" instead of "JavaScript" — a model quality issue, not a factual correctness issue.
+- Adversarial questions mostly fall back deterministically, which is safe but not conversational.
+- WebGPU browser-local testing remains NOT MEASURED.
 - Local Ollama on an e2-micro is useful but inconsistent; validators and deterministic grounding are part of the product, not temporary scaffolding.
 - Production retained only a capped subset of all-time requests, so the suite cannot reproduce missing conversations.
 - The public frontend and production backend have not been changed by this feature branch.
@@ -140,8 +147,12 @@ An earlier private-preview deployment at commit `a4c8bd4` passed the then-curren
 ## LITE mode files
 
 - `lib/lite-agent.js` — compact agent pipeline (rewrite → pre-route → tool → compress → generate → validate → fallback)
+- `lib/relationship-graph.js` — generic relationship graph builder (subject-relation-object triples with provenance)
+- `lib/claim-extractor.js` — deterministic claim extraction from generated text (no LLM, relation class normalization)
+- `lib/relationship-validator.js` — relationship-aware validation (checks specific relationships, not just entity existence)
 - `scripts/eval-lite.js` — LITE evaluation harness (28 questions across 9 categories)
 - `data/lite-eval-results.json` — latest LITE eval results
+- `data/accepted-answer-audit.md` — manual audit of previously accepted answers
 - `docs/local-ai-runtime.md` — FULL vs LITE comparison, configuration, and measured results
 
 ## Files central to continuation
