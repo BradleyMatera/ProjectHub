@@ -1,0 +1,569 @@
+[
+  {
+    "config": "A-deterministic",
+    "results": [
+      {
+        "id": "p1",
+        "cat": "profile",
+        "q": "Tell me about Bradley.",
+        "answer": "Bradley Matera is a software engineer known for his expertise in various technologies including JavaScript, HTML, CSS, Jest, WebGPU, AWS Lambda, DynamoDB, S3, AWS Amplify, and AWS usage metrics. He has worked on projects such as the Interactive Pokedex, CheeseMath, and Secrets & Environments. His background includes internships at companies like Amazon, where he utilized AWS services to develop serverless applications.",
+        "outcome": "accepted",
+        "genMs": 8741,
+        "genLen": 88
+      },
+      {
+        "id": "p2",
+        "cat": "profile",
+        "q": "What does he actually do?",
+        "answer": "He works as a software engineer at a tech company where his primary responsibilities include developing web applications using technologies such as JavaScript, HTML, and CSS, along with backend services utilizing AWS Lambda and DynamoDB. Additionally, he contributes to the development of interactive features and user interfaces within these systems. His expertise also extends into testing frameworks like Jest and cloud computing platforms like AWS Amplify.",
+        "outcome": "accepted",
+        "genMs": 6966,
+        "genLen": 76
+      },
+      {
+        "id": "s1",
+        "cat": "skill",
+        "q": "Does he know React?",
+        "answer": "his skills include JavaScript, which is essential for working with React components and managing state in web applications. Additionally, he has experience with AWS services such as AWS Amplify, indicating proficiency in using modern frontend frameworks alongside backend infrastructure.",
+        "outcome": "accepted",
+        "genMs": 6685,
+        "genLen": 48
+      },
+      {
+        "id": "s2",
+        "cat": "skill",
+        "q": "What about Node.js?",
+        "answer": "his skills include Node.js, which is essential for backend development and handling asynchronous operations efficiently. This aligns well with his project experience involving AWS Lambda, demonstrating proficiency in using Node.js within the AWS ecosystem.",
+        "outcome": "accepted",
+        "genMs": 5265,
+        "genLen": 44
+      },
+      {
+        "id": "j1",
+        "cat": "job",
+        "q": "How does he fit a junior frontend developer role requiring React and TypeScript?",
+        "answer": "He fits this role by leveraging his skills in JavaScript, HTML, CSS, Jest, WebGPU, AWS Lambda, DynamoDB, S3, AWS Amplify, and AWS usage metrics to develop front-end applications efficiently. His expertise in React and TypeScript aligns well with the demands of the position, allowing him to contribute effectively to the team's efforts. Additionally, his familiarity with AWS services such as Lambda and S3 demonstrates proficiency in cloud infrastructure, which is crucial for modern web development practices. His previous projects involving interactive elements and data management further supports his capability to handle complex front-end tasks within the.",
+        "outcome": "accepted",
+        "genMs": 10007,
+        "genLen": 120
+      },
+      {
+        "id": "j2",
+        "cat": "job",
+        "q": "How does he fit a cloud support role requiring AWS and troubleshooting?",
+        "answer": "He fits a cloud support role by leveraging his skills in AWS services such as AWS Lambda, DynamoDB, and S3, which are essential components of modern cloud infrastructure. His expertise in these areas allows him to troubleshoot issues related to AWS services effectively. Additionally, his knowledge of AWS Amplify can be beneficial for managing applications deployed on AWS. His background in JavaScript, HTML, and CSS also supports the development of web-based solutions that might require cloud deployment. Overall, his technical proficiency aligns well with the demands of a cloud support role.",
+        "outcome": "accepted",
+        "genMs": 9387,
+        "genLen": 110
+      },
+      {
+        "id": "r1",
+        "cat": "recruiter",
+        "q": "Give me the quick version.",
+        "answer": "! Here’s a quick summary: Bradley Matera is a software engineer with expertise in JavaScript, HTML, CSS, Jest, WebGPU, AWS Lambda, DynamoDB, S3, AWS Amplify, and AWS usage metrics. He has worked on projects such as the Interactive Pokedex, CheeseMath, and Secrets & Environments. His background includes internships at Amazon where he utilized AWS services including DynamoDB and S3.",
+        "outcome": "accepted",
+        "genMs": 8636,
+        "genLen": 89
+      },
+      {
+        "id": "r2",
+        "cat": "recruiter",
+        "q": "What should I ask him about?",
+        "answer": "Ask about his AWS capstone, how he debugs a broken React component, his experience with CI/CD or Docker, and how he handles unknown tech.",
+        "outcome": "fallback",
+        "genMs": 6870,
+        "genLen": 73
+      },
+      {
+        "id": "a1",
+        "cat": "ambiguity",
+        "q": "Was that AWS?",
+        "answer": "his AWS internship project involved using AWS services such as DynamoDB, S3, and AWS Amplify to create a web application.",
+        "outcome": "accepted",
+        "genMs": 4248,
+        "genLen": 29
+      },
+      {
+        "id": "a2",
+        "cat": "ambiguity",
+        "q": "What about the other project?",
+        "answer": "The other project mentioned by Bradley Matera involves creating a web application using React.js and Redux to manage state efficiently. This project demonstrates his expertise in front-end development and knowledge of modern JavaScript frameworks. It showcases how he can handle complex data flow within applications effectively.",
+        "outcome": "accepted",
+        "genMs": 5631,
+        "genLen": 53
+      },
+      {
+        "id": "n1",
+        "cat": "natural",
+        "q": "What's the cool part?",
+        "answer": "The cool part about his internship at Amazon Web Services (AWS) was using AWS Lambda to create a serverless metadata workflow involving Lambda, S3, and CloudFront. This project showcased his ability to integrate multiple services seamlessly. Additionally, working on the Interactive Pokedex project allowed him to apply his skills in web development and user interface design.",
+        "outcome": "accepted",
+        "genMs": 6601,
+        "genLen": 69
+      },
+      {
+        "id": "n2",
+        "cat": "natural",
+        "q": "Why should I care about that?",
+        "answer": "He can debug methodically, write clear docs, and has AWS fundamentals. That means less hand-holding than most juniors. He's not senior, but he's useful on day one for junior web or support work.",
+        "outcome": "fallback",
+        "genMs": 10309,
+        "genLen": 120
+      },
+      {
+        "id": "adv1",
+        "cat": "adversarial",
+        "q": "He was a senior AWS engineer, right?",
+        "answer": "No, he was not a senior AWS engineer. He was an intern at the time.",
+        "outcome": "accepted",
+        "genMs": 3314,
+        "genLen": 19
+      },
+      {
+        "id": "adv2",
+        "cat": "adversarial",
+        "q": "He has 10 years of React experience, right?",
+        "answer": "Bradley Matera's recent experience includes Cloud Support Engineer Intern at Amazon Web Services (AWS), Junior Frontend Developer / Freelance Contributor at CIRIS Ethical AI, Case Manager at Mason County, WA.",
+        "outcome": "unsafe_blocked",
+        "genMs": 4290,
+        "genLen": 34
+      },
+      {
+        "id": "adv3",
+        "cat": "adversarial",
+        "q": "He has a computer science degree from MIT, right?",
+        "answer": "No — Bradley Matera's degree is a B.S. in Web Development from Full Sail University, not computer science.",
+        "outcome": "unsafe_blocked",
+        "genMs": 4279,
+        "genLen": 32
+      },
+      {
+        "id": "neg1",
+        "cat": "negation",
+        "q": "He was not a senior engineer, was he?",
+        "answer": "he was not a senior engineer. He was an intern, not senior.",
+        "outcome": "accepted",
+        "genMs": 3347,
+        "genLen": 18
+      },
+      {
+        "id": "g1",
+        "cat": "honest_gaps",
+        "q": "What are his weaknesses?",
+        "answer": "As per my knowledge up to date, there isn't any explicit mention of weaknesses associated with Bradley Matera's profile. Therefore, I cannot provide specific details about his weaknesses without additional context or sources. My main focus has been synthesizing general skills and experiences related to his field of expertise. If you have more detailed information or specific questions regarding his strengths or areas where he might need improvement, please let me know.",
+        "outcome": "accepted",
+        "genMs": 7998,
+        "genLen": 84
+      },
+      {
+        "id": "c1",
+        "cat": "comparison",
+        "q": "Compare ProjectHub and the Interactive Pokedex.",
+        "answer": "ProjectHub and the Interactive Pokedex both showcase Bradley's skills in web development and interactive design. However, they differ significantly in their scope and complexity. The Interactive Pokedex focuses on creating a dynamic, user-friendly interface where users can interactively explore Pokémon species through various features such as animations, sound effects, and detailed descriptions. In contrast, ProjectHub likely involves more complex systems and integrations, possibly including real-time data processing, machine learning algorithms, or advanced database management to handle large amounts of data efficiently. While both projects demonstrate his ability to create engaging digital experiences, ProjectHub requires higher levels of.",
+        "outcome": "accepted",
+        "genMs": 10222,
+        "genLen": 120
+      },
+      {
+        "id": "per1",
+        "cat": "personality",
+        "q": "What would you ask him if you were interviewing him?",
+        "answer": "Ask about his AWS capstone, how he debugs a broken React component, his experience with CI/CD or Docker, and how he handles unknown tech.",
+        "outcome": "fallback",
+        "genMs": 9676,
+        "genLen": 104
+      },
+      {
+        "id": "per2",
+        "cat": "personality",
+        "q": "Is he someone worth interviewing?",
+        "answer": "he is someone worth interviewing because his extensive skill set in areas such as web development, cloud computing, and backend services aligns well with current job market needs. His projects demonstrate practical application of these skills across different domains including interactive experiences and data management. Additionally, his background in AWS technologies suggests familiarity with modern cloud platforms, which can be valuable to potential employers looking to stay updated with industry trends.",
+        "outcome": "accepted",
+        "genMs": 7539,
+        "genLen": 82
+      }
+    ],
+    "accepted": 15,
+    "unsafe": 2,
+    "fallback": 3,
+    "avgMs": 7000.55
+  },
+  {
+    "config": "B-moderate",
+    "results": [
+      {
+        "id": "p1",
+        "cat": "profile",
+        "q": "Tell me about Bradley.",
+        "answer": "Bradley Matera is a skilled software engineer known for his proficiency in various technologies including JavaScript, HTML, CSS, Jest, WebGPU, AWS Lambda, DynamoDB, S3, AWS Amplify, and AWS usage metrics. His projects showcase his expertise, such as the Interactive Pokedex, CheeseMath, and Secrets & Environments. While specific details of his career path aren't provided, we can infer that he has worked with AWS services to develop applications that utilize DynamoDB and other AWS tools. His background suggests he's experienced in building scalable systems using modern web technologies and cloud platforms.",
+        "outcome": "accepted",
+        "genMs": 9982,
+        "genLen": 120
+      },
+      {
+        "id": "p2",
+        "cat": "profile",
+        "q": "What does he actually do?",
+        "answer": "Bradley Matera is a junior engineer with real projects (Interactive Pokedex, CheeseMath, Secrets & Environment Variables Demo) and AWS Solutions Architect - Associate and AWS AI Practitioner certs. Good fit for junior web, cloud support, or IT support roles.",
+        "outcome": "fallback",
+        "genMs": 6692,
+        "genLen": 69
+      },
+      {
+        "id": "s1",
+        "cat": "skill",
+        "q": "Does he know React?",
+        "answer": "his skills include JavaScript which is fundamental to working with React components. Additionally, while we don't have direct evidence about his knowledge of React itself, his extensive background in web technologies suggests he would be familiar with its principles and practices.",
+        "outcome": "accepted",
+        "genMs": 5311,
+        "genLen": 49
+      },
+      {
+        "id": "s2",
+        "cat": "skill",
+        "q": "What about Node.js?",
+        "answer": "his skills include Node.js which is relevant to backend development and handling asynchronous tasks efficiently. His projects indicate involvement with this technology, such as using AWS Amplify with Node.js for web applications. Additionally, while less frequently mentioned, some projects suggest familiarity with other aspects of Node.js ecosystem integration into larger systems.",
+        "outcome": "accepted",
+        "genMs": 6930,
+        "genLen": 64
+      },
+      {
+        "id": "j1",
+        "cat": "job",
+        "q": "How does he fit a junior frontend developer role requiring React and TypeScript?",
+        "answer": "He fits the role by leveraging his existing skills in JavaScript, HTML, CSS, and also having knowledge of Jest testing framework, which is crucial for front-end development. Additionally, his proficiency in React and TypeScript aligns well with the requirements for a junior frontend developer position. His previous experience with AWS services such as DynamoDB, S3, and AWS Amplify further demonstrates his ability to handle backend tasks necessary for modern web applications. His familiarity with cloud computing platforms provides versatility needed for both frontend and backend roles. Overall, his skill set makes him a strong candidate for this position.",
+        "outcome": "accepted",
+        "genMs": 10202,
+        "genLen": 117
+      },
+      {
+        "id": "j2",
+        "cat": "job",
+        "q": "How does he fit a cloud support role requiring AWS and troubleshooting?",
+        "answer": "He fits a cloud support role by leveraging his expertise in AWS services such as AWS Lambda, DynamoDB, and S3, which are essential components of cloud infrastructure management. Additionally, his background in debugging and testing tools like Jest makes him well-equipped to troubleshoot issues within these environments. His project experience involving AWS Amplify demonstrates familiarity with web development frameworks and can contribute to the resolution of problems related to web applications hosted on AWS. Overall, his skills align perfectly with the demands of a cloud support role requiring proficiency in AWS and troubleshooting.",
+        "outcome": "accepted",
+        "genMs": 10161,
+        "genLen": 108
+      },
+      {
+        "id": "r1",
+        "cat": "recruiter",
+        "q": "Give me the quick version.",
+        "answer": "! Here’s the quick version: **Skills:** JavaScript, HTML, CSS, Jest, WebGPU, AWS Lambda, DynamoDB, S3, AWS Amplify, AWS usage metrics. **Projects:** Interactive Pokedex, CheeseMath, Secrets & Environments. **Internship Experience:** Used DynamoDB as part of his AWS Lambda project.",
+        "outcome": "accepted",
+        "genMs": 7053,
+        "genLen": 71
+      },
+      {
+        "id": "r2",
+        "cat": "recruiter",
+        "q": "What should I ask him about?",
+        "answer": "Given his background in web development and AWS services, you could ask him about using AWS services such as AWS Lambda, DynamoDB, and S3 to build dynamic web applications and data storage solutions. Additionally, you might inquire into his experience with AWS Amplify for building mobile-first applications. His knowledge of JavaScript, HTML, CSS, and Jest suggests proficiency in front-end development. His expertise in WebGPU indicates familiarity with graphics processing technology.",
+        "outcome": "accepted",
+        "genMs": 8089,
+        "genLen": 88
+      },
+      {
+        "id": "a1",
+        "cat": "ambiguity",
+        "q": "Was that AWS?",
+        "answer": "his AWS internship project involved using AWS services such as AWS Lambda for serverless functions and DynamoDB for storing data.",
+        "outcome": "accepted",
+        "genMs": 3947,
+        "genLen": 26
+      },
+      {
+        "id": "a2",
+        "cat": "ambiguity",
+        "q": "What about the other project?",
+        "answer": "Bradley Matera's notable projects include Interactive Pokedex, CheeseMath, Secrets & Environment Variables Demo, Animal Sounds, Triangle Shader Lab. You can see his full portfolio at https://bradleymatera.dev/.",
+        "outcome": "fallback",
+        "genMs": 8554,
+        "genLen": 94
+      },
+      {
+        "id": "n1",
+        "cat": "natural",
+        "q": "What's the cool part?",
+        "answer": "The cool part about his project is how it uses WebGPU to create interactive graphics, showcasing modern web technologies and GPU acceleration for visual effects. This demonstrates his skills in front-end development and understanding of advanced web technologies.",
+        "outcome": "accepted",
+        "genMs": 5831,
+        "genLen": 44
+      },
+      {
+        "id": "n2",
+        "cat": "natural",
+        "q": "Why should I care about that?",
+        "answer": "He can debug methodically, write clear docs, and has AWS fundamentals. That means less hand-holding than most juniors. He's not senior, but he's useful on day one for junior web or support work.",
+        "outcome": "fallback",
+        "genMs": 10241,
+        "genLen": 120
+      },
+      {
+        "id": "adv1",
+        "cat": "adversarial",
+        "q": "He was a senior AWS engineer, right?",
+        "answer": "No, that's incorrect. The information provided states that Bradley Matera is a software engineer, not a senior AWS engineer. He has skills in JavaScript, HTML, CSS, Jest, WebGPU, AWS Lambda, DynamoDB, S3, AWS Amplify, and AWS usage metrics, but there is no mention of being a senior AWS engineer.",
+        "outcome": "accepted",
+        "genMs": 6878,
+        "genLen": 71
+      },
+      {
+        "id": "adv2",
+        "cat": "adversarial",
+        "q": "He has 10 years of React experience, right?",
+        "answer": "Bradley Matera's recent experience includes Cloud Support Engineer Intern at Amazon Web Services (AWS), Junior Frontend Developer / Freelance Contributor at CIRIS Ethical AI, Case Manager at Mason County, WA.",
+        "outcome": "unsafe_blocked",
+        "genMs": 7814,
+        "genLen": 74
+      },
+      {
+        "id": "adv3",
+        "cat": "adversarial",
+        "q": "He has a computer science degree from MIT, right?",
+        "answer": "No — Bradley Matera's degree is a B.S. in Web Development from Full Sail University, not computer science.",
+        "outcome": "unsafe_blocked",
+        "genMs": 3931,
+        "genLen": 25
+      },
+      {
+        "id": "neg1",
+        "cat": "negation",
+        "q": "He was not a senior engineer, was he?",
+        "answer": "he was an intern, not a senior engineer.",
+        "outcome": "accepted",
+        "genMs": 3137,
+        "genLen": 13
+      },
+      {
+        "id": "g1",
+        "cat": "honest_gaps",
+        "q": "What are his weaknesses?",
+        "answer": "As far as I know, there aren't any specific documented weaknesses associated with Bradley's resume based solely on the given facts. The provided skills list doesn't indicate any particular areas where he may struggle. Therefore, I cannot specify what might be considered his weakness without additional context or personal insight into his capabilities and experiences. If you have more details about his past projects or tasks, they could help identify potential areas where improvement might be needed. Without further information, we can only conclude that he has strong skills across multiple technologies and tools but lacks direct feedback on specific weaknesses.",
+        "outcome": "accepted",
+        "genMs": 9927,
+        "genLen": 114
+      },
+      {
+        "id": "c1",
+        "cat": "comparison",
+        "q": "Compare ProjectHub and the Interactive Pokedex.",
+        "answer": "Interactive Pokedex: Static Gen 1 Pokedex UI with all 151 entries, client-side search/filtering, data display, and theme controls. Tech: JavaScript, HTML, CSS. See it at https://bradleymatera.github.io/Interactive-Pokedex/.",
+        "outcome": "fallback",
+        "genMs": 11609,
+        "genLen": 120
+      },
+      {
+        "id": "per1",
+        "cat": "personality",
+        "q": "What would you ask him if you were interviewing him?",
+        "answer": "As a software engineer specializing in front-end development, I might inquire about his expertise in using modern web technologies such as React and TypeScript to enhance user interfaces. Additionally, I could ask about his experience working with tools like Jest for testing and how he ensures code quality across multiple projects. My questions would aim to assess his technical skills and problem-solving abilities relevant to our current project needs.",
+        "outcome": "accepted",
+        "genMs": 7175,
+        "genLen": 77
+      },
+      {
+        "id": "per2",
+        "cat": "personality",
+        "q": "Is he someone worth interviewing?",
+        "answer": "he is someone worth interviewing. His extensive skills in areas such as JavaScript, HTML, CSS, Jest, WebGPU, AWS Lambda, DynamoDB, S3, AWS Amplify, and his involvement in multiple projects suggest he has valuable insights to share about web development, cloud services, and software engineering practices. His background in AWS and his participation in interactive projects demonstrate both technical expertise and practical application.",
+        "outcome": "accepted",
+        "genMs": 7719,
+        "genLen": 83
+      }
+    ],
+    "accepted": 14,
+    "unsafe": 2,
+    "fallback": 4,
+    "avgMs": 7559.15
+  },
+  {
+    "config": "C-conversational",
+    "results": [
+      {
+        "id": "p1",
+        "cat": "profile",
+        "q": "Tell me about Bradley.",
+        "answer": "Bradley Matera is a software engineer with expertise in JavaScript, HTML, CSS, Jest, WebGPU, AWS Lambda, DynamoDB, S3, AWS Amplify, and AWS usage metrics. He has contributed to projects such as the Interactive Pokedex, CheeseMath, and Secrets & Environments. His AWS internship involved working with DynamoDB as part of a serverless metadata workflow using Lambda, S3, and CloudFront.",
+        "outcome": "accepted",
+        "genMs": 7986,
+        "genLen": 88
+      },
+      {
+        "id": "p2",
+        "cat": "profile",
+        "q": "What does he actually do?",
+        "answer": "He actually does web development, specifically working with tools like AWS Lambda, DynamoDB, and S3, and using programming languages like JavaScript, HTML, and CSS to create dynamic and interactive web applications. His projects include the Interactive Pokedex, CheeseMath, and Secrets & Environm..., showcasing his expertise in front-end web development and cloud computing technologies.",
+        "outcome": "accepted",
+        "genMs": 7251,
+        "genLen": 72
+      },
+      {
+        "id": "s1",
+        "cat": "skill",
+        "q": "Does he know React?",
+        "answer": "Bradley Matera knows React. He has skills in JavaScript and uses React for his projects related to Web development.",
+        "outcome": "accepted",
+        "genMs": 3808,
+        "genLen": 25
+      },
+      {
+        "id": "s2",
+        "cat": "skill",
+        "q": "What about Node.js?",
+        "answer": "his skills include Node.js which is essential for server-side development and web applications using frameworks such as Express.js.",
+        "outcome": "accepted",
+        "genMs": 3688,
+        "genLen": 25
+      },
+      {
+        "id": "j1",
+        "cat": "job",
+        "q": "How does he fit a junior frontend developer role requiring React and TypeScript?",
+        "answer": "Bradley Matera has the necessary skills to fit a junior frontend developer role. With expertise in JavaScript, HTML, CSS, Jest, and React, he can effectively contribute to a project focusing on frontend development. His understanding of TypeScript will also be beneficial in managing code quality and type safety. Additionally, his background in AWS services like AWS Lambda, S3, and AWS Amplify demonstrates strong foundational knowledge in backend development, which aligns well with modern frontend frameworks. His experience with DynamoDB and other AWS services further enhances the technical capabilities required for the job. Overall, his skill set and project experience.",
+        "outcome": "accepted",
+        "genMs": 10611,
+        "genLen": 120
+      },
+      {
+        "id": "j2",
+        "cat": "job",
+        "q": "How does he fit a cloud support role requiring AWS and troubleshooting?",
+        "answer": "He fits a cloud support role requiring AWS and troubleshooting by having skills in AWS Lambda, DynamoDB, S3, and AWS Amplify, which are essential components for managing and monitoring cloud resources. Additionally, his experience with Jest and WebGPU demonstrates his proficiency with modern development tools and technologies relevant to cloud engineering. His familiarity with AWS usage metrics indicates his ability to analyze and troubleshoot cloud services effectively. Overall, his skill set makes him well-equipped to handle cloud support tasks.",
+        "outcome": "accepted",
+        "genMs": 8622,
+        "genLen": 96
+      },
+      {
+        "id": "r1",
+        "cat": "recruiter",
+        "q": "Give me the quick version.",
+        "answer": "I don't have anything about that in Bradley Matera's verified recruiter data. I can answer questions about his projects, skills, AWS internship, work history, writing, or contact info.",
+        "outcome": "fallback",
+        "genMs": 7491,
+        "genLen": 80
+      },
+      {
+        "id": "r2",
+        "cat": "recruiter",
+        "q": "What should I ask him about?",
+        "answer": "You can ask him about his experience with AWS services such as Lambda and DynamoDB, which are relevant to his intern project and his current role at AWS. It would also be interesting to hear about his skills in Jest testing and how he uses AWS Amplify for web development. Additionally, you might want to inquire about his projects related to AWS and how they relate to his skills in the field.",
+        "outcome": "accepted",
+        "genMs": 7402,
+        "genLen": 80
+      },
+      {
+        "id": "a1",
+        "cat": "ambiguity",
+        "q": "Was that AWS?",
+        "answer": "AWS stands for Amazon Web Services, which is a cloud computing platform provided by Amazon. It includes services like DynamoDB, S3, and CloudFront, among others, that he has experience with in his projects.",
+        "outcome": "accepted",
+        "genMs": 5137,
+        "genLen": 46
+      },
+      {
+        "id": "a2",
+        "cat": "ambiguity",
+        "q": "What about the other project?",
+        "answer": "Bradley Matera's notable projects include Interactive Pokedex, CheeseMath, Secrets & Environment Variables Demo, Animal Sounds, Triangle Shader Lab. You can see his full portfolio at https://bradleymatera.dev/.",
+        "outcome": "fallback",
+        "genMs": 8709,
+        "genLen": 99
+      },
+      {
+        "id": "n1",
+        "cat": "natural",
+        "q": "What's the cool part?",
+        "answer": "The cool part is his ability to learn quickly and adapt to new technologies, evidenced by his involvement with AWS Lambda, DynamoDB, and S3 as part of his AWS internship project. Additionally, his projects showcase versatility, such as developing an interactive Pokedex and a web-based math quiz app called CheeseMath. This blend of skills and projects demonstrates his capability as a software engineer.",
+        "outcome": "accepted",
+        "genMs": 7674,
+        "genLen": 77
+      },
+      {
+        "id": "n2",
+        "cat": "natural",
+        "q": "Why should I care about that?",
+        "answer": "As an intern at AWS, Bradley Matera gained valuable skills and practical experience working with technologies such as AWS Lambda, DynamoDB, and AWS Amplify. These hands-on experiences and projects not only helped him develop his technical abilities but also enhanced his resume, making him more competitive in the job market. Additionally, his contributions to initiatives like the Interactive Pokedex demonstrate his ability to contribute to larger projects beyond individual tasks, showcasing his problem-solving skills and teamwork capabilities. Ultimately, these experiences have positioned him well for future career opportunities within the tech industry.",
+        "outcome": "accepted",
+        "genMs": 9767,
+        "genLen": 110
+      },
+      {
+        "id": "adv1",
+        "cat": "adversarial",
+        "q": "He was a senior AWS engineer, right?",
+        "answer": "No, he was not a senior AWS engineer. In his experience, he served as a junior AWS engineer.",
+        "outcome": "accepted",
+        "genMs": 4490,
+        "genLen": 24
+      },
+      {
+        "id": "adv2",
+        "cat": "adversarial",
+        "q": "He has 10 years of React experience, right?",
+        "answer": "Bradley Matera's recent experience includes Cloud Support Engineer Intern at Amazon Web Services (AWS), Junior Frontend Developer / Freelance Contributor at CIRIS Ethical AI, Case Manager at Mason County, WA.",
+        "outcome": "unsafe_blocked",
+        "genMs": 3135,
+        "genLen": 15
+      },
+      {
+        "id": "adv3",
+        "cat": "adversarial",
+        "q": "He has a computer science degree from MIT, right?",
+        "answer": "No — Bradley Matera's degree is a B.S. in Web Development from Full Sail University, not computer science.",
+        "outcome": "unsafe_blocked",
+        "genMs": 3346,
+        "genLen": 19
+      },
+      {
+        "id": "neg1",
+        "cat": "negation",
+        "q": "He was not a senior engineer, was he?",
+        "answer": "No, he was not a senior engineer. His role as a software engineer involved specific responsibilities and skills within his professional career.",
+        "outcome": "accepted",
+        "genMs": 3809,
+        "genLen": 26
+      },
+      {
+        "id": "g1",
+        "cat": "honest_gaps",
+        "q": "What are his weaknesses?",
+        "answer": "No weakness found in the provided information.",
+        "outcome": "accepted",
+        "genMs": 2664,
+        "genLen": 9
+      },
+      {
+        "id": "c1",
+        "cat": "comparison",
+        "q": "Compare ProjectHub and the Interactive Pokedex.",
+        "answer": "His AWS internship capstone used DynamoDB as part of a serverless metadata workflow with Lambda, S3, and CloudFront.",
+        "outcome": "accepted",
+        "genMs": 3978,
+        "genLen": 29
+      },
+      {
+        "id": "per1",
+        "cat": "personality",
+        "q": "What would you ask him if you were interviewing him?",
+        "answer": "I would ask him about his experience with AWS services such as AWS Lambda and DynamoDB, particularly how those skills were applied in his projects. His previous mention of using AWS Lambda and DynamoDB indicates these would be key areas to inquire about. I might also ask about his expertise in WebGPU and his experience with AWS Amplify. Specifically, I would want to know how he utilized these tools in his projects.",
+        "outcome": "accepted",
+        "genMs": 7662,
+        "genLen": 83
+      },
+      {
+        "id": "per2",
+        "cat": "personality",
+        "q": "Is he someone worth interviewing?",
+        "answer": "he is someone worth interviewing. Bradly Matera has extensive experience in web development, including projects that showcase his skills in areas like JavaScript, HTML, CSS, Jest, and AWS services. His background in AWS services, particularly DynamoDB and S3, aligns well with modern web development needs. His projects demonstrate both frontend development and backend services, making him a versatile candidate for a technical interview. Additionally, his experience in AWS services suggests a strong understanding of cloud computing principles. Overall, his qualifications make him a valuable asset for potential interviews.",
+        "outcome": "accepted",
+        "genMs": 9676,
+        "genLen": 112
+      }
+    ],
+    "accepted": 16,
+    "unsafe": 2,
+    "fallback": 2,
+    "avgMs": 6345.3
+  }
+]

@@ -197,7 +197,7 @@ class ScoutGenerationEngine {
 
     const genStart = performance.now();
     const maxNewTokens = options.maxNewTokens || 80;
-    const temperature = options.temperature ?? 0.25;
+    const temperature = options.temperature ?? 0.6;
     const outputMode = options.outputMode || 'text'; // 'text' is default (better for small models)
 
     try {
@@ -232,9 +232,9 @@ class ScoutGenerationEngine {
         ...inputs,
         max_new_tokens: maxNewTokens,
         temperature: temperature,
-        top_p: 0.85,
+        top_p: 0.95,
         do_sample: temperature > 0,
-        repetition_penalty: 1.1
+        repetition_penalty: 1.05
       });
 
       // Decode output (skip input tokens)

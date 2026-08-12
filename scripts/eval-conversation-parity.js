@@ -84,10 +84,10 @@ async function main() {
       const output = await model.generate({
         ...inputs,
         max_new_tokens: 120,
-        temperature: 0.4,
-        top_p: 0.9,
+        temperature: 0.6,
+        top_p: 0.95,
         do_sample: true,
-        repetition_penalty: 1.1
+        repetition_penalty: 1.05
       });
       const genMs = Date.now() - genStart;
 
