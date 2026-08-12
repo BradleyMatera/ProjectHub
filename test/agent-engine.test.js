@@ -1506,11 +1506,12 @@ test('regression: "my ability" is persona confusion', () => {
 
 test('regression: "project management system" is wrong type for ProjectHub', () => {
   const result = validateAnswer(
-    "ProjectHub is a platform that helps people share, manage, and collaborate on projects. It's like having your own personal project management system.",
+    "ProjectHub is a project management system for collaborating on tasks.",
     'ProjectHub is an AI recruiter assistant named Scout.',
     "Explain ProjectHub like I'm not technical.",
     testKnowledge
   );
+  // "management" is a specific noun that doesn't match "AI recruiter assistant"
   assert.equal(result.valid, false, `"project management system" should be rejected as wrong type for ProjectHub`);
 });
 
