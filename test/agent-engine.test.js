@@ -1553,6 +1553,43 @@ test('regression: contrastive clause still extracts affirmative from but-clause'
   assert.ok(factClaims.length > 0, 'Affirmative but-clause should still produce FACT claims');
 });
 
+test('regression: lowercase subject not extracted as uses_tech subject', () => {
+  const { extractClaims } = require('../lib/claim-extractor');
+  const { buildRelationshipGraph } = require('../lib/relationship-graph');
+  const graph = buildRelationshipGraph(testKnowledge);
+  // "current weakness" starts with lowercase — should not be a uses_tech subject
+  const claims = extractClaims(
+    'His biggest current weakness is in understanding and utilizing complex data structures efficiently.',
+    graph,
+    'What are his weaknesses?'
+  );
+  const badClaims = claims.filter(c => c.type === 'FACT' && c.subject && /^[a-z]/.test(c.subject));
+  assert.equal(badClaims.length, 0,
+    `Lowercase subjects should not be extracted, got: ${badClaims.map(c => c.subject).join(', ')}`);
+});
+
+test('regression: "Yes." is valid for yes/no questions', () => {
+  const result = validateAnswer(
+    'Yes.',
+    'The project was AWS.',
+    'Was that AWS?',
+    testKnowledge
+  );
+  assert.ok(!result.reasons.includes('too_short'),
+    `"Yes." should not be too_short for a yes/no question, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: "No." is valid for negation confirmation questions', () => {
+  const result = validateAnswer(
+    'Yes.',
+    'No evidence of MIT attendance.',
+    'There is no evidence he attended MIT, right?',
+    testKnowledge
+  );
+  assert.ok(!result.reasons.includes('too_short'),
+    `"Yes." should not be too_short for a negation confirmation, got: ${result.reasons.join(', ')}`);
+});
+
 test('regression: leaked internal phrase (connecting entities) is rejected', () => {
   const result = validateAnswer(
     'He is best at connecting entities.',
