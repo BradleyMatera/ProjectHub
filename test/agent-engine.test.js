@@ -1644,6 +1644,28 @@ test('regression: "lacks experience with X" rejected when X is a built project',
     `Should flag false negation for built project, got: ${result.reasons.join(', ')}`);
 });
 
+test('regression: fabricated employment at unknown company is rejected', () => {
+  const result = validateAnswer(
+    'Bradley Matera was a Cloud Support Engineer Intern with Netflix, focusing on serverless architecture and microservices integration.',
+    'Bradley worked at AWS and CIRIS Ethical AI.',
+    'What did he do at Netflix?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false, 'Fabricated Netflix employment should be rejected');
+  assert.ok(result.reasons.some(r => r.includes('fabricated_employment')),
+    `Should flag fabricated employment, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: correct employment at known company is accepted', () => {
+  const result = validateAnswer(
+    'Bradley Matera was a Cloud Support Engineer Intern at Amazon Web Services (AWS).',
+    'Bradley interned at AWS.',
+    'What did he do at AWS?',
+    testKnowledge
+  );
+  assert.equal(result.valid, true, `Correct AWS employment should be accepted, got: ${result.reasons.join(', ')}`);
+});
+
 test('regression: leaked internal phrase (connecting entities) is rejected', () => {
   const result = validateAnswer(
     'He is best at connecting entities.',
