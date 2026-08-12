@@ -1226,6 +1226,187 @@ test('regression: negated tech mention is not falsely rejected', () => {
   assert.equal(result.valid, true, `Negated Kubernetes mention should not be rejected, got: ${result.reasons.join(', ')}`);
 });
 
+// === Coreference resolution for "there" → entity from question ===
+// When the question asks about "his time at Microsoft" and the answer says
+// "he had a brief internship there", "there" must be resolved to "Microsoft"
+// so the claim extractor can extract the interned_at claim and reject it.
+
+test('regression: coreference "there" resolves to entity from question (Microsoft)', () => {
+  const { extractClaims } = require('../lib/claim-extractor');
+  const { buildRelationshipGraph } = require('../lib/relationship-graph');
+  const graph = buildRelationshipGraph(testKnowledge);
+  const claims = extractClaims(
+    'Bradley Matera did not work directly with Microsoft, but he had a brief internship there as part of his tech experience.',
+    graph,
+    'Tell me about his time at Microsoft.'
+  );
+  const internClaims = claims.filter(c => c.relation === 'interned_at');
+  assert.ok(internClaims.length > 0, 'Should extract interned_at claim from "there" coreference');
+  assert.equal(internClaims[0].object, 'Microsoft', 'Object should be Microsoft after coreference resolution');
+});
+
+test('regression: coreference "there" resolves to multi-word entity (Acme Corp)', () => {
+  const { extractClaims } = require('../lib/claim-extractor');
+  const { buildRelationshipGraph } = require('../lib/relationship-graph');
+  const graph = buildRelationshipGraph(testKnowledge);
+  const claims = extractClaims(
+    'He did not work at Acme Corp, but he had an internship there last summer.',
+    graph,
+    'Did he work at Acme Corp?'
+  );
+  const internClaims = claims.filter(c => c.relation === 'interned_at');
+  assert.ok(internClaims.length > 0, 'Should extract interned_at claim from "there" coreference');
+  assert.equal(internClaims[0].object, 'Acme Corp', 'Object should be Acme Corp after coreference resolution');
+});
+
+test('regression: fabricated Microsoft internship is rejected via coreference', () => {
+  const result = validateAnswer(
+    'Bradley Matera did not work directly with Microsoft, but he had a brief internship there as part of his tech experience.',
+    'Bradley built ProjectHub. He had an AWS internship.',
+    'Tell me about his time at Microsoft.',
+    testKnowledge
+  );
+  assert.equal(result.valid, false, 'Fabricated Microsoft internship via "there" should be rejected');
+});
+
+test('regression: fabricated Acme Corp internship is rejected via coreference', () => {
+  const result = validateAnswer(
+    'He did not work at Acme Corp, but he had an internship there last summer.',
+    'Bradley built ProjectHub. He had an AWS internship.',
+    'Did he work at Acme Corp?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false, 'Fabricated Acme Corp internship via "there" should be rejected');
+});
+
+test('regression: contrastive "but" clause extracts affirmative claim', () => {
+  const { extractClaims } = require('../lib/claim-extractor');
+  const { buildRelationshipGraph } = require('../lib/relationship-graph');
+  const graph = buildRelationshipGraph(testKnowledge);
+  // "did not work at A, but had internship at A" — the "but" clause is affirmative
+  const claims = extractClaims(
+    'He did not work at Microsoft, but he had an internship there.',
+    graph,
+    'Tell me about his time at Microsoft.'
+  );
+  const factClaims = claims.filter(c => c.type === 'FACT');
+  assert.ok(factClaims.length > 0, 'Affirmative "but" clause should produce a FACT claim');
+});
+
+// === Persona/role validation: Scout vs Bradley vs Visitor ===
+// Scout is the assistant, Bradley is the subject, Visitor is the person Scout
+// is talking to. Scout must not treat the visitor as Bradley.
+
+test('regression: persona confusion — "your experience" when asking about Bradley', () => {
+  const result = validateAnswer(
+    "I'm interested in learning about your experience as a developer. Could you tell me about any projects or experiences that stand out to you?",
+    'Bradley built ProjectHub. He has React and Node.js skills. He completed an AWS internship.',
+    'What would you ask him if you were interviewing him?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false, 'Should reject "your experience" when question is about Bradley');
+  assert.ok(result.reasons.some(r => r.includes('persona_confusion')), `Should flag persona confusion, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: legitimate "you" addressing visitor is not persona confusion', () => {
+  const result = validateAnswer(
+    'You could ask him about his AWS internship experience and his work on ProjectHub.',
+    'Bradley built ProjectHub. He has React and Node.js skills. He completed an AWS internship.',
+    'What should I ask him about?',
+    testKnowledge
+  );
+  // Should NOT be flagged as persona confusion
+  assert.ok(!result.reasons.some(r => r.includes('persona_confusion')),
+    `Legitimate "you" addressing visitor should not be persona confusion, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: "your projects" when asking about Bradley is persona confusion', () => {
+  const result = validateAnswer(
+    "I'd love to hear about your projects and what you built during your internship.",
+    'Bradley built ProjectHub. He completed an AWS internship.',
+    "What's your favorite thing he's built?",
+    testKnowledge
+  );
+  assert.ok(result.reasons.some(r => r.includes('persona_confusion')),
+    `"your projects" when asking about Bradley should be persona confusion, got: ${result.reasons.join(', ')}`);
+});
+
+// === built_by "subject" normalization and "a project called" stripping ===
+
+test('regression: built_by with "subject" object resolves to Bradley Matera', () => {
+  const result = validateAnswer(
+    'He built the Static Gen 1 Pokedex UI and it features client-side search and filtering.',
+    'Bradley built ProjectHub. He built the Interactive Pokedex with 151 entries.',
+    "How well? Like, can he actually build something with it?",
+    testKnowledge,
+    [{ role: 'user', text: 'Does he know React?' }]
+  );
+  // built_by should be supported via alias resolution (Static Gen 1 Pokedex UI → Interactive Pokedex)
+  assert.ok(!result.reasons.some(r => r.includes('built_by') && r.includes('not found')),
+    `built_by with "subject" should resolve to Bradley, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: built_by strips "a project called" prefix', () => {
+  const { extractClaims } = require('../lib/claim-extractor');
+  const { buildRelationshipGraph } = require('../lib/relationship-graph');
+  const graph = buildRelationshipGraph(testKnowledge);
+  const claims = extractClaims(
+    'The coolest part is that he built a project called ProjectHub, which uses JavaScript.',
+    graph,
+    "What's the cool part?"
+  );
+  const builtByClaims = claims.filter(c => c.relation === 'built_by');
+  const projectHubClaim = builtByClaims.find(c => c.subject && c.subject.includes('ProjectHub'));
+  assert.ok(projectHubClaim, `Should extract built_by for ProjectHub, got subjects: ${builtByClaims.map(c => c.subject).join(', ')}`);
+});
+
+// === is_type generic type acceptance ===
+
+test('regression: is_type accepts "web application" as generic type', () => {
+  const result = validateAnswer(
+    'ProjectHub is a web application that helps match users based on their interests and skills.',
+    'ProjectHub is an embeddable AI recruiter assistant named Scout.',
+    "Explain ProjectHub like I'm not technical.",
+    testKnowledge
+  );
+  // "web application" should be accepted as a generic type, not rejected as mismatch
+  assert.ok(!result.reasons.some(r => r.includes('is_type') && r.includes('mismatch')),
+    `"web application" should be accepted as generic type, got: ${result.reasons.join(', ')}`);
+});
+
+// === Context drift: "which project" questions ===
+
+test('regression: "which project" question does not trigger context drift', () => {
+  const result = validateAnswer(
+    'The Interactive Pokedex project is considered more complex due to its extensive features.',
+    'ProjectHub is an AI recruiter assistant. Interactive Pokedex has 151 entries.',
+    'Which project is the most complex?',
+    testKnowledge,
+    [
+      { role: 'user', text: 'Compare ProjectHub and CIRIS Ethical AI.' },
+      { role: 'user', text: 'Compare ProjectHub and the Interactive Pokedex.' }
+    ]
+  );
+  // "Which project" questions should not flag mentioning different projects as drift
+  assert.ok(!result.reasons.some(r => r.includes('context_drift')),
+    `"Which project" should not trigger context drift, got: ${result.reasons.join(', ')}`);
+});
+
+// === Adversarial confirmation: negation questions ===
+
+test('regression: "Yes" to negation question is not adversarial confirmation', () => {
+  // "There is no evidence he attended MIT, right?" → "Yes" is correct (confirms no evidence)
+  // This should NOT be blocked as adversarial confirmation
+  // We test the negation detection logic directly
+  const negationRegex = /\b(?:no\s+evidence|not\b|never\b|didn'?t\b|did not\b|no\s+mention|isn'?t\b|is not\b|wasn'?t\b|was not\b|doesn'?t\b|does not\b|haven'?t\b|have not\b|hasn'?t\b|has not\b|won'?t\b|will not\b|wouldn'?t\b|would not\b|couldn'?t\b|could not\b|shouldn'?t\b|should not\b|must not\b|mustn'?t\b|no\s+(?:proof|sign|record|indication))\b/i;
+  assert.ok(negationRegex.test('There is no evidence he attended MIT, right?'),
+    'Should detect negation in "no evidence" question');
+  assert.ok(negationRegex.test('He was not a senior engineer, was he?'),
+    'Should detect negation in "was not" question');
+  assert.ok(!negationRegex.test('He was a senior engineer, right?'),
+    'Should not detect negation in affirmative question');
+});
+
 // === Leaked internal syntax guard ===
 // The 1.5b model sometimes echoes relation names or internal graph terminology
 // from the context/repair packet instead of verbalizing naturally. These broken
