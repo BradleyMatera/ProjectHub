@@ -1744,6 +1744,17 @@ test('regression: false negation "projects do not involve building" is rejected'
     `Should flag false negation, got: ${result.reasons.join(', ')}`);
 });
 
+test('regression: has_degree with school name matches attended synonym', () => {
+  const { buildRelationshipGraph, checkRelationship } = require('../lib/relationship-graph');
+  const graph = buildRelationshipGraph(testKnowledge);
+  // "has a degree from Full Sail" should match "attended Full Sail"
+  const result = checkRelationship(graph, 'Bradley Matera', 'has_degree', 'Full Sail University');
+  assert.equal(result.supported, true, `has_degree|Full Sail should be supported via attended synonym, got: ${result.reason}`);
+  // But has_degree with an unknown school should still fail
+  const result2 = checkRelationship(graph, 'Bradley Matera', 'has_degree', 'MIT');
+  assert.equal(result2.supported, false, 'has_degree|MIT should not be supported');
+});
+
 test('regression: leaked internal phrase (connecting entities) is rejected', () => {
   const result = validateAnswer(
     'He is best at connecting entities.',
