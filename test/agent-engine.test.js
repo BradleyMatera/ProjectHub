@@ -1407,6 +1407,49 @@ test('regression: "Yes" to negation question is not adversarial confirmation', (
     'Should not detect negation in affirmative question');
 });
 
+// === Secondary uses_tech scan: only for technologies, not projects ===
+
+test('regression: secondary uses_tech scan does not check projects against history tech', () => {
+  const result = validateAnswer(
+    'Yes, he has experience building projects. For instance, ProjectHub uses JavaScript, Node.js, and Express, which are all part of his skill set.',
+    'Bradley built ProjectHub with JavaScript, Node.js, and Express. He knows React.',
+    "How well? Like, can he actually build something with it?",
+    testKnowledge,
+    [{ role: 'user', text: 'Does he know React?' }]
+  );
+  // Should NOT flag "React uses_tech ProjectHub" — ProjectHub is a project, not a tech
+  assert.ok(!result.reasons.some(r => r.includes('React') && r.includes('uses_tech') && r.includes('ProjectHub')),
+    `Should not check React uses_tech ProjectHub, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: secondary uses_tech scan still catches unsupported tech under project', () => {
+  const result = validateAnswer(
+    'He learned WebGPU during the AWS capstone.',
+    'AWS capstone uses Lambda. WebGPU is separate.',
+    'What did he learn there?',
+    testKnowledge,
+    [{ role: 'user', text: 'Tell me about the AWS internship.' }]
+  );
+  // Should still reject WebGPU under AWS capstone — WebGPU is a technology
+  assert.equal(result.valid, false, 'Should reject WebGPU under AWS capstone');
+});
+
+// === worked_at: "experience with" is skill, not employer ===
+
+test('regression: "experience with front-end" is not worked_at', () => {
+  const { extractClaims } = require('../lib/claim-extractor');
+  const { buildRelationshipGraph } = require('../lib/relationship-graph');
+  const graph = buildRelationshipGraph(testKnowledge);
+  const claims = extractClaims(
+    'You could ask him about his experience with front-end development, particularly using React and JavaScript.',
+    graph,
+    'What should I ask him about?'
+  );
+  const workedAtClaims = claims.filter(c => c.relation === 'worked_at');
+  assert.equal(workedAtClaims.length, 0,
+    `"experience with front-end" should not be worked_at, got: ${workedAtClaims.map(c => c.object).join(', ')}`);
+});
+
 // === Leaked internal syntax guard ===
 // The 1.5b model sometimes echoes relation names or internal graph terminology
 // from the context/repair packet instead of verbalizing naturally. These broken
