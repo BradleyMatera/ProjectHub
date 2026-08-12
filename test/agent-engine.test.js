@@ -1514,6 +1514,45 @@ test('regression: "project management system" is wrong type for ProjectHub', () 
   assert.equal(result.valid, false, `"project management system" should be rejected as wrong type for ProjectHub`);
 });
 
+test('regression: false negation — "no experience building" when graph has built_by', () => {
+  const result = validateAnswer(
+    'He has no experience with building software.',
+    'Bradley built ProjectHub, Interactive Pokedex, CheeseMath, and other projects.',
+    "What's the strongest evidence that he can actually build software?",
+    testKnowledge
+  );
+  assert.equal(result.valid, false, 'Should reject false negation about building experience');
+  assert.ok(result.reasons.some(r => r.includes('false_negation')),
+    `Should flag false negation, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: negated has_experience is not extracted as FACT', () => {
+  const { extractClaims } = require('../lib/claim-extractor');
+  const { buildRelationshipGraph } = require('../lib/relationship-graph');
+  const graph = buildRelationshipGraph(testKnowledge);
+  const claims = extractClaims(
+    'He was an entry-level developer and did not have experience with handling production incidents.',
+    graph,
+    'He did not handle production incidents, did he?'
+  );
+  const factClaims = claims.filter(c => c.type === 'FACT' && c.relation === 'has_experience');
+  assert.equal(factClaims.length, 0,
+    `Negated has_experience should not be extracted as FACT, got: ${factClaims.map(c => c.object).join(', ')}`);
+});
+
+test('regression: contrastive clause still extracts affirmative from but-clause', () => {
+  const { extractClaims } = require('../lib/claim-extractor');
+  const { buildRelationshipGraph } = require('../lib/relationship-graph');
+  const graph = buildRelationshipGraph(testKnowledge);
+  const claims = extractClaims(
+    'He did not work at Microsoft, but he had an internship there.',
+    graph,
+    'Tell me about his time at Microsoft.'
+  );
+  const factClaims = claims.filter(c => c.type === 'FACT');
+  assert.ok(factClaims.length > 0, 'Affirmative but-clause should still produce FACT claims');
+});
+
 test('regression: leaked internal phrase (connecting entities) is rejected', () => {
   const result = validateAnswer(
     'He is best at connecting entities.',
