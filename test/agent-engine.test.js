@@ -1590,6 +1590,25 @@ test('regression: "No." is valid for negation confirmation questions', () => {
     `"Yes." should not be too_short for a negation confirmation, got: ${result.reasons.join(', ')}`);
 });
 
+test('regression: partial object match for tech names (Amplify matches AWS Amplify)', () => {
+  const { buildRelationshipGraph, checkRelationship } = require('../lib/relationship-graph');
+  const graph = buildRelationshipGraph(testKnowledge);
+  // "Amplify" should match "AWS Amplify" via suffix matching
+  const result = checkRelationship(graph, 'AWS internship capstone', 'uses_tech', 'Amplify');
+  assert.equal(result.supported, true, 'Amplify should match AWS Amplify via partial match');
+});
+
+test('regression: false negation not triggered by qualified assessments', () => {
+  const result = validateAnswer(
+    'No, his projects have been limited to static UIs for the Pokedex, basic calculator demos, and simple WebGL learning examples. He has not built anything substantial or professionally relevant.',
+    'Bradley built ProjectHub, Interactive Pokedex, CheeseMath, and other projects.',
+    'How well? Like, can he actually build something with it?',
+    testKnowledge
+  );
+  assert.ok(!result.reasons.some(r => r.includes('false_negation')),
+    `Qualified assessment should not trigger false negation, got: ${result.reasons.join(', ')}`);
+});
+
 test('regression: leaked internal phrase (connecting entities) is rejected', () => {
   const result = validateAnswer(
     'He is best at connecting entities.',
