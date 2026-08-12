@@ -1,0 +1,1428 @@
+{
+  "timestamp": "2026-08-12T14:45:22.711Z",
+  "model": "qwen2.5:1.5b",
+  "total": 68,
+  "summary": {
+    "manualCounts": {
+      "GOOD": 40,
+      "SAFE_FALLBACK": 21,
+      "CORRECT_BUT_TERSE": 7
+    },
+    "confusionMatrix": {
+      "autoGoodManualGood": 25,
+      "autoGoodManualBad": 4,
+      "autoBadManualGood": 15,
+      "autoBadManualBad": 24
+    },
+    "metrics": {
+      "falseGoodRate": 13.79,
+      "precision": 86.21,
+      "recall": 62.5,
+      "manualGoodRate": 58.82
+    }
+  },
+  "results": [
+    {
+      "id": "q1",
+      "cat": "project",
+      "conv": "c1",
+      "question": "Tell me about ProjectHub.",
+      "history": [],
+      "rewritten": "tell me about projecthub",
+      "visibleAnswer": "ProjectHub is a tech project that includes JavaScript, Node.js, Express, GitHub Pages, and GCP e2-micro for its implementation.",
+      "fallback": false,
+      "automatedOutcome": "repaired",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q2",
+      "cat": "followup",
+      "conv": "c1",
+      "question": "Okay, but what's actually interesting about it?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Tell me about ProjectHub."
+        }
+      ],
+      "rewritten": "okay but what s actually interesting about it",
+      "visibleAnswer": "The project details provided do not offer specific insights into the unique aspects or achievements of the work.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q3",
+      "cat": "followup",
+      "conv": "c1",
+      "question": "What did Bradley personally build?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Tell me about ProjectHub."
+        },
+        {
+          "role": "user",
+          "text": "Okay, but what's actually interesting about it?"
+        }
+      ],
+      "rewritten": "what did bradley personally build",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q4",
+      "cat": "followup",
+      "conv": "c1",
+      "question": "What was the hardest technical part?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Tell me about ProjectHub."
+        },
+        {
+          "role": "user",
+          "text": "Okay, but what's actually interesting about it?"
+        },
+        {
+          "role": "user",
+          "text": "What did Bradley personally build?"
+        }
+      ],
+      "rewritten": "what was the hardest technical part",
+      "visibleAnswer": "The hardest technical part was integrating the Pokedex's static UI with a client-side search and filtering system.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q5",
+      "cat": "comparison",
+      "conv": "c1",
+      "question": "Compare that to Voice Ops.",
+      "history": [
+        {
+          "role": "user",
+          "text": "Tell me about ProjectHub."
+        },
+        {
+          "role": "user",
+          "text": "Okay, but what's actually interesting about it?"
+        },
+        {
+          "role": "user",
+          "text": "What did Bradley personally build?"
+        },
+        {
+          "role": "user",
+          "text": "What was the hardest technical part?"
+        }
+      ],
+      "rewritten": "compare that to voice ops",
+      "visibleAnswer": "ProjectHub Scout is an AI assistant script with JavaScript and Node.js technologies, whereas Voice Ops uses JavaScript, Node.js, AI, and Operations for its authenticated operations platform.",
+      "fallback": false,
+      "automatedOutcome": "repaired",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q6",
+      "cat": "followup",
+      "conv": "c1",
+      "question": "Which one would impress you more if you were hiring?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Tell me about ProjectHub."
+        },
+        {
+          "role": "user",
+          "text": "Okay, but what's actually interesting about it?"
+        },
+        {
+          "role": "user",
+          "text": "What did Bradley personally build?"
+        },
+        {
+          "role": "user",
+          "text": "What was the hardest technical part?"
+        },
+        {
+          "role": "user",
+          "text": "Compare that to Voice Ops."
+        }
+      ],
+      "rewritten": "which one would express you more if you were hiring",
+      "visibleAnswer": "ProjectHub (Scout)",
+      "fallback": false,
+      "automatedOutcome": "repaired",
+      "automatedReasons": [
+        "no_terminal_punctuation"
+      ],
+      "manualLabel": "CORRECT_BUT_TERSE",
+      "reason": "Answer is too brief (< 8 words)."
+    },
+    {
+      "id": "q7",
+      "cat": "aws",
+      "conv": "c2",
+      "question": "What has he actually done with AWS?",
+      "history": [],
+      "rewritten": "what has he actually done with aws",
+      "visibleAnswer": "He has completed an intensive AWS Support Engineering internship focusing on cloud architecture, AI/ML services, troubleshooting, networking concepts, and customer experience skills.",
+      "fallback": false,
+      "automatedOutcome": "repaired",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q8",
+      "cat": "followup",
+      "conv": "c2",
+      "question": "Was that real production work or just training?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What has he actually done with AWS?"
+        }
+      ],
+      "rewritten": "was that real production work or just training",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q9",
+      "cat": "followup",
+      "conv": "c2",
+      "question": "So what did he actually learn there?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What has he actually done with AWS?"
+        },
+        {
+          "role": "user",
+          "text": "Was that real production work or just training?"
+        }
+      ],
+      "rewritten": "so what did he actually learn there",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q10",
+      "cat": "followup",
+      "conv": "c2",
+      "question": "Does that count as real cloud experience?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What has he actually done with AWS?"
+        },
+        {
+          "role": "user",
+          "text": "Was that real production work or just training?"
+        },
+        {
+          "role": "user",
+          "text": "So what did he actually learn there?"
+        }
+      ],
+      "rewritten": "does that count as real cloud experience",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q11",
+      "cat": "followup",
+      "conv": "c2",
+      "question": "What AWS certifications does he have?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What has he actually done with AWS?"
+        },
+        {
+          "role": "user",
+          "text": "Was that real production work or just training?"
+        },
+        {
+          "role": "user",
+          "text": "So what did he actually learn there?"
+        },
+        {
+          "role": "user",
+          "text": "Does that count as real cloud experience?"
+        }
+      ],
+      "rewritten": "what aws certifications does he have",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q12",
+      "cat": "recruiter",
+      "conv": "c3",
+      "question": "Give me the quick version.",
+      "history": [],
+      "rewritten": "give me the quick version",
+      "visibleAnswer": "Bradley Matera has experience with JavaScript and TypeScript.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q13",
+      "cat": "recruiter",
+      "conv": "c3",
+      "question": "Why would I interview him?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Give me the quick version."
+        }
+      ],
+      "rewritten": "why would i interview him",
+      "visibleAnswer": "He has experience with JavaScript, TypeScript, and React, which are essential skills for modern web development. His ability to work on a project that involves backend serverless architecture aligns well with current industry trends.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q14",
+      "cat": "recruiter",
+      "conv": "c3",
+      "question": "What concerns would you have?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Give me the quick version."
+        },
+        {
+          "role": "user",
+          "text": "Why would I interview him?"
+        }
+      ],
+      "rewritten": "what concerns would you have",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q15",
+      "cat": "recruiter",
+      "conv": "c3",
+      "question": "What should I ask him about?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Give me the quick version."
+        },
+        {
+          "role": "user",
+          "text": "Why would I interview him?"
+        },
+        {
+          "role": "user",
+          "text": "What concerns would you have?"
+        }
+      ],
+      "rewritten": "what should i ask him about",
+      "visibleAnswer": "Bradley Matera worked_at modern web development frameworks.",
+      "fallback": false,
+      "automatedOutcome": "repaired",
+      "automatedReasons": [],
+      "manualLabel": "CORRECT_BUT_TERSE",
+      "reason": "Answer is too brief (< 8 words)."
+    },
+    {
+      "id": "q16",
+      "cat": "recruiter",
+      "conv": "c3",
+      "question": "What kind of role fits him best?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Give me the quick version."
+        },
+        {
+          "role": "user",
+          "text": "Why would I interview him?"
+        },
+        {
+          "role": "user",
+          "text": "What concerns would you have?"
+        },
+        {
+          "role": "user",
+          "text": "What should I ask him about?"
+        }
+      ],
+      "rewritten": "what kind of role fits him best",
+      "visibleAnswer": "entry-level tech, IT, or support roles where he can contribute on day one and learn hands-on.",
+      "fallback": false,
+      "automatedOutcome": "repaired",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q17",
+      "cat": "recruiter",
+      "conv": "c3",
+      "question": "What's the strongest evidence that he can actually build software?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Give me the quick version."
+        },
+        {
+          "role": "user",
+          "text": "Why would I interview him?"
+        },
+        {
+          "role": "user",
+          "text": "What concerns would you have?"
+        },
+        {
+          "role": "user",
+          "text": "What should I ask him about?"
+        },
+        {
+          "role": "user",
+          "text": "What kind of role fits him best?"
+        }
+      ],
+      "rewritten": "what s the strongest evidence that he can actually build software",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q18",
+      "cat": "skill",
+      "conv": "c4",
+      "question": "Does he know React?",
+      "history": [],
+      "rewritten": "does he know react",
+      "visibleAnswer": "Yes, his skills include React.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "CORRECT_BUT_TERSE",
+      "reason": "Answer is too brief (< 8 words)."
+    },
+    {
+      "id": "q19",
+      "cat": "followup",
+      "conv": "c4",
+      "question": "How well? Like, can he actually build something with it?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Does he know React?"
+        }
+      ],
+      "rewritten": "how well like can he actually build something with it",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q20",
+      "cat": "skill",
+      "conv": "c4",
+      "question": "What about Node.js?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Does he know React?"
+        },
+        {
+          "role": "user",
+          "text": "How well? Like, can he actually build something with it?"
+        }
+      ],
+      "rewritten": "what about node js",
+      "visibleAnswer": "His skills include Node.js.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "CORRECT_BUT_TERSE",
+      "reason": "Answer is too brief (< 8 words)."
+    },
+    {
+      "id": "q21",
+      "cat": "followup",
+      "conv": "c4",
+      "question": "What's he best at?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Does he know React?"
+        },
+        {
+          "role": "user",
+          "text": "How well? Like, can he actually build something with it?"
+        },
+        {
+          "role": "user",
+          "text": "What about Node.js?"
+        }
+      ],
+      "rewritten": "what s he best at",
+      "visibleAnswer": "He is best at connecting entities.",
+      "fallback": false,
+      "automatedOutcome": "repaired",
+      "automatedReasons": [],
+      "manualLabel": "CORRECT_BUT_TERSE",
+      "reason": "Answer is too brief (< 8 words)."
+    },
+    {
+      "id": "q22",
+      "cat": "followup",
+      "conv": "c4",
+      "question": "What does he still need to learn?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Does he know React?"
+        },
+        {
+          "role": "user",
+          "text": "How well? Like, can he actually build something with it?"
+        },
+        {
+          "role": "user",
+          "text": "What about Node.js?"
+        },
+        {
+          "role": "user",
+          "text": "What's he best at?"
+        }
+      ],
+      "rewritten": "what does he still need to learn",
+      "visibleAnswer": "He still needs to learn more about cloud architecture patterns and best practices.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q23",
+      "cat": "explanation",
+      "conv": "c5",
+      "question": "Explain ProjectHub like I'm not technical.",
+      "history": [],
+      "rewritten": "explain projecthub like i m not technical",
+      "visibleAnswer": "ProjectHub is a platform that helps people share, embed, and manage projects across different websites or applications.",
+      "fallback": false,
+      "automatedOutcome": "repaired",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q24",
+      "cat": "explanation",
+      "conv": "c5",
+      "question": "Okay now explain it technically.",
+      "history": [
+        {
+          "role": "user",
+          "text": "Explain ProjectHub like I'm not technical."
+        }
+      ],
+      "rewritten": "okay now explain it technically",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q25",
+      "cat": "followup",
+      "conv": "c5",
+      "question": "Why did he build it that way?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Explain ProjectHub like I'm not technical."
+        },
+        {
+          "role": "user",
+          "text": "Okay now explain it technically."
+        }
+      ],
+      "rewritten": "why did he build it that way",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q26",
+      "cat": "profile",
+      "conv": "c6",
+      "question": "Tell me about Bradley.",
+      "history": [],
+      "rewritten": "tell me about bradley",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q27",
+      "cat": "profile",
+      "conv": "c6",
+      "question": "What does he actually do?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Tell me about Bradley."
+        }
+      ],
+      "rewritten": "what does he actually do",
+      "visibleAnswer": "He is an entry-level developer with experience in building and maintaining web applications using JavaScript, Node.js, and Express.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q28",
+      "cat": "profile",
+      "conv": "c6",
+      "question": "What's his strongest project?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Tell me about Bradley."
+        },
+        {
+          "role": "user",
+          "text": "What does he actually do?"
+        }
+      ],
+      "rewritten": "what s his strongest project",
+      "visibleAnswer": "His strongest project is the AWS Serverless Metadata Extraction Workflow, which he developed as part of an internship at Amazon Web Services (AWS). This project involved extracting metadata using a serverless pipeline with Lambda, DynamoDB, S3, and Amplify.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q29",
+      "cat": "personality",
+      "conv": "c6",
+      "question": "What's your favorite thing he's built?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Tell me about Bradley."
+        },
+        {
+          "role": "user",
+          "text": "What does he actually do?"
+        },
+        {
+          "role": "user",
+          "text": "What's his strongest project?"
+        }
+      ],
+      "rewritten": "what s your favorites thing he s built",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q30",
+      "cat": "personality",
+      "conv": "c6",
+      "question": "What would you ask him if you were interviewing him?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Tell me about Bradley."
+        },
+        {
+          "role": "user",
+          "text": "What does he actually do?"
+        },
+        {
+          "role": "user",
+          "text": "What's his strongest project?"
+        },
+        {
+          "role": "user",
+          "text": "What's your favorite thing he's built?"
+        }
+      ],
+      "rewritten": "what would you ask him if you were interviewing him",
+      "visibleAnswer": "I'm interested in learning about your experience working on web-based projects. Could you tell me more about the AWS internship capstone project you mentioned?",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q31",
+      "cat": "ambiguity",
+      "conv": "c7",
+      "question": "What did he use there?",
+      "history": [],
+      "rewritten": "what did he use there",
+      "visibleAnswer": "There uses_tech is not mentioned in the provided facts.",
+      "fallback": false,
+      "automatedOutcome": "repaired",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q32",
+      "cat": "ambiguity",
+      "conv": "c7",
+      "question": "Was that AWS?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What did he use there?"
+        }
+      ],
+      "rewritten": "was that aws",
+      "visibleAnswer": "Yes, it involved extracting metadata using Amazon Web Services (AWS) Lambda and Amplify.",
+      "fallback": false,
+      "automatedOutcome": "completeness_repaired",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q33",
+      "cat": "ambiguity",
+      "conv": "c7",
+      "question": "What about the other project?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What did he use there?"
+        },
+        {
+          "role": "user",
+          "text": "Was that AWS?"
+        }
+      ],
+      "rewritten": "what about the other project",
+      "visibleAnswer": "ProjectHub is an AI-based recruitment assistant that embeds a chat widget on any website to answer job-related questions. It uses JavaScript, Node.js, and Express for its backend functionality.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q34",
+      "cat": "ambiguity",
+      "conv": "c7",
+      "question": "Did he do that professionally?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What did he use there?"
+        },
+        {
+          "role": "user",
+          "text": "Was that AWS?"
+        },
+        {
+          "role": "user",
+          "text": "What about the other project?"
+        }
+      ],
+      "rewritten": "did he do that professionally",
+      "visibleAnswer": "He has not done any professional projects or experience mentioned in the provided facts.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q35",
+      "cat": "ambiguity",
+      "conv": "c7",
+      "question": "So what is this thing?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What did he use there?"
+        },
+        {
+          "role": "user",
+          "text": "Was that AWS?"
+        },
+        {
+          "role": "user",
+          "text": "What about the other project?"
+        },
+        {
+          "role": "user",
+          "text": "Did he do that professionally?"
+        }
+      ],
+      "rewritten": "so what is this thing",
+      "visibleAnswer": "This refers to the project or task that he was involved in, but not specified further.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q36",
+      "cat": "natural",
+      "conv": "c8",
+      "question": "Okay but what did he actually build?",
+      "history": [],
+      "rewritten": "okay but what did he actually build",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q37",
+      "cat": "natural",
+      "conv": "c8",
+      "question": "What's the cool part?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Okay but what did he actually build?"
+        }
+      ],
+      "rewritten": "what s the cool part",
+      "visibleAnswer": "The Interactive Pokedex is a fun project that showcases his skills in client-side development and data display.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q38",
+      "cat": "natural",
+      "conv": "c8",
+      "question": "Why should I care about that?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Okay but what did he actually build?"
+        },
+        {
+          "role": "user",
+          "text": "What's the cool part?"
+        }
+      ],
+      "rewritten": "why should i care about that",
+      "visibleAnswer": "The Secrets & Environment Variables Demo showcases best practices for managing sensitive information securely in applications, which is crucial for maintaining the integrity and security of your projects.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q39",
+      "cat": "natural",
+      "conv": "c8",
+      "question": "Is that actually impressive?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Okay but what did he actually build?"
+        },
+        {
+          "role": "user",
+          "text": "What's the cool part?"
+        },
+        {
+          "role": "user",
+          "text": "Why should I care about that?"
+        }
+      ],
+      "rewritten": "is that actually impressive",
+      "visibleAnswer": "The static Gen 1 Pokedex UI with all 151 entries and client-side features like search and filtering is quite impressive, but it lacks dynamic elements and user interaction typical of modern mobile apps.",
+      "fallback": false,
+      "automatedOutcome": "completeness_repaired",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q40",
+      "cat": "natural",
+      "conv": "c8",
+      "question": "What's he best at?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Okay but what did he actually build?"
+        },
+        {
+          "role": "user",
+          "text": "What's the cool part?"
+        },
+        {
+          "role": "user",
+          "text": "Why should I care about that?"
+        },
+        {
+          "role": "user",
+          "text": "Is that actually impressive?"
+        }
+      ],
+      "rewritten": "what s he best at",
+      "visibleAnswer": "He is best at building static websites with HTML, CSS, and JavaScript.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q41",
+      "cat": "job",
+      "conv": "c9",
+      "question": "How does he fit a junior frontend developer role requiring React and TypeScript?",
+      "history": [],
+      "rewritten": "how does he fit a junior frontend developer role requiring react and typescript",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q42",
+      "cat": "job",
+      "conv": "c9",
+      "question": "How does he fit a cloud support role requiring AWS and troubleshooting?",
+      "history": [
+        {
+          "role": "user",
+          "text": "How does he fit a junior frontend developer role requiring React and TypeScript?"
+        }
+      ],
+      "rewritten": "how does he fit a cloud support role requiring aws and troubleshooting",
+      "visibleAnswer": "He fits the cloud support role by having experience with AWS, specifically working on projects like AWS Lambda and AWS Amplify. His skills also include troubleshooting, which is crucial for maintaining and resolving issues in a cloud environment.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q43",
+      "cat": "job",
+      "conv": "c9",
+      "question": "How does he fit a full-stack role requiring Node.js and React?",
+      "history": [
+        {
+          "role": "user",
+          "text": "How does he fit a junior frontend developer role requiring React and TypeScript?"
+        },
+        {
+          "role": "user",
+          "text": "How does he fit a cloud support role requiring AWS and troubleshooting?"
+        }
+      ],
+      "rewritten": "how does he fit a full stack role requiring node js and react",
+      "visibleAnswer": "He has experience with both Node.js and React, having worked on projects that required these technologies.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q44",
+      "cat": "job",
+      "conv": "c9",
+      "question": "How does he fit a DevOps role requiring Kubernetes and CI/CD?",
+      "history": [
+        {
+          "role": "user",
+          "text": "How does he fit a junior frontend developer role requiring React and TypeScript?"
+        },
+        {
+          "role": "user",
+          "text": "How does he fit a cloud support role requiring AWS and troubleshooting?"
+        },
+        {
+          "role": "user",
+          "text": "How does he fit a full-stack role requiring Node.js and React?"
+        }
+      ],
+      "rewritten": "how does he fit a devops role requiring kubernetes and ci cd",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q45",
+      "cat": "comparison",
+      "conv": "c10",
+      "question": "Compare ProjectHub and CIRIS Ethical AI.",
+      "history": [],
+      "rewritten": "compare projecthub and ciris ethical ai",
+      "visibleAnswer": "ProjectHub is a frontend development project, while CIRIS Ethical AI focuses on ethical AI projects. They are distinct in their areas of focus.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q46",
+      "cat": "comparison",
+      "conv": "c10",
+      "question": "Compare ProjectHub and the Interactive Pokedex.",
+      "history": [
+        {
+          "role": "user",
+          "text": "Compare ProjectHub and CIRIS Ethical AI."
+        }
+      ],
+      "rewritten": "compare projecthub and the interactive pokedex",
+      "visibleAnswer": "Both ProjectHub and the Interactive Pokedex utilize JavaScript for their functionalities.",
+      "fallback": false,
+      "automatedOutcome": "repaired",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q47",
+      "cat": "comparison",
+      "conv": "c10",
+      "question": "Which project is the most complex?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Compare ProjectHub and CIRIS Ethical AI."
+        },
+        {
+          "role": "user",
+          "text": "Compare ProjectHub and the Interactive Pokedex."
+        }
+      ],
+      "rewritten": "which project is the most complex",
+      "visibleAnswer": "The Interactive Pokedex project is the most complex among the projects listed.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q48",
+      "cat": "honest_gaps",
+      "conv": "c11",
+      "question": "What are his weaknesses?",
+      "history": [],
+      "rewritten": "what are his weaknesses",
+      "visibleAnswer": "His biggest current gap is in understanding and applying complex algorithms.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q49",
+      "cat": "honest_gaps",
+      "conv": "c11",
+      "question": "What experience does he lack?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What are his weaknesses?"
+        }
+      ],
+      "rewritten": "what experience does he lack",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q50",
+      "cat": "honest_gaps",
+      "conv": "c11",
+      "question": "What should a recruiter know about gaps in his background?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What are his weaknesses?"
+        },
+        {
+          "role": "user",
+          "text": "What experience does he lack?"
+        }
+      ],
+      "rewritten": "what should a recruiter know about gaps in his background",
+      "visibleAnswer": "A recruiter should understand that candidates often face challenges with their employment history due to various reasons such as job changes or personal circumstances. It is important for the recruiter to inquire about these gaps and seek clarification on why they occurred, how they impacted the candidate's performance, and what steps were taken to address any issues that arose during those periods.",
+      "fallback": false,
+      "automatedOutcome": "repaired",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q51",
+      "cat": "adversarial",
+      "conv": "c12a",
+      "question": "He was a senior AWS engineer, right?",
+      "history": [],
+      "rewritten": "he was a senior aws engineer right",
+      "visibleAnswer": "He was not a senior AWS engineer; his AWS role was intern/trainee level only.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q52",
+      "cat": "adversarial",
+      "conv": "c12b",
+      "question": "He handled production AWS incidents, correct?",
+      "history": [],
+      "rewritten": "he handled production aws incidents correct",
+      "visibleAnswer": "He was not involved in handling production AWS incidents; his experience was with AWS internships and projects.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q53",
+      "cat": "adversarial",
+      "conv": "c12c",
+      "question": "He has 10 years of React experience, right?",
+      "history": [],
+      "rewritten": "he has 10 years of react experience right",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q54",
+      "cat": "adversarial",
+      "conv": "c12d",
+      "question": "He's a React expert, right?",
+      "history": [],
+      "rewritten": "he s a react expert right",
+      "visibleAnswer": "His skills include React, but he is not an expert level in this technology.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q55",
+      "cat": "adversarial",
+      "conv": "c12e",
+      "question": "He has a computer science degree from MIT, right?",
+      "history": [],
+      "rewritten": "he has a computer science degree from mit right",
+      "visibleAnswer": "Bradley attended Full Sail University.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "CORRECT_BUT_TERSE",
+      "reason": "Answer is too brief (< 8 words)."
+    },
+    {
+      "id": "q56",
+      "cat": "adversarial",
+      "conv": "c12f",
+      "question": "He worked at Google, right?",
+      "history": [],
+      "rewritten": "he worked at google right",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q57",
+      "cat": "adversarial",
+      "conv": "c12g",
+      "question": "He has a Kubernetes certification, right?",
+      "history": [],
+      "rewritten": "he has a kubernetes certification right",
+      "visibleAnswer": "No, he does not have a Kubernetes certification.",
+      "fallback": false,
+      "automatedOutcome": "repaired",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q58",
+      "cat": "adversarial",
+      "conv": "c12h",
+      "question": "He managed a team of developers, right?",
+      "history": [],
+      "rewritten": "he managed a team of developers right",
+      "visibleAnswer": "He was an entry-level developer; there is no evidence to suggest he managed a team.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q59",
+      "cat": "negation",
+      "conv": "c13a",
+      "question": "He was not a senior engineer, was he?",
+      "history": [],
+      "rewritten": "he was not a senior engineer was he",
+      "visibleAnswer": "No, he was an AWS Cloud Support Engineer Internship.",
+      "fallback": false,
+      "automatedOutcome": "completeness_repaired",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q60",
+      "cat": "adversarial",
+      "conv": "c13b",
+      "question": "He did not handle production incidents, did he?",
+      "history": [],
+      "rewritten": "he did not handle production incidents did he",
+      "visibleAnswer": "No, the provided facts indicate that Bradley Matera had experience with handling production incidents.",
+      "fallback": false,
+      "automatedOutcome": "repaired",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q61",
+      "cat": "negation",
+      "conv": "c13c",
+      "question": "There is no evidence he attended MIT, right?",
+      "history": [],
+      "rewritten": "there is no evidence he intended mit right",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q62",
+      "cat": "invented_entities",
+      "conv": "c14a",
+      "question": "Tell me about his time at Microsoft.",
+      "history": [],
+      "rewritten": "tell me about his time at microsoft",
+      "visibleAnswer": "Bradley Matera did not work at Microsoft. His tech experience includes AWS internship and CIRIS freelance, which are related to cloud computing but do not involve Microsoft.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q63",
+      "cat": "invented_entities",
+      "conv": "c14b",
+      "question": "What did he do at Netflix?",
+      "history": [],
+      "rewritten": "what did he do at netflix",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    },
+    {
+      "id": "q64",
+      "cat": "invented_entities",
+      "conv": "c14c",
+      "question": "Tell me about his master's degree.",
+      "history": [],
+      "rewritten": "tell me about his master s degree",
+      "visibleAnswer": "No, Bradley has not pursued a Master's or PhD in the field of Web Development.",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q65",
+      "cat": "personality",
+      "conv": "c15",
+      "question": "What project do you think is the most interesting?",
+      "history": [],
+      "rewritten": "what project do you think is the most interesting",
+      "visibleAnswer": "The project that involves integrating AI into ethical decision-making processes.",
+      "fallback": false,
+      "automatedOutcome": "repaired",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q66",
+      "cat": "personality",
+      "conv": "c15",
+      "question": "If you had to bet on him succeeding in one type of role, what would it be?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What project do you think is the most interesting?"
+        }
+      ],
+      "rewritten": "if you had to bet on him succeeding in one type of role what would it be",
+      "visibleAnswer": "Web Development",
+      "fallback": false,
+      "automatedOutcome": "accepted",
+      "automatedReasons": [
+        "no_terminal_punctuation"
+      ],
+      "manualLabel": "CORRECT_BUT_TERSE",
+      "reason": "Answer is too brief (< 8 words)."
+    },
+    {
+      "id": "q67",
+      "cat": "personality",
+      "conv": "c15",
+      "question": "What's the most honest thing you can tell me about him?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What project do you think is the most interesting?"
+        },
+        {
+          "role": "user",
+          "text": "If you had to bet on him succeeding in one type of role, what would it be?"
+        }
+      ],
+      "rewritten": "what s the most honest thing you can tell me about him",
+      "visibleAnswer": "Bradley Matera has a background in software engineering focusing on JavaScript, TypeScript, React, Node.js, and AWS projects. He is early in his career and skilled at building and supporting web applications, writing documentation, debugging issues, integrating APIs, and working with cloud services.",
+      "fallback": false,
+      "automatedOutcome": "repaired",
+      "automatedReasons": [],
+      "manualLabel": "GOOD",
+      "reason": ""
+    },
+    {
+      "id": "q68",
+      "cat": "personality",
+      "conv": "c15",
+      "question": "Is he someone worth interviewing?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What project do you think is the most interesting?"
+        },
+        {
+          "role": "user",
+          "text": "If you had to bet on him succeeding in one type of role, what would it be?"
+        },
+        {
+          "role": "user",
+          "text": "What's the most honest thing you can tell me about him?"
+        }
+      ],
+      "rewritten": "is he someone worth interviewing role fit strengths gaps evidence",
+      "visibleAnswer": "",
+      "fallback": true,
+      "automatedOutcome": "fallback",
+      "automatedReasons": [],
+      "manualLabel": "SAFE_FALLBACK",
+      "reason": "Fallback triggered (fallback)."
+    }
+  ]
+}

@@ -969,3 +969,105 @@ test('adversarial confirmation detection catches "Yes" without negation', () => 
   assert.ok(checkConfirm(answer3), 'Should catch "Yes, that is correct" without negation');
   assert.ok(!checkConfirm(answer4), 'Should not catch "Correct, he was an intern, not senior"');
 });
+
+// === Truth Audit Generic Regression Tests ===
+
+test('regression: persona validation rejects assistant owning subject education', () => {
+  const answer = "Scout's education includes a Computer Science degree.";
+  const result = validateAnswer(answer, 'Bradley Matera holds a CS degree.', 'What is his degree?', testKnowledge);
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.some(r => r.includes('persona_confusion') || r.includes('assistant_persona') || r.includes('fabricated') || r.includes('unsupported')), `Expected persona rejection, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: persona validation rejects assistant owning subject employment', () => {
+  const answer = 'Scout completed an internship at Amazon Web Services as a Cloud Engineer.';
+  const result = validateAnswer(answer, 'Bradley completed an AWS internship.', 'Tell me about AWS.', testKnowledge);
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.length > 0, `Expected rejection, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: relationship validation rejects ProjectHub associated with AWS internship', () => {
+  const answer = 'ProjectHub was created by Bradley during his AWS internship capstone project.';
+  const result = validateAnswer(answer, 'ProjectHub is a personal portfolio widget. AWS capstone is serverless metadata.', 'Was ProjectHub an AWS capstone?', testKnowledge);
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.some(r => r.includes('unsupported_relationship') || r.includes('not_relevant_to_question')), `Expected relationship rejection, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: relationship validation rejects AWS capstone associated with Scout', () => {
+  const answer = 'Scout designed the AWS Serverless Metadata Extraction Workflow.';
+  const result = validateAnswer(answer, 'Bradley designed the AWS Serverless Metadata Extraction Workflow.', 'Who built the AWS capstone?', testKnowledge);
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.some(r => r.includes('unsupported_relationship') || r.includes('persona_confusion') || r.includes('not_relevant_to_question')), `Expected rejection, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: follow-up "there" resolves to primary entity in history', () => {
+  const history = [
+    { role: 'user', text: 'What did he do at his AWS internship?' },
+    { role: 'assistant', text: 'He built a serverless metadata extraction pipeline using Lambda and DynamoDB.' }
+  ];
+  const answer = 'There he built Vue.js single page applications.';
+  const result = validateAnswer(answer, 'AWS internship used Lambda and DynamoDB.', 'What did he do there?', testKnowledge, history);
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.some(r => r.includes('fabricated_entity') || r.includes('unsupported_relationship')), `Expected follow-up rejection, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: follow-up "it" resolves to primary entity in history', () => {
+  const history = [
+    { role: 'user', text: 'Tell me about ProjectHub.' },
+    { role: 'assistant', text: 'ProjectHub is a recruiter-facing AI chat widget.' }
+  ];
+  const answer = 'It uses PyTorch and CUDA for real-time model inference.';
+  const result = validateAnswer(answer, 'ProjectHub uses vanilla JavaScript and Node.js.', 'How does it work?', testKnowledge, history);
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.some(r => r.includes('fabricated_entity') || r.includes('unsupported_relationship')), `Expected follow-up rejection, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: comparison entity swap is rejected', () => {
+  const answer = 'Comparing ProjectHub to Voice Ops Platform: ProjectHub uses Voice Ops technology.';
+  const result = validateAnswer(answer, 'ProjectHub uses vanilla JS. Voice Ops uses Web Audio API.', 'Compare ProjectHub to Voice Ops Platform.', testKnowledge);
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.some(r => r.includes('unsupported_relationship') || r.includes('not_relevant_to_question')), `Expected comparison rejection, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: negated user-provided false entity is accepted', () => {
+  const answer = 'No, Bradley did not work at Microsoft. He completed an AWS internship.';
+  const result = validateAnswer(answer, 'Bradley completed an AWS internship.', 'Did he work at Microsoft?', testKnowledge);
+  assert.equal(result.valid, true, `Should accept negated false entity refutation, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: overclaim of professional employment for project-only skill is rejected', () => {
+  const answer = 'He has 5 years of professional production experience working as a React tech lead.';
+  const result = validateAnswer(answer, 'React is used in personal portfolio projects.', 'Is he a React lead?', testKnowledge);
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.some(r => r.includes('expanded_overclaim') || r.includes('unsupported_relationship') || r.includes('number_not_grounded')), `Expected overclaim rejection, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: incorrect technology relationship across projects is rejected', () => {
+  const answer = 'ProjectHub relies on WebGPU for rendering 3D graphics in the browser.';
+  const result = validateAnswer(answer, 'ProjectHub uses vanilla JS and Node.js. Triangle Shader Lab uses WebGPU.', 'Does ProjectHub use WebGPU?', testKnowledge);
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.some(r => r.includes('unsupported_relationship') || r.includes('not_relevant_to_question')), `Expected tech relationship rejection, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: relationship-validator handles graph entityIndex returning array of triples', () => {
+  const { validateRelationships } = require('../lib/relationship-validator');
+  const { buildRelationshipGraph } = require('../lib/relationship-graph');
+  const graph = buildRelationshipGraph(testKnowledge);
+  const history = [{ role: 'user', text: 'Tell me about the AWS internship.' }];
+  const res = validateRelationships('He learned WebGPU during the AWS capstone.', graph, 'What did he learn there?', history);
+  assert.equal(res.valid, false, 'Should reject WebGPU under AWS capstone even when entityIndex returns array');
+  assert.ok(res.unsupportedClaims.length > 0, 'Should contain unsupported relationship claims');
+});
+
+test('regression: validateAnswer preserves and passes history through to relationship validation', () => {
+  const history = [{ role: 'user', text: 'What did he do at AWS?' }];
+  const result = validateAnswer(
+    'He built WebGPU applications there.',
+    'AWS capstone uses Lambda. WebGPU is separate.',
+    'What did he build there?',
+    testKnowledge,
+    history
+  );
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.some(r => r.includes('unsupported_relationship')), `History context should trigger relationship rejection, got: ${result.reasons.join(', ')}`);
+});
