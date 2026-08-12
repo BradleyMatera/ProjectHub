@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# ProjectHub safety hook: GitHub is authoritative.
+# Direct pushes to protected integration/production branches are never allowed
+# from a local clone, IDE, coding agent, or desktop copy.
+
+while read local_ref local_sha remote_ref remote_sha
+do
+  case "$remote_ref" in
+    refs/heads/master|refs/heads/develop)
+      echo >&2 ""
+      echo >&2 "BLOCKED: direct push to ${remote_ref#refs/heads/} is not allowed."
+      echo >&2 "GitHub is the ProjectHub source of truth; local clones are disposable working copies."
+      echo >&2 "Fetch/pull from origin, create a feature branch, push that branch, and use a pull request."
+      echo >&2 ""
+      exit 1
+      ;;
+  esac
+done
+
+exit 0
