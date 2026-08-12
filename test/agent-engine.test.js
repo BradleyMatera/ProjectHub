@@ -1666,6 +1666,39 @@ test('regression: correct employment at known company is accepted', () => {
   assert.equal(result.valid, true, `Correct AWS employment should be accepted, got: ${result.reasons.join(', ')}`);
 });
 
+test('regression: fabricated technology (MongoDB) is detected when not in knowledge base', () => {
+  const result = validateAnswer(
+    'His experience with building and deploying web applications using technologies such as Node.js, Express, and MongoDB.',
+    'Bradley has experience with JavaScript, Node.js, Express, React, and AWS.',
+    "What's the strongest evidence that he can actually build software?",
+    testKnowledge
+  );
+  assert.equal(result.valid, false, 'MongoDB should be flagged as fabricated when not in knowledge base');
+  assert.ok(result.reasons.some(r => r.includes('fabricated_entity:MongoDB')),
+    `Should flag MongoDB as fabricated, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: known technology is not flagged as fabricated', () => {
+  const result = validateAnswer(
+    'His skills include JavaScript, Node.js, Express, and React.',
+    'Bradley has experience with JavaScript, Node.js, Express, and React.',
+    'Does he know React?',
+    testKnowledge
+  );
+  assert.equal(result.valid, true, `Known technologies should not be flagged, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: negated technology mention is not flagged as fabricated', () => {
+  const result = validateAnswer(
+    'He does not have experience with MongoDB or PostgreSQL.',
+    'Bradley has experience with JavaScript and Node.js.',
+    'Does he know MongoDB?',
+    testKnowledge
+  );
+  assert.ok(!result.reasons.some(r => r.includes('fabricated_entity:MongoDB')),
+    `Negated MongoDB should not be flagged as fabricated, got: ${result.reasons.join(', ')}`);
+});
+
 test('regression: leaked internal phrase (connecting entities) is rejected', () => {
   const result = validateAnswer(
     'He is best at connecting entities.',
