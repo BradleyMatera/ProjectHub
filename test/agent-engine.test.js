@@ -1721,6 +1721,29 @@ test('regression: correct entity description is accepted', () => {
   assert.equal(result.valid, true, `Correct description should be accepted, got: ${result.reasons.join(', ')}`);
 });
 
+test('regression: project claimed as company is rejected', () => {
+  const result = validateAnswer(
+    'His work experience includes internships at companies such as ProjectHub, where he contributed to serverless applications.',
+    'Bradley built ProjectHub. He interned at AWS.',
+    'Is he someone worth interviewing?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false, 'Project claimed as company should be rejected');
+  assert.ok(result.reasons.some(r => r.includes('wrong_relationship:project_as_company')),
+    `Should flag project as company, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: false negation "projects do not involve building" is rejected', () => {
+  const result = validateAnswer(
+    'No, his projects do not involve building anything. He primarily focuses on frontend development.',
+    'Bradley has built ProjectHub, Interactive Pokedex, CheeseMath.',
+    'How well? Like, can he actually build something with it?',
+    testKnowledge
+  );
+  assert.ok(result.reasons.some(r => r.includes('false_negation')),
+    `Should flag false negation, got: ${result.reasons.join(', ')}`);
+});
+
 test('regression: leaked internal phrase (connecting entities) is rejected', () => {
   const result = validateAnswer(
     'He is best at connecting entities.',
