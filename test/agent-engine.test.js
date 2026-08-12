@@ -1071,3 +1071,138 @@ test('regression: validateAnswer preserves and passes history through to relatio
   assert.equal(result.valid, false);
   assert.ok(result.reasons.some(r => r.includes('unsupported_relationship')), `History context should trigger relationship rejection, got: ${result.reasons.join(', ')}`);
 });
+
+// === HalfCommit safety-regression guard ===
+// These tests pin the 6 displayed safety errors found in the post-HalfCommit
+// 68-run audit. They ensure the validation loosening that caused them cannot
+// recur. Each test is generic (no questionId branching, no ProjectHub-specific
+// hardcoding) — it tests the generic validation concept that was broken.
+
+// q38 / q44: "experience in cloud infrastructure management" and
+// "experience in cloud infrastructure design and automation" were overclaims
+// that passed because a genericCategoryRe skip exempted any has_experience
+// claim starting with "cloud", "infrastructure", "devops", etc. That skip is
+// removed — unsupported has_experience claims must go through relationship
+// validation and fail when no triple exists.
+test('regression: has_experience overclaim for cloud infrastructure is rejected', () => {
+  const result = validateRelationships(
+    'He has experience in cloud infrastructure management and automation.',
+    testGraph
+  );
+  assert.equal(result.valid, false, 'Unsupported has_experience overclaim should be rejected');
+  assert.ok(result.unsupportedClaims.length > 0, 'Should flag cloud infrastructure as unsupported has_experience');
+});
+
+test('regression: has_experience overclaim for cloud infrastructure design is rejected', () => {
+  const result = validateRelationships(
+    'Bradley has experience in cloud infrastructure design and automation.',
+    testGraph
+  );
+  assert.equal(result.valid, false, 'Unsupported has_experience overclaim should be rejected');
+});
+
+// q23: "ProjectHub is a tool that helps find jobs for people..." was a factual
+// mischaracterization that passed because the isOpenEndedQuestion regex was
+// over-broad (matched "explain it"), skipping the insufficient_content_overlap
+// check. The regex is reverted — "Explain X like I'm not technical" should NOT
+// be classified as open-ended, so an answer with low source overlap is rejected.
+test('regression: explain-like question does not skip content-overlap check', () => {
+  const source = 'ProjectHub is an embeddable AI recruiter assistant named Scout. It answers questions about Bradley projects.';
+  const result = validateAnswer(
+    'ProjectHub is a tool that helps find jobs for people who are looking for work, kind of like a job search engine but with AI assistance.',
+    source,
+    "Explain ProjectHub like I'm not technical.",
+    testKnowledge
+  );
+  assert.equal(result.valid, false, `Mischaracterized answer with low source overlap should be rejected, got: ${result.reasons.join(', ')}`);
+});
+
+// q33: "ProjectHub is an AI assistant script that answers questions about
+// various scripts on websites" — mischaracterization. This is a PRE-EXISTING
+// claim-extractor coverage gap (is_type claims are skipped, and the description
+// mischaracterization isn't captured by any pattern). Documenting as a known
+// gap — the is_type skip and description-accuracy check need to be addressed
+// in the conversational-parity phase.
+test('known-gap: ProjectHub mischaracterization as scripts-answerer (pre-existing)', () => {
+  const source = 'ProjectHub is an embeddable AI recruiter assistant named Scout. It uses JavaScript, Node.js, and Express.';
+  const result = validateAnswer(
+    'ProjectHub is an AI assistant script that answers questions about various scripts on websites. It uses JavaScript, Node.js, and Express for its functionality.',
+    source,
+    'What about the other project?',
+    testKnowledge
+  );
+  // Currently passes — this is a known gap. is_type validation is skipped and
+  // the description mischaracterization isn't extracted as a claim.
+  // When fixed, this assertion should flip to false.
+  assert.equal(result.valid, true, `Known gap: mischaracterization currently passes. Reasons: ${result.reasons.join(', ')}`);
+});
+
+// q28: "AWS internship capstone... and an AI assistant named Scout" — Scout is
+// the ProjectHub assistant, NOT part of the AWS capstone. This is a PRE-EXISTING
+// claim-extractor coverage gap — the complex sentence "capstone that involved...
+// with Lambda, DynamoDB, S3, and an AI assistant named Scout" doesn't match any
+// extraction pattern, so no claims are extracted and nothing is validated.
+test('known-gap: Scout attributed to AWS capstone (pre-existing claim-extractor gap)', () => {
+  const result = validateRelationships(
+    'His strongest project was the AWS internship capstone that involved extracting metadata using a serverless pipeline with Lambda, DynamoDB, S3, and an AI assistant named Scout.',
+    testGraph
+  );
+  // Currently passes — this is a known gap. The claim extractor doesn't parse
+  // the complex sentence structure to extract Scout as an attributed entity.
+  // When fixed, this assertion should flip to false.
+  assert.equal(result.valid, true, `Known gap: Scout-in-capstone currently passes. Unsupported: ${result.unsupportedClaims.length}`);
+});
+
+// q4: Follow-up context drift — conversation about ProjectHub, but answer
+// talks about the Pokedex. This is a PRE-EXISTING conversation-state gap —
+// the validator doesn't check whether the answer's subject matches the
+// conversation's active subject. Needs a follow-up context resolution check.
+test('known-gap: follow-up answer drifts to wrong project (pre-existing)', () => {
+  const history = [
+    { role: 'user', text: 'Tell me about ProjectHub.' },
+    { role: 'user', text: "Okay, but what's actually interesting about it?" },
+    { role: 'user', text: 'What did Bradley personally build?' }
+  ];
+  const source = 'ProjectHub is an embeddable AI recruiter assistant. It uses JavaScript and Node.js. The Interactive Pokedex uses client-side search and filtering.';
+  const result = validateAnswer(
+    'The hardest technical part was integrating the Pokedex static UI with a dynamic client-side search and filtering system.',
+    source,
+    'What was the hardest technical part?',
+    testKnowledge,
+    history
+  );
+  // Currently passes — this is a known gap. The validator doesn't verify
+  // that the answer's subject matches the conversation's active subject.
+  // When fixed, this assertion should flip to false.
+  assert.equal(result.valid, true, `Known gap: follow-up drift currently passes. Reasons: ${result.reasons.join(', ')}`);
+});
+
+// Entity-grounding exemption must NOT become factual-grounding exemption.
+// "Kubernetes" is a recognizable technology, but if it is not in the source
+// evidence for this query, claiming it as Bradley's experience must fail
+// grounding. (Negated mentions are handled separately by the negation skip.)
+test('regression: recognizable tech name still requires grounding when asserted', () => {
+  const source = 'Bradley built ProjectHub with JavaScript and Node.js. He has an AWS certification.';
+  const result = validateAnswer(
+    'Bradley has Kubernetes experience and uses it for deployment.',
+    source,
+    'What does Bradley know?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false, `Ungrounded Kubernetes claim should be rejected even though Kubernetes is a real technology, got: ${result.reasons.join(', ')}`);
+  assert.ok(result.reasons.some(r => r.startsWith('entity_not_grounded:') || r.includes('unsupported_relationship')), `Should flag Kubernetes as ungrounded or unsupported, got: ${result.reasons.join(', ')}`);
+});
+
+// Negated mention of a recognizable tech name should NOT be rejected — the
+// negation-context skip handles "no Kubernetes experience" correctly.
+test('regression: negated tech mention is not falsely rejected', () => {
+  const source = 'Bradley built ProjectHub with JavaScript and Node.js. He has an AWS certification.';
+  const result = validateAnswer(
+    'No, he does not have a Kubernetes certification.',
+    source,
+    'He has a Kubernetes certification, right?',
+    testKnowledge
+  );
+  // This should pass — it's a correct negation/refutation
+  assert.equal(result.valid, true, `Negated Kubernetes mention should not be rejected, got: ${result.reasons.join(', ')}`);
+});
