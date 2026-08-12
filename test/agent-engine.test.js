@@ -1632,6 +1632,18 @@ test('regression: correct AWS certification is accepted', () => {
   assert.equal(result.valid, true, `Correct certification should be accepted, got: ${result.reasons.join(', ')}`);
 });
 
+test('regression: "lacks experience with X" rejected when X is a built project', () => {
+  const result = validateAnswer(
+    'He lacks experience with the Interactive Pokedex, CheeseMath Calculator, and Triangle Shader Lab.',
+    'Bradley built the Interactive Pokedex, CheeseMath, and Triangle Shader Lab.',
+    'What experience does he lack?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false, 'Should reject lack claims about built projects');
+  assert.ok(result.reasons.some(r => r.includes('false_negation')),
+    `Should flag false negation for built project, got: ${result.reasons.join(', ')}`);
+});
+
 test('regression: leaked internal phrase (connecting entities) is rejected', () => {
   const result = validateAnswer(
     'He is best at connecting entities.',
