@@ -1154,10 +1154,11 @@ test('known-gap: Scout attributed to AWS capstone (pre-existing claim-extractor 
 });
 
 // q4: Follow-up context drift — conversation about ProjectHub, but answer
-// talks about the Pokedex. This is a PRE-EXISTING conversation-state gap —
-// the validator doesn't check whether the answer's subject matches the
-// conversation's active subject. Needs a follow-up context resolution check.
-test('known-gap: follow-up answer drifts to wrong project (pre-existing)', () => {
+// talks about the Pokedex. The implicit follow-up subject consistency check
+// detects that the question doesn't mention an entity, the conversation's
+// primary entity is ProjectHub, and the answer mentions a different entity
+// (Pokedex) without mentioning ProjectHub.
+test('regression: follow-up answer drifts to wrong project is rejected', () => {
   const history = [
     { role: 'user', text: 'Tell me about ProjectHub.' },
     { role: 'user', text: "Okay, but what's actually interesting about it?" },
@@ -1171,10 +1172,28 @@ test('known-gap: follow-up answer drifts to wrong project (pre-existing)', () =>
     testKnowledge,
     history
   );
-  // Currently passes — this is a known gap. The validator doesn't verify
-  // that the answer's subject matches the conversation's active subject.
-  // When fixed, this assertion should flip to false.
-  assert.equal(result.valid, true, `Known gap: follow-up drift currently passes. Reasons: ${result.reasons.join(', ')}`);
+  assert.equal(result.valid, false, `Follow-up context drift should be rejected, got: ${result.reasons.join(', ')}`);
+  assert.ok(result.reasons.some(r => r.includes('context_drift')), `Should flag context drift, got: ${result.reasons.join(', ')}`);
+});
+
+// Control: when the question explicitly mentions an entity, context drift
+// should NOT be triggered — the user is intentionally asking about that entity.
+test('regression: explicit entity in question does not trigger context drift', () => {
+  const history = [
+    { role: 'user', text: 'Tell me about ProjectHub.' },
+    { role: 'user', text: "Okay, but what's actually interesting about it?" }
+  ];
+  const source = 'ProjectHub is an embeddable AI recruiter assistant. The Interactive Pokedex uses client-side search and filtering.';
+  const result = validateAnswer(
+    'The Interactive Pokedex has client-side search and filtering for all 151 entries.',
+    source,
+    'What about the Interactive Pokedex?',
+    testKnowledge,
+    history
+  );
+  // Should not be rejected for context drift — the question explicitly asks
+  // about the Pokedex, so mentioning it is correct.
+  assert.ok(!result.reasons.includes('context_drift'), `Explicit entity question should not trigger context drift, got: ${result.reasons.join(', ')}`);
 });
 
 // Entity-grounding exemption must NOT become factual-grounding exemption.
@@ -1205,4 +1224,91 @@ test('regression: negated tech mention is not falsely rejected', () => {
   );
   // This should pass — it's a correct negation/refutation
   assert.equal(result.valid, true, `Negated Kubernetes mention should not be rejected, got: ${result.reasons.join(', ')}`);
+});
+
+// === Leaked internal syntax guard ===
+// The 1.5b model sometimes echoes relation names or internal graph terminology
+// from the context/repair packet instead of verbalizing naturally. These broken
+// outputs must never be displayed.
+
+test('regression: leaked relation name (worked_at) is rejected', () => {
+  const result = validateAnswer(
+    'Bradley Matera worked_at modern web development frameworks.',
+    'Bradley uses JavaScript and Node.js.',
+    'What should I ask him about?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.includes('leaked_relation_syntax'), `Should flag leaked relation name, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: leaked relation name (uses_tech) is rejected', () => {
+  const result = validateAnswer(
+    'There uses_tech in the project.',
+    'Bradley uses JavaScript and Node.js.',
+    'What did he use there?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.includes('leaked_relation_syntax'), `Should flag leaked relation name, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: leaked internal phrase (connecting entities) is rejected', () => {
+  const result = validateAnswer(
+    'He is best at connecting entities.',
+    'Bradley uses JavaScript and Node.js.',
+    "What's he best at?",
+    testKnowledge
+  );
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.includes('leaked_internal_language'), `Should flag leaked internal language, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: leaked internal phrase (not in the knowledge base) is rejected', () => {
+  const result = validateAnswer(
+    'A technology/entity not in the knowledge base.',
+    'Bradley uses JavaScript and Node.js.',
+    'What experience does he lack?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.includes('leaked_internal_language'), `Should flag leaked internal language, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: normal answer without leaked syntax is not falsely rejected', () => {
+  const result = validateAnswer(
+    'He has experience with JavaScript and Node.js.',
+    'Bradley uses JavaScript and Node.js for web development.',
+    'What does Bradley know?',
+    testKnowledge
+  );
+  assert.equal(result.valid, true, `Normal answer should not be rejected, got: ${result.reasons.join(', ')}`);
+});
+
+// q63: "Bradley was employed by Netflix as a software engineer" — fabrication.
+// The model claims employment at Netflix when no such relationship exists.
+// The "employed by" pattern must be extracted as a worked_at claim and rejected.
+test('regression: fabricated employment at Netflix is rejected', () => {
+  const result = validateAnswer(
+    'Bradley was employed by Netflix as a software engineer.',
+    'Bradley Matera had no direct experience with Netflix. His tech experience is AWS internship and CIRIS freelance.',
+    'What did he do at Netflix?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false, `Netflix fabrication should be rejected, got: ${result.reasons.join(', ')}`);
+  assert.ok(result.reasons.some(r => r.includes('unsupported_relationship') && r.includes('Netflix')), `Should flag Netflix as unsupported employment, got: ${result.reasons.join(', ')}`);
+});
+
+// q33: "AWS context_drift ProjectHub" — the model echoed the internal
+// context_drift reason name from the repair packet. All internal reason
+// names must be caught by the leaked syntax check.
+test('regression: leaked context_drift reason name is rejected', () => {
+  const result = validateAnswer(
+    'AWS context_drift ProjectHub is unrelated to the projects mentioned.',
+    'Bradley built ProjectHub and the AWS capstone.',
+    'What about the other project?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false, `Leaked context_drift should be rejected, got: ${result.reasons.join(', ')}`);
+  assert.ok(result.reasons.includes('leaked_relation_syntax'), `Should flag leaked context_drift, got: ${result.reasons.join(', ')}`);
 });
