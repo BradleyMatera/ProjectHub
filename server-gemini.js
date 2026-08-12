@@ -3541,6 +3541,208 @@ setInterval(() => { runThinkMode().catch(e => console.error('[think] Error:', e.
 process.on('SIGTERM', () => { flushStats(); process.exit(0); });
 process.on('SIGINT', () => { flushStats(); process.exit(0); });
 
+// --- Client-Local Mode Endpoints ---
+// These endpoints support browser-local inference:
+// 1. /api/client-packet: Server prepares a compact evidence packet for browser generation
+// 2. /api/client-validate: Server validates a browser-generated answer against the same evidence
+
+const { preRoute, compressToolResult, buildLitePacket, detectAdversarialCaveat, rewriteQuery } = require('./lib/lite-agent');
+
+// In-memory store for evidence packets (short TTL, identified by runId)
+const clientPacketStore = new Map();
+const CLIENT_PACKET_TTL_MS = 60000; // 1 minute
+
+app.post('/api/client-packet', async (req, res) => {
+  try {
+    const userMessage = String(req.body.message || '').trim();
+    const sessionId = String(req.body.sessionId || '').slice(0, 128);
+    if (!userMessage) return res.status(400).json({ error: 'Missing message.' });
+    if (userMessage.length > 600) return res.status(400).json({ error: 'Message too long.' });
+
+    const knowledge = await fetchKnowledge();
+    if (!knowledge) return res.status(503).json({ error: 'Knowledge not loaded.' });
+
+    const history = getConversationHistory(sessionId, req.body.history);
+    const convState = sessionState.getState(sessionId);
+
+    // BM25 retrieval
+    const chunks = ragChunks || buildRagChunks(knowledge);
+    const understood = understandQuery(userMessage, history, chunks);
+    const bm25Results = bm25Index
+      ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 5)
+      : [];
+    const evidence = bm25Results.map(r => ({
+      kind: r.tag, name: '', description: r.text, evidenceScore: r.rrfScore
+    }));
+
+    // Query rewrite (resolve references)
+    const { rewritten, changed } = rewriteQuery(userMessage, convState);
+
+    // Pre-route (deterministic tool selection)
+    const route = preRoute(rewritten, convState, knowledge);
+
+    // Execute tool
+    let toolResult;
+    try {
+      toolResult = executeAgentTool(route.tool, route.args, knowledge);
+    } catch (err) {
+      toolResult = { error: 'Tool execution failed.' };
+    }
+
+    // Compress evidence
+    let compressed = compressToolResult(route.tool, toolResult, 240);
+
+    // Supplement with BM25 evidence if tool result is thin
+    if (evidence.length && compressed.length < 200) {
+      const evidenceText = evidence.slice(0, 3)
+        .map(e => String(e.description || '').slice(0, 120))
+        .filter(t => t).join('\n');
+      if (evidenceText) compressed = compressed + '\n' + evidenceText;
+    }
+
+    // Adversarial caveat
+    const adversarial = detectAdversarialCaveat(rewritten, compressed);
+    if (adversarial) compressed = compressed + '\n' + adversarial;
+
+    // Build compact packet
+    const packet = buildLitePacket({
+      question: rewritten,
+      compressedEvidence: compressed,
+      operation: route.operation,
+      maxTokens: 120
+    });
+
+    // Create a CLIENT_SAFE evidence boundary
+    // Only include public-facing evidence, never internal analytics/logs/secrets
+    const clientSafeEvidence = {
+      systemPrompt: packet.systemPrompt,
+      userPrompt: packet.userPrompt,
+      operation: route.operation,
+      rewritten: changed,
+      rewrittenQuery: rewritten,
+      adversarial: !!adversarial,
+      contextTokens: packet.estimatedTokens
+    };
+
+    // Store the full evidence for validation (server-side only)
+    const runId = `run-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    clientPacketStore.set(runId, {
+      compressedEvidence: compressed,
+      toolResult,
+      question: rewritten,
+      originalQuestion: userMessage,
+      sessionId,
+      createdAt: Date.now()
+    });
+
+    // Clean up expired packets
+    const now = Date.now();
+    for (const [key, val] of clientPacketStore) {
+      if (now - val.createdAt > CLIENT_PACKET_TTL_MS) clientPacketStore.delete(key);
+    }
+
+    meterEvent({ source: 'client-local', kind: 'packet', meta: { operation: route.operation, tokens: packet.estimatedTokens } });
+
+    // Build deterministic fallback answer (server-side grounded answer)
+    const fallbackReply = buildGroundedFallback(knowledge, userMessage, history);
+
+    res.json({
+      ok: true,
+      runId,
+      packet: clientSafeEvidence,
+      // Also return the deterministic fallback answer so the browser
+      // can display it immediately if generation fails
+      fallback: fallbackReply
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/client-validate', async (req, res) => {
+  try {
+    const runId = String(req.body.runId || '').slice(0, 64);
+    const answer = String(req.body.answer || '').trim().slice(0, 600);
+    const sessionId = String(req.body.sessionId || '').slice(0, 128);
+
+    if (!runId || !answer) return res.status(400).json({ error: 'Missing runId or answer.' });
+
+    const stored = clientPacketStore.get(runId);
+    if (!stored) return res.status(404).json({ ok: false, verdict: 'expired', valid: false });
+
+    // Validate the browser-generated answer against the SAME evidence
+    const sourceText = stored.compressedEvidence + ' ' + JSON.stringify(stored.toolResult).slice(0, 2000);
+    const validation = validateAnswer(answer, sourceText, stored.question);
+
+    // Check for forbidden claims in adversarial questions
+    const adversarialCaveat = detectAdversarialCaveat(stored.question, stored.compressedEvidence);
+    let forbidden = false;
+    if (adversarialCaveat) {
+      const FORBIDDEN_RE = /\b(senior|production|managed a team|architected|expert|team lead)\b/i;
+      const NEGATION_RE = /\b(not|never|no|wasn't|was not|isn't|is not|didn't|did not|doesn't|does not)\b/i;
+      const hasNegation = NEGATION_RE.test(answer);
+      if (FORBIDDEN_RE.test(answer) && !hasNegation) {
+        forbidden = true;
+      }
+      // Check for years claims
+      const yearsMatch = answer.match(/\b(\d+)\s+years?\b/i);
+      if (yearsMatch && !hasNegation) {
+        forbidden = true;
+      }
+      // Check for university/degree claims not in evidence
+      const questionLower = stored.question.toLowerCase();
+      if (/mit|stanford|harvard|berkeley|carnegie mellon|caltech|princeton|yale|oxford|cambridge/.test(answer.toLowerCase()) && !hasNegation) {
+        // If the question asks about a specific university, and the answer confirms it,
+        // check if that university is in the evidence
+        const uniMatch = answer.match(/(MIT|Stanford|Harvard|Berkeley|Carnegie Mellon|Caltech|Princeton|Yale|Oxford|Cambridge)/i);
+        if (uniMatch && !stored.compressedEvidence.toLowerCase().includes(uniMatch[0].toLowerCase())) {
+          forbidden = true;
+        }
+      }
+      // Check for degree claims (computer science, CS, etc.) not in evidence
+      if (/\b(computer science|CS degree|B\.?S\.?|B\.?A\.?|M\.?S\.?|M\.?A\.?|Ph\.?D)\b/i.test(answer) && !hasNegation) {
+        if (!/\b(computer science|CS|degree)\b/i.test(stored.compressedEvidence)) {
+          forbidden = true;
+        }
+      }
+    }
+
+    const valid = validation.valid && !forbidden;
+
+    meterEvent({
+      source: 'client-local',
+      kind: 'validation',
+      meta: { verdict: validation.verdict, valid, forbidden, reasons: validation.reasons }
+    });
+
+    // Update session state if valid
+    if (valid) {
+      sessionState.updateState(sessionId, stored.originalQuestion, answer, await fetchKnowledge());
+    }
+
+    res.json({
+      ok: true,
+      valid,
+      verdict: forbidden ? 'forbidden' : validation.verdict,
+      reasons: validation.reasons,
+      forbidden
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.get('/api/client-status', (req, res) => {
+  res.json({
+    ok: true,
+    mode: 'client-local',
+    supported: true,
+    model: 'Qwen2.5-0.5B-Instruct (ONNX, q4)',
+    runtime: 'transformers.js v4 + WebGPU',
+    packetStoreSize: clientPacketStore.size
+  });
+});
+
 app.post('/api/chat', async (req, res) => {
   let userMessage = '';
   let sessionId = '';

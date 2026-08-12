@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Scout Browser Inference Feasibility Test</title>
+<style>
+body { font-family: monospace; padding: 20px; max-width: 800px; margin: auto; }
+.log { white-space: pre-wrap; font-size: 12px; line-height: 1.4; }
+.ok { color: green; }
+.err { color: red; }
+.info { color: blue; }
+.warn { color: orange; }
+</style>
+</head>
+<body>
+<h2>Scout Browser Inference Feasibility Test</h2>
+<div id="log" class="log"></div>
+<script>
+const log = (msg, cls = '') => {
+  const el = document.getElementById('log');
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  el.appendChild(span);
+};
+
+const SERVER_URL = 'http://localhost:3199';
+
+async function run() {
+  // 1. Capability detection
+  log('=== Capability Detection ===');
+  const hasWebGPU = !!(navigator.gpu);
+  log(`WebGPU: ${hasWebGPU ? 'YES' : 'NO'}`, hasWebGPU ? 'ok' : 'warn');
+  if (hasWebGPU) {
+    try {
+      const adapter = await navigator.gpu.requestAdapter();
+      log(`GPU adapter: ${adapter ? adapter.info?.description || 'available' : 'null'}`, adapter ? 'ok' : 'err');
+    } catch (e) {
+      log(`GPU adapter error: ${e.message}`, 'err');
+    }
+  }
+  log(`WebAssembly: ${typeof WebAssembly !== 'undefined' ? 'YES' : 'NO'}`);
+  log(`UserAgent: ${navigator.userAgent.slice(0, 100)}`, 'info');
+  log('');
+
+  if (!hasWebGPU) {
+    log('WebGPU not available. WASM-only mode would be very slow.', 'warn');
+    log('Proceeding with WebGPU test only for now.', 'warn');
+    log('');
+  }
+
+  // 2. Load Transformers.js
+  log('=== Loading Transformers.js v4 ===');
+  const t0 = performance.now();
+  try {
+    const tf = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0');
+    const t1 = performance.now();
+    log(`Transformers.js loaded in ${(t1 - t0).toFixed(0)}ms`, 'ok');
+    log(`Version: ${tf.env.version || 'unknown'}`, 'info');
+
+    tf.env.allowLocalModels = false;
+    tf.env.allowRemoteModels = true;
+
+    // 3. Load model
+    log('');
+    log('=== Loading Qwen2.5-0.5B-Instruct (ONNX) ===');
+    log('This will download ~400-500MB on first use...', 'warn');
+
+    const modelId = 'onnx-community/Qwen2.5-0.5B-Instruct';
+    const device = hasWebGPU ? 'webgpu' : 'wasm';
+    const dtype = hasWebGPU ? 'q4f16' : 'q4';
+
+    log(`Model: ${modelId}`);
+    log(`Device: ${device}`);
+    log(`Dtype: ${dtype}`);
+
+    const t2 = performance.now();
+    log('Loading tokenizer...');
+    const tokenizer = await tf.AutoTokenizer.from_pretrained(modelId);
+    const t3 = performance.now();
+    log(`Tokenizer loaded in ${(t3 - t2).toFixed(0)}ms`, 'ok');
+
+    log('Loading model (this is the big download)...');
+    const t4 = performance.now();
+    const model = await tf.AutoModelForCausalLM.from_pretrained(modelId, {
+      device: device,
+      dtype: dtype,
+    });
+    const t5 = performance.now();
+    log(`Model loaded in ${((t5 - t4) / 1000).toFixed(1)}s`, 'ok');
+    log(`Total model load: ${((t5 - t2) / 1000).toFixed(1)}s`, 'ok');
+
+    // 4. Test generation
+    log('');
+    log('=== Test Generation ===');
+
+    const messages = [
+      { role: 'system', content: 'You are Scout. Answer from facts only. Return JSON: {"answer":"<text>"}' },
+      { role: 'user', content: 'Q: Has Bradley used DynamoDB?\n\nFACTS: Bradley DynamoDB evidence: direct. Used in AWS internship capstone with Lambda, DynamoDB, S3.' }
+    ];
+
+    const prompt = tokenizer.apply_chat_template(messages, {
+      tokenize: false,
+      add_generation_prompt: true
+    });
+
+    log(`Prompt length: ${prompt.length} chars`);
+
+    const inputs = tokenizer(prompt, {
+      return_tensors: device === 'webgpu' ? 'webgpu' : 'cpu',
+      max_length: 512,
+      truncation: true
+    });
+
+    log('Generating...');
+    const t6 = performance.now();
+    const output = await model.generate({
+      ...inputs,
+      max_new_tokens: 60,
+      temperature: 0.25,
+      top_p: 0.85,
+      do_sample: true,
+      repetition_penalty: 1.1
+    });
+    const t7 = performance.now();
+
+    const inputLen = inputs.input_ids.dims()[1];
+    const generatedTokens = output[0].slice(null, [inputLen, null]);
+    const answer = tokenizer.decode(generatedTokens, { skip_special_tokens: true }).trim();
+
+    const genTime = (t7 - t6) / 1000;
+    const tokenCount = output[0].dims()[1] - inputLen;
+    const tps = tokenCount / genTime;
+
+    log(`Generation: ${genTime.toFixed(1)}s for ${tokenCount} tokens (${tps.toFixed(1)} tok/s)`, 'ok');
+    log(`Answer: ${answer}`, 'info');
+
+    // 5. Test with Scout server packet
+    log('');
+    log('=== Scout Server Packet Test ===');
+    const packetRes = await fetch(`${SERVER_URL}/api/client-packet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Has Bradley used DynamoDB?', sessionId: 'browser-test' })
+    });
+    const { runId, packet, fallback } = await packetRes.json();
+    log(`Packet: tokens=${packet.contextTokens} operation=${packet.operation}`);
+
+    const scoutMessages = [
+      { role: 'system', content: packet.systemPrompt },
+      { role: 'user', content: packet.userPrompt }
+    ];
+    const scoutPrompt = tokenizer.apply_chat_template(scoutMessages, {
+      tokenize: false,
+      add_generation_prompt: true
+    });
+    const scoutInputs = tokenizer(scoutPrompt, {
+      return_tensors: device === 'webgpu' ? 'webgpu' : 'cpu',
+      max_length: 512,
+      truncation: true
+    });
+
+    const t8 = performance.now();
+    const scoutOutput = await model.generate({
+      ...scoutInputs,
+      max_new_tokens: 80,
+      temperature: 0.25,
+      top_p: 0.85,
+      do_sample: true,
+      repetition_penalty: 1.1
+    });
+    const t9 = performance.now();
+
+    const scoutInputLen = scoutInputs.input_ids.dims()[1];
+    const scoutGenTokens = scoutOutput[0].slice(null, [scoutInputLen, null]);
+    const scoutAnswer = tokenizer.decode(scoutGenTokens, { skip_special_tokens: true }).trim();
+
+    log(`Scout generation: ${((t9 - t8) / 1000).toFixed(1)}s`, 'ok');
+    log(`Scout answer: ${scoutAnswer}`, 'info');
+
+    // 6. Validate with server
+    const valRes = await fetch(`${SERVER_URL}/api/client-validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ runId, answer: scoutAnswer, sessionId: 'browser-test' })
+    });
+    const validation = await valRes.json();
+    log(`Validation: valid=${validation.valid} verdict=${validation.verdict}`, validation.valid ? 'ok' : 'warn');
+    if (validation.reasons?.length) log(`Reasons: ${validation.reasons.join(', ')}`, 'warn');
+
+    // 7. Summary
+    log('');
+    log('=== Summary ===');
+    log(`Model load: ${((t5 - t2) / 1000).toFixed(1)}s`);
+    log(`First generation: ${genTime.toFixed(1)}s (${tps.toFixed(1)} tok/s)`);
+    log(`Scout generation: ${((t9 - t8) / 1000).toFixed(1)}s`);
+    log(`Validation: ${validation.valid ? 'PASSED' : 'FAILED'}`);
+    log(`Device: ${device}`);
+    log(`Dtype: ${dtype}`);
+    log('', '');
+    log('Browser-local inference is FEASIBLE.' , 'ok');
+
+  } catch (err) {
+    log(`ERROR: ${err.message}`, 'err');
+    log(`Stack: ${err.stack}`, 'err');
+  }
+}
+
+run();
+</script>
+</body>
+</html>

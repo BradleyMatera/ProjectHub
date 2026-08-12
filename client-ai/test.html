@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scout Client-Local AI Test</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+  .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  h1 { font-size: 1.4em; margin: 0 0 8px; }
+  h2 { font-size: 1.1em; margin: 16px 0 8px; }
+  .status { padding: 8px 12px; border-radius: 4px; font-size: 0.9em; margin-bottom: 8px; }
+  .status.idle { background: #e0e0e0; color: #666; }
+  .status.checking { background: #fff3cd; color: #856404; }
+  .status.loading-runtime { background: #cce5ff; color: #004085; }
+  .status.loading-model { background: #cce5ff; color: #004085; }
+  .status.ready { background: #d4edda; color: #155724; }
+  .status.error { background: #f8d7da; color: #721c24; }
+  .progress-bar { height: 4px; background: #e0e0e0; border-radius: 2px; margin: 8px 0; }
+  .progress-fill { height: 100%; background: #007bff; border-radius: 2px; transition: width 0.3s; }
+  .metrics { font-size: 0.85em; color: #666; }
+  .metrics span { margin-right: 12px; }
+  .chat { min-height: 200px; }
+  .message { padding: 8px 12px; margin: 4px 0; border-radius: 4px; }
+  .message.user { background: #007bff; color: white; text-align: right; }
+  .message.bot { background: #f0f0f0; }
+  .message.source { font-size: 0.75em; color: #999; margin-top: 2px; }
+  input[type="text"] { width: 70%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+  button { padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  button:disabled { background: #ccc; cursor: not-allowed; }
+  button.secondary { background: #6c757d; }
+  .capability { font-size: 0.85em; }
+  .capability span { display: inline-block; padding: 2px 8px; border-radius: 3px; margin: 2px; }
+  .cap-yes { background: #d4edda; color: #155724; }
+  .cap-no { background: #f8d7da; color: #721c24; }
+  .test-buttons button { margin: 2px; font-size: 0.8em; padding: 4px 8px; }
+  pre { background: #f8f9fa; padding: 8px; border-radius: 4px; font-size: 0.8em; overflow-x: auto; }
+</style>
+</head>
+<body>
+
+<h1>Scout Client-Local AI Test</h1>
+<p>Tests browser-local inference using Transformers.js v4 + WebGPU with Qwen2.5-0.5B-Instruct.</p>
+
+<div class="card">
+  <h2>Capability Detection</h2>
+  <div id="capability" class="capability">Checking...</div>
+</div>
+
+<div class="card">
+  <h2>Model Initialization</h2>
+  <div id="initStatus" class="status idle">Idle</div>
+  <div class="progress-bar"><div id="progressFill" class="progress-fill" style="width: 0%"></div></div>
+  <div id="initMetrics" class="metrics"></div>
+  <button id="initBtn" onclick="initEngine()">Initialize Model</button>
+</div>
+
+<div class="card">
+  <h2>Chat Test</h2>
+  <div id="chat" class="chat"></div>
+  <div style="margin-top: 12px;">
+    <input type="text" id="msgInput" placeholder="Ask Scout a question..." onkeypress="if(event.key==='Enter')sendMessage()">
+    <button id="sendBtn" onclick="sendMessage()" disabled>Send</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Quick Test Questions</h2>
+  <div class="test-buttons">
+    <button onclick="quickTest('Tell me about ProjectHub.')">Project</button>
+    <button onclick="quickTest('Has Bradley used DynamoDB?')">Skill</button>
+    <button onclick="quickTest('What did Bradley actually do at AWS?')">AWS</button>
+    <button onclick="quickTest('Compare ProjectHub and Voice Ops Platform.')">Compare</button>
+    <button onclick="quickTest('Give me the quick recruiter version.')">Brief</button>
+    <button onclick="quickTest('Tell me about Bradley.')">Profile</button>
+    <button onclick="quickTest('He was a senior AWS engineer, right?')">Adv: Senior</button>
+    <button onclick="quickTest('He has 10 years of React experience, right?')">Adv: 10 years</button>
+    <button onclick="quickTest('He handled production AWS incidents, correct?')">Adv: Production</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Raw Metrics</h2>
+  <pre id="rawMetrics">No metrics yet.</pre>
+</div>
+
+<script src="generation-engine.js"></script>
+<script>
+const SERVER_URL = 'http://localhost:3199';
+const SESSION_ID = 'client-test-' + Date.now();
+let engine = null;
+
+// Capability check on load
+(async function() {
+  const cap = await ScoutGenerationEngine.checkCapability();
+  const el = document.getElementById('capability');
+  el.innerHTML = `
+    <span class="${cap.webgpu ? 'cap-yes' : 'cap-no'}">WebGPU: ${cap.webgpu ? 'YES' : 'NO'}</span>
+    <span class="${cap.wasm ? 'cap-yes' : 'cap-no'}">WASM: ${cap.wasm ? 'YES' : 'NO'}</span>
+    <span class="${cap.supported ? 'cap-yes' : 'cap-no'}">Supported: ${cap.supported ? 'YES' : 'NO'}</span>
+    <span>Device: ${cap.device}</span>
+  `;
+})();
+
+async function initEngine() {
+  const btn = document.getElementById('initBtn');
+  btn.disabled = true;
+  btn.textContent = 'Initializing...';
+
+  engine = new ScoutGenerationEngine();
+
+  try {
+    await engine.initialize((update) => {
+      const statusEl = document.getElementById('initStatus');
+      const progressEl = document.getElementById('progressFill');
+      statusEl.className = 'status ' + update.status;
+      statusEl.textContent = update.status.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      if (update.progress) progressEl.style.width = (update.progress * 100) + '%';
+    });
+
+    document.getElementById('initStatus').className = 'status ready';
+    document.getElementById('initStatus').textContent = 'Ready';
+    document.getElementById('progressFill').style.width = '100%';
+
+    const m = engine.getMetrics();
+    document.getElementById('initMetrics').innerHTML = `
+      <span>Download/Load: ${(m.downloadMs / 1000).toFixed(1)}s</span>
+      <span>Total Init: ${(m.initMs / 1000).toFixed(1)}s</span>
+      <span>Device: ${m.device}</span>
+      <span>Cache: ${m.cacheHit ? 'HIT' : 'MISS'}</span>
+    `;
+
+    document.getElementById('sendBtn').disabled = false;
+    btn.textContent = 'Model Ready';
+    updateRawMetrics();
+  } catch (err) {
+    document.getElementById('initStatus').className = 'status error';
+    document.getElementById('initStatus').textContent = 'Error: ' + err.message;
+    btn.disabled = false;
+    btn.textContent = 'Retry Initialize';
+  }
+}
+
+function addMessage(text, isUser, source) {
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = 'message ' + (isUser ? 'user' : 'bot');
+  div.textContent = text;
+  if (source) {
+    const src = document.createElement('div');
+    src.className = 'source';
+    src.textContent = source;
+    div.appendChild(src);
+  }
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('msgInput');
+  const msg = input.value.trim();
+  if (!msg || !engine || !engine.isReady()) return;
+
+  input.value = '';
+  document.getElementById('sendBtn').disabled = true;
+  addMessage(msg, true);
+
+  try {
+    const result = await engine.ask(msg, SESSION_ID, SERVER_URL);
+    addMessage(result.answer, false, `[${result.source}] validated=${result.validated}`);
+    if (result.generatedAnswer && result.source === 'deterministic_fallback') {
+      addMessage('(rejected: ' + result.generatedAnswer.slice(0, 100) + ')', false, '[rejected generation]');
+    }
+  } catch (err) {
+    addMessage('Error: ' + err.message, false, '[error]');
+  }
+
+  document.getElementById('sendBtn').disabled = false;
+  updateRawMetrics();
+}
+
+async function quickTest(question) {
+  document.getElementById('msgInput').value = question;
+  await sendMessage();
+}
+
+function updateRawMetrics() {
+  const el = document.getElementById('rawMetrics');
+  if (!engine) { el.textContent = 'No engine.'; return; }
+  const m = engine.getMetrics();
+  el.textContent = JSON.stringify(m, null, 2);
+}
+</script>
+</body>
+</html>

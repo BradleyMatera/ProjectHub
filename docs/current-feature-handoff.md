@@ -4,7 +4,7 @@
 
 **Working branch:** `feat/agent-systems-network`
 
-**Code baseline:** `7c15f07 fix: contextual number grounding prevents hallucinated claims from passing validation`
+**Code baseline:** `9312995 feat: add LITE agent mode for e2-micro with compact packets and adversarial safety` (LITE mode committed; CLIENT LOCAL mode in progress)
 
 **Release state:** committed locally, not promoted to `develop` or `master`, and the newest commit has not been deployed to the private preview. Production is unchanged.
 
