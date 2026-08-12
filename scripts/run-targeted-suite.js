@@ -13,24 +13,31 @@ const sessionState = require('../lib/session-state');
 
 const MODEL = process.env.OLLAMA_AGENT_MODEL || 'qwen2.5:1.5b';
 
-// Targeted question indices (0-based) — the ones that were problematic in postfix22
+// Targeted question indices (0-based) — the ones that were weak in Stability Y
+// Focus on non-fallback weak answers that need to become GOOD
 const TARGET_INDICES = [
-  0,   // q1 — fabricated ProjectHub description
-  2,   // q3 — fallback — "What did Bradley personally build?"
-  3,   // q4 — fallback — context drift
-  7,   // q8 — fallback — "Was that real production work?"
-  10,  // q11 — terse — only 1 of 2 certs
-  13,  // q14 — fallback — recruiter concerns
-  16,  // q17 — MongoDB fabrication
-  26,  // q27 — MongoDB + fabricated "token system for 364 Applications"
-  29,  // q30 — fallback — persona confusion
+  1,   // q2 — generic — "what's actually interesting about it?"
+  2,   // q3 — generic — "What did Bradley personally build?"
+  8,   // q9 — generic after repair — "what did he learn there?"
+  11,  // q12 — terse — "Give me the quick version"
+  12,  // q13 — generic after repair — "Why would I interview him?"
+  16,  // q17 — generic — "strongest evidence he can build software"
+  19,  // q20 — generic — "What about Node.js?"
+  20,  // q21 — generic — "What's he best at?"
+  21,  // q22 — fact wrong — "What does he still need to learn?"
+  23,  // q24 — generic — "explain it technically"
+  26,  // q27 — terse after repair — "What does he actually do?"
+  30,  // q31 — broken — "What did he use there?"
+  32,  // q33 — terse — "What about the other project?"
+  33,  // q34 — generic after repair — "Did he do that professionally?"
   34,  // q35 — generic — "So what is this thing?"
-  42,  // q43 — fallback — "proficiency in" overclaim
-  43,  // q44 — fallback — "unknown" skill
-  44,  // q45 — generic — comparison only mentions one entity
-  48,  // q49 — fallback — Udemy/DSA
-  52,  // q53 — fallback — adversarial Yes
-  62,  // q63 — fallback — Netflix
+  36,  // q37 — generic — "What's the cool part?"
+  39,  // q40 — generic — "What's he best at?"
+  49,  // q50 — generic after repair — "gaps in his background"
+  54,  // q55 — terse after repair — "MIT degree"
+  59,  // q60 — fact wrong — "production incidents"
+  64,  // q65 — terse after repair — "most interesting project"
+  67,  // q68 — generic — "worth interviewing?"
 ];
 
 async function runTargetedSuite(runLabel) {
