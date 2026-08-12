@@ -1755,6 +1755,18 @@ test('regression: has_degree with school name matches attended synonym', () => {
   assert.equal(result2.supported, false, 'has_degree|MIT should not be supported');
 });
 
+test('regression: "At Netflix, he built..." is rejected as fabricated employment', () => {
+  const result = validateAnswer(
+    'At Netflix, he built a serverless metadata workflow with Lambda, S3, and Amplify as part of an intern project.',
+    'Bradley worked at AWS. He did not work at Netflix.',
+    'What did he do at Netflix?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false, 'Should reject fabricated employment at Netflix');
+  assert.ok(result.reasons.some(r => r.includes('fabricated_employment:Netflix')),
+    `Should flag fabricated employment at Netflix, got: ${result.reasons.join(', ')}`);
+});
+
 test('regression: leaked internal phrase (connecting entities) is rejected', () => {
   const result = validateAnswer(
     'He is best at connecting entities.',
