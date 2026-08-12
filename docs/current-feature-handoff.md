@@ -4,7 +4,24 @@
 
 **Working branch:** `feat/agent-systems-network`
 
-**Code baseline:** Conversational completion and parity phase (post-`e12ff86`)
+**Code baseline:** Response planning and conversational parity phase (post-`72ccf6b`)
+
+**Response planner:** `lib/response-planner.js` computes a semantic answer plan
+before LLM generation. The plan operates on generic slots (intent, subject,
+directAnswer, entities, evidenceStrength, caveats, jobFit, recruiterBrief)
+and is domain-neutral. For high-risk intents (ADVERSARIAL, JOB_FIT, SKILL,
+COMPARISON, YES_NO, RECRUITER), a compact ANSWER GUIDE is injected into the
+prompt. For conversational intents, the model gets full evidence budget.
+
+**Adversarial confirmation check:** If the question triggers an adversarial
+caveat and the answer confirms the claim (starts with Yes/Correct without
+negation), the answer is blocked and falls back deterministically.
+
+**Plan vs packet comparison:** The 1.5B model does not consistently benefit
+from structured plan constraints. The plan helps safety (0 unsafe blocked)
+and specific categories (job-fit, invented entities) but slightly hurts
+overall quality due to reduced evidence budget. The remaining gap is mostly
+model capacity. See `data/plan-vs-packet-results.json`.
 
 **Release state:** committed locally, not promoted to `develop` or `master`, not deployed. Production is unchanged.
 
