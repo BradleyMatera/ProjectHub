@@ -1609,6 +1609,28 @@ test('regression: false negation not triggered by qualified assessments', () => 
     `Qualified assessment should not trigger false negation, got: ${result.reasons.join(', ')}`);
 });
 
+test('regression: fabricated AWS certification is rejected', () => {
+  const result = validateAnswer(
+    'He has completed the AWS Certified Developer Associate (AWS-Developer) certification.',
+    'Bradley has AWS Certified Solutions Architect Associate and AWS Certified AI Practitioner certifications.',
+    'What AWS certifications does he have?',
+    testKnowledge
+  );
+  assert.equal(result.valid, false, 'Fabricated certification should be rejected');
+  assert.ok(result.reasons.some(r => r.includes('fabricated_certification')),
+    `Should flag fabricated certification, got: ${result.reasons.join(', ')}`);
+});
+
+test('regression: correct AWS certification is accepted', () => {
+  const result = validateAnswer(
+    'He has completed the AWS Certified Solutions Architect - Associate certification.',
+    'Bradley has AWS Certified Solutions Architect Associate and AWS Certified AI Practitioner certifications.',
+    'What AWS certifications does he have?',
+    testKnowledge
+  );
+  assert.equal(result.valid, true, `Correct certification should be accepted, got: ${result.reasons.join(', ')}`);
+});
+
 test('regression: leaked internal phrase (connecting entities) is rejected', () => {
   const result = validateAnswer(
     'He is best at connecting entities.',
