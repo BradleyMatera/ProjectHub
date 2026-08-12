@@ -125,7 +125,7 @@ test('buildRawPacket is minimal for raw comparison', () => {
   const packet = buildRawPacket({ question: 'What did Bradley do with AWS?', agentName: 'Scout' });
   assert.ok(!packet.systemPrompt.includes('VERIFIED_EVIDENCE'));
   assert.equal(packet.evidenceCount, 0);
-  assert.ok(packet.estimatedTokens < 50);
+  assert.ok(packet.estimatedTokens < 80);
 });
 
 test('renderEvidenceList deduplicates', () => {

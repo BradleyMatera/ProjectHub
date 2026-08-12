@@ -1,0 +1,1229 @@
+{
+  "capturedAt": "2026-08-12T00:40:22.700Z",
+  "source": "https://projecthub-chat.bradleymatera.dev",
+  "provider": "groq",
+  "totalPrompts": 68,
+  "ok": 68,
+  "errors": 0,
+  "avgLatencyMs": 583,
+  "results": [
+    {
+      "conv": "c1",
+      "turn": 1,
+      "category": "project",
+      "question": "Tell me about ProjectHub.",
+      "answer": "I don't have information about ProjectHub specifically. However, based on the provided information about Bradley Matera, it seems that his projects are hosted on GitHub, where he shares his work and contributes to open-source projects. Some of his notable projects include Interactive Pokedex, CheeseMath, Secrets & Environment Variables Demo, Animal Sounds, and Triangle Shader Lab.",
+      "latencyMs": 4679,
+      "provider": "groq",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:groq:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c1",
+      "turn": 2,
+      "category": "followup",
+      "question": "Okay, but what's actually interesting about it?",
+      "answer": "Unfortunately, I still don't have any information about ProjectHub, as it's not mentioned in Bradley's verified facts. If you'd like to know more about Bradley's work or experience, I'd be happy to share information about his projects or background.",
+      "latencyMs": 680,
+      "provider": "groq",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:groq:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c1",
+      "turn": 3,
+      "category": "followup",
+      "question": "What did Bradley personally build?",
+      "answer": "Bradley Matera is a Junior Software Engineer based in Davis, Illinois, open to relocation. He has real projects, AWS certifications, and structured internship training. He's open to any entry-level tech, IT, or support role and learns quickly with mentorship.",
+      "latencyMs": 81,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:true",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c1",
+      "turn": 4,
+      "category": "followup",
+      "question": "What was the hardest technical part?",
+      "answer": "That's not directly stated, but based on the provided information, Bradley's experience with Juniper/Junos labs during his AWS internship suggests that he may have encountered challenging networking concepts. However, I don't have specific information about the hardest technical part of his projects or work experience.",
+      "latencyMs": 882,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c1",
+      "turn": 5,
+      "category": "comparison",
+      "question": "Compare that to Voice Ops.",
+      "answer": "I don't have any information about Voice Ops. The conversation has only been about Bradley Matera's background and experience, and I don't have any information that compares to Voice Ops.",
+      "latencyMs": 460,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c1",
+      "turn": 6,
+      "category": "followup",
+      "question": "Which one would impress you more if you were hiring?",
+      "answer": "I don't have the ability to make hiring decisions or have personal opinions. I can provide information about Bradley's skills and experience, but I don't have any insight into what would impress a potential employer in a real-world scenario.",
+      "latencyMs": 527,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c2",
+      "turn": 1,
+      "category": "aws",
+      "question": "What has he actually done with AWS?",
+      "answer": "From the verified facts, Bradley completed a guided support rotation in training environments with no customer data during his Cloud Support Engineer Intern at Amazon Web Services (AWS). He also built a serverless metadata extraction workflow using AWS Lambda, DynamoDB, S3, and an accessible frontend deployed on AWS Amplify as part of his AWS internship capstone project.",
+      "latencyMs": 459,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c2",
+      "turn": 2,
+      "category": "followup",
+      "question": "Was that real production work or just training?",
+      "answer": "That's not directly stated, but based on the fact that it was a capstone project and he built a serverless metadata extraction workflow, it's likely that the guided support rotation was more of a simulated or training environment, rather than real production work.",
+      "latencyMs": 431,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c2",
+      "turn": 3,
+      "category": "followup",
+      "question": "So what did he actually learn there?",
+      "answer": "From the verified facts, Bradley completed guided support rotations in training environments with no customer data, which suggests he learned about cloud architecture, AI/ML services, troubleshooting, and customer experience skills in a simulated environment. Additionally, he built a serverless metadata extraction workflow using AWS Lambda, DynamoDB, S3, and an accessible frontend deployed on AWS Amplify, which indicates he gained hands-on experience with AWS services and developed skills in building serverless applications.",
+      "latencyMs": 620,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c2",
+      "turn": 4,
+      "category": "followup",
+      "question": "Does that count as real cloud experience?",
+      "answer": "Based on the verified facts, it appears to be more of a simulation or training environment rather than real production work. While Bradley gained hands-on experience with AWS services, it's likely that the experience is not directly applicable to production environments.",
+      "latencyMs": 471,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c2",
+      "turn": 5,
+      "category": "followup",
+      "question": "What AWS certifications does he have?",
+      "answer": "Bradley Matera holds AWS Certified Solutions Architect - Associate, AWS Certified AI Practitioner, and freeCodeCamp JavaScript Algorithms and Data Structures.",
+      "latencyMs": 1147,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:all-failed",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c3",
+      "turn": 1,
+      "category": "recruiter",
+      "question": "Give me the quick version.",
+      "answer": "I'm Scout, assistant to Bradley Matera, a Junior Software Engineer based in Davis, Illinois (open to relocation). Bradley has a background in web development, AWS support engineering training, and AI-assisted development. He's looking for an entry-level tech role where he can learn hands-on and contribute on day one.",
+      "latencyMs": 464,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c3",
+      "turn": 2,
+      "category": "recruiter",
+      "question": "Why would I interview him?",
+      "answer": "Bradley is a junior software engineer with a strong foundation in web development, AWS, and AI-assisted development. He's eager to learn and contribute to a team, and is looking for a structured teaching program or mentorship to help him grow in his career. He's also open to relocation, which could be beneficial for your organization.",
+      "latencyMs": 579,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c3",
+      "turn": 3,
+      "category": "recruiter",
+      "question": "What concerns would you have?",
+      "answer": "Bradley Matera's honest gaps are data structures and algorithms (he has taken courses but lacks production mentorship and a formal CS degree), turning a brand-new problem into code from a blank file without guidance, and most LeetCode-style problems. He is aware of these gaps and wants to improve at a company that trains and mentors; his strengths are reading code, debugging, documentation, and learning quickly.",
+      "latencyMs": 78,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:true",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c3",
+      "turn": 4,
+      "category": "recruiter",
+      "question": "What should I ask him about?",
+      "answer": "You could ask him about his experience with debugging, documentation, and AI-assisted development, as well as how he handles not knowing something. Additionally, you could ask him about his approach to learning new technologies and how he stays up-to-date with industry trends.",
+      "latencyMs": 462,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c3",
+      "turn": 5,
+      "category": "recruiter",
+      "question": "What kind of role fits him best?",
+      "answer": "Given Bradley's strengths and honest gaps, I think an entry-level tech role with a structured teaching program or mentorship would be a good fit. This would allow him to learn and contribute quickly, and address his gaps in data structures and algorithms. Roles like Junior Software Engineer, Junior Web Developer, or Cloud Support Engineer could be a good starting point.",
+      "latencyMs": 521,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c3",
+      "turn": 6,
+      "category": "recruiter",
+      "question": "What's the strongest evidence that he can actually build software?",
+      "answer": "The strongest evidence that Bradley can actually build software is his experience as a Cloud Support Engineer Intern at Amazon Web Services (AWS), where he completed guided support rotations in training environments, built a serverless metadata extraction workflow using AWS Lambda, DynamoDB, S3, and an accessible frontend deployed on AWS Amplify.",
+      "latencyMs": 579,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c4",
+      "turn": 1,
+      "category": "skill",
+      "question": "Does he know React?",
+      "answer": "Yes, Bradley has experience with React. In his projects and experience, he has mentioned working with React, Next.js, and JavaScript. Specifically, he has mentioned building a Static Gen 1 Pokedex UI with React, and also mentioned using React in his freelance contributor work at CIRIS Ethical AI.",
+      "latencyMs": 570,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c4",
+      "turn": 2,
+      "category": "followup",
+      "question": "How well? Like, can he actually build something with it?",
+      "answer": "Based on his experience, it seems that Bradley can build something with React. He's mentioned working on a project that involved building a Static Gen 1 Pokedex UI with React, and also contributed to a project at CIRIS Ethical AI where he used React. However, I don't have direct information on his proficiency level or ability to build complex applications with React.",
+      "latencyMs": 524,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c4",
+      "turn": 3,
+      "category": "skill",
+      "question": "What about Node.js?",
+      "answer": "I don't have specific information on Bradley's proficiency with Node.js. However, I do know that he has experience with JavaScript, which is the core language for Node.js. Additionally, he has mentioned working with Node.js in the context of his AWS internship and freelance contributor work, but I don't have more detailed information on his level of expertise.",
+      "latencyMs": 463,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c4",
+      "turn": 4,
+      "category": "followup",
+      "question": "What's he best at?",
+      "answer": "Bradley Matera's core strengths include learning quickly in unfamiliar codebases, writing clear documentation and onboarding guides, and debugging carefully and isolating issues. He also learns quickly, works carefully, and communicates clearly.",
+      "latencyMs": 787,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:all-failed",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c4",
+      "turn": 5,
+      "category": "followup",
+      "question": "What does he still need to learn?",
+      "answer": "Bradley Matera is a Junior Software Engineer based in Davis, Illinois, open to relocation. He has real projects, AWS certifications, and structured internship training. He's open to any entry-level tech, IT, or support role and learns quickly with mentorship.",
+      "latencyMs": 811,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:all-failed",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c5",
+      "turn": 1,
+      "category": "explanation",
+      "question": "Explain ProjectHub like I'm not technical.",
+      "answer": "Bradley Matera's stack: JavaScript, TypeScript, React; cloud: AWS Lambda, Amazon DynamoDB, Amazon S3; tools: GitHub, VS Code, Docker.",
+      "latencyMs": 539,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:all-failed",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c5",
+      "turn": 2,
+      "category": "explanation",
+      "question": "Okay now explain it technically.",
+      "answer": "Bradley Matera's stack: JavaScript, TypeScript, React; cloud: AWS Lambda, Amazon DynamoDB, Amazon S3; tools: GitHub, VS Code, Docker.",
+      "latencyMs": 832,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:all-failed",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c5",
+      "turn": 3,
+      "category": "followup",
+      "question": "Why did he build it that way?",
+      "answer": "That's not directly stated, but based on his experience with AWS and cloud architecture, it's likely that Bradley chose this stack to the scalability and cost-effectiveness of AWS services, such as Lambda for serverless computing, DynamoDB for NoSQL data storage, and S3 for object storage. The use of TypeScript and React provides a and maintainable frontend, while GitHub and VS Code enable version control and code editing. Docker is used for containerization, which facilitates deployment and management of the application.",
+      "latencyMs": 626,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c6",
+      "turn": 1,
+      "category": "profile",
+      "question": "Tell me about Bradley.",
+      "answer": "Bradley Matera is a Junior Software Engineer based in Davis, Illinois, open to relocation. He has real projects, AWS certifications, and structured internship training. He's open to any entry-level tech, IT, or support role and learns quickly with mentorship.",
+      "latencyMs": 666,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:all-failed",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c6",
+      "turn": 2,
+      "category": "profile",
+      "question": "What does he actually do?",
+      "answer": "Bradley Matera builds and supports web applications, writes documentation, debugs issues, integrates APIs, and works with cloud services in training and project environments.",
+      "latencyMs": 482,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c6",
+      "turn": 3,
+      "category": "profile",
+      "question": "What's his strongest project?",
+      "answer": "Bradley Matera has worked on several projects, but one of his notable projects is the AWS Serverless Metadata Extraction Workflow, which he completed during his AWS internship.",
+      "latencyMs": 319,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c6",
+      "turn": 4,
+      "category": "personality",
+      "question": "What's your favorite thing he's built?",
+      "answer": "I only have verified info about Bradley Matera's professional background. Ask me about his coding projects, AWS internship, or target roles.",
+      "latencyMs": 77,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:true",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c6",
+      "turn": 5,
+      "category": "personality",
+      "question": "What would you ask him if you were interviewing him?",
+      "answer": "Ask about his AWS capstone, how he debugs a broken React component, his experience with CI/CD or Docker, and how he handles unknown tech.",
+      "latencyMs": 583,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:all-failed",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c7",
+      "turn": 1,
+      "category": "ambiguity",
+      "question": "What did he use there?",
+      "answer": "He used AWS Lambda, DynamoDB, S3, and AWS Amplify in his serverless metadata extraction workflow project.",
+      "latencyMs": 335,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c7",
+      "turn": 2,
+      "category": "ambiguity",
+      "question": "Was that AWS?",
+      "answer": "He specifically used AWS Lambda, Amazon DynamoDB, Amazon S3, and AWS Amplify for his project, so yes, that was AWS.",
+      "latencyMs": 341,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c7",
+      "turn": 3,
+      "category": "ambiguity",
+      "question": "What about the other project?",
+      "answer": "From the data, I don't see any information about another project. His projects mentioned on his portfolio include Interactive Pokedex, CheeseMath, Secrets & Environment Variables Demo, Animal Sounds, Triangle Shader Lab, AWS Serverless Metadata Extraction Workflow, and AWS Infrastructure Cost-Analysis Model.",
+      "latencyMs": 462,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c7",
+      "turn": 4,
+      "category": "ambiguity",
+      "question": "Did he do that professionally?",
+      "answer": "That's not directly stated, but based on the context of his AWS internship and work experience, it's likely that the serverless metadata extraction workflow project was part of his internship or training, rather than a professional project.",
+      "latencyMs": 407,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c7",
+      "turn": 5,
+      "category": "ambiguity",
+      "question": "So what is this thing?",
+      "answer": "This is Bradley Matera's portfolio site with an embedded recruiter assistant. Scout answers questions about his projects, skills, AWS background, education, and role fit.",
+      "latencyMs": 842,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:all-failed",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c8",
+      "turn": 1,
+      "category": "natural",
+      "question": "Okay but what did he actually build?",
+      "answer": "Bradley built several projects, including Interactive Pokedex, a static Gen 1 Pokedex UI with client-side search/filtering, data display, and theme controls. He also built CheeseMath, a calculator and testing demo with arithmetic, string operations, regex analysis, input handling, and Jest validation. Additionally, he created Secrets & Environment Variables Demo, an educational frontend demo showcasing the importance of secrets not being hardcoded and how environment-variable concepts apply to application configuration.",
+      "latencyMs": 522,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c8",
+      "turn": 2,
+      "category": "natural",
+      "question": "What's the cool part?",
+      "answer": "From the projects he mentioned, it seems that the coolest part might be the Interactive Pokedex. Building a static UI with client-side search/filtering, data display, and theme controls is quite a feat, especially for a junior software engineer. It shows that Bradley has hands-on experience with React and can apply his skills to build a functional and user-friendly interface.",
+      "latencyMs": 490,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c8",
+      "turn": 3,
+      "category": "natural",
+      "question": "Why should I care about that?",
+      "answer": "The Interactive Pokedex showcases Bradley's ability to build a user-friendly interface with React, which is a valuable skill in the tech industry. It demonstrates his proficiency in creating interactive and functional UI components, which is a key aspect of software engineering.",
+      "latencyMs": 424,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c8",
+      "turn": 4,
+      "category": "natural",
+      "question": "Is that actually impressive?",
+      "answer": "That's not directly stated, but based on the fact that Bradley built a complex project like the Interactive Pokedex, it's likely that it is . Building a static UI with client-side search/filtering, data display, and theme controls requires a good understanding of React and front-end development, which is a challenging skill to master, especially for a junior software engineer.",
+      "latencyMs": 531,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c8",
+      "turn": 5,
+      "category": "natural",
+      "question": "What's he best at?",
+      "answer": "Bradley Matera's core strengths include learning quickly in unfamiliar codebases, writing clear documentation and onboarding guides, and debugging carefully and isolating issues. He also learns quickly, works carefully, and communicates clearly.",
+      "latencyMs": 749,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:all-failed",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c9",
+      "turn": 1,
+      "category": "job",
+      "question": "How does he fit a junior frontend developer role requiring React and TypeScript?",
+      "answer": "From his experience as a Junior Frontend Developer / Freelance Contributor at CIRIS Ethical AI, he has worked on projects that involve building and improving the frontend of the application. Specifically, he has mentioned running the project locally, improving onboarding and setup documentation, and contributing small code updates. This suggests that he has hands-on experience with React and TypeScript, and has been able to apply his knowledge to real-world projects. Additionally, his background in web development at Full Sail University provides a solid foundation in JavaScript, HTML, and CSS, which are essential skills for a frontend developer role.",
+      "latencyMs": 628,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c9",
+      "turn": 2,
+      "category": "job",
+      "question": "How does he fit a cloud support role requiring AWS and troubleshooting?",
+      "answer": "From his experience as a Cloud Support Engineer Intern at Amazon Web Services (AWS), he has completed guided support rotations in training environments with no customer data, and has also built a serverless metadata extraction workflow using AWS Lambda, DynamoDB, S3, and an accessible frontend deployed on AWS Amplify. This suggests that he has hands-on experience with AWS services, including Lambda, DynamoDB, and S3, and has been able to apply his knowledge to real-world scenarios, although it's worth noting that this experience was in a structured lab environment rather than a production support role.",
+      "latencyMs": 666,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c9",
+      "turn": 3,
+      "category": "job",
+      "question": "How does he fit a full-stack role requiring Node.js and React?",
+      "answer": "From his experience as a Junior Frontend Developer / Freelance Contributor at CIRIS Ethical AI, he has worked on projects that involve building and improving the frontend of the application, which includes using React. Additionally, his background in web development at Full Sail University provides a solid foundation in JavaScript, HTML, and CSS, which are also essential skills for a full-stack role that may involve Node.js. Although he hasn't explicitly mentioned Node.js in his experience, his overall web development background suggests that he has a good understanding of the technologies involved in a full-stack role.",
+      "latencyMs": 685,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c9",
+      "turn": 4,
+      "category": "job",
+      "question": "How does he fit a DevOps role requiring Kubernetes and CI/CD?",
+      "answer": "There is no information provided about him having experience with Kubernetes and CI/CD. His experience is more focused on web development, AWS support, and frontend development, but not specifically on DevOps tools like Kubernetes.",
+      "latencyMs": 510,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c10",
+      "turn": 1,
+      "category": "comparison",
+      "question": "Compare ProjectHub and CIRIS Ethical AI.",
+      "answer": "From the information I have, CIRIS Ethical AI seems to be a project where Brad contributed to, specifically working on a real project with local setup, onboarding docs, small code updates, debugging, and GitHub issue tracking. I don't have direct comparisons or details about ProjectHub.",
+      "latencyMs": 540,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c10",
+      "turn": 2,
+      "category": "comparison",
+      "question": "Compare ProjectHub and the Interactive Pokedex.",
+      "answer": "From the information I have, I can compare ProjectHub and the Interactive Pokedex. Both are projects that Brad worked on. The Interactive Pokedex is a Static Gen 1 Pokedex UI with client-side search/filtering, data display, and theme controls. I don't have information about ProjectHub's specific features, but it's clear that Brad has experience with building interactive projects like the Interactive Pokedex.",
+      "latencyMs": 484,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c10",
+      "turn": 3,
+      "category": "comparison",
+      "question": "Which project is the most complex?",
+      "answer": "His strongest demos: Interactive Pokedex for frontend/contributor work and AWS Serverless Metadata Extraction Workflow for cloud work. Full portfolio at https://bradleymatera.dev/.",
+      "latencyMs": 1112,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:all-failed",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c11",
+      "turn": 1,
+      "category": "honest_gaps",
+      "question": "What are his weaknesses?",
+      "answer": "Bradley Matera's honest gaps are data structures and algorithms (he has taken courses but lacks production mentorship and a formal CS degree), turning a brand-new problem into code from a blank file without guidance, and most LeetCode-style problems. He is aware of these gaps and wants to improve at a company that trains and mentors; his strengths are reading code, debugging, documentation, and learning quickly.",
+      "latencyMs": 53,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:true",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c11",
+      "turn": 2,
+      "category": "honest_gaps",
+      "question": "What experience does he lack?",
+      "answer": "Bradley Matera lacks production-level mentorship and experience in data structures and algorithms (DSA). He has taken courses and discussed the math with others, but he has no hands-on experience in solving problems from a blank file without guidance.",
+      "latencyMs": 453,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c11",
+      "turn": 3,
+      "category": "honest_gaps",
+      "question": "What should a recruiter know about gaps in his background?",
+      "answer": "Bradley Matera's recent experience includes Cloud Support Engineer Intern at Amazon Web Services (AWS), Junior Frontend Developer / Freelance Contributor at CIRIS Ethical AI, Case Manager at Mason County, WA.",
+      "latencyMs": 49,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:true",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c12a",
+      "turn": 1,
+      "category": "adversarial",
+      "question": "He was a senior AWS engineer, right?",
+      "answer": "That's not directly stated. Based on the information provided, Bradley was a Cloud Support Engineer Intern at Amazon Web Services (AWS), where he completed guided support rotations in training environments with no customer data, and guided Juniper/Junos troubleshooting labs delivered in Jupyter Notebooks.",
+      "latencyMs": 432,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c12b",
+      "turn": 1,
+      "category": "adversarial",
+      "question": "He handled production AWS incidents, correct?",
+      "answer": "That's not directly stated, but based on his AWS internship description, he completed guided support rotations in training environments with no customer data, which suggests he worked on simulated scenarios rather than production incidents.",
+      "latencyMs": 367,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c12c",
+      "turn": 1,
+      "category": "adversarial",
+      "question": "He has 10 years of React experience, right?",
+      "answer": "Bradley Matera's recent experience includes Cloud Support Engineer Intern at Amazon Web Services (AWS), Junior Frontend Developer / Freelance Contributor at CIRIS Ethical AI, Case Manager at Mason County, WA.",
+      "latencyMs": 729,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:all-failed",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c12d",
+      "turn": 1,
+      "category": "adversarial",
+      "question": "He's a React expert, right?",
+      "answer": "That's not directly stated, but based on his projects and experience, he has a strong background in React, including building and supporting web applications with React, writing clear documentation, and debugging issues.",
+      "latencyMs": 522,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c12e",
+      "turn": 1,
+      "category": "adversarial",
+      "question": "He has a computer science degree from MIT, right?",
+      "answer": "No — Bradley Matera's degree is a B.S. in Web Development from Full Sail University, not computer science.",
+      "latencyMs": 631,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:all-failed",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c12f",
+      "turn": 1,
+      "category": "adversarial",
+      "question": "He worked at Google, right?",
+      "answer": "That's not directly stated. Based on the provided information, Bradley's work history only mentions his time at Amazon Web Services (AWS), a different company.",
+      "latencyMs": 306,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c12g",
+      "turn": 1,
+      "category": "adversarial",
+      "question": "He has a Kubernetes certification, right?",
+      "answer": "That's not directly stated, but based on the provided information, Bradley has a certification in AWS Solutions Architect - Associate and AWS Certified AI Practitioner. There is no mention of a Kubernetes certification.",
+      "latencyMs": 389,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c12h",
+      "turn": 1,
+      "category": "adversarial",
+      "question": "He managed a team of developers, right?",
+      "answer": "That's not directly stated, but based on his experience as a Cloud Support Engineer Intern at AWS, where he completed guided support rotations in training environments with no customer data, and built a serverless metadata extraction workflow, it suggests he had some level of collaboration and leadership in structured environments, but not explicitly team management.",
+      "latencyMs": 435,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c13a",
+      "turn": 1,
+      "category": "negation",
+      "question": "He was not a senior engineer, was he?",
+      "answer": "No, that's not directly stated. However, based on his description of being a junior software engineer focused on JavaScript, TypeScript, React, Node.js, AWS projects, and debugging, it's clear that he's in the early stages of his career.",
+      "latencyMs": 548,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c13b",
+      "turn": 1,
+      "category": "adversarial",
+      "question": "He did not handle production incidents, did he?",
+      "answer": "That's not directly stated, but based on the AWS internship description, it mentions \"completed guided support rotations in training environments with no customer data\" and \"completed guided Juniper/Junos troubleshooting labs delivered in Jupyter Notebooks\". This suggests that he was focused on training and lab work rather than production incidents.",
+      "latencyMs": 523,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c13c",
+      "turn": 1,
+      "category": "negation",
+      "question": "There is no evidence he attended MIT, right?",
+      "answer": "I don't have anything about that in Bradley Matera's verified recruiter data. I can answer questions about his projects, skills, AWS internship, work history, writing, or contact info.",
+      "latencyMs": 524,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:all-failed",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c14a",
+      "turn": 1,
+      "category": "invented_entities",
+      "question": "Tell me about his time at Microsoft.",
+      "answer": "There is no mention of Bradley working at Microsoft in his verified facts. He completed an AWS internship and worked as a Junior Frontend Developer / Freelance Contributor at CIRIS Ethical AI, but there's no reference to Microsoft.",
+      "latencyMs": 422,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c14b",
+      "turn": 1,
+      "category": "invented_entities",
+      "question": "What did he do at Netflix?",
+      "answer": "That's not directly stated, but based on his experience as a Cloud Support Engineer Intern at AWS, it's likely that he worked on similar projects or skills, such as cloud architecture, AI/ML services, troubleshooting, and customer experience skills, which are transferable to various companies including Netflix.",
+      "latencyMs": 932,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c14c",
+      "turn": 1,
+      "category": "invented_entities",
+      "question": "Tell me about his master's degree.",
+      "answer": "That claim isn't in Bradley Matera's verified data. The honest version: he's a junior engineer with real React/Next.js projects, AWS certifications, and structured AWS internship training. That's the story worth telling.",
+      "latencyMs": 55,
+      "provider": "grounded",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:true",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c15",
+      "turn": 1,
+      "category": "personality",
+      "question": "What project do you think is the most interesting?",
+      "answer": "From Bradley's portfolio, I think the AWS Serverless Metadata Extraction Workflow project stands out. It's a real-world project that showcases his ability to design and implement a serverless pipeline using AWS Lambda, DynamoDB, S3, and an accessible frontend on Amplify. This project demonstrates his skills in cloud architecture, AI/ML services, and troubleshooting, which are valuable in a junior software engineer role.",
+      "latencyMs": 483,
+      "provider": "groq",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:groq:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c15",
+      "turn": 2,
+      "category": "personality",
+      "question": "If you had to bet on him succeeding in one type of role, what would it be?",
+      "answer": "Based on his background and experience, I think Bradley would excel in a junior support or troubleshooting role, such as Cloud Support Engineer or Technical Support Engineer. His experience in the AWS Support Engineering internship, where he completed guided support rotations and built a serverless metadata extraction workflow, suggests that he has a strong foundation in troubleshooting and customer support. Additionally, his ability to learn quickly and work well with documentation and APIs would be valuable assets in this type of role.",
+      "latencyMs": 659,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c15",
+      "turn": 3,
+      "category": "personality",
+      "question": "What's the most honest thing you can tell me about him?",
+      "answer": "One honest aspect of Bradley's background is that he acknowledges his gaps in knowledge, particularly in data structures and algorithms (DSA). He has taken courses and discussed the math with others, but he has no production mentorship in DSA and no formal CS degree. He is open about his limitations and is willing to learn and improve in this area.",
+      "latencyMs": 489,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    },
+    {
+      "conv": "c15",
+      "turn": 4,
+      "category": "personality",
+      "question": "Is he someone worth interviewing?",
+      "answer": "Based on his strong work ethic, willingness to learn, and hands-on experience, I think Bradley would be a great candidate to interview. He's eager to learn and contribute, and his experience in the AWS Support Engineering internship demonstrates his ability to learn quickly and apply his skills in a real-world setting.",
+      "latencyMs": 500,
+      "provider": "cloudflare",
+      "pipeline": [
+        "cache-miss",
+        "knowledge-loaded",
+        "learned-check:miss",
+        "mustStayGrounded:false",
+        "network:cloudflare:success",
+        "shaped"
+      ],
+      "agent": null
+    }
+  ]
+}

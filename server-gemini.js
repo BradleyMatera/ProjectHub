@@ -3547,6 +3547,7 @@ process.on('SIGINT', () => { flushStats(); process.exit(0); });
 // 2. /api/client-validate: Server validates a browser-generated answer against the same evidence
 
 const { preRoute, compressToolResult, buildLitePacket, detectAdversarialCaveat, rewriteQuery } = require('./lib/lite-agent');
+const { buildCompactProfileSummary } = require('./lib/profile-summary');
 
 // In-memory store for evidence packets (short TTL, identified by runId)
 const clientPacketStore = new Map();
@@ -3604,19 +3605,23 @@ app.post('/api/client-packet', async (req, res) => {
     const adversarial = detectAdversarialCaveat(rewritten, compressed);
     if (adversarial) compressed = compressed + '\n' + adversarial;
 
+    // Add profile summary for better conversation quality
+    const profileSummary = buildCompactProfileSummary();
+    if (profileSummary) {
+      compressed = profileSummary + '\n\n' + compressed;
+    }
+
     // Build compact packet
     const packet = buildLitePacket({
       question: rewritten,
       compressedEvidence: compressed,
       operation: route.operation,
-      maxTokens: 120
+      maxTokens: 200
     });
 
-    // For client mode, use plain-text output (better for 0.5B model)
-    // Strip JSON requirement from system prompt
-    const clientSystemPrompt = packet.systemPrompt
-      .replace(/Return JSON: \{"answer":"<text>"\}/g, 'Answer in 1-2 complete sentences.')
-      .replace(/Return JSON.*$/gim, 'Answer in 1-2 complete sentences.');
+    // For client mode, use plain-text output (better for small models)
+    // The buildLitePacket already uses conversational prompt without JSON requirement
+    const clientSystemPrompt = packet.systemPrompt;
 
     // Create a CLIENT_SAFE evidence boundary
     // Only include public-facing evidence, never internal analytics/logs/secrets
@@ -3695,55 +3700,54 @@ app.post('/api/client-validate', async (req, res) => {
       const sentences = splitSentences(answer);
       const evidenceLower = (stored.systemPrompt + ' ' + stored.compressedEvidence).toLowerCase();
 
-      // For adversarial questions: if ANY non-negated clause confirms the premise,
-      // the answer is forbidden. The model must refute or deny.
+      // For adversarial questions: if ANY non-negated clause contains the false
+      // claim, the answer is forbidden. The model must refute or deny.
       // We split sentences into clauses (by semicolons) so that
       // "he was not junior; he was senior" correctly flags the "senior" clause.
+      // Note: in adversarial context, appearing in a non-negated clause IS
+      // the confirmation — we don't require explicit "yes" or "indeed".
       for (const sent of sentences) {
         const clauses = splitClauses(sent);
         for (const clause of clauses) {
           if (hasNegation(clause)) continue; // refuting clauses are safe
 
-        // Confirmation language without negation = accepting the false premise
-        const confirms = /\b(indeed|correct|that'?s right|yes|he was|he has|he did|he held|he worked|he handled|he managed|he is|he attended|he received|he obtained|he earned|he holds|holds a)\b/i.test(clause);
-
         // Seniority claims
-        if (/\b(senior|principal|staff)\b.*\b(engineer|developer|architect)\b/i.test(clause) && confirms) {
+        if (/\b(senior|principal|staff)\b.*\b(engineer|developer|architect)\b/i.test(clause)) {
           forbidden = true; break;
         }
         // Production claims
-        if (/\b(production|live production|owned production|production incident)\b/i.test(clause) && confirms) {
+        if (/\b(production|live production|owned production|production incident)\b/i.test(clause)) {
           forbidden = true; break;
         }
         // Leadership claims
-        if (/\b(managed a team|team lead|led a team|supervised|directed|manager|managing|ceo|cto|co-founder|founder)\b/i.test(clause) && confirms) {
+        if (/\b(managed a team|team lead|led a team|supervised|directed|manager|managing|ceo|cto|co-founder|founder)\b/i.test(clause)) {
           forbidden = true; break;
         }
         // Expert claims
-        if (/\b(expert|mastery|deep expertise|executive)\b/i.test(clause) && confirms) {
+        if (/\b(expert|expertise|mastery|deep expertise|executive|proficient)\b/i.test(clause)) {
           forbidden = true; break;
         }
         // Years claims — any positive years claim in adversarial context is forbidden
         const yearsMatch = clause.match(/\b(\d+)\s+years?\b/i);
-        if (yearsMatch && confirms) { forbidden = true; break; }
+        if (yearsMatch) { forbidden = true; break; }
         // University claims — known universities not in evidence (positive assertion)
         const uniMatch = clause.match(/\b(MIT|Stanford|Harvard|Berkeley|Carnegie Mellon|Caltech|Princeton|Yale|Oxford|Cambridge|Georgia Tech|UCLA|UMich|NYU|Columbia|Duke|Massachusetts Institute)\b/i);
-        if (uniMatch && confirms) { forbidden = true; break; }
+        if (uniMatch) { forbidden = true; break; }
         // Employer claims — known tech companies not in evidence (positive assertion)
         const empMatch = clause.match(/\b(Google|Microsoft|Apple|Meta|Facebook|Netflix|Tesla|OpenAI|Anthropic)\b/i);
-        if (empMatch && empMatch[0].toLowerCase() !== 'amazon' && confirms) {
+        if (empMatch && empMatch[0].toLowerCase() !== 'amazon') {
           forbidden = true; break;
         }
         // Degree claims not in evidence (positive assertion)
-        if (/\b(computer science|CS degree|Master'?s|Ph\.?D|M\.?S\.?|M\.?A\.?|Bachelor of Science in Computer)\b/i.test(clause) && confirms) {
+        if (/\b(computer science|CS degree|Master'?s|Ph\.?D|M\.?S\.?|M\.?A\.?|Bachelor of Science in Computer)\b/i.test(clause)) {
           forbidden = true; break;
         }
         // Certification claims not in evidence (positive assertion)
-        if (/\b(Kubernetes certification|CKA|CKAD|AWS Certified DevOps|Solutions Architect Professional|Security Specialty)\b/i.test(clause) && confirms) {
+        if (/\b(Kubernetes certification|CKA|CKAD|AWS Certified DevOps|Solutions Architect Professional|Security Specialty)\b/i.test(clause)) {
           forbidden = true; break;
         }
         // Fortune 500 / enterprise claims
-        if (/\b(Fortune 500|enterprise clients|enterprise customer|million users)\b/i.test(clause) && confirms) {
+        if (/\b(Fortune 500|enterprise clients|enterprise customer|million users)\b/i.test(clause)) {
           forbidden = true; break;
         }
         } // end clause loop

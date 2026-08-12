@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Scout Conversation Comparison</title>
+<style>
+body { font-family: -apple-system, system-ui, sans-serif; background: #07100d; color: #eef8f2; margin: 0; padding: 20px; }
+h1 { color: #46e39a; font-size: 20px; }
+h2 { color: #74b9ff; font-size: 16px; margin-top: 24px; }
+.conv { background: #101b17; border: 1px solid #29443a; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.turn { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #1a2a23; }
+.turn:last-child { border-bottom: none; }
+.q { color: #46e39a; font-weight: bold; margin-bottom: 8px; }
+.col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.col > div { padding: 8px; border-radius: 4px; font-size: 13px; line-height: 1.5; }
+.groq { background: #1a2a1f; }
+.local05 { background: #1a2330; }
+.local15 { background: #2a1a23; }
+.label { font-size: 11px; text-transform: uppercase; color: #9db4a9; margin-bottom: 4px; }
+.provider { font-size: 10px; color: #9db4a9; }
+.latency { font-size: 10px; color: #9db4a9; }
+.fallback { color: #f59e0b; font-style: italic; }
+.accepted { color: #46e39a; }
+.blocked { color: #ff6b6b; }
+.controls { margin-bottom: 16px; }
+button { background: #16251f; color: #46e39a; border: 1px solid #29443a; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-right: 8px; }
+button:hover { background: #29443a; }
+button.active { background: #46e39a; color: #07100d; }
+</style>
+</head>
+<body>
+<h1>Scout Conversation Comparison</h1>
+<p style="color: #9db4a9; font-size: 13px;">Side-by-side comparison of Groq baseline vs 0.5B local vs 1.5B local. Data loaded from evaluation JSON files.</p>
+
+<div class="controls">
+  <button id="load-btn" class="active">Load Results</button>
+  <button id="conv-btn">By Conversation</button>
+  <button id="cat-btn">By Category</button>
+</div>
+
+<div id="content"></div>
+
+<script>
+const FILES = {
+  groq: 'data/groq-golden-baseline.json',
+  '0.5B': 'data/parity-0.5B-results.json',
+  '1.5B': 'data/parity-1.5B-results.json'
+};
+
+let groqData = null, data05 = null, data15 = null;
+
+async function loadAll() {
+  try {
+    const [g, d5, d15] = await Promise.all([
+      fetch(FILES.groq).then(r => r.json()),
+      fetch(FILES['0.5B']).then(r => r.json()),
+      fetch(FILES['1.5B']).then(r => r.json())
+    ]);
+    groqData = g;
+    data05 = d5;
+    data15 = d15;
+    renderByConversation();
+  } catch (e) {
+    document.getElementById('content').innerHTML = '<p style="color:#ff6b6b">Error loading: ' + e.message + '</p>';
+  }
+}
+
+function findResult(data, conv, turn) {
+  if (!data) return null;
+  const results = data.results || [];
+  return results.find(r => r.conv === conv && r.turn === turn);
+}
+
+function renderAnswer(result, isGroq) {
+  if (!result) return '<div class="label">N/A</div>';
+  if (isGroq) {
+    const answer = result.answer || 'ERROR: ' + (result.error || 'unknown');
+    const cls = result.error ? 'fallback' : 'accepted';
+    return `<div class="label">Groq <span class="provider">(${result.provider})</span> <span class="latency">${result.latencyMs}ms</span></div>
+            <div class="${cls}">${escapeHtml(answer)}</div>`;
+  }
+  const answer = result.displayedAnswer || result.parsedAnswer || '';
+  const outcome = result.outcome || 'unknown';
+  const cls = outcome === 'accepted' ? 'accepted' : outcome === 'unsafe_blocked' ? 'blocked' : 'fallback';
+  const label = outcome === 'accepted' ? 'ACCEPTED' : outcome === 'unsafe_blocked' ? 'BLOCKED' : 'FALLBACK';
+  return `<div class="label">${result._modelLabel || 'Local'} <span class="latency">${result.genMs}ms ${result.tps}tok/s</span> [${label}]</div>
+          <div class="${cls}">${escapeHtml(answer)}</div>`;
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderByConversation() {
+  if (!groqData) { loadAll(); return; }
+  const content = document.getElementById('content');
+  const convs = [...new Set(groqData.results.map(r => r.conv))];
+  let html = '';
+
+  for (const conv of convs) {
+    const turns = groqData.results.filter(r => r.conv === conv).sort((a,b) => a.turn - b.turn);
+    if (!turns.length) continue;
+
+    html += `<div class="conv"><h2>Conversation ${conv}</h2>`;
+    for (const t of turns) {
+      const g = findResult(groqData, conv, t.turn);
+      const d5 = findResult(data05, conv, t.turn);
+      const d15 = findResult(data15, conv, t.turn);
+      if (d5) d5._modelLabel = '0.5B';
+      if (d15) d15._modelLabel = '1.5B';
+
+      html += `<div class="turn"><div class="q">T${t.turn} [${t.category}]: ${escapeHtml(t.question)}</div>`;
+      html += `<div class="col">`;
+      html += `<div class="groq">${renderAnswer(g, true)}</div>`;
+      html += `<div class="local05">${renderAnswer(d5, false)}</div>`;
+      html += `<div class="local15">${renderAnswer(d15, false)}</div>`;
+      html += `</div></div>`;
+    }
+    html += '</div>';
+  }
+
+  content.innerHTML = html;
+}
+
+function renderByCategory() {
+  if (!groqData) { loadAll(); return; }
+  const content = document.getElementById('content');
+  const cats = [...new Set(groqData.results.map(r => r.category))].sort();
+  let html = '';
+
+  for (const cat of cats) {
+    const turns = groqData.results.filter(r => r.category === cat).sort((a,b) => a.conv.localeCompare(b.conv) || a.turn - b.turn);
+    if (!turns.length) continue;
+
+    html += `<div class="conv"><h2>${cat}</h2>`;
+    for (const t of turns) {
+      const g = findResult(groqData, t.conv, t.turn);
+      const d5 = findResult(data05, t.conv, t.turn);
+      const d15 = findResult(data15, t.conv, t.turn);
+      if (d5) d5._modelLabel = '0.5B';
+      if (d15) d15._modelLabel = '1.5B';
+
+      html += `<div class="turn"><div class="q">${escapeHtml(t.question)}</div>`;
+      html += `<div class="col">`;
+      html += `<div class="groq">${renderAnswer(g, true)}</div>`;
+      html += `<div class="local05">${renderAnswer(d5, false)}</div>`;
+      html += `<div class="local15">${renderAnswer(d15, false)}</div>`;
+      html += `</div></div>`;
+    }
+    html += '</div>';
+  }
+
+  content.innerHTML = html;
+}
+
+document.getElementById('load-btn').addEventListener('click', loadAll);
+document.getElementById('conv-btn').addEventListener('click', renderByConversation);
+document.getElementById('cat-btn').addEventListener('click', renderByCategory);
+
+loadAll();
+</script>
+</body>
+</html>
