@@ -127,6 +127,9 @@ async function sendChatRequest(message, sessionId, history) {
 // Classify SOURCE from the API response
 function classifySource(apiResponse) {
   if (apiResponse.error === 'INFERENCE_UNAVAILABLE') return 'ERROR';
+  if (apiResponse.cached) return 'CACHE_HIT';
+  if (apiResponse.provider === 'grounded') return 'GROUNDED';
+  if (apiResponse.provider === 'learned') return 'LEARNED';
   const meta = apiResponse.agentMeta || {};
   const outcome = meta.outcome || apiResponse.outcome;
   if (outcome === 'inference_unavailable') return 'ERROR';
@@ -136,7 +139,7 @@ function classifySource(apiResponse) {
   if (apiResponse.fallback && !outcome) return 'ERROR';
   if (apiResponse.fallback && outcome === 'recovery') return 'RECOVERY_GENERATION';
   // If generated is true and not fallback, it's first generation
-  if (!apiResponse.fallback && apiResponse.reply) return 'FIRST_GENERATION';
+  if (!apiResponse.fallback && apiResponse.reply && (apiResponse.provider || '').includes('ollama')) return 'FIRST_GENERATION';
   return 'ERROR';
 }
 
