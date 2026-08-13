@@ -1,0 +1,653 @@
+{
+  "timestamp": "2026-08-13T03:32:46.762Z",
+  "model": "qwen2.5:1.5b",
+  "runs": 3,
+  "turns": 18,
+  "results": {
+    "t01_skill_node": {
+      "label": "Skill evidence: Node.js follow-up",
+      "question": "What about Node.js?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "He has direct experience with Node.js.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 2241,
+          "validation": null
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "He has direct experience with Node.js.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 1186,
+          "validation": null
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "Node.js is used in the ProjectHub (Scout) project to create an embeddable AI recruiter assistant named Scout.",
+          "fallback": false,
+          "outcome": "repaired",
+          "latencyMs": 1089,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        }
+      ]
+    },
+    "t02_skill_react": {
+      "label": "Skill evidence: React direct",
+      "question": "Does he have React experience?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "Yes.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 837,
+          "validation": {
+            "valid": true,
+            "reasons": [
+              "not_relevant_to_question"
+            ]
+          }
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "Health Care Specialist / Combat Medic (68W) at United States Army. Served on active duty as a 68W Health Care Specialist with the 2/508 Infantry at Fort Bragg.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 917,
+          "validation": null
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "Yes.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 610,
+          "validation": {
+            "valid": true,
+            "reasons": [
+              "not_relevant_to_question"
+            ]
+          }
+        }
+      ]
+    },
+    "t03_rationale_projecthub": {
+      "label": "Rationale: why build ProjectHub that way",
+      "question": "Why did he build it that way?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "ProjectHub (Scout)'s design was built with the intent to provide an embeddable AI recruiter assistant, allowing for easy integration into various websites and platforms.",
+          "fallback": false,
+          "outcome": "repaired",
+          "latencyMs": 1528,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "ProjectHub (Scout)'s design was built with the intent to be embeddable AI recruiter assistance, allowing for integration into various websites and platforms.",
+          "fallback": false,
+          "outcome": "repaired",
+          "latencyMs": 1607,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "ProjectHub (Scout)'s design was built with the intent to provide an embeddable AI recruiter assistant, allowing for seamless integration into various websites and platforms.",
+          "fallback": false,
+          "outcome": "repaired",
+          "latencyMs": 1845,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        }
+      ]
+    },
+    "t04_comparison_complex": {
+      "label": "Comparison: which project is most complex",
+      "question": "Which project is the most complex?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "ProjectHub (Scout): Embeddable AI recruiter assistant named Scout.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 887,
+          "validation": null
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "ProjectHub (Scout): Embeddable AI recruiter assistant named Scout.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 1329,
+          "validation": null
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "ProjectHub (Scout): Embeddable AI recruiter assistant named Scout.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 1037,
+          "validation": null
+        }
+      ]
+    },
+    "t05_comparison_interesting": {
+      "label": "Comparison: most interesting project (opinion)",
+      "question": "What project do you think is the most interesting?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "I believe ProjectHub, which Scout has built as an embeddable AI recruiter assistant, showcases his skills in creating a user-friendly and efficient tool for job seekers. The project's focus on embedding AI technology within the recruitment process adds value by streamlining the application process while providing personalized insights.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 846,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "One script tag adds a chat widget to any site. It answers questions about AI ethics.",
+          "fallback": false,
+          "outcome": "repaired",
+          "latencyMs": 1126,
+          "validation": {
+            "valid": true,
+            "reasons": [
+              "not_relevant_to_question"
+            ]
+          }
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "I believe ProjectHub (Scout) has the potential to revolutionize how businesses manage their recruitment processes by providing an efficient and personalized AI assistant.",
+          "fallback": false,
+          "outcome": "repaired",
+          "latencyMs": 1785,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        }
+      ]
+    },
+    "t06_jobfit_fullstack": {
+      "label": "Job fit: full-stack Node.js + React",
+      "question": "How does he fit a full-stack role requiring Node.js and React?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "He has experience with JavaScript, Node.js, and Express, which aligns well with the requirements for a full-stack position that includes both Node.js and React. His projects have utilized these technologies, such as ProjectHub (JavaScript/Node.js/Express) and Voice Ops Platform (JavaScript/Node.js/AI).",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 953,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "He has experience with Node.js, JavaScript, and Express, which aligns well with the requirements for a full-stack position. Additionally, his skills in React are listed as part of ProjectHub, indicating proficiency in this technology.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 809,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "He has experience with both Node.js and React, as evidenced by his work on ProjectHub (JavaScript/Node.js/Express) and the Voice Ops Platform (JavaScript/Node.js/AI). This aligns well with a full-stack role.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 1252,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        }
+      ]
+    },
+    "t07_jobfit_devops": {
+      "label": "Job fit: DevOps (should be NOT_FIT)",
+      "question": "How does he fit a DevOps role requiring Kubernetes and CI/CD?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "GAPS: kubernetes.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 1498,
+          "validation": null
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "GAPS: kubernetes.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 1605,
+          "validation": null
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "GAPS: kubernetes.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 11978,
+          "validation": null
+        }
+      ]
+    },
+    "t08_recruiter_interview": {
+      "label": "Recruiter: worth interviewing?",
+      "question": "Is he someone worth interviewing?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "Yes, Bradley Matera is an entry-level developer with experience in Cloud Support Engineer Intern and Junior Frontend Developer roles. He has built projects such as Interactive Pokedex and Secrets & Environment Variables Demo, demonstrating his skills in JavaScript, TypeScript, React, Next.js, Node.js, HTML, AWS Certified Solutions Architect - Associate, and AWS Certified AI Practitioner.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 1042,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "Yes, Bradley Matera has experience with JavaScript, TypeScript, React, Next.js, Node.js, and HTML. He also possesses skills in cloud support engineering and frontend development, which aligns well with the needs of a tech company looking for entry-level candidates.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 874,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "Yes, Junior software engineer focused on JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation. He has built several projects and completed an AWS internship.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 15123,
+          "validation": null
+        }
+      ]
+    },
+    "t09_coref_there": {
+      "label": "Coref: \"there\" after project mention",
+      "question": "What did he use there?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "He has direct experience with Cloud troubleshooting, Networking fundamentals, Infrastructure analysis, Linux / Unix command line basics, Terminal / shell workflows.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 1244,
+          "validation": null
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "He has direct experience with Cloud troubleshooting, Networking fundamentals, Infrastructure analysis, Linux / Unix command line basics, Terminal / shell workflows.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 1299,
+          "validation": null
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "He has direct experience with Cloud troubleshooting, Networking fundamentals, Infrastructure analysis, Linux / Unix command line basics, Terminal / shell workflows.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 16102,
+          "validation": null
+        }
+      ]
+    },
+    "t10_coref_other_project": {
+      "label": "Coref: \"the other project\" after single project",
+      "question": "What about the other project?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "The Interactive Pokedex was built using a tech stack that includes HTML, CSS, JavaScript, and a database for storing Pokémon information. It allows users to interact with the Pokédex by searching for specific Pokémon or viewing details of their abilities.",
+          "fallback": false,
+          "outcome": "repaired",
+          "latencyMs": 1673,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "He has adjacent experience related to Interactive, mentioned in Animal Sounds.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 1847,
+          "validation": null
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "He has adjacent experience related to Interactive, mentioned in Animal Sounds.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 15362,
+          "validation": null
+        }
+      ]
+    },
+    "t11_coref_this_thing": {
+      "label": "Coref: \"this thing\" after project discussion",
+      "question": "So what is this thing?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "Interactive Pokedex is a static, client-side version of the Pokémon Go Pokedex that includes all 151 entries. It features a user-friendly interface with search and filtering capabilities, allowing users to browse Pokémon by name or type.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 799,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "Interactive Pokedex is a static, client-side version of the Pokémon Go Pokedex that displays all 151 entries. It features a user-friendly interface with search and filtering capabilities, allowing users to browse Pokémon by name or type.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 857,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "Interactive Pokedex: Static Gen 1 Pokedex UI with all 151 entries, client-side search/filtering, data display, and theme controls.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 16064,
+          "validation": null
+        }
+      ]
+    },
+    "t12_ambig_no_history": {
+      "label": "Ambiguity: \"there\" with no history",
+      "question": "What did he use there?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "Which project or experience do you mean?",
+          "fallback": false,
+          "outcome": "clarification_required",
+          "latencyMs": 0,
+          "validation": null
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "Which project or experience do you mean?",
+          "fallback": false,
+          "outcome": "clarification_required",
+          "latencyMs": 0,
+          "validation": null
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "Which project or experience do you mean?",
+          "fallback": false,
+          "outcome": "clarification_required",
+          "latencyMs": 28,
+          "validation": null
+        }
+      ]
+    },
+    "t13_professional_boundary": {
+      "label": "Professional boundary: did he do AWS professionally?",
+      "question": "Did he do that professionally?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "No.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 828,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "No.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 1603,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "No.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 889,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        }
+      ]
+    },
+    "t14_project_details_pokedex": {
+      "label": "Project details: what did he actually build (Pokedex)",
+      "question": "Okay but what did he actually build?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "He built the Interactive Pokedex, a static version of Pokémon Go's first generation Pokédex featuring all 151 entries. The project involved creating a client-side interface that included search and filtering capabilities for the data display.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 744,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "He built the Interactive Pokedex, a static version of Pokémon Go's first generation Pokédex featuring all 151 entries. The project utilized client-side search and filtering functionalities to enhance user experience.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 975,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "He built the Interactive Pokedex, a static Gen 1 Pokedex user interface featuring all 151 entries. The project utilized client-side search and filtering functionalities.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 869,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        }
+      ]
+    },
+    "t15_strength_best_at": {
+      "label": "Strength: what is he best at?",
+      "question": "What's he best at?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "He is best at building static UIs with client-side functionalities such as search and filtering, data display, and handling input.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 514,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "Interactive Pokedex: Static Gen 1 Pokedex UI with all 151 entries, client-side search/filtering, data display, and theme controls.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 1252,
+          "validation": null
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "He is best at building simple projects with a focus on client-side functionality, such as the static Pokémon Database UI and the Calculator and Testing Demo.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 1267,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        }
+      ]
+    },
+    "t16_cross_entity_projecthub": {
+      "label": "Cross-entity: ProjectHub description (no CIRIS drift)",
+      "question": "Tell me about ProjectHub.",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "ProjectHub is an embedded AI recruiter assistant named Scout. It answers questions about Bradley's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 876,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "ProjectHub is an embedded AI recruiter assistant named Scout. It answers questions about Bradley's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 1012,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "ProjectHub is an embedded AI recruiter assistant named Scout. It features a script tag that adds a chat widget to any site, answering questions about Bradley's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 1078,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        }
+      ]
+    },
+    "t17_yesno_aws": {
+      "label": "Yes/No: was that AWS?",
+      "question": "Was that AWS?",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "AWS Serverless Metadata Extraction Workflow: AWS internship capstone project that extracts metadata using a serverless pipeline with Lambda, DynamoDB, S3, and an accessible frontend on Amplify.",
+          "fallback": true,
+          "outcome": "fallback",
+          "latencyMs": 1153,
+          "validation": null
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "The AWS internship capstone project that extracted metadata using a serverless pipeline included Lambda, DynamoDB, S3, and an accessible frontend on Amplify.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 1483,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "Yes, the AWS Serverless Metadata Extraction Workflow is related to an internship project that extracts metadata using a serverless pipeline with Lambda, DynamoDB, S3, and an accessible frontend on Amplify.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 777,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        }
+      ]
+    },
+    "t18_profile_summary": {
+      "label": "Profile: quick version of who he is",
+      "question": "Give me a quick version of who he is.",
+      "runs": [
+        {
+          "run": 1,
+          "visibleAnswer": "Bradley Matera has experience as a Cloud Support Engineer Intern and a Junior Frontend Developer. He is familiar with JavaScript, TypeScript, React, Next.js, Node.js, HTML, AWS Certified Solutions Architect - Associate, and AWS Certified AI Practitioner.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 878,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 2,
+          "visibleAnswer": "Bradley Matera has experience as a Cloud Support Engineer Intern and a Junior Frontend Developer. He is familiar with JavaScript, TypeScript, React, Next.js, Node.js, HTML, AWS Certified Solutions Architect - Associate, and AWS Certified AI Practitioner.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 980,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        },
+        {
+          "run": 3,
+          "visibleAnswer": "Bradley Matera has experience as a Cloud Support Engineer Intern and a Junior Frontend Developer. He is familiar with JavaScript, TypeScript, React, Next.js, Node.js, and HTML.",
+          "fallback": false,
+          "outcome": "accepted",
+          "latencyMs": 822,
+          "validation": {
+            "valid": true,
+            "reasons": []
+          }
+        }
+      ]
+    }
+  }
+}
