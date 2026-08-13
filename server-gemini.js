@@ -20,6 +20,7 @@ const { runAgentLoop, probeAgent } = require('./lib/agent-engine');
 const { runLiteAgent } = require('./lib/lite-agent');
 const { buildReasoningPacket, buildSynthesisPacket, estimateTokens } = require('./lib/context-packet');
 const { validateAnswer, validateToolDecision, attemptJsonRepair } = require('./lib/grounding-validator');
+const { classifyResponsePolicy, findRoleInQuestion: policyFindRole } = require('./lib/response-policy');
 const sessionState = require('./lib/session-state');
 
 const app = express();
@@ -2812,15 +2813,18 @@ async function generateWithAgent(knowledge, question, history) {
     meterEvent({ source: 'agent-local-tools', kind: 'tool', meta: { tool: step.tool, planner: 'local' } });
   }
   const ollamaResult = await applyLocalAgentStyleWithOllama(question, localResult);
-  const reply = removeSlop(String(ollamaResult?.reply || localResult.reply).trim().replace(/\s+/g, ' '));
+  // If Ollama fails to generate, return null — no deterministic prose fallback.
+  // The caller will handle INFERENCE_UNAVAILABLE.
+  if (!ollamaResult || !ollamaResult.reply) return null;
+  const reply = removeSlop(String(ollamaResult.reply).trim().replace(/\s+/g, ' '));
   const sourceText = `${buildPrompt(knowledge, question, history, 'ollama')} ${localResult.toolResults.map(item => JSON.stringify(item.result)).join(' ')}`.toLowerCase();
   if (!reply || !validateNetworkReply(reply, sourceText)) return null;
   return {
     reply,
     provider: 'local-agent',
     model: 'knowledge-tools',
-    languageLayer: ollamaResult ? 'ollama' : 'deterministic',
-    languageModel: ollamaResult ? OLLAMA_AGENT_MODEL : null,
+    languageLayer: 'ollama',
+    languageModel: OLLAMA_AGENT_MODEL,
     style: ollamaResult?.style || 'standard',
     steps: localResult.steps,
     tools: [...new Set(localResult.steps.map(step => step.tool).filter(Boolean))]
@@ -3824,41 +3828,47 @@ app.post('/api/chat', async (req, res) => {
 
     const knowledge = await fetchKnowledge();
     if (!knowledge) {
-      pipeline.push('knowledge-unavailable', 'grounded-fallback');
-      const payload = { ...buildGroundedFallbackPayload({}, userMessage, history), provider: 'grounded', fallback: true, pipeline };
-      lastReplyProvider = 'grounded';
-      recordRequest(userMessage, 'grounded', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: payload.reply, groundedReply: payload.reply, sessionId });
-      rememberConversation(sessionId, userMessage, payload.reply);
-      return res.json(payload);
+      pipeline.push('knowledge-unavailable');
+      return res.json({
+        ok: false,
+        error: 'INFERENCE_UNAVAILABLE',
+        reply: 'Scout is temporarily unavailable. Please try again in a moment.',
+        pipeline,
+        provider: 'ollama-recovery',
+        latencyMs: Date.now() - reqStart
+      });
     }
     pipeline.push('knowledge-loaded');
 
-    // 1. Check learned answers first (from think mode)
+    // 1. Classify response policy — deterministic code decides WHAT to say,
+    //    not the final prose. The policy contract guides generative inference.
+    const policy = classifyResponsePolicy(userMessage, history, knowledge);
+    pipeline.push(`policy:${policy.mode}`);
+
+    // 1b. Learned answers provide EVIDENCE only, not final prose.
     const learnedAns = getLearnedAnswer(userMessage);
     pipeline.push(`learned-check:${learnedAns ? 'hit' : 'miss'}`);
-    // 1b. Grounded deterministic answer is always computed first
-    const grounded = buildGroundedFallbackPayload(knowledge, userMessage, history);
-    let reply = learnedAns || grounded.reply;
-    let provider = learnedAns ? 'learned' : 'grounded';
-    let model = learnedAns ? 'think-mode' : 'knowledge-json';
 
-    // 2. For bounded evidence workflows, execute ProjectHub's read-only local
-    //    tools and optionally classify presentation style with Ollama.
+    // 1c. Grounded payload provides EVIDENCE only (allowedFacts), not final prose.
+    const grounded = buildGroundedFallbackPayload(knowledge, userMessage, history);
+
+    // Default reply is NOT set — all prose must come from generative inference.
+    // If inference fails, we return INFERENCE_UNAVAILABLE.
+    let reply = null;
+    let provider = 'pending';
+    let model = 'pending';
+
+    // 2. ALL queries go through generative inference. Deterministic code
+    //    classifies, retrieves, and builds contracts but does NOT write prose.
     let generated = false;
     let agentMeta = null;
     let agentEvents = null;
     currentStanceContext = getStanceContext(sessionId);
 
-    // 2a. NEW: Scout Agent Engine — real bounded Ollama agent loop with structured
-    //     decisions, tool selection, multi-step reasoning, and grounding validation.
-    //     This is the primary generative path. The existing deterministic agent and
-    //     RAG rephrasing paths below remain as fallbacks when this is disabled or
-    //     when the agent loop exhausts its budget and returns fallback:true.
-    //
-    //     SCOUT_AGENT_MODE controls the execution strategy:
-    //       'full' — multi-step model-driven agent loop (775-900 token packets)
-    //       'lite' — harness pre-routes tools, single generation (150-250 token packets)
-    if (SCOUT_AGENT_ENGINE_ENABLED && !mustStayGrounded(userMessage, history)) {
+    // 2a. Scout Agent Engine — the ONLY generative path. Policy contract
+    //     from classifyResponsePolicy is injected into the lite agent prompt.
+    //     No mustStayGrounded gate — all queries go through generation.
+    if (SCOUT_AGENT_ENGINE_ENABLED) {
       pipeline.push(`scout-agent-${SCOUT_AGENT_MODE}:eligible`);
       try {
         // Retrieve evidence via BM25 for the agent context packet
@@ -3881,6 +3891,12 @@ app.post('/api/chat', async (req, res) => {
         const convState = sessionState.getState(sessionId);
 
         // Select execution strategy based on SCOUT_AGENT_MODE
+        // Policy contract from classifyResponsePolicy is injected to guide generation
+        const policyContract = {
+          mode: policy.mode,
+          allowedFacts: policy.allowedFacts,
+          ...policy.contract,
+        };
         const agentResult = SCOUT_AGENT_MODE === 'lite'
           ? await runLiteAgent({
               question: userMessage,
@@ -3888,7 +3904,8 @@ app.post('/api/chat', async (req, res) => {
               evidence,
               knowledge,
               sessionId,
-              model: localModelRouter.agentModel()
+              model: localModelRouter.agentModel(),
+              policyContract
             })
           : await runAgentLoop({
               question: userMessage,
@@ -3984,42 +4001,15 @@ app.post('/api/chat', async (req, res) => {
       } catch (e) {
         pipeline.push(`scout-agent-${SCOUT_AGENT_MODE}:error:${String(e?.message || e).slice(0, 60)}`);
       }
-    } else if (!mustStayGrounded(userMessage, history)) {
-      pipeline.push('mustStayGrounded:false');
-      if (shouldUseDeterministicAgent(userMessage)) {
-        pipeline.push('agent:eligible');
-        const agentResult = await generateWithAgent(knowledge, userMessage, history);
-        if (agentResult) {
-          pipeline.push(`agent:${agentResult.provider}:success`);
-          reply = agentResult.reply;
-          provider = agentResult.provider;
-          model = agentResult.model;
-          agentMeta = {
-            used: true,
-            tools: agentResult.tools,
-            steps: agentResult.steps.length,
-            languageLayer: agentResult.languageLayer,
-            languageModel: agentResult.languageModel,
-            style: agentResult.style
-          };
-          generated = true;
-        } else {
-          pipeline.push('agent:failed');
-        }
-      }
     } else {
-      pipeline.push('mustStayGrounded:true');
+      // Agent engine not enabled — no generative path available.
+      pipeline.push('agent-engine-disabled');
     }
 
-    // 2b. A pre-warmed Ollama model may phrase open-ended
-    //     RAG answers. Its output must pass both the legacy safety checks and a
-    //     strict source/entity validator; deterministic grounded output wins on
-    //     timeout, cold start, or any validation failure.
-    if (!generated && GEN_ENABLED && history.length < CONVERSATION_MAX_TURNS && !mustStayGrounded(userMessage, history)) {
+    // 2b. Legacy RAG path — only used when agent engine is disabled.
+    //     This is a secondary generative path, NOT deterministic prose.
+    if (!generated && GEN_ENABLED && history.length < CONVERSATION_MAX_TURNS) {
       try {
-        // Abort Ollama first, then enforce a separate route deadline. Some
-        // HTTP stacks take time to surface AbortError even though inference is
-        // already cancelled; the grounded answer must not wait for that unwind.
         const genReply = await resolveWithin(
           callGenerativeRag(knowledge, userMessage, grounded.reply, history, CHAT_GENERATION_BUDGET_MS),
           CHAT_RESPONSE_BUDGET_MS
@@ -4040,13 +4030,26 @@ app.post('/api/chat', async (req, res) => {
       pipeline.push('local-rag:skipped-context-budget');
     }
 
-    // 2c. Apply context-aware wrapping to grounded replies (avoid blind repetition)
-    if (!generated && provider === 'grounded') {
-      reply = buildContextualGroundedReply(reply, userMessage, history);
+    // 2c. If no generative path succeeded, return INFERENCE_UNAVAILABLE.
+    //     Deterministic prose is NO LONGER used as final user-visible text.
+    if (!generated) {
+      pipeline.push('inference-unavailable:no-generative-path');
+      return res.json({
+        ok: false,
+        error: 'INFERENCE_UNAVAILABLE',
+        reply: 'Scout is temporarily unavailable. Please try again in a moment.',
+        pipeline,
+        provider: 'ollama-recovery',
+        model: GEN_MODEL,
+        latencyMs: Date.now() - reqStart,
+        agentMeta,
+        agentEvents
+      });
     }
 
     // 3. Deterministic format compliance (one sentence, bullets, JSON, word caps, tone controls)
-    reply = shapeReply(reply, userMessage, knowledge);
+    //     shapeReply transforms the generated reply's FORMAT but does NOT write new prose.
+    if (reply) reply = shapeReply(reply, userMessage, knowledge);
     pipeline.push('shaped');
 
     // 3b. Frustration detection — switch to ultra-direct mode
@@ -4111,12 +4114,15 @@ app.post('/api/chat', async (req, res) => {
   } catch (err) {
     console.error('Chat error:', err);
     pipeline.push('error');
-    const knowledge = knowledgeCache || {};
-    const grounded = buildGroundedFallbackPayload(knowledge, userMessage, []);
-    lastReplyProvider = 'grounded';
-    recordRequest(userMessage, 'grounded', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: grounded.reply, groundedReply: grounded.reply, sessionId });
-    rememberConversation(sessionId, userMessage, grounded.reply);
-    return res.json({ reply: grounded.reply, provider: 'grounded', model: 'knowledge-json', fallback: true, pipeline });
+    return res.json({
+      ok: false,
+      error: 'INFERENCE_UNAVAILABLE',
+      reply: 'Scout is temporarily unavailable. Please try again in a moment.',
+      pipeline,
+      provider: 'ollama-recovery',
+      model: GEN_MODEL,
+      latencyMs: Date.now() - reqStart
+    });
   }
 });
 
