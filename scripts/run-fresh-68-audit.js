@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { runLiteAgent } = require('../lib/lite-agent');
-const { CONVERSATIONS } = require('../data/conversation-parity-suite');
+const { CONVERSATIONS, CONVERSATION_SETUPS } = require('../data/conversation-parity-suite');
 const knowledge = require('../data/recruiter-knowledge.json');
 const { BM25Index } = require('../lib/bm25');
 const { buildRagChunks } = require('../lib/rag-chunks');
@@ -29,12 +29,17 @@ async function runFresh68Audit() {
     const item = CONVERSATIONS[i];
     const convId = item.conv || 'default';
     if (!convSessions.has(convId)) {
-      convSessions.set(convId, `audit-68-${convId}-${Date.now()}`);
+      const newSessionId = `audit-68-${convId}-${Date.now()}`;
+      convSessions.set(convId, newSessionId);
+      for (const setup of CONVERSATION_SETUPS[convId] || []) {
+        sessionState.updateState(newSessionId, setup.question, setup.response, knowledge);
+      }
     }
     const sessionId = convSessions.get(convId);
     const state = sessionState.getState(sessionId);
+    const history = state.recentTurns || state.history || [];
 
-    const understood = understandQuery(item.question, [], chunks);
+    const understood = understandQuery(item.question, history, chunks);
     const bm25Results = searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 5);
     const evidence = bm25Results.map(r => ({
       kind: r.tag, name: '', description: r.text, evidenceScore: r.rrfScore
@@ -52,10 +57,13 @@ async function runFresh68Audit() {
     const visibleAnswer = result.reply || '';
     const isFallback = !!result.fallback;
 
-    const historySnapshot = ((state.recentTurns || state.history) || []).map(t => ({
-      role: t.role || (t.user ? 'user' : 'assistant'),
-      text: t.text || t.user || t.assistant || ''
-    }));
+    const historySnapshot = ((state.recentTurns || state.history) || []).flatMap(t => {
+      if (t.role && t.text) return [{ role: t.role, text: t.text }];
+      return [
+        t.user ? { role: 'user', text: t.user } : null,
+        t.assistant ? { role: 'assistant', text: t.assistant } : null
+      ].filter(Boolean);
+    });
 
     results.push({
       id: item.id || `q${i+1}`,

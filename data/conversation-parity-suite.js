@@ -7,6 +7,15 @@
  * Multi-turn conversations are grouped by sessionId.
  */
 
+const CONVERSATION_SETUPS = {
+  c7: [
+    {
+      question: 'Compare the Interactive Pokedex and the AWS Serverless Metadata Extraction Workflow.',
+      response: 'The Interactive Pokedex is a personal JavaScript, HTML, and CSS project. The AWS Serverless Metadata Extraction Workflow is an internship capstone using Lambda, DynamoDB, S3, and Amplify.'
+    }
+  ]
+};
+
 const CONVERSATIONS = [
   // === C1: ProjectHub deep dive (6 turns) ===
   { conv: 'c1', turn: 1, category: 'project', question: 'Tell me about ProjectHub.' },
@@ -50,7 +59,7 @@ const CONVERSATIONS = [
   { conv: 'c6', turn: 4, category: 'personality', question: 'What\'s your favorite thing he\'s built?' },
   { conv: 'c6', turn: 5, category: 'personality', question: 'What would you ask him if you were interviewing him?' },
 
-  // === C7: Ambiguity (5 turns) ===
+  // === C7: Ambiguity (5 scored turns after an unscored comparison setup) ===
   { conv: 'c7', turn: 1, category: 'ambiguity', question: 'What did he use there?' },
   { conv: 'c7', turn: 2, category: 'ambiguity', question: 'Was that AWS?' },
   { conv: 'c7', turn: 3, category: 'ambiguity', question: 'What about the other project?' },
@@ -107,4 +116,4 @@ const CONVERSATIONS = [
   { conv: 'c15', turn: 4, category: 'personality', question: 'Is he someone worth interviewing?' },
 ];
 
-module.exports = { CONVERSATIONS };
+module.exports = { CONVERSATIONS, CONVERSATION_SETUPS };
