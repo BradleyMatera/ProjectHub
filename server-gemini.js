@@ -196,7 +196,7 @@ app.get('/health', async (req, res) => {
     lastPipeline: persistentStats.lastPipeline || [],
     providerHealth: persistentStats.providerHealth,
     recentSessions: getRecentSessions(),
-    localOnly: true,
+    localOnly: false,
     models: [{ engine: 'ollama', model: GEN_MODEL, local: true }],
     agent: {
       enabled: AGENT_ENABLED,
@@ -204,11 +204,11 @@ app.get('/health', async (req, res) => {
       agentMode: SCOUT_AGENT_MODE,
       ollamaControllerEnabled: OLLAMA_AGENT_ENABLED,
       ollamaModel: OLLAMA_AGENT_MODEL,
-      deterministicFallback: true,
+      deterministicFallback: false,
       mode: SCOUT_AGENT_ENGINE_ENABLED ? (SCOUT_AGENT_MODE === 'lite' ? 'scout-lite-agent' : 'scout-agent-engine') : 'ollama-rag-tools-memory',
       pinnedModels: localModelRouter.listPinnedModels()
     },
-    genModel: process.env.GEN_MODEL || 'qwen2.5:0.5b',
+    genModel: process.env.GEN_MODEL || 'qwen2.5:1.5b',
     genTimeoutMs: parseInt(process.env.GEN_TIMEOUT_MS || '12500', 10),
     knowledgeSource: 'bundled-local-json',
     memory: {
