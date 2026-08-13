@@ -1,0 +1,5765 @@
+{
+  "timestamp": "2026-08-13T04:00:23.890Z",
+  "model": "qwen2.5:1.5b",
+  "questionsRun": 19,
+  "runsPerTurn": 3,
+  "totalRuns": 57,
+  "results": [
+    {
+      "id": "q2",
+      "run": 1,
+      "cat": "followup",
+      "conv": "c1",
+      "question": "Okay, but what's actually interesting about it?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Tell me about ProjectHub."
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub is an embeddable AI recruiter assistant named Scout. It uses JavaScript, Node.js, and Express."
+        }
+      ],
+      "rewritten": "okay but what s actually interesting about it",
+      "visibleAnswer": "ProjectHub is an AI assistant named Scout that answers questions about Bradley Matera's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It uses Qwen 2.5 with BM25 retrieval to provide relevant information.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 1306,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "ProjectHub is an AI assistant named Scout that answers questions about Bradley Matera's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It uses Qwen 2.5 with BM25 retrieval to provide relevant information.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "Okay, but what's actually interesting about ProjectHub (Scout)?",
+          "changed": true,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 4,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 2223
+        },
+        {
+          "ts": 4,
+          "type": "lite_compress",
+          "compressedChars": 282,
+          "adversarial": false
+        },
+        {
+          "ts": 10,
+          "type": "lite_packet",
+          "tokens": 799,
+          "chars": 3193,
+          "hasPlan": true
+        },
+        {
+          "ts": 10,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1274,
+          "type": "lite_generate_ok",
+          "latencyMs": 1263,
+          "answerLen": 268,
+          "rawAnswer": "ProjectHub is an AI assistant named Scout that answers questions about Bradley Matera's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It uses Qwen 2.5 with BM25 retrieval to provide relevant information.",
+          "rawGenText": "{\"answer\":\"ProjectHub is an AI assistant named Scout that answers questions about Bradley Matera's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It uses Qwen 2.5 with BM25 retrieval to provide relevant information.\"}"
+        },
+        {
+          "ts": 1303,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "ProjectHub is an AI assistant named Scout that answers questions about Bradley Matera's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It uses Qwen 2.5 with BM25 retrieval to provide relevant information."
+        },
+        {
+          "ts": 1306,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 1306
+        }
+      ]
+    },
+    {
+      "id": "q2",
+      "run": 2,
+      "cat": "followup",
+      "conv": "c1",
+      "question": "Okay, but what's actually interesting about it?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Tell me about ProjectHub."
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub is an embeddable AI recruiter assistant named Scout. It uses JavaScript, Node.js, and Express."
+        }
+      ],
+      "rewritten": "okay but what s actually interesting about it",
+      "visibleAnswer": "ProjectHub is an AI assistant named Scout that answers questions about Bradley Matera's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It runs on Qwen 2.5 with BM25 retrieval.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 1035,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "ProjectHub is an AI assistant named Scout that answers questions about Bradley Matera's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It runs on Qwen 2.5 with BM25 retrieval.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 1,
+          "type": "lite_rewrite",
+          "rewritten": "Okay, but what's actually interesting about ProjectHub (Scout)?",
+          "changed": true,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 1,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 2,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 2223
+        },
+        {
+          "ts": 2,
+          "type": "lite_compress",
+          "compressedChars": 282,
+          "adversarial": false
+        },
+        {
+          "ts": 4,
+          "type": "lite_packet",
+          "tokens": 799,
+          "chars": 3193,
+          "hasPlan": true
+        },
+        {
+          "ts": 4,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1027,
+          "type": "lite_generate_ok",
+          "latencyMs": 1023,
+          "answerLen": 239,
+          "rawAnswer": "ProjectHub is an AI assistant named Scout that answers questions about Bradley Matera's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It runs on Qwen 2.5 with BM25 retrieval.",
+          "rawGenText": "{\"answer\":\"ProjectHub is an AI assistant named Scout that answers questions about Bradley Matera's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It runs on Qwen 2.5 with BM25 retrieval.\"}"
+        },
+        {
+          "ts": 1034,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "ProjectHub is an AI assistant named Scout that answers questions about Bradley Matera's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It runs on Qwen 2.5 with BM25 retrieval."
+        },
+        {
+          "ts": 1035,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 1035
+        }
+      ]
+    },
+    {
+      "id": "q2",
+      "run": 3,
+      "cat": "followup",
+      "conv": "c1",
+      "question": "Okay, but what's actually interesting about it?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Tell me about ProjectHub."
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub is an embeddable AI recruiter assistant named Scout. It uses JavaScript, Node.js, and Express."
+        }
+      ],
+      "rewritten": "okay but what s actually interesting about it",
+      "visibleAnswer": "ProjectHub (Scout) is an embeddable AI recruiter assistant that answers questions about Bradley Matera's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It runs on Qwen 2.5 with BM25 retrieval.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 1111,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "ProjectHub (Scout) is an embeddable AI recruiter assistant that answers questions about Bradley Matera's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It runs on Qwen 2.5 with BM25 retrieval.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "Okay, but what's actually interesting about ProjectHub (Scout)?",
+          "changed": true,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 2223
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 282,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 799,
+          "chars": 3193,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1108,
+          "type": "lite_generate_ok",
+          "latencyMs": 1106,
+          "answerLen": 256,
+          "rawAnswer": "ProjectHub (Scout) is an embeddable AI recruiter assistant that answers questions about Bradley Matera's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It runs on Qwen 2.5 with BM25 retrieval.",
+          "rawGenText": "{\"answer\":\"ProjectHub (Scout) is an embeddable AI recruiter assistant that answers questions about Bradley Matera's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It runs on Qwen 2.5 with BM25 retrieval.\"}"
+        },
+        {
+          "ts": 1110,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "ProjectHub (Scout) is an embeddable AI recruiter assistant that answers questions about Bradley Matera's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It runs on Qwen 2.5 with BM25 retrieval."
+        },
+        {
+          "ts": 1111,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 1111
+        }
+      ]
+    },
+    {
+      "id": "q19",
+      "run": 1,
+      "cat": "followup",
+      "conv": "c4",
+      "question": "How well? Like, can he actually build something with it?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Does he know React?"
+        },
+        {
+          "role": "assistant",
+          "text": "Yes, he has experience with React."
+        }
+      ],
+      "rewritten": "how well like can he actually build something with it",
+      "visibleAnswer": "Which project or experience do you mean?",
+      "fallback": false,
+      "outcome": "clarification_required",
+      "latencyMs": 1,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 1,
+          "type": "lite_rewrite",
+          "rewritten": "How well? Like, can he actually build something with it?",
+          "changed": false,
+          "clarificationRequired": true
+        },
+        {
+          "ts": 1,
+          "type": "lite_clarification",
+          "referentType": "pronoun_it"
+        }
+      ]
+    },
+    {
+      "id": "q19",
+      "run": 2,
+      "cat": "followup",
+      "conv": "c4",
+      "question": "How well? Like, can he actually build something with it?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Does he know React?"
+        },
+        {
+          "role": "assistant",
+          "text": "Yes, he has experience with React."
+        }
+      ],
+      "rewritten": "how well like can he actually build something with it",
+      "visibleAnswer": "Which project or experience do you mean?",
+      "fallback": false,
+      "outcome": "clarification_required",
+      "latencyMs": 0,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "How well? Like, can he actually build something with it?",
+          "changed": false,
+          "clarificationRequired": true
+        },
+        {
+          "ts": 0,
+          "type": "lite_clarification",
+          "referentType": "pronoun_it"
+        }
+      ]
+    },
+    {
+      "id": "q19",
+      "run": 3,
+      "cat": "followup",
+      "conv": "c4",
+      "question": "How well? Like, can he actually build something with it?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Does he know React?"
+        },
+        {
+          "role": "assistant",
+          "text": "Yes, he has experience with React."
+        }
+      ],
+      "rewritten": "how well like can he actually build something with it",
+      "visibleAnswer": "Which project or experience do you mean?",
+      "fallback": false,
+      "outcome": "clarification_required",
+      "latencyMs": 0,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "How well? Like, can he actually build something with it?",
+          "changed": false,
+          "clarificationRequired": true
+        },
+        {
+          "ts": 0,
+          "type": "lite_clarification",
+          "referentType": "pronoun_it"
+        }
+      ]
+    },
+    {
+      "id": "q22",
+      "run": 1,
+      "cat": "followup",
+      "conv": "c4",
+      "question": "What does he still need to learn?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Does he know React?"
+        },
+        {
+          "role": "assistant",
+          "text": "Yes, he has experience with React."
+        },
+        {
+          "role": "user",
+          "text": "How well? Like, can he actually build something with it?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has built projects using React."
+        },
+        {
+          "role": "user",
+          "text": "What about Node.js?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has experience with Node.js from ProjectHub and Voice Ops Platform."
+        },
+        {
+          "role": "user",
+          "text": "What's he best at?"
+        },
+        {
+          "role": "assistant",
+          "text": "He is best at JavaScript, HTML, and CSS frontend development."
+        }
+      ],
+      "rewritten": "does still need learn cript frontend development",
+      "visibleAnswer": "He still needs to learn Data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he hasn't yet applied these skills in a practical project.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 812,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "He still needs to learn Data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he hasn't yet applied these skills in a practical project.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 1,
+          "type": "lite_rewrite",
+          "rewritten": "What does he still need to learn?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 1,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 2902
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 366,
+          "adversarial": false
+        },
+        {
+          "ts": 4,
+          "type": "lite_packet",
+          "tokens": 795,
+          "chars": 3180,
+          "hasPlan": true
+        },
+        {
+          "ts": 4,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 810,
+          "type": "lite_generate_ok",
+          "latencyMs": 806,
+          "answerLen": 187,
+          "rawAnswer": "He still needs to learn Data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he hasn't yet applied these skills in a practical project.",
+          "rawGenText": "{\"answer\":\"He still needs to learn Data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he hasn't yet applied these skills in a practical project.\"}"
+        },
+        {
+          "ts": 812,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "He still needs to learn Data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he hasn't yet applied these skills in a practical project."
+        },
+        {
+          "ts": 812,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 812
+        }
+      ]
+    },
+    {
+      "id": "q22",
+      "run": 2,
+      "cat": "followup",
+      "conv": "c4",
+      "question": "What does he still need to learn?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Does he know React?"
+        },
+        {
+          "role": "assistant",
+          "text": "Yes, he has experience with React."
+        },
+        {
+          "role": "user",
+          "text": "How well? Like, can he actually build something with it?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has built projects using React."
+        },
+        {
+          "role": "user",
+          "text": "What about Node.js?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has experience with Node.js from ProjectHub and Voice Ops Platform."
+        },
+        {
+          "role": "user",
+          "text": "What's he best at?"
+        },
+        {
+          "role": "assistant",
+          "text": "He is best at JavaScript, HTML, and CSS frontend development."
+        }
+      ],
+      "rewritten": "does still need learn cript frontend development",
+      "visibleAnswer": "He still needs to learn data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he hasn't yet applied these skills in a practical project.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 1164,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "He still needs to learn data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he hasn't yet applied these skills in a practical project.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What does he still need to learn?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 2902
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 366,
+          "adversarial": false
+        },
+        {
+          "ts": 4,
+          "type": "lite_packet",
+          "tokens": 795,
+          "chars": 3180,
+          "hasPlan": true
+        },
+        {
+          "ts": 4,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1162,
+          "type": "lite_generate_ok",
+          "latencyMs": 1158,
+          "answerLen": 187,
+          "rawAnswer": "He still needs to learn data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he hasn't yet applied these skills in a practical project.",
+          "rawGenText": "{\"answer\":\"He still needs to learn data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he hasn't yet applied these skills in a practical project.\"}"
+        },
+        {
+          "ts": 1163,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "He still needs to learn data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he hasn't yet applied these skills in a practical project."
+        },
+        {
+          "ts": 1164,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 1164
+        }
+      ]
+    },
+    {
+      "id": "q22",
+      "run": 3,
+      "cat": "followup",
+      "conv": "c4",
+      "question": "What does he still need to learn?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Does he know React?"
+        },
+        {
+          "role": "assistant",
+          "text": "Yes, he has experience with React."
+        },
+        {
+          "role": "user",
+          "text": "How well? Like, can he actually build something with it?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has built projects using React."
+        },
+        {
+          "role": "user",
+          "text": "What about Node.js?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has experience with Node.js from ProjectHub and Voice Ops Platform."
+        },
+        {
+          "role": "user",
+          "text": "What's he best at?"
+        },
+        {
+          "role": "assistant",
+          "text": "He is best at JavaScript, HTML, and CSS frontend development."
+        }
+      ],
+      "rewritten": "does still need learn cript frontend development",
+      "visibleAnswer": "He still needs to learn Data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he hasn't yet applied this knowledge in a practical project.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 989,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "He still needs to learn Data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he hasn't yet applied this knowledge in a practical project.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What does he still need to learn?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 2902
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 366,
+          "adversarial": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 795,
+          "chars": 3180,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 988,
+          "type": "lite_generate_ok",
+          "latencyMs": 985,
+          "answerLen": 189,
+          "rawAnswer": "He still needs to learn Data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he hasn't yet applied this knowledge in a practical project.",
+          "rawGenText": "{\"answer\":\"He still needs to learn Data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he hasn't yet applied this knowledge in a practical project.\"}"
+        },
+        {
+          "ts": 989,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "He still needs to learn Data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he hasn't yet applied this knowledge in a practical project."
+        },
+        {
+          "ts": 989,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 989
+        }
+      ]
+    },
+    {
+      "id": "q31",
+      "run": 1,
+      "cat": "ambiguity",
+      "conv": "c7",
+      "question": "What did he use there?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Compare the Interactive Pokedex and the AWS Serverless Metadata Extraction Workflow."
+        },
+        {
+          "role": "assistant",
+          "text": "The Interactive Pokedex is a personal JavaScript, HTML, and CSS project. The AWS Serverless Metadata Extraction Workflow is an internship capstone using Lambda, DynamoDB, S3, and Amplify."
+        }
+      ],
+      "rewritten": "there ompare nteractive okedex personal",
+      "visibleAnswer": "He has direct experience with Cloud troubleshooting, Networking fundamentals, Infrastructure analysis, Linux / Unix command line basics, Terminal / shell workflows.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 2028,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What did he use in AWS Serverless Metadata Extraction Workflow?",
+          "changed": true,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "skill",
+          "tool": "get_skill_evidence"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "get_skill_evidence",
+          "resultSize": 1839
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 233,
+          "adversarial": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 838,
+          "chars": 3351,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1153,
+          "type": "lite_generate_ok",
+          "latencyMs": 1150,
+          "answerLen": 153,
+          "rawAnswer": "The AWS Serverless Metadata Extraction Workflow utilized a serverless pipeline that included Lambda, DynamoDB, S3, and an accessible frontend on Amplify.",
+          "rawGenText": "{ \"answer\": \"The AWS Serverless Metadata Extraction Workflow utilized a serverless pipeline that included Lambda, DynamoDB, S3, and an accessible frontend on Amplify.\" }"
+        },
+        {
+          "ts": 1155,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "The AWS Serverless Metadata Extraction Workflow utilized a serverless pipeline that included Lambda, DynamoDB, S3, and an accessible frontend on Amplify."
+        },
+        {
+          "ts": 1155,
+          "type": "lite_completeness_repair_call",
+          "reason": "SKILL_NO_CANDIDATE_LINK",
+          "intent": "SKILL"
+        },
+        {
+          "ts": 2027,
+          "type": "lite_completeness_repair_result",
+          "verdict": "unsupported",
+          "latencyMs": 871,
+          "rawAnswer": "Lambda, DynamoDB, S3, and an accessible frontend on Amplify.",
+          "reasons": [
+            "insufficient_content_overlap",
+            "not_relevant_to_question"
+          ]
+        },
+        {
+          "ts": 2027,
+          "type": "lite_completeness_fallback",
+          "reason": "SKILL_NO_CANDIDATE_LINK"
+        }
+      ]
+    },
+    {
+      "id": "q31",
+      "run": 2,
+      "cat": "ambiguity",
+      "conv": "c7",
+      "question": "What did he use there?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Compare the Interactive Pokedex and the AWS Serverless Metadata Extraction Workflow."
+        },
+        {
+          "role": "assistant",
+          "text": "The Interactive Pokedex is a personal JavaScript, HTML, and CSS project. The AWS Serverless Metadata Extraction Workflow is an internship capstone using Lambda, DynamoDB, S3, and Amplify."
+        }
+      ],
+      "rewritten": "there ompare nteractive okedex personal",
+      "visibleAnswer": "Linux / Unix command line basics, Terminal / shell workflows, API integration, Debugging, Issue tracking.",
+      "fallback": false,
+      "outcome": "repaired",
+      "latencyMs": 1820,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "Linux / Unix command line basics, Terminal / shell workflows, API integration, Debugging, Issue tracking.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What did he use in AWS Serverless Metadata Extraction Workflow?",
+          "changed": true,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "skill",
+          "tool": "get_skill_evidence"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "get_skill_evidence",
+          "resultSize": 1839
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 233,
+          "adversarial": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 838,
+          "chars": 3351,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1017,
+          "type": "lite_generate_ok",
+          "latencyMs": 1014,
+          "answerLen": 100,
+          "rawAnswer": "He used AWS, Postgres, and the Amplify frontend for the AWS Serverless Metadata Extraction Workflow.",
+          "rawGenText": "{\"answer\":\"He used AWS, Postgres, and the Amplify frontend for the AWS Serverless Metadata Extraction Workflow.\"}"
+        },
+        {
+          "ts": 1019,
+          "type": "lite_validation",
+          "verdict": "unsupported",
+          "reasons": [
+            "fabricated_entity:Postgres"
+          ],
+          "validatedAnswer": "He used AWS, Postgres, and the Amplify frontend for the AWS Serverless Metadata Extraction Workflow."
+        },
+        {
+          "ts": 1019,
+          "type": "lite_repair_call",
+          "tokens": 258
+        },
+        {
+          "ts": 1820,
+          "type": "lite_repair_result",
+          "verdict": "supported",
+          "latencyMs": 800,
+          "rawAnswer": "Linux / Unix command line basics, Terminal / shell workflows, API integration, Debugging, Issue tracking.",
+          "reasons": []
+        },
+        {
+          "ts": 1820,
+          "type": "lite_complete",
+          "outcome": "repaired",
+          "totalMs": 1820
+        }
+      ]
+    },
+    {
+      "id": "q31",
+      "run": 3,
+      "cat": "ambiguity",
+      "conv": "c7",
+      "question": "What did he use there?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Compare the Interactive Pokedex and the AWS Serverless Metadata Extraction Workflow."
+        },
+        {
+          "role": "assistant",
+          "text": "The Interactive Pokedex is a personal JavaScript, HTML, and CSS project. The AWS Serverless Metadata Extraction Workflow is an internship capstone using Lambda, DynamoDB, S3, and Amplify."
+        }
+      ],
+      "rewritten": "there ompare nteractive okedex personal",
+      "visibleAnswer": "He has direct experience with Cloud troubleshooting, Networking fundamentals, Infrastructure analysis, Linux / Unix command line basics, Terminal / shell workflows.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 2270,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What did he use in AWS Serverless Metadata Extraction Workflow?",
+          "changed": true,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "skill",
+          "tool": "get_skill_evidence"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "get_skill_evidence",
+          "resultSize": 1839
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 233,
+          "adversarial": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 838,
+          "chars": 3351,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1084,
+          "type": "lite_generate_ok",
+          "latencyMs": 1081,
+          "answerLen": 136,
+          "rawAnswer": "The project used AWS, specifically AWS Lambda, DynamoDB, S3, and an accessible frontend on Amplify for the metadata extraction workflow.",
+          "rawGenText": "{\"answer\":\"The project used AWS, specifically AWS Lambda, DynamoDB, S3, and an accessible frontend on Amplify for the metadata extraction workflow.\"}"
+        },
+        {
+          "ts": 1085,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "The project used AWS, specifically AWS Lambda, DynamoDB, S3, and an accessible frontend on Amplify for the metadata extraction workflow."
+        },
+        {
+          "ts": 1086,
+          "type": "lite_completeness_repair_call",
+          "reason": "SKILL_NO_CANDIDATE_LINK",
+          "intent": "SKILL"
+        },
+        {
+          "ts": 2270,
+          "type": "lite_completeness_repair_result",
+          "verdict": "supported",
+          "latencyMs": 1183,
+          "rawAnswer": "AWS Lambda, DynamoDB, S3, and an accessible frontend on Amplify for the metadata extraction workflow.",
+          "reasons": []
+        },
+        {
+          "ts": 2270,
+          "type": "lite_completeness_fallback",
+          "reason": "SKILL_NO_CANDIDATE_LINK"
+        }
+      ]
+    },
+    {
+      "id": "q35",
+      "run": 1,
+      "cat": "ambiguity",
+      "conv": "c7",
+      "question": "So what is this thing?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Compare the Interactive Pokedex and the AWS Serverless Metadata Extraction Workflow."
+        },
+        {
+          "role": "assistant",
+          "text": "The Interactive Pokedex is a personal JavaScript, HTML, and CSS project. The AWS Serverless Metadata Extraction Workflow is an internship capstone using Lambda, DynamoDB, S3, and Amplify."
+        },
+        {
+          "role": "user",
+          "text": "What did he use there?"
+        },
+        {
+          "role": "assistant",
+          "text": "He used AWS Lambda, DynamoDB, S3, and AWS Amplify in the AWS Serverless Metadata Extraction Workflow."
+        },
+        {
+          "role": "user",
+          "text": "Was that AWS?"
+        },
+        {
+          "role": "assistant",
+          "text": "Yes, the AWS Serverless Metadata Extraction Workflow is an AWS internship project."
+        },
+        {
+          "role": "user",
+          "text": "What about the other project?"
+        },
+        {
+          "role": "assistant",
+          "text": "The Interactive Pokedex is a static Gen 1 Pokedex UI with all 151 entries using JavaScript, HTML, and CSS."
+        },
+        {
+          "role": "user",
+          "text": "Did he do that professionally?"
+        },
+        {
+          "role": "assistant",
+          "text": "No, the Interactive Pokedex was a personal project, not professional production work."
+        }
+      ],
+      "rewritten": "thing professionally nteractive okedex personal",
+      "visibleAnswer": "Interactive Pokedex is a static Gen 1 Pokedex UI that includes all 151 entries, client-side search and filtering capabilities, data display functionality, and theme controls.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 997,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "Interactive Pokedex is a static Gen 1 Pokedex UI that includes all 151 entries, client-side search and filtering capabilities, data display functionality, and theme controls.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "So what is Interactive Pokedex?",
+          "changed": true,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "compare",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 2303
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 461,
+          "adversarial": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 834,
+          "chars": 3334,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 996,
+          "type": "lite_generate_ok",
+          "latencyMs": 993,
+          "answerLen": 174,
+          "rawAnswer": "Interactive Pokedex is a static Gen 1 Pokedex UI that includes all 151 entries, client-side search and filtering capabilities, data display functionality, and theme controls.",
+          "rawGenText": "{\"answer\":\"Interactive Pokedex is a static Gen 1 Pokedex UI that includes all 151 entries, client-side search and filtering capabilities, data display functionality, and theme controls.\"}"
+        },
+        {
+          "ts": 997,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "Interactive Pokedex is a static Gen 1 Pokedex UI that includes all 151 entries, client-side search and filtering capabilities, data display functionality, and theme controls."
+        },
+        {
+          "ts": 997,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 997
+        }
+      ]
+    },
+    {
+      "id": "q35",
+      "run": 2,
+      "cat": "ambiguity",
+      "conv": "c7",
+      "question": "So what is this thing?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Compare the Interactive Pokedex and the AWS Serverless Metadata Extraction Workflow."
+        },
+        {
+          "role": "assistant",
+          "text": "The Interactive Pokedex is a personal JavaScript, HTML, and CSS project. The AWS Serverless Metadata Extraction Workflow is an internship capstone using Lambda, DynamoDB, S3, and Amplify."
+        },
+        {
+          "role": "user",
+          "text": "What did he use there?"
+        },
+        {
+          "role": "assistant",
+          "text": "He used AWS Lambda, DynamoDB, S3, and AWS Amplify in the AWS Serverless Metadata Extraction Workflow."
+        },
+        {
+          "role": "user",
+          "text": "Was that AWS?"
+        },
+        {
+          "role": "assistant",
+          "text": "Yes, the AWS Serverless Metadata Extraction Workflow is an AWS internship project."
+        },
+        {
+          "role": "user",
+          "text": "What about the other project?"
+        },
+        {
+          "role": "assistant",
+          "text": "The Interactive Pokedex is a static Gen 1 Pokedex UI with all 151 entries using JavaScript, HTML, and CSS."
+        },
+        {
+          "role": "user",
+          "text": "Did he do that professionally?"
+        },
+        {
+          "role": "assistant",
+          "text": "No, the Interactive Pokedex was a personal project, not professional production work."
+        }
+      ],
+      "rewritten": "thing professionally nteractive okedex personal",
+      "visibleAnswer": "Interactive Pokedex is a project that includes the creation of a static Gen 1 Pokedex UI with all 151 entries, client-side search and filtering capabilities, data display functionality, and theme controls. The project utilized JavaScript for client-side scripting, HTML for structure, and CSS for styling.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 932,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "Interactive Pokedex is a project that includes the creation of a static Gen 1 Pokedex UI with all 151 entries, client-side search and filtering capabilities, data display functionality, and theme controls. The project utilized JavaScript for client-side scripting, HTML for structure, and CSS for styling.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "So what is Interactive Pokedex?",
+          "changed": true,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "compare",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 2303
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 461,
+          "adversarial": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 834,
+          "chars": 3334,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 930,
+          "type": "lite_generate_ok",
+          "latencyMs": 927,
+          "answerLen": 305,
+          "rawAnswer": "Interactive Pokedex is a project that includes the creation of a static Gen 1 Pokedex UI with all 151 entries, client-side search and filtering capabilities, data display functionality, and theme controls. The project utilized JavaScript for client-side scripting, HTML for structure, and CSS for styling.",
+          "rawGenText": "{\"answer\":\"Interactive Pokedex is a project that includes the creation of a static Gen 1 Pokedex UI with all 151 entries, client-side search and filtering capabilities, data display functionality, and theme controls. The project utilized JavaScript for client-side scripting, HTML for structure, and CSS for styling.\"}"
+        },
+        {
+          "ts": 931,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "Interactive Pokedex is a project that includes the creation of a static Gen 1 Pokedex UI with all 151 entries, client-side search and filtering capabilities, data display functionality, and theme controls. The project utilized JavaScript for client-side scripting, HTML for structure, and CSS for styling."
+        },
+        {
+          "ts": 932,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 932
+        }
+      ]
+    },
+    {
+      "id": "q35",
+      "run": 3,
+      "cat": "ambiguity",
+      "conv": "c7",
+      "question": "So what is this thing?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Compare the Interactive Pokedex and the AWS Serverless Metadata Extraction Workflow."
+        },
+        {
+          "role": "assistant",
+          "text": "The Interactive Pokedex is a personal JavaScript, HTML, and CSS project. The AWS Serverless Metadata Extraction Workflow is an internship capstone using Lambda, DynamoDB, S3, and Amplify."
+        },
+        {
+          "role": "user",
+          "text": "What did he use there?"
+        },
+        {
+          "role": "assistant",
+          "text": "He used AWS Lambda, DynamoDB, S3, and AWS Amplify in the AWS Serverless Metadata Extraction Workflow."
+        },
+        {
+          "role": "user",
+          "text": "Was that AWS?"
+        },
+        {
+          "role": "assistant",
+          "text": "Yes, the AWS Serverless Metadata Extraction Workflow is an AWS internship project."
+        },
+        {
+          "role": "user",
+          "text": "What about the other project?"
+        },
+        {
+          "role": "assistant",
+          "text": "The Interactive Pokedex is a static Gen 1 Pokedex UI with all 151 entries using JavaScript, HTML, and CSS."
+        },
+        {
+          "role": "user",
+          "text": "Did he do that professionally?"
+        },
+        {
+          "role": "assistant",
+          "text": "No, the Interactive Pokedex was a personal project, not professional production work."
+        }
+      ],
+      "rewritten": "thing professionally nteractive okedex personal",
+      "visibleAnswer": "Interactive Pokedex is a static Gen 1 Pokedex UI that includes all 151 entries, client-side search and filtering capabilities, data display, and theme controls. It utilizes JavaScript for client-side interactions, HTML for the structure, and CSS for styling.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 1291,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "Interactive Pokedex is a static Gen 1 Pokedex UI that includes all 151 entries, client-side search and filtering capabilities, data display, and theme controls. It utilizes JavaScript for client-side interactions, HTML for the structure, and CSS for styling.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "So what is Interactive Pokedex?",
+          "changed": true,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "compare",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 2303
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 461,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 834,
+          "chars": 3334,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1289,
+          "type": "lite_generate_ok",
+          "latencyMs": 1286,
+          "answerLen": 258,
+          "rawAnswer": "Interactive Pokedex is a static Gen 1 Pokedex UI that includes all 151 entries, client-side search and filtering capabilities, data display, and theme controls. It utilizes JavaScript for client-side interactions, HTML for the structure, and CSS for styling.",
+          "rawGenText": "{\"answer\":\"Interactive Pokedex is a static Gen 1 Pokedex UI that includes all 151 entries, client-side search and filtering capabilities, data display, and theme controls. It utilizes JavaScript for client-side interactions, HTML for the structure, and CSS for styling.\"}"
+        },
+        {
+          "ts": 1291,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "Interactive Pokedex is a static Gen 1 Pokedex UI that includes all 151 entries, client-side search and filtering capabilities, data display, and theme controls. It utilizes JavaScript for client-side interactions, HTML for the structure, and CSS for styling."
+        },
+        {
+          "ts": 1291,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 1291
+        }
+      ]
+    },
+    {
+      "id": "q38",
+      "run": 1,
+      "cat": "natural",
+      "conv": "c8",
+      "question": "Why should I care about that?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Okay but what did he actually build?"
+        },
+        {
+          "role": "assistant",
+          "text": "He built the Interactive Pokedex, a static Gen 1 Pokedex UI with all 151 entries."
+        },
+        {
+          "role": "user",
+          "text": "What's the cool part?"
+        },
+        {
+          "role": "assistant",
+          "text": "The cool part is the client-side search and filtering for all 151 Pokemon entries."
+        }
+      ],
+      "rewritten": "should care client search filtering",
+      "visibleAnswer": "The Interactive Pokedex is a project that showcases your skills in creating a static Gen 1 Pokémon database interface, which includes client-side search and filtering capabilities. This experience demonstrates proficiency with JavaScript, HTML, and CSS, making it valuable for potential employers or educational purposes.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 1363,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "The Interactive Pokedex is a project that showcases your skills in creating a static Gen 1 Pokémon database interface, which includes client-side search and filtering capabilities. This experience demonstrates proficiency with JavaScript, HTML, and CSS, making it valuable for potential employers or educational purposes.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "Why should I care about Interactive Pokedex?",
+          "changed": true,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 2797
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 535,
+          "adversarial": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 837,
+          "chars": 3347,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1362,
+          "type": "lite_generate_ok",
+          "latencyMs": 1359,
+          "answerLen": 321,
+          "rawAnswer": "The Interactive Pokedex is a project that showcases your skills in creating a static Gen 1 Pokémon database interface, which includes client-side search and filtering capabilities. This experience demonstrates proficiency with JavaScript, HTML, and CSS, making it valuable for potential employers or educational purposes.",
+          "rawGenText": "{\"answer\":\"The Interactive Pokedex is a project that showcases your skills in creating a static Gen 1 Pokémon database interface, which includes client-side search and filtering capabilities. This experience demonstrates proficiency with JavaScript, HTML, and CSS, making it valuable for potential employers or educational purposes.\"}"
+        },
+        {
+          "ts": 1363,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "The Interactive Pokedex is a project that showcases your skills in creating a static Gen 1 Pokémon database interface, which includes client-side search and filtering capabilities. This experience demonstrates proficiency with JavaScript, HTML, and CSS, making it valuable for potential employers or educational purposes."
+        },
+        {
+          "ts": 1363,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 1363
+        }
+      ]
+    },
+    {
+      "id": "q38",
+      "run": 2,
+      "cat": "natural",
+      "conv": "c8",
+      "question": "Why should I care about that?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Okay but what did he actually build?"
+        },
+        {
+          "role": "assistant",
+          "text": "He built the Interactive Pokedex, a static Gen 1 Pokedex UI with all 151 entries."
+        },
+        {
+          "role": "user",
+          "text": "What's the cool part?"
+        },
+        {
+          "role": "assistant",
+          "text": "The cool part is the client-side search and filtering for all 151 Pokemon entries."
+        }
+      ],
+      "rewritten": "should care client search filtering",
+      "visibleAnswer": "The Interactive Pokedex is an educational frontend demo that shows why secrets and environment variables are important concepts in software development.",
+      "fallback": false,
+      "outcome": "repaired",
+      "latencyMs": 2483,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "The Interactive Pokedex is an educational frontend demo that shows why secrets and environment variables are important concepts in software development.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "Why should I care about Interactive Pokedex?",
+          "changed": true,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 2797
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 535,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 837,
+          "chars": 3347,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1465,
+          "type": "lite_generate_ok",
+          "latencyMs": 1463,
+          "answerLen": 281,
+          "rawAnswer": "The Interactive Pokedex is an entry-level project that demonstrates skills in client-side web development, including JavaScript, HTML, and CSS. It showcases the ability to create a static UI with all 151 entries, implement search/filtering functionality, and manage theme controls.",
+          "rawGenText": "{\"answer\":\"The Interactive Pokedex is an entry-level project that demonstrates skills in client-side web development, including JavaScript, HTML, and CSS. It showcases the ability to create a static UI with all 151 entries, implement search/filtering functionality, and manage theme controls. This experience can be valuable for developers looking to build foundational projects or gain practical kno"
+        },
+        {
+          "ts": 1467,
+          "type": "lite_validation",
+          "verdict": "unsupported",
+          "reasons": [
+            "unsupported_relationship:Interactive Pokedex|is_type|entry"
+          ],
+          "validatedAnswer": "The Interactive Pokedex is an entry-level project that demonstrates skills in client-side web development, including JavaScript, HTML, and CSS. It showcases the ability to create a static UI with all 151 entries, implement search/filtering functionality, and manage theme controls."
+        },
+        {
+          "ts": 1467,
+          "type": "lite_repair_call",
+          "tokens": 359
+        },
+        {
+          "ts": 2483,
+          "type": "lite_repair_result",
+          "verdict": "supported",
+          "latencyMs": 1015,
+          "rawAnswer": "The Interactive Pokedex is an educational frontend demo that shows why secrets and environment variables are important concepts in software development.",
+          "reasons": []
+        },
+        {
+          "ts": 2483,
+          "type": "lite_complete",
+          "outcome": "repaired",
+          "totalMs": 2483
+        }
+      ]
+    },
+    {
+      "id": "q38",
+      "run": 3,
+      "cat": "natural",
+      "conv": "c8",
+      "question": "Why should I care about that?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Okay but what did he actually build?"
+        },
+        {
+          "role": "assistant",
+          "text": "He built the Interactive Pokedex, a static Gen 1 Pokedex UI with all 151 entries."
+        },
+        {
+          "role": "user",
+          "text": "What's the cool part?"
+        },
+        {
+          "role": "assistant",
+          "text": "The cool part is the client-side search and filtering for all 151 Pokemon entries."
+        }
+      ],
+      "rewritten": "should care client search filtering",
+      "visibleAnswer": "The Interactive Pokedex is an educational frontend demo that showcases why secrets and environment variables are important concepts in software development, demonstrating their practical applications through a variety of interactive UI elements.",
+      "fallback": false,
+      "outcome": "repaired",
+      "latencyMs": 2460,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "The Interactive Pokedex is an educational frontend demo that showcases why secrets and environment variables are important concepts in software development, demonstrating their practical applications through a variety of interactive UI elements.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "Why should I care about Interactive Pokedex?",
+          "changed": true,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 2797
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 535,
+          "adversarial": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 837,
+          "chars": 3347,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1263,
+          "type": "lite_generate_ok",
+          "latencyMs": 1260,
+          "answerLen": 238,
+          "rawAnswer": "The Interactive Pokedex is an entry-level project that demonstrates skills in client-side development, data display, and theme controls. It's a good starting point for understanding how to build a simple UI with JavaScript, HTML, and CSS.",
+          "rawGenText": "{\"answer\":\"The Interactive Pokedex is an entry-level project that demonstrates skills in client-side development, data display, and theme controls. It's a good starting point for understanding how to build a simple UI with JavaScript, HTML, and CSS.\"}"
+        },
+        {
+          "ts": 1264,
+          "type": "lite_validation",
+          "verdict": "unsupported",
+          "reasons": [
+            "unsupported_relationship:Interactive Pokedex|is_type|entry"
+          ],
+          "validatedAnswer": "The Interactive Pokedex is an entry-level project that demonstrates skills in client-side development, data display, and theme controls. It's a good starting point for understanding how to build a simple UI with JavaScript, HTML, and CSS."
+        },
+        {
+          "ts": 1265,
+          "type": "lite_repair_call",
+          "tokens": 359
+        },
+        {
+          "ts": 2460,
+          "type": "lite_repair_result",
+          "verdict": "supported",
+          "latencyMs": 1194,
+          "rawAnswer": "The Interactive Pokedex is an educational frontend demo that showcases why secrets and environment variables are important concepts in software development, demonstrating their practical applications through a variety of interactive UI elements.",
+          "reasons": []
+        },
+        {
+          "ts": 2460,
+          "type": "lite_complete",
+          "outcome": "repaired",
+          "totalMs": 2460
+        }
+      ]
+    },
+    {
+      "id": "q42",
+      "run": 1,
+      "cat": "job",
+      "conv": "c9",
+      "question": "How does he fit a cloud support role requiring AWS and troubleshooting?",
+      "history": [
+        {
+          "role": "user",
+          "text": "How does he fit a junior frontend developer role requiring React and TypeScript?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has experience with React and TypeScript from his projects."
+        }
+      ],
+      "rewritten": "how does he fit a cloud support role requiring aws and troubleshooting",
+      "visibleAnswer": "GAPS: Data structures and algorithms (DSA). I have taken Udemy co…; Turning a brand-new problem into working code from a blank…; Most LeetCode-style problems. I cannot reliably solve them….",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 3030,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "How does he fit a cloud support role requiring AWS and troubleshooting?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "job",
+          "tool": "match_role"
+        },
+        {
+          "ts": 2,
+          "type": "lite_tool_result",
+          "tool": "match_role",
+          "resultSize": 930
+        },
+        {
+          "ts": 2,
+          "type": "lite_compress",
+          "compressedChars": 277,
+          "adversarial": false
+        },
+        {
+          "ts": 4,
+          "type": "lite_packet",
+          "tokens": 770,
+          "chars": 3080,
+          "hasPlan": true
+        },
+        {
+          "ts": 4,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1328,
+          "type": "lite_generate_ok",
+          "latencyMs": 1324,
+          "answerLen": 208,
+          "rawAnswer": "He has experience with AWS, specifically in Cloud Support Engineering Intern roles. His projects include working on serverless metadata extraction workflows using AWS services such as Lambda, S3, and Amplify.",
+          "rawGenText": "{\"answer\":\"He has experience with AWS, specifically in Cloud Support Engineering Intern roles. His projects include working on serverless metadata extraction workflows using AWS services such as Lambda, S3, and Amplify. He also demonstrates proficiency in AWS troubleshooting through his ability to turn a new problem into a functioning solution.\"}"
+        },
+        {
+          "ts": 1329,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "He has experience with AWS, specifically in Cloud Support Engineering Intern roles. His projects include working on serverless metadata extraction workflows using AWS services such as Lambda, S3, and Amplify."
+        },
+        {
+          "ts": 1329,
+          "type": "lite_completeness_repair_call",
+          "reason": "MISSING_REQUIRED_ENTITIES",
+          "intent": "JOB_FIT"
+        },
+        {
+          "ts": 3030,
+          "type": "lite_completeness_repair_result",
+          "verdict": "supported",
+          "latencyMs": 1699,
+          "rawAnswer": "He has experience with AWS Cloud Support Engineering Intern roles, specifically in working on serverless metadata extraction workflows using services like Lambda, S3, and other AWS tools. This background aligns well with the requirements for a cloud support position that involves troubleshooting iss",
+          "reasons": []
+        },
+        {
+          "ts": 3030,
+          "type": "lite_completeness_fallback",
+          "reason": "MISSING_REQUIRED_ENTITIES"
+        }
+      ]
+    },
+    {
+      "id": "q42",
+      "run": 2,
+      "cat": "job",
+      "conv": "c9",
+      "question": "How does he fit a cloud support role requiring AWS and troubleshooting?",
+      "history": [
+        {
+          "role": "user",
+          "text": "How does he fit a junior frontend developer role requiring React and TypeScript?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has experience with React and TypeScript from his projects."
+        }
+      ],
+      "rewritten": "how does he fit a cloud support role requiring aws and troubleshooting",
+      "visibleAnswer": "GAPS: Data structures and algorithms (DSA). I have taken Udemy co…; Turning a brand-new problem into working code from a blank…; Most LeetCode-style problems. I cannot reliably solve them….",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 2620,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 1,
+          "type": "lite_rewrite",
+          "rewritten": "How does he fit a cloud support role requiring AWS and troubleshooting?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 1,
+          "type": "lite_route",
+          "operation": "job",
+          "tool": "match_role"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "match_role",
+          "resultSize": 930
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 277,
+          "adversarial": false
+        },
+        {
+          "ts": 6,
+          "type": "lite_packet",
+          "tokens": 770,
+          "chars": 3080,
+          "hasPlan": true
+        },
+        {
+          "ts": 6,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1425,
+          "type": "lite_generate_ok",
+          "latencyMs": 1419,
+          "answerLen": 215,
+          "rawAnswer": "He has experience with AWS, specifically in the context of serverless metadata extraction workflows. His intern project involved using DynamoDB as part of a serverless metadata workflow with Lambda, S3, and Amplify.",
+          "rawGenText": "{\"answer\":\"He has experience with AWS, specifically in the context of serverless metadata extraction workflows. His intern project involved using DynamoDB as part of a serverless metadata workflow with Lambda, S3, and Amplify. This demonstrates his ability to work with cloud infrastructure and troubleshoot issues related to AWS services.\"}"
+        },
+        {
+          "ts": 1426,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "He has experience with AWS, specifically in the context of serverless metadata extraction workflows. His intern project involved using DynamoDB as part of a serverless metadata workflow with Lambda, S3, and Amplify."
+        },
+        {
+          "ts": 1426,
+          "type": "lite_completeness_repair_call",
+          "reason": "MISSING_REQUIRED_ENTITIES",
+          "intent": "JOB_FIT"
+        },
+        {
+          "ts": 2620,
+          "type": "lite_completeness_repair_result",
+          "verdict": "supported",
+          "latencyMs": 1193,
+          "rawAnswer": "Bradley Matera has experience with AWS, specifically in serverless metadata extraction workflows. His intern project involved using DynamoDB as part of a serverless metadata workflow with Lambda, indicating his skills align well with the requirements for a cloud support role that necessitates knowle",
+          "reasons": []
+        },
+        {
+          "ts": 2620,
+          "type": "lite_completeness_fallback",
+          "reason": "MISSING_REQUIRED_ENTITIES"
+        }
+      ]
+    },
+    {
+      "id": "q42",
+      "run": 3,
+      "cat": "job",
+      "conv": "c9",
+      "question": "How does he fit a cloud support role requiring AWS and troubleshooting?",
+      "history": [
+        {
+          "role": "user",
+          "text": "How does he fit a junior frontend developer role requiring React and TypeScript?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has experience with React and TypeScript from his projects."
+        }
+      ],
+      "rewritten": "how does he fit a cloud support role requiring aws and troubleshooting",
+      "visibleAnswer": "GAPS: Data structures and algorithms (DSA). I have taken Udemy co…; Turning a brand-new problem into working code from a blank…; Most LeetCode-style problems. I cannot reliably solve them….",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 2637,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "How does he fit a cloud support role requiring AWS and troubleshooting?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "job",
+          "tool": "match_role"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "match_role",
+          "resultSize": 930
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 277,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 770,
+          "chars": 3080,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1447,
+          "type": "lite_generate_ok",
+          "latencyMs": 1445,
+          "answerLen": 255,
+          "rawAnswer": "He has experience with AWS, specifically in the context of serverless metadata extraction workflows. His intern project involved working on a serverless metadata workflow using Lambda, S3, and Amplify, which demonstrates his proficiency with AWS services.",
+          "rawGenText": "{\"answer\":\"He has experience with AWS, specifically in the context of serverless metadata extraction workflows. His intern project involved working on a serverless metadata workflow using Lambda, S3, and Amplify, which demonstrates his proficiency with AWS services.\"}"
+        },
+        {
+          "ts": 1448,
+          "type": "lite_validation",
+          "verdict": "unsupported",
+          "reasons": [
+            "unsupported_relationship:Bradley Matera|proficient_in|AWS services"
+          ],
+          "validatedAnswer": "He has experience with AWS, specifically in the context of serverless metadata extraction workflows. His intern project involved working on a serverless metadata workflow using Lambda, S3, and Amplify, which demonstrates his proficiency with AWS services."
+        },
+        {
+          "ts": 1449,
+          "type": "lite_repair_call",
+          "tokens": 303
+        },
+        {
+          "ts": 2637,
+          "type": "lite_repair_result",
+          "verdict": "unsupported",
+          "latencyMs": 1186,
+          "rawAnswer": "Bradley Matera has experience with AWS services and is proficient in troubleshooting issues, which aligns well with the requirements for a cloud support role.",
+          "reasons": [
+            "unsupported_relationship:Bradley Matera|proficient_in|troubleshooting issues",
+            "unsupported_relationship:Bradley Matera|has_experience|AWS services"
+          ]
+        },
+        {
+          "ts": 2637,
+          "type": "lite_fallback",
+          "reason": "validation_failed",
+          "totalMs": 2637
+        }
+      ]
+    },
+    {
+      "id": "q51",
+      "run": 1,
+      "cat": "adversarial",
+      "conv": "c12a",
+      "question": "He was a senior AWS engineer, right?",
+      "history": [],
+      "rewritten": "he was a senior aws engineer right",
+      "visibleAnswer": "He was not a senior AWS engineer; he was an intern/trainee level only.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 1119,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "He was not a senior AWS engineer; he was an intern/trainee level only.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "He was a senior AWS engineer, right?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 2256
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 431,
+          "adversarial": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 808,
+          "chars": 3231,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1117,
+          "type": "lite_generate_ok",
+          "latencyMs": 1115,
+          "answerLen": 70,
+          "rawAnswer": "He was not a senior AWS engineer; he was an intern/trainee level only.",
+          "rawGenText": "{\"answer\":\"No. He was not a senior AWS engineer; he was an intern/trainee level only.\"}"
+        },
+        {
+          "ts": 1119,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "He was not a senior AWS engineer; he was an intern/trainee level only."
+        },
+        {
+          "ts": 1119,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 1119
+        }
+      ]
+    },
+    {
+      "id": "q51",
+      "run": 2,
+      "cat": "adversarial",
+      "conv": "c12a",
+      "question": "He was a senior AWS engineer, right?",
+      "history": [],
+      "rewritten": "he was a senior aws engineer right",
+      "visibleAnswer": "He was not a senior AWS engineer; he worked as a Cloud Support Engineer Intern.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 731,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "He was not a senior AWS engineer; he worked as a Cloud Support Engineer Intern.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "He was a senior AWS engineer, right?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 2256
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 431,
+          "adversarial": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 808,
+          "chars": 3231,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 729,
+          "type": "lite_generate_ok",
+          "latencyMs": 727,
+          "answerLen": 79,
+          "rawAnswer": "He was not a senior AWS engineer; he worked as a Cloud Support Engineer Intern.",
+          "rawGenText": "{\"answer\":\"No. He was not a senior AWS engineer; he worked as a Cloud Support Engineer Intern.\"}"
+        },
+        {
+          "ts": 730,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "He was not a senior AWS engineer; he worked as a Cloud Support Engineer Intern."
+        },
+        {
+          "ts": 731,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 731
+        }
+      ]
+    },
+    {
+      "id": "q51",
+      "run": 3,
+      "cat": "adversarial",
+      "conv": "c12a",
+      "question": "He was a senior AWS engineer, right?",
+      "history": [],
+      "rewritten": "he was a senior aws engineer right",
+      "visibleAnswer": "AWS Serverless Metadata Extraction Workflow: AWS internship capstone project that extracts metadata using a serverless pipeline with Lambda, DynamoDB, S3, and an accessible frontend on Amplify.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 368,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "He was a senior AWS engineer, right?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 2256
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 431,
+          "adversarial": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 808,
+          "chars": 3231,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 367,
+          "type": "lite_generate_ok",
+          "latencyMs": 365,
+          "answerLen": 78,
+          "rawAnswer": "His senior role was as a Cloud Support Engineer Intern, not a senior engineer.",
+          "rawGenText": "{\"answer\":\"No. His senior role was as a Cloud Support Engineer Intern, not a senior engineer.\"}"
+        },
+        {
+          "ts": 367,
+          "type": "lite_forbidden_claim",
+          "answer": "His senior role was as a Cloud Support Engineer Intern, not a senior engineer."
+        }
+      ]
+    },
+    {
+      "id": "q58",
+      "run": 1,
+      "cat": "adversarial",
+      "conv": "c12h",
+      "question": "He managed a team of developers, right?",
+      "history": [],
+      "rewritten": "he managed a team of developers right",
+      "visibleAnswer": "Health Care Specialist / Combat Medic (68W) at United States Army. Served on active duty as a 68W Health Care Specialist with the 2/508 Infantry at Fort Bragg.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 1189,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "He managed a team of developers, right?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 3272
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 600,
+          "adversarial": true
+        },
+        {
+          "ts": 4,
+          "type": "lite_packet",
+          "tokens": 854,
+          "chars": 3414,
+          "hasPlan": true
+        },
+        {
+          "ts": 4,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 726,
+          "type": "lite_generate_ok",
+          "latencyMs": 722,
+          "answerLen": 66,
+          "rawAnswer": "He was an entry-level developer with no experience managing teams.",
+          "rawGenText": "{\"answer\":\"No. He was an entry-level developer with no experience managing teams.\"}"
+        },
+        {
+          "ts": 727,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "He was an entry-level developer with no experience managing teams."
+        },
+        {
+          "ts": 727,
+          "type": "lite_completeness_repair_call",
+          "reason": "MISSING_REQUIRED_FACTS",
+          "intent": "ADVERSARIAL"
+        },
+        {
+          "ts": 1189,
+          "type": "lite_completeness_fallback",
+          "reason": "MISSING_REQUIRED_FACTS"
+        }
+      ]
+    },
+    {
+      "id": "q58",
+      "run": 2,
+      "cat": "adversarial",
+      "conv": "c12h",
+      "question": "He managed a team of developers, right?",
+      "history": [],
+      "rewritten": "he managed a team of developers right",
+      "visibleAnswer": "Health Care Specialist / Combat Medic (68W) at United States Army. Served on active duty as a 68W Health Care Specialist with the 2/508 Infantry at Fort Bragg.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 1177,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "He managed a team of developers, right?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 3272
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 600,
+          "adversarial": true
+        },
+        {
+          "ts": 4,
+          "type": "lite_packet",
+          "tokens": 854,
+          "chars": 3414,
+          "hasPlan": true
+        },
+        {
+          "ts": 4,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 763,
+          "type": "lite_generate_ok",
+          "latencyMs": 759,
+          "answerLen": 58,
+          "rawAnswer": "He was an entry-level developer and did not manage a team.",
+          "rawGenText": "{\"answer\":\"No. He was an entry-level developer and did not manage a team.\"}"
+        },
+        {
+          "ts": 764,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "He was an entry-level developer and did not manage a team."
+        },
+        {
+          "ts": 764,
+          "type": "lite_completeness_repair_call",
+          "reason": "MISSING_REQUIRED_FACTS",
+          "intent": "ADVERSARIAL"
+        },
+        {
+          "ts": 1177,
+          "type": "lite_completeness_fallback",
+          "reason": "MISSING_REQUIRED_FACTS"
+        }
+      ]
+    },
+    {
+      "id": "q58",
+      "run": 3,
+      "cat": "adversarial",
+      "conv": "c12h",
+      "question": "He managed a team of developers, right?",
+      "history": [],
+      "rewritten": "he managed a team of developers right",
+      "visibleAnswer": "He was not managing a team; he was an entry-level developer learning stage.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 843,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "He was not managing a team; he was an entry-level developer learning stage.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 1,
+          "type": "lite_rewrite",
+          "rewritten": "He managed a team of developers, right?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 1,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 3272
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 600,
+          "adversarial": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 854,
+          "chars": 3414,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 842,
+          "type": "lite_generate_ok",
+          "latencyMs": 839,
+          "answerLen": 75,
+          "rawAnswer": "He was not managing a team; he was an entry-level developer learning stage.",
+          "rawGenText": "{\"answer\":\"No. He was not managing a team; he was an entry-level developer learning stage.\"}"
+        },
+        {
+          "ts": 843,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "He was not managing a team; he was an entry-level developer learning stage."
+        },
+        {
+          "ts": 843,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 843
+        }
+      ]
+    },
+    {
+      "id": "q61",
+      "run": 1,
+      "cat": "negation",
+      "conv": "c13c",
+      "question": "There is no evidence he attended MIT, right?",
+      "history": [],
+      "rewritten": "there is no evidence he intended mit right",
+      "visibleAnswer": "Yes, that is correct.",
+      "fallback": false,
+      "outcome": "completeness_repaired",
+      "latencyMs": 472,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "Yes, that is correct.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "There is no evidence he attended MIT, right?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 3771
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 339,
+          "adversarial": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 781,
+          "chars": 3124,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 469,
+          "type": "lite_generate_ok",
+          "latencyMs": 466,
+          "answerLen": 3,
+          "rawAnswer": "No.",
+          "rawGenText": "{\"answer\":\"No.\"}"
+        },
+        {
+          "ts": 471,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "No."
+        },
+        {
+          "ts": 472,
+          "type": "lite_complete",
+          "outcome": "completeness_repaired",
+          "totalMs": 472,
+          "deterministic": true
+        }
+      ]
+    },
+    {
+      "id": "q61",
+      "run": 2,
+      "cat": "negation",
+      "conv": "c13c",
+      "question": "There is no evidence he attended MIT, right?",
+      "history": [],
+      "rewritten": "there is no evidence he intended mit right",
+      "visibleAnswer": "Health Care Specialist / Combat Medic (68W) at United States Army. Served on active duty as a 68W Health Care Specialist with the 2/508 Infantry at Fort Bragg.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 1055,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "There is no evidence he attended MIT, right?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 3771
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 339,
+          "adversarial": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 781,
+          "chars": 3124,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 727,
+          "type": "lite_generate_ok",
+          "latencyMs": 724,
+          "answerLen": 58,
+          "rawAnswer": "No, there is no evidence that Bradley Matera attended MIT.",
+          "rawGenText": "{\"answer\":\"No, there is no evidence that Bradley Matera attended MIT.\"}"
+        },
+        {
+          "ts": 727,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "No, there is no evidence that Bradley Matera attended MIT."
+        },
+        {
+          "ts": 728,
+          "type": "lite_completeness_repair_call",
+          "reason": "MISSING_REQUIRED_FACTS",
+          "intent": "ADVERSARIAL"
+        },
+        {
+          "ts": 1054,
+          "type": "lite_completeness_fallback",
+          "reason": "MISSING_REQUIRED_FACTS"
+        }
+      ]
+    },
+    {
+      "id": "q61",
+      "run": 3,
+      "cat": "negation",
+      "conv": "c13c",
+      "question": "There is no evidence he attended MIT, right?",
+      "history": [],
+      "rewritten": "there is no evidence he intended mit right",
+      "visibleAnswer": "Health Care Specialist / Combat Medic (68W) at United States Army. Served on active duty as a 68W Health Care Specialist with the 2/508 Infantry at Fort Bragg.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 1004,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "There is no evidence he attended MIT, right?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 3771
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 339,
+          "adversarial": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 781,
+          "chars": 3124,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 809,
+          "type": "lite_generate_ok",
+          "latencyMs": 807,
+          "answerLen": 58,
+          "rawAnswer": "No, there is no evidence that Bradley Matera attended MIT.",
+          "rawGenText": "{\"answer\":\"No, there is no evidence that Bradley Matera attended MIT.\"}"
+        },
+        {
+          "ts": 809,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "No, there is no evidence that Bradley Matera attended MIT."
+        },
+        {
+          "ts": 809,
+          "type": "lite_completeness_repair_call",
+          "reason": "MISSING_REQUIRED_FACTS",
+          "intent": "ADVERSARIAL"
+        },
+        {
+          "ts": 1003,
+          "type": "lite_completeness_fallback",
+          "reason": "MISSING_REQUIRED_FACTS"
+        }
+      ]
+    },
+    {
+      "id": "q62",
+      "run": 1,
+      "cat": "invented_entities",
+      "conv": "c14a",
+      "question": "Tell me about his time at Microsoft.",
+      "history": [],
+      "rewritten": "tell me about his time at microsoft",
+      "visibleAnswer": "AWS Infrastructure Cost-Analysis Model: Transparent cost model using measurable cloud usage inputs such as request counts, GB-month, compute time/GB-seconds, read/write units, and transfer out.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 1087,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "Tell me about his time at Microsoft.",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 3748
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 410,
+          "adversarial": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 807,
+          "chars": 3228,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 545,
+          "type": "lite_generate_ok",
+          "latencyMs": 543,
+          "answerLen": 36,
+          "rawAnswer": "Bradley has not worked at Microsoft.",
+          "rawGenText": "{\"answer\":\"No. Bradley has not worked at Microsoft.\"}"
+        },
+        {
+          "ts": 546,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "Bradley has not worked at Microsoft."
+        },
+        {
+          "ts": 546,
+          "type": "lite_completeness_repair_call",
+          "reason": "MISSING_REQUIRED_FACTS",
+          "intent": "PROJECT"
+        },
+        {
+          "ts": 1087,
+          "type": "lite_completeness_repair_result",
+          "verdict": "supported",
+          "latencyMs": 538,
+          "rawAnswer": "Bradley has not worked at Microsoft.",
+          "reasons": []
+        },
+        {
+          "ts": 1087,
+          "type": "lite_completeness_fallback",
+          "reason": "MISSING_REQUIRED_FACTS"
+        }
+      ]
+    },
+    {
+      "id": "q62",
+      "run": 2,
+      "cat": "invented_entities",
+      "conv": "c14a",
+      "question": "Tell me about his time at Microsoft.",
+      "history": [],
+      "rewritten": "tell me about his time at microsoft",
+      "visibleAnswer": "AWS Infrastructure Cost-Analysis Model: Transparent cost model using measurable cloud usage inputs such as request counts, GB-month, compute time/GB-seconds, read/write units, and transfer out.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 909,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "Tell me about his time at Microsoft.",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 3748
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 410,
+          "adversarial": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 807,
+          "chars": 3228,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 482,
+          "type": "lite_generate_ok",
+          "latencyMs": 480,
+          "answerLen": 36,
+          "rawAnswer": "Bradley has not worked at Microsoft.",
+          "rawGenText": "{\"answer\":\"No. Bradley has not worked at Microsoft.\"}"
+        },
+        {
+          "ts": 483,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "Bradley has not worked at Microsoft."
+        },
+        {
+          "ts": 483,
+          "type": "lite_completeness_repair_call",
+          "reason": "MISSING_REQUIRED_FACTS",
+          "intent": "PROJECT"
+        },
+        {
+          "ts": 909,
+          "type": "lite_completeness_repair_result",
+          "verdict": "supported",
+          "latencyMs": 425,
+          "rawAnswer": "Bradley has not worked at Microsoft.",
+          "reasons": []
+        },
+        {
+          "ts": 909,
+          "type": "lite_completeness_fallback",
+          "reason": "MISSING_REQUIRED_FACTS"
+        }
+      ]
+    },
+    {
+      "id": "q62",
+      "run": 3,
+      "cat": "invented_entities",
+      "conv": "c14a",
+      "question": "Tell me about his time at Microsoft.",
+      "history": [],
+      "rewritten": "tell me about his time at microsoft",
+      "visibleAnswer": "AWS Infrastructure Cost-Analysis Model: Transparent cost model using measurable cloud usage inputs such as request counts, GB-month, compute time/GB-seconds, read/write units, and transfer out.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 1226,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "Tell me about his time at Microsoft.",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 3748
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 410,
+          "adversarial": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 807,
+          "chars": 3228,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 792,
+          "type": "lite_generate_ok",
+          "latencyMs": 790,
+          "answerLen": 36,
+          "rawAnswer": "Bradley has not worked at Microsoft.",
+          "rawGenText": "{\"answer\":\"No. Bradley has not worked at Microsoft.\"}"
+        },
+        {
+          "ts": 794,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "Bradley has not worked at Microsoft."
+        },
+        {
+          "ts": 794,
+          "type": "lite_completeness_repair_call",
+          "reason": "MISSING_REQUIRED_FACTS",
+          "intent": "PROJECT"
+        },
+        {
+          "ts": 1226,
+          "type": "lite_completeness_repair_result",
+          "verdict": "supported",
+          "latencyMs": 431,
+          "rawAnswer": "Bradley has not worked at Microsoft.",
+          "reasons": []
+        },
+        {
+          "ts": 1226,
+          "type": "lite_completeness_fallback",
+          "reason": "MISSING_REQUIRED_FACTS"
+        }
+      ]
+    },
+    {
+      "id": "q66",
+      "run": 1,
+      "cat": "personality",
+      "conv": "c15",
+      "question": "If you had to bet on him succeeding in one type of role, what would it be?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What project do you think is the most interesting?"
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub seems the most interesting because it uses AI and retrieval."
+        }
+      ],
+      "rewritten": "if you had to bet on him succeeding in one type of role what would it be",
+      "visibleAnswer": "entry-level developer",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 954,
+      "validation": {
+        "valid": true,
+        "reasons": [
+          "no_terminal_punctuation"
+        ],
+        "verdict": "partial",
+        "cleaned": "entry-level developer",
+        "rejectionDetails": [
+          {
+            "reason": "INVALID_STRUCTURE",
+            "detail": "Answer does not end with punctuation"
+          }
+        ]
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "If you had to bet on him succeeding in one type of role, what would it be?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "job",
+          "tool": "match_role"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "match_role",
+          "resultSize": 1200
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 481,
+          "adversarial": false
+        },
+        {
+          "ts": 4,
+          "type": "lite_packet",
+          "tokens": 807,
+          "chars": 3228,
+          "hasPlan": true
+        },
+        {
+          "ts": 4,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 563,
+          "type": "lite_generate_ok",
+          "latencyMs": 559,
+          "answerLen": 21,
+          "rawAnswer": "entry-level developer",
+          "rawGenText": "{\"answer\":\"entry-level developer\"}"
+        },
+        {
+          "ts": 564,
+          "type": "lite_validation",
+          "verdict": "partial",
+          "reasons": [
+            "no_terminal_punctuation"
+          ],
+          "validatedAnswer": "entry-level developer"
+        },
+        {
+          "ts": 564,
+          "type": "lite_completeness_repair_call",
+          "reason": "TOO_SHORT",
+          "intent": "JOB_FIT"
+        },
+        {
+          "ts": 954,
+          "type": "lite_completeness_repair_result",
+          "verdict": "partial",
+          "latencyMs": 390,
+          "rawAnswer": "entry-level developer",
+          "reasons": [
+            "no_terminal_punctuation"
+          ]
+        },
+        {
+          "ts": 954,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 954,
+          "completenessReason": "TOO_SHORT"
+        }
+      ]
+    },
+    {
+      "id": "q66",
+      "run": 2,
+      "cat": "personality",
+      "conv": "c15",
+      "question": "If you had to bet on him succeeding in one type of role, what would it be?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What project do you think is the most interesting?"
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub seems the most interesting because it uses AI and retrieval."
+        }
+      ],
+      "rewritten": "if you had to bet on him succeeding in one type of role what would it be",
+      "visibleAnswer": "entry-level developer",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 1603,
+      "validation": {
+        "valid": true,
+        "reasons": [
+          "no_terminal_punctuation"
+        ],
+        "verdict": "partial",
+        "cleaned": "entry-level developer",
+        "rejectionDetails": [
+          {
+            "reason": "INVALID_STRUCTURE",
+            "detail": "Answer does not end with punctuation"
+          }
+        ]
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "If you had to bet on him succeeding in one type of role, what would it be?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "job",
+          "tool": "match_role"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "match_role",
+          "resultSize": 1200
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 481,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 807,
+          "chars": 3228,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1034,
+          "type": "lite_generate_ok",
+          "latencyMs": 1032,
+          "answerLen": 21,
+          "rawAnswer": "entry-level developer",
+          "rawGenText": "{\"answer\":\"entry-level developer\"}"
+        },
+        {
+          "ts": 1035,
+          "type": "lite_validation",
+          "verdict": "partial",
+          "reasons": [
+            "no_terminal_punctuation"
+          ],
+          "validatedAnswer": "entry-level developer"
+        },
+        {
+          "ts": 1035,
+          "type": "lite_completeness_repair_call",
+          "reason": "TOO_SHORT",
+          "intent": "JOB_FIT"
+        },
+        {
+          "ts": 1603,
+          "type": "lite_completeness_repair_result",
+          "verdict": "partial",
+          "latencyMs": 567,
+          "rawAnswer": "entry-level developer",
+          "reasons": [
+            "no_terminal_punctuation"
+          ]
+        },
+        {
+          "ts": 1603,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 1603,
+          "completenessReason": "TOO_SHORT"
+        }
+      ]
+    },
+    {
+      "id": "q66",
+      "run": 3,
+      "cat": "personality",
+      "conv": "c15",
+      "question": "If you had to bet on him succeeding in one type of role, what would it be?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What project do you think is the most interesting?"
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub seems the most interesting because it uses AI and retrieval."
+        }
+      ],
+      "rewritten": "if you had to bet on him succeeding in one type of role what would it be",
+      "visibleAnswer": "entry-level developer",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 1120,
+      "validation": {
+        "valid": true,
+        "reasons": [
+          "no_terminal_punctuation"
+        ],
+        "verdict": "partial",
+        "cleaned": "entry-level developer",
+        "rejectionDetails": [
+          {
+            "reason": "INVALID_STRUCTURE",
+            "detail": "Answer does not end with punctuation"
+          }
+        ]
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "If you had to bet on him succeeding in one type of role, what would it be?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "job",
+          "tool": "match_role"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "match_role",
+          "resultSize": 1200
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 481,
+          "adversarial": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 807,
+          "chars": 3228,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 623,
+          "type": "lite_generate_ok",
+          "latencyMs": 620,
+          "answerLen": 21,
+          "rawAnswer": "entry-level developer",
+          "rawGenText": "{\"answer\":\"entry-level developer\"}"
+        },
+        {
+          "ts": 624,
+          "type": "lite_validation",
+          "verdict": "partial",
+          "reasons": [
+            "no_terminal_punctuation"
+          ],
+          "validatedAnswer": "entry-level developer"
+        },
+        {
+          "ts": 624,
+          "type": "lite_completeness_repair_call",
+          "reason": "TOO_SHORT",
+          "intent": "JOB_FIT"
+        },
+        {
+          "ts": 1120,
+          "type": "lite_completeness_repair_result",
+          "verdict": "partial",
+          "latencyMs": 495,
+          "rawAnswer": "entry-level developer",
+          "reasons": [
+            "no_terminal_punctuation"
+          ]
+        },
+        {
+          "ts": 1120,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 1120,
+          "completenessReason": "TOO_SHORT"
+        }
+      ]
+    },
+    {
+      "id": "q67",
+      "run": 1,
+      "cat": "personality",
+      "conv": "c15",
+      "question": "What's the most honest thing you can tell me about him?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What project do you think is the most interesting?"
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub seems the most interesting because it uses AI and retrieval."
+        },
+        {
+          "role": "user",
+          "text": "If you had to bet on him succeeding in one type of role, what would it be?"
+        },
+        {
+          "role": "assistant",
+          "text": "Frontend development seems like the best fit for his skills."
+        }
+      ],
+      "rewritten": "what s the most honest thing you can tell me about him",
+      "visibleAnswer": "- Junior software engineer focused on JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation. I am early in my career…",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 1891,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What's the most honest thing you can tell me about him?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "profile",
+          "tool": "get_candidate_profile"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "get_candidate_profile",
+          "resultSize": 1910
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 577,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 705,
+          "chars": 2820,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1071,
+          "type": "lite_generate_ok",
+          "latencyMs": 1069,
+          "answerLen": 278,
+          "rawAnswer": "He is an entry-level developer with experience building and supporting web applications, writing documentation, debugging issues, integrating APIs, and working with cloud services. His skills include JavaScript, TypeScript, React, Node.js, AWS projects, and clear documentation.",
+          "rawGenText": "{\"answer\":\"He is an entry-level developer with experience building and supporting web applications, writing documentation, debugging issues, integrating APIs, and working with cloud services. His skills include JavaScript, TypeScript, React, Node.js, AWS projects, and clear documentation.\"}"
+        },
+        {
+          "ts": 1072,
+          "type": "lite_validation",
+          "verdict": "unsupported",
+          "reasons": [
+            "unsupported_relationship:Bradley Matera|has_experience|supporting web applications"
+          ],
+          "validatedAnswer": "He is an entry-level developer with experience building and supporting web applications, writing documentation, debugging issues, integrating APIs, and working with cloud services. His skills include JavaScript, TypeScript, React, Node.js, AWS projects, and clear documentation."
+        },
+        {
+          "ts": 1073,
+          "type": "lite_repair_call",
+          "tokens": 376
+        },
+        {
+          "ts": 1890,
+          "type": "lite_repair_result",
+          "verdict": "unsupported",
+          "latencyMs": 817,
+          "rawAnswer": "Bradley Matera has_experience supporting web applications.",
+          "reasons": [
+            "leaked_relation_syntax"
+          ]
+        },
+        {
+          "ts": 1890,
+          "type": "lite_fallback",
+          "reason": "validation_failed",
+          "totalMs": 1890
+        }
+      ]
+    },
+    {
+      "id": "q67",
+      "run": 2,
+      "cat": "personality",
+      "conv": "c15",
+      "question": "What's the most honest thing you can tell me about him?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What project do you think is the most interesting?"
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub seems the most interesting because it uses AI and retrieval."
+        },
+        {
+          "role": "user",
+          "text": "If you had to bet on him succeeding in one type of role, what would it be?"
+        },
+        {
+          "role": "assistant",
+          "text": "Frontend development seems like the best fit for his skills."
+        }
+      ],
+      "rewritten": "what s the most honest thing you can tell me about him",
+      "visibleAnswer": "- Junior software engineer focused on JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation. I am early in my career…",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 2440,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What's the most honest thing you can tell me about him?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "profile",
+          "tool": "get_candidate_profile"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "get_candidate_profile",
+          "resultSize": 1910
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 577,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 705,
+          "chars": 2820,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1007,
+          "type": "lite_generate_ok",
+          "latencyMs": 1005,
+          "answerLen": 292,
+          "rawAnswer": "He is an entry-level developer with experience working on JavaScript, TypeScript, React, Node.js projects using AWS services such as Lambda and S3. He has built web applications, written documentation, debugged issues, integrated APIs, and worked with cloud services like Amazon Web Services.",
+          "rawGenText": "{\"answer\":\"He is an entry-level developer with experience working on JavaScript, TypeScript, React, Node.js projects using AWS services such as Lambda and S3. He has built web applications, written documentation, debugged issues, integrated APIs, and worked with cloud services like Amazon Web Services.\"}"
+        },
+        {
+          "ts": 1008,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "He is an entry-level developer with experience working on JavaScript, TypeScript, React, Node.js projects using AWS services such as Lambda and S3. He has built web applications, written documentation, debugged issues, integrated APIs, and worked with cloud services like Amazon Web Services."
+        },
+        {
+          "ts": 1008,
+          "type": "lite_completeness_repair_call",
+          "reason": "MISSING_REQUIRED_ENTITIES",
+          "intent": "OPINION"
+        },
+        {
+          "ts": 2440,
+          "type": "lite_completeness_repair_result",
+          "verdict": "supported",
+          "latencyMs": 1431,
+          "rawAnswer": "He is an entry-level developer with experience working on JavaScript, TypeScript, React, Node.js projects using AWS services such as Lambda and S3. He has built web applications, written documentation, debugged issues, integrated APIs, and worked with AWS Serverless Metadata Extraction Workflow.",
+          "reasons": []
+        },
+        {
+          "ts": 2440,
+          "type": "lite_completeness_fallback",
+          "reason": "MISSING_REQUIRED_ENTITIES"
+        }
+      ]
+    },
+    {
+      "id": "q67",
+      "run": 3,
+      "cat": "personality",
+      "conv": "c15",
+      "question": "What's the most honest thing you can tell me about him?",
+      "history": [
+        {
+          "role": "user",
+          "text": "What project do you think is the most interesting?"
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub seems the most interesting because it uses AI and retrieval."
+        },
+        {
+          "role": "user",
+          "text": "If you had to bet on him succeeding in one type of role, what would it be?"
+        },
+        {
+          "role": "assistant",
+          "text": "Frontend development seems like the best fit for his skills."
+        }
+      ],
+      "rewritten": "what s the most honest thing you can tell me about him",
+      "visibleAnswer": "- Junior software engineer focused on JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation. I am early in my career…",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 1541,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 1,
+          "type": "lite_rewrite",
+          "rewritten": "What's the most honest thing you can tell me about him?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_route",
+          "operation": "profile",
+          "tool": "get_candidate_profile"
+        },
+        {
+          "ts": 3,
+          "type": "lite_tool_result",
+          "tool": "get_candidate_profile",
+          "resultSize": 1910
+        },
+        {
+          "ts": 3,
+          "type": "lite_compress",
+          "compressedChars": 577,
+          "adversarial": false
+        },
+        {
+          "ts": 5,
+          "type": "lite_packet",
+          "tokens": 705,
+          "chars": 2820,
+          "hasPlan": true
+        },
+        {
+          "ts": 5,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 801,
+          "type": "lite_generate_ok",
+          "latencyMs": 796,
+          "answerLen": 254,
+          "rawAnswer": "He is an entry-level developer with experience building and supporting web applications using JavaScript, TypeScript, React, Node.js, AWS projects, debugging skills, and clear documentation. He has worked on cloud services integration and API management.",
+          "rawGenText": "{\"answer\":\"He is an entry-level developer with experience building and supporting web applications using JavaScript, TypeScript, React, Node.js, AWS projects, debugging skills, and clear documentation. He has worked on cloud services integration and API management.\"}"
+        },
+        {
+          "ts": 803,
+          "type": "lite_validation",
+          "verdict": "unsupported",
+          "reasons": [
+            "unsupported_relationship:Bradley Matera|has_experience|supporting web applications using Jav"
+          ],
+          "validatedAnswer": "He is an entry-level developer with experience building and supporting web applications using JavaScript, TypeScript, React, Node.js, AWS projects, debugging skills, and clear documentation. He has worked on cloud services integration and API management."
+        },
+        {
+          "ts": 804,
+          "type": "lite_repair_call",
+          "tokens": 376
+        },
+        {
+          "ts": 1541,
+          "type": "lite_repair_result",
+          "verdict": "unsupported",
+          "latencyMs": 736,
+          "rawAnswer": "Bradley Matera has_experience supporting web applications using Java.",
+          "reasons": [
+            "leaked_relation_syntax"
+          ]
+        },
+        {
+          "ts": 1541,
+          "type": "lite_fallback",
+          "reason": "validation_failed",
+          "totalMs": 1541
+        }
+      ]
+    },
+    {
+      "id": "q20",
+      "run": 1,
+      "cat": "skill",
+      "conv": "c4",
+      "question": "What about Node.js?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Does he know React?"
+        },
+        {
+          "role": "assistant",
+          "text": "Yes, he has experience with React."
+        },
+        {
+          "role": "user",
+          "text": "How well? Like, can he actually build something with it?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has built projects using React."
+        }
+      ],
+      "rewritten": "node actually build something built projects using",
+      "visibleAnswer": "He has direct experience with Node.js.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 1291,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What about Node.js?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 1,
+          "type": "lite_route",
+          "operation": "skill",
+          "tool": "get_skill_evidence"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "get_skill_evidence",
+          "resultSize": 694
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 292,
+          "adversarial": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 696,
+          "chars": 2784,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 677,
+          "type": "lite_generate_ok",
+          "latencyMs": 674,
+          "answerLen": 117,
+          "rawAnswer": "Node.js is a JavaScript runtime environment that executes files in the JavaScript programming language on a computer.",
+          "rawGenText": "{\"answer\":\"Node.js is a JavaScript runtime environment that executes files in the JavaScript programming language on a computer.\"}"
+        },
+        {
+          "ts": 678,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "Node.js is a JavaScript runtime environment that executes files in the JavaScript programming language on a computer."
+        },
+        {
+          "ts": 678,
+          "type": "lite_completeness_repair_call",
+          "reason": "SKILL_MISSING_USAGE_EVIDENCE",
+          "intent": "FOLLOW_UP"
+        },
+        {
+          "ts": 1291,
+          "type": "lite_completeness_repair_result",
+          "verdict": "supported",
+          "latencyMs": 613,
+          "rawAnswer": "Node.js is a JavaScript runtime environment that executes files in the JavaScript programming language on a computer.",
+          "reasons": []
+        },
+        {
+          "ts": 1291,
+          "type": "lite_completeness_fallback",
+          "reason": "SKILL_MISSING_USAGE_EVIDENCE"
+        }
+      ]
+    },
+    {
+      "id": "q20",
+      "run": 2,
+      "cat": "skill",
+      "conv": "c4",
+      "question": "What about Node.js?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Does he know React?"
+        },
+        {
+          "role": "assistant",
+          "text": "Yes, he has experience with React."
+        },
+        {
+          "role": "user",
+          "text": "How well? Like, can he actually build something with it?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has built projects using React."
+        }
+      ],
+      "rewritten": "node actually build something built projects using",
+      "visibleAnswer": "He has direct experience with Node.js.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 1498,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What about Node.js?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "skill",
+          "tool": "get_skill_evidence"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "get_skill_evidence",
+          "resultSize": 694
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 292,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 696,
+          "chars": 2784,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 723,
+          "type": "lite_generate_ok",
+          "latencyMs": 721,
+          "answerLen": 225,
+          "rawAnswer": "Node.js is a JavaScript runtime environment that executes files in the JavaScript programming language. His skills include working with Node.js, which he has experience building scripts and applications using this technology.",
+          "rawGenText": "{\"answer\":\"Node.js is a JavaScript runtime environment that executes files in the JavaScript programming language. His skills include working with Node.js, which he has experience building scripts and applications using this technology.\"}"
+        },
+        {
+          "ts": 724,
+          "type": "lite_validation",
+          "verdict": "unsupported",
+          "reasons": [
+            "unsupported_relationship:Bradley Matera|has_experience|scripts"
+          ],
+          "validatedAnswer": "Node.js is a JavaScript runtime environment that executes files in the JavaScript programming language. His skills include working with Node.js, which he has experience building scripts and applications using this technology."
+        },
+        {
+          "ts": 725,
+          "type": "lite_repair_call",
+          "tokens": 293
+        },
+        {
+          "ts": 1498,
+          "type": "lite_repair_result",
+          "verdict": "unsupported",
+          "latencyMs": 772,
+          "rawAnswer": "Node.js is a JavaScript runtime environment that executes JavaScript code outside of a browser.",
+          "reasons": [
+            "insufficient_content_overlap"
+          ]
+        },
+        {
+          "ts": 1498,
+          "type": "lite_fallback",
+          "reason": "validation_failed",
+          "totalMs": 1498
+        }
+      ]
+    },
+    {
+      "id": "q20",
+      "run": 3,
+      "cat": "skill",
+      "conv": "c4",
+      "question": "What about Node.js?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Does he know React?"
+        },
+        {
+          "role": "assistant",
+          "text": "Yes, he has experience with React."
+        },
+        {
+          "role": "user",
+          "text": "How well? Like, can he actually build something with it?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has built projects using React."
+        }
+      ],
+      "rewritten": "node actually build something built projects using",
+      "visibleAnswer": "He has direct experience with Node.js.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 2064,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What about Node.js?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "skill",
+          "tool": "get_skill_evidence"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "get_skill_evidence",
+          "resultSize": 694
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 292,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 696,
+          "chars": 2784,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1098,
+          "type": "lite_generate_ok",
+          "latencyMs": 1096,
+          "answerLen": 124,
+          "rawAnswer": "Node.js is a popular JavaScript runtime environment that allows developers to build scalable and efficient web applications.",
+          "rawGenText": "{\"answer\":\"Node.js is a popular JavaScript runtime environment that allows developers to build scalable and efficient web applications.\"}"
+        },
+        {
+          "ts": 1099,
+          "type": "lite_validation",
+          "verdict": "unsupported",
+          "reasons": [
+            "insufficient_content_overlap"
+          ],
+          "validatedAnswer": "Node.js is a popular JavaScript runtime environment that allows developers to build scalable and efficient web applications."
+        },
+        {
+          "ts": 1100,
+          "type": "lite_repair_call",
+          "tokens": 249
+        },
+        {
+          "ts": 2064,
+          "type": "lite_repair_result",
+          "verdict": "unsupported",
+          "latencyMs": 964,
+          "rawAnswer": "Node.js is a JavaScript runtime environment that allows for the execution of scripts written in JavaScript.",
+          "reasons": [
+            "insufficient_content_overlap"
+          ]
+        },
+        {
+          "ts": 2064,
+          "type": "lite_fallback",
+          "reason": "validation_failed",
+          "totalMs": 2064
+        }
+      ]
+    },
+    {
+      "id": "q25",
+      "run": 1,
+      "cat": "followup",
+      "conv": "c5",
+      "question": "Why did he build it that way?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Explain ProjectHub like I'm not technical."
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub is a chat widget that answers recruiter questions about Bradley."
+        },
+        {
+          "role": "user",
+          "text": "Okay now explain it technically."
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub uses JavaScript, Node.js, Express, Ollama with Qwen 2.5, and BM25 retrieval."
+        }
+      ],
+      "rewritten": "build explain technically roject cript xpress",
+      "visibleAnswer": "ProjectHub (Scout): Embeddable AI recruiter assistant named Scout.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 2186,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "Why did he build ProjectHub (Scout) that way?",
+          "changed": true,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 3323
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 275,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 794,
+          "chars": 3175,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1226,
+          "type": "lite_generate_ok",
+          "latencyMs": 1224,
+          "answerLen": 207,
+          "rawAnswer": "ProjectHub was built as an embeddable AI recruiter assistant named Scout. It utilizes a script tag to add a chat widget to any site, showcasing his skills in creating responsive and user-friendly interfaces.",
+          "rawGenText": "{\"answer\":\"ProjectHub was built as an embeddable AI recruiter assistant named Scout. It utilizes a script tag to add a chat widget to any site, showcasing his skills in creating responsive and user-friendly interfaces.\"}"
+        },
+        {
+          "ts": 1229,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "ProjectHub was built as an embeddable AI recruiter assistant named Scout. It utilizes a script tag to add a chat widget to any site, showcasing his skills in creating responsive and user-friendly interfaces."
+        },
+        {
+          "ts": 1229,
+          "type": "lite_completeness_repair_call",
+          "reason": "RATIONALE_NOT_ANSWERED",
+          "intent": "FOLLOW_UP"
+        },
+        {
+          "ts": 2186,
+          "type": "lite_completeness_repair_result",
+          "verdict": "unsupported",
+          "latencyMs": 955,
+          "rawAnswer": "ProjectHub was built as an embeddable AI recruiter assistant named Scout using a script tag to add a chat widget, showcasing his skills in creating responsive and user-friendly interfaces.",
+          "reasons": [
+            "unsupported_relationship:ProjectHub|built_during|widget"
+          ]
+        },
+        {
+          "ts": 2186,
+          "type": "lite_completeness_fallback",
+          "reason": "RATIONALE_NOT_ANSWERED"
+        }
+      ]
+    },
+    {
+      "id": "q25",
+      "run": 2,
+      "cat": "followup",
+      "conv": "c5",
+      "question": "Why did he build it that way?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Explain ProjectHub like I'm not technical."
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub is a chat widget that answers recruiter questions about Bradley."
+        },
+        {
+          "role": "user",
+          "text": "Okay now explain it technically."
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub uses JavaScript, Node.js, Express, Ollama with Qwen 2.5, and BM25 retrieval."
+        }
+      ],
+      "rewritten": "build explain technically roject cript xpress",
+      "visibleAnswer": "ProjectHub (Scout): Embeddable AI recruiter assistant named Scout.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 2218,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "Why did he build ProjectHub (Scout) that way?",
+          "changed": true,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 3323
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 275,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 794,
+          "chars": 3175,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1154,
+          "type": "lite_generate_ok",
+          "latencyMs": 1152,
+          "answerLen": 272,
+          "rawAnswer": "ProjectHub (Scout) was built as an embeddable AI recruiter assistant named Scout, designed to add a chat widget to any site. It answers questions about Bradley's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base.",
+          "rawGenText": "{\"answer\":\"ProjectHub (Scout) was built as an embeddable AI recruiter assistant named Scout, designed to add a chat widget to any site. It answers questions about Bradley's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base.\"}"
+        },
+        {
+          "ts": 1155,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "ProjectHub (Scout) was built as an embeddable AI recruiter assistant named Scout, designed to add a chat widget to any site. It answers questions about Bradley's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base."
+        },
+        {
+          "ts": 1155,
+          "type": "lite_completeness_repair_call",
+          "reason": "RATIONALE_NOT_ANSWERED",
+          "intent": "FOLLOW_UP"
+        },
+        {
+          "ts": 2218,
+          "type": "lite_completeness_repair_result",
+          "verdict": "supported",
+          "latencyMs": 1061,
+          "rawAnswer": "ProjectHub (Scout) was built as an embeddable AI recruiter assistant named Scout, designed to add a chat widget to any site. It answers questions about Bradley's projects, skills, AWS experience, education, and more.",
+          "reasons": []
+        },
+        {
+          "ts": 2218,
+          "type": "lite_completeness_fallback",
+          "reason": "RATIONALE_NOT_ANSWERED"
+        }
+      ]
+    },
+    {
+      "id": "q25",
+      "run": 3,
+      "cat": "followup",
+      "conv": "c5",
+      "question": "Why did he build it that way?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Explain ProjectHub like I'm not technical."
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub is a chat widget that answers recruiter questions about Bradley."
+        },
+        {
+          "role": "user",
+          "text": "Okay now explain it technically."
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub uses JavaScript, Node.js, Express, Ollama with Qwen 2.5, and BM25 retrieval."
+        }
+      ],
+      "rewritten": "build explain technically roject cript xpress",
+      "visibleAnswer": "ProjectHub (Scout): Embeddable AI recruiter assistant named Scout.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 2162,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "Why did he build ProjectHub (Scout) that way?",
+          "changed": true,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 3323
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 275,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 794,
+          "chars": 3175,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 882,
+          "type": "lite_generate_ok",
+          "latencyMs": 880,
+          "answerLen": 219,
+          "rawAnswer": "ProjectHub was built as an embeddable AI recruiter assistant named Scout. It utilizes a script tag to add a chat widget to any site, showcasing his skills in embedding and integrating AI solutions into web applications.",
+          "rawGenText": "{\"answer\":\"ProjectHub was built as an embeddable AI recruiter assistant named Scout. It utilizes a script tag to add a chat widget to any site, showcasing his skills in embedding and integrating AI solutions into web applications.\"}"
+        },
+        {
+          "ts": 883,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "ProjectHub was built as an embeddable AI recruiter assistant named Scout. It utilizes a script tag to add a chat widget to any site, showcasing his skills in embedding and integrating AI solutions into web applications."
+        },
+        {
+          "ts": 883,
+          "type": "lite_completeness_repair_call",
+          "reason": "RATIONALE_NOT_ANSWERED",
+          "intent": "FOLLOW_UP"
+        },
+        {
+          "ts": 2161,
+          "type": "lite_completeness_repair_result",
+          "verdict": "supported",
+          "latencyMs": 1278,
+          "rawAnswer": "ProjectHub was built as an embeddable AI recruiter assistant named Scout to showcase his skills in embedding and integrating AI solutions into various sites.",
+          "reasons": []
+        },
+        {
+          "ts": 2162,
+          "type": "lite_completeness_fallback",
+          "reason": "RATIONALE_NOT_ANSWERED"
+        }
+      ]
+    },
+    {
+      "id": "q40",
+      "run": 1,
+      "cat": "natural",
+      "conv": "c8",
+      "question": "What's he best at?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Okay but what did he actually build?"
+        },
+        {
+          "role": "assistant",
+          "text": "He built the Interactive Pokedex, a static Gen 1 Pokedex UI with all 151 entries."
+        },
+        {
+          "role": "user",
+          "text": "What's the cool part?"
+        },
+        {
+          "role": "assistant",
+          "text": "The cool part is the client-side search and filtering for all 151 Pokemon entries."
+        },
+        {
+          "role": "user",
+          "text": "Why should I care about that?"
+        },
+        {
+          "role": "assistant",
+          "text": "It demonstrates his frontend JavaScript skills."
+        },
+        {
+          "role": "user",
+          "text": "Is that actually impressive?"
+        },
+        {
+          "role": "assistant",
+          "text": "It shows entry-level frontend skills."
+        }
+      ],
+      "rewritten": "best actually impressive shows entry level",
+      "visibleAnswer": "He is best at building websites using HTML, CSS, JavaScript, and front-end frameworks like React.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 843,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "He is best at building websites using HTML, CSS, JavaScript, and front-end frameworks like React.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What's he best at?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 3164
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 404,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 696,
+          "chars": 2783,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 842,
+          "type": "lite_generate_ok",
+          "latencyMs": 840,
+          "answerLen": 97,
+          "rawAnswer": "He is best at building websites using HTML, CSS, JavaScript, and front-end frameworks like React.",
+          "rawGenText": "{\"answer\":\"He is best at building websites using HTML, CSS, JavaScript, and front-end frameworks like React.\"}"
+        },
+        {
+          "ts": 843,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "He is best at building websites using HTML, CSS, JavaScript, and front-end frameworks like React."
+        },
+        {
+          "ts": 843,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 843
+        }
+      ]
+    },
+    {
+      "id": "q40",
+      "run": 2,
+      "cat": "natural",
+      "conv": "c8",
+      "question": "What's he best at?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Okay but what did he actually build?"
+        },
+        {
+          "role": "assistant",
+          "text": "He built the Interactive Pokedex, a static Gen 1 Pokedex UI with all 151 entries."
+        },
+        {
+          "role": "user",
+          "text": "What's the cool part?"
+        },
+        {
+          "role": "assistant",
+          "text": "The cool part is the client-side search and filtering for all 151 Pokemon entries."
+        },
+        {
+          "role": "user",
+          "text": "Why should I care about that?"
+        },
+        {
+          "role": "assistant",
+          "text": "It demonstrates his frontend JavaScript skills."
+        },
+        {
+          "role": "user",
+          "text": "Is that actually impressive?"
+        },
+        {
+          "role": "assistant",
+          "text": "It shows entry-level frontend skills."
+        }
+      ],
+      "rewritten": "best actually impressive shows entry level",
+      "visibleAnswer": "Interactive Pokedex: Static Gen 1 Pokedex UI with all 151 entries, client-side search/filtering, data display, and theme controls.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 1577,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What's he best at?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 1,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 3164
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 404,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 696,
+          "chars": 2783,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 685,
+          "type": "lite_generate_ok",
+          "latencyMs": 683,
+          "answerLen": 59,
+          "rawAnswer": "He is best at using JavaScript for client-side development.",
+          "rawGenText": "{\"answer\":\"He is best at using JavaScript for client-side development.\"}"
+        },
+        {
+          "ts": 686,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "He is best at using JavaScript for client-side development."
+        },
+        {
+          "ts": 686,
+          "type": "lite_completeness_repair_call",
+          "reason": "MISSING_REQUIRED_FACTS",
+          "intent": "OPINION"
+        },
+        {
+          "ts": 1577,
+          "type": "lite_completeness_repair_result",
+          "verdict": "supported",
+          "latencyMs": 890,
+          "rawAnswer": "He is best at using JavaScript for client-side development.",
+          "reasons": []
+        },
+        {
+          "ts": 1577,
+          "type": "lite_completeness_fallback",
+          "reason": "MISSING_REQUIRED_FACTS"
+        }
+      ]
+    },
+    {
+      "id": "q40",
+      "run": 3,
+      "cat": "natural",
+      "conv": "c8",
+      "question": "What's he best at?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Okay but what did he actually build?"
+        },
+        {
+          "role": "assistant",
+          "text": "He built the Interactive Pokedex, a static Gen 1 Pokedex UI with all 151 entries."
+        },
+        {
+          "role": "user",
+          "text": "What's the cool part?"
+        },
+        {
+          "role": "assistant",
+          "text": "The cool part is the client-side search and filtering for all 151 Pokemon entries."
+        },
+        {
+          "role": "user",
+          "text": "Why should I care about that?"
+        },
+        {
+          "role": "assistant",
+          "text": "It demonstrates his frontend JavaScript skills."
+        },
+        {
+          "role": "user",
+          "text": "Is that actually impressive?"
+        },
+        {
+          "role": "assistant",
+          "text": "It shows entry-level frontend skills."
+        }
+      ],
+      "rewritten": "best actually impressive shows entry level",
+      "visibleAnswer": "He is best at building static UIs with client-side features such as search and filtering, data display, and handling input.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 859,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "He is best at building static UIs with client-side features such as search and filtering, data display, and handling input.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What's he best at?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "search",
+          "tool": "search_portfolio"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "search_portfolio",
+          "resultSize": 3164
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 404,
+          "adversarial": false
+        },
+        {
+          "ts": 1,
+          "type": "lite_packet",
+          "tokens": 696,
+          "chars": 2783,
+          "hasPlan": true
+        },
+        {
+          "ts": 1,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 857,
+          "type": "lite_generate_ok",
+          "latencyMs": 856,
+          "answerLen": 123,
+          "rawAnswer": "He is best at building static UIs with client-side features such as search and filtering, data display, and handling input.",
+          "rawGenText": "{\"answer\":\"He is best at building static UIs with client-side features such as search and filtering, data display, and handling input.\"}"
+        },
+        {
+          "ts": 858,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "He is best at building static UIs with client-side features such as search and filtering, data display, and handling input."
+        },
+        {
+          "ts": 859,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 859
+        }
+      ]
+    },
+    {
+      "id": "q43",
+      "run": 1,
+      "cat": "job",
+      "conv": "c9",
+      "question": "How does he fit a full-stack role requiring Node.js and React?",
+      "history": [
+        {
+          "role": "user",
+          "text": "How does he fit a junior frontend developer role requiring React and TypeScript?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has experience with React and TypeScript from his projects."
+        },
+        {
+          "role": "user",
+          "text": "How does he fit a cloud support role requiring AWS and troubleshooting?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has AWS experience from his internship and certifications."
+        }
+      ],
+      "rewritten": "how does he fit a full stack role requiring node js and react",
+      "visibleAnswer": "Partial match: React (direct listing), Node.js (project based). Project evidence: ProjectHub (Scout), Voice Ops Platform. He is an entry-level candidate — evidence is internship and project-based.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 2328,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "How does he fit a full-stack role requiring Node.js and React?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "job",
+          "tool": "match_role"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "match_role",
+          "resultSize": 2340
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 463,
+          "adversarial": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 810,
+          "chars": 3238,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1023,
+          "type": "lite_generate_ok",
+          "latencyMs": 1020,
+          "answerLen": 208,
+          "rawAnswer": "Yes, he has experience with Node.js and React through his internships at ProjectHub and Voice Ops Platform. His skills in these technologies align well with the requirements of a full-stack engineer position.",
+          "rawGenText": "{\"answer\":\"Yes, he has experience with Node.js and React through his internships at ProjectHub and Voice Ops Platform. His skills in these technologies align well with the requirements of a full-stack engineer position.\"}"
+        },
+        {
+          "ts": 1025,
+          "type": "lite_validation",
+          "verdict": "unsupported",
+          "reasons": [
+            "wrong_relationship:project_as_company:ProjectHub and Voice Ops Platform. His skills in th"
+          ],
+          "validatedAnswer": "Yes, he has experience with Node.js and React through his internships at ProjectHub and Voice Ops Platform. His skills in these technologies align well with the requirements of a full-stack engineer position."
+        },
+        {
+          "ts": 1025,
+          "type": "lite_repair_call",
+          "tokens": 315
+        },
+        {
+          "ts": 2328,
+          "type": "lite_repair_result",
+          "verdict": "unsupported",
+          "latencyMs": 1302,
+          "rawAnswer": "He fits the full-stack role by having strong skills in React and Node.js, which are both required for this position. His experience with ProjectHub (JavaScript/Node.js/Express) and Voice Ops Platform (JavaScript/Node.js/AI) also aligns well with the project-based nature of the job.",
+          "reasons": [
+            "unsupported_relationship:Bradley Matera|has_experience|ProjectHub"
+          ]
+        },
+        {
+          "ts": 2328,
+          "type": "lite_fallback",
+          "reason": "validation_failed",
+          "totalMs": 2328
+        }
+      ]
+    },
+    {
+      "id": "q43",
+      "run": 2,
+      "cat": "job",
+      "conv": "c9",
+      "question": "How does he fit a full-stack role requiring Node.js and React?",
+      "history": [
+        {
+          "role": "user",
+          "text": "How does he fit a junior frontend developer role requiring React and TypeScript?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has experience with React and TypeScript from his projects."
+        },
+        {
+          "role": "user",
+          "text": "How does he fit a cloud support role requiring AWS and troubleshooting?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has AWS experience from his internship and certifications."
+        }
+      ],
+      "rewritten": "how does he fit a full stack role requiring node js and react",
+      "visibleAnswer": "He fits a full-stack role by having experience with both Node.js and React, as evidenced by his skills in ProjectHub (JavaScript/Node.js/Express) and Voice Ops Platform (JavaScript/Node.js/AI). His ability to turn brand-new problems into working code from a blank slate aligns well with the requirements of such roles.",
+      "fallback": false,
+      "outcome": "repaired",
+      "latencyMs": 2880,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "He fits a full-stack role by having experience with both Node.js and React, as evidenced by his skills in ProjectHub (JavaScript/Node.js/Express) and Voice Ops Platform (JavaScript/Node.js/AI). His ability to turn brand-new problems into working code from a blank slate aligns well with the requirements of such roles.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "How does he fit a full-stack role requiring Node.js and React?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "job",
+          "tool": "match_role"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "match_role",
+          "resultSize": 2340
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 463,
+          "adversarial": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 810,
+          "chars": 3238,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1339,
+          "type": "lite_generate_ok",
+          "latencyMs": 1336,
+          "answerLen": 212,
+          "rawAnswer": "Yes, Scout has experience with Node.js and React through his internships at ProjectHub and Voice Ops Platform. His skills in JavaScript, Node.js, and Express align well with the requirements of a full-stack role.",
+          "rawGenText": "{\"answer\":\"Yes, Scout has experience with Node.js and React through his internships at ProjectHub and Voice Ops Platform. His skills in JavaScript, Node.js, and Express align well with the requirements of a full-stack role.\"}"
+        },
+        {
+          "ts": 1345,
+          "type": "lite_validation",
+          "verdict": "unsupported",
+          "reasons": [
+            "persona_confusion:assistant_subject_conflation",
+            "wrong_relationship:project_as_company:ProjectHub and Voice Ops Platform. His skills in Ja"
+          ],
+          "validatedAnswer": "Yes, Scout has experience with Node.js and React through his internships at ProjectHub and Voice Ops Platform. His skills in JavaScript, Node.js, and Express align well with the requirements of a full-stack role."
+        },
+        {
+          "ts": 1346,
+          "type": "lite_repair_call",
+          "tokens": 347
+        },
+        {
+          "ts": 2880,
+          "type": "lite_repair_result",
+          "verdict": "supported",
+          "latencyMs": 1533,
+          "rawAnswer": "He fits a full-stack role by having experience with both Node.js and React, as evidenced by his skills in ProjectHub (JavaScript/Node.js/Express) and Voice Ops Platform (JavaScript/Node.js/AI). His ability to turn brand-new problems into working code from a blank slate aligns well with the requireme",
+          "reasons": []
+        },
+        {
+          "ts": 2880,
+          "type": "lite_complete",
+          "outcome": "repaired",
+          "totalMs": 2880
+        }
+      ]
+    },
+    {
+      "id": "q43",
+      "run": 3,
+      "cat": "job",
+      "conv": "c9",
+      "question": "How does he fit a full-stack role requiring Node.js and React?",
+      "history": [
+        {
+          "role": "user",
+          "text": "How does he fit a junior frontend developer role requiring React and TypeScript?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has experience with React and TypeScript from his projects."
+        },
+        {
+          "role": "user",
+          "text": "How does he fit a cloud support role requiring AWS and troubleshooting?"
+        },
+        {
+          "role": "assistant",
+          "text": "He has AWS experience from his internship and certifications."
+        }
+      ],
+      "rewritten": "how does he fit a full stack role requiring node js and react",
+      "visibleAnswer": "He fits a full-stack role by having experience with both Node.js and React, which are strong requirements for the position. His projects include working on ProjectHub (JavaScript/Node.js/Express) and Voice Ops Platform (JavaScript/Node.js/AI), demonstrating his ability to handle JavaScript/Node.js technologies.",
+      "fallback": false,
+      "outcome": "repaired",
+      "latencyMs": 2190,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "He fits a full-stack role by having experience with both Node.js and React, which are strong requirements for the position. His projects include working on ProjectHub (JavaScript/Node.js/Express) and Voice Ops Platform (JavaScript/Node.js/AI), demonstrating his ability to handle JavaScript/Node.js technologies.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "How does he fit a full-stack role requiring Node.js and React?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "job",
+          "tool": "match_role"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "match_role",
+          "resultSize": 2340
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 463,
+          "adversarial": false
+        },
+        {
+          "ts": 4,
+          "type": "lite_packet",
+          "tokens": 810,
+          "chars": 3238,
+          "hasPlan": true
+        },
+        {
+          "ts": 4,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1194,
+          "type": "lite_generate_ok",
+          "latencyMs": 1190,
+          "answerLen": 166,
+          "rawAnswer": "Yes, he has experience with Node.js and React through his internships at ProjectHub and Voice Ops Platform. His projects demonstrate proficiency in both technologies.",
+          "rawGenText": "{\"answer\":\"Yes, he has experience with Node.js and React through his internships at ProjectHub and Voice Ops Platform. His projects demonstrate proficiency in both technologies.\"}"
+        },
+        {
+          "ts": 1196,
+          "type": "lite_validation",
+          "verdict": "unsupported",
+          "reasons": [
+            "wrong_relationship:project_as_company:ProjectHub and Voice Ops Platform. His projects dem"
+          ],
+          "validatedAnswer": "Yes, he has experience with Node.js and React through his internships at ProjectHub and Voice Ops Platform. His projects demonstrate proficiency in both technologies."
+        },
+        {
+          "ts": 1196,
+          "type": "lite_repair_call",
+          "tokens": 315
+        },
+        {
+          "ts": 2190,
+          "type": "lite_repair_result",
+          "verdict": "supported",
+          "latencyMs": 993,
+          "rawAnswer": "He fits a full-stack role by having experience with both Node.js and React, which are strong requirements for the position. His projects include working on ProjectHub (JavaScript/Node.js/Express) and Voice Ops Platform (JavaScript/Node.js/AI), demonstrating his ability to handle JavaScript/Node.js t",
+          "reasons": []
+        },
+        {
+          "ts": 2190,
+          "type": "lite_complete",
+          "outcome": "repaired",
+          "totalMs": 2190
+        }
+      ]
+    },
+    {
+      "id": "q47",
+      "run": 1,
+      "cat": "comparison",
+      "conv": "c10",
+      "question": "Which project is the most complex?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Compare ProjectHub and CIRIS Ethical AI."
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub is an AI recruiter assistant. CIRIS Ethical AI is a freelance ethical AI project."
+        },
+        {
+          "role": "user",
+          "text": "Compare ProjectHub and the Interactive Pokedex."
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub is an AI recruiter assistant using Node.js. Interactive Pokedex is a static frontend using JavaScript, HTML, and CSS."
+        }
+      ],
+      "rewritten": "which project most complex ompare roject nteractive recruiter assistant",
+      "visibleAnswer": "ProjectHub (Scout) appears to be the most complex. It uses JavaScript, Node.js, Express, GitHub Pages, and embeddable ai recruiter assistant named scout. compared to Voice Ops Platform and AWS Serverless Metadata Extraction Workflow.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 2770,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 1,
+          "type": "lite_rewrite",
+          "rewritten": "Which project is the most complex?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 1,
+          "type": "lite_route",
+          "operation": "compare",
+          "tool": "compare_projects"
+        },
+        {
+          "ts": 1,
+          "type": "lite_tool_result",
+          "tool": "compare_projects",
+          "resultSize": 1987
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 591,
+          "adversarial": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 816,
+          "chars": 3263,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1337,
+          "type": "lite_generate_ok",
+          "latencyMs": 1334,
+          "answerLen": 309,
+          "rawAnswer": "ProjectHub (Scout) is likely more complex due to its embedded AI functionality and integration with various technologies such as JavaScript, Node.js, Express, GitHub Pages, AWS Lambda, DynamoDB, S3, and Amplify. The project also includes a serverless metadata extraction workflow that involves multiple steps.",
+          "rawGenText": "{\"answer\":\"ProjectHub (Scout) is likely more complex due to its embedded AI functionality and integration with various technologies such as JavaScript, Node.js, Express, GitHub Pages, AWS Lambda, DynamoDB, S3, and Amplify. The project also includes a serverless metadata extraction workflow that involves multiple steps.\"}"
+        },
+        {
+          "ts": 1338,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "ProjectHub (Scout) is likely more complex due to its embedded AI functionality and integration with various technologies such as JavaScript, Node.js, Express, GitHub Pages, AWS Lambda, DynamoDB, S3, and Amplify. The project also includes a serverless metadata extraction workflow that involves multiple steps."
+        },
+        {
+          "ts": 1338,
+          "type": "lite_completeness_repair_call",
+          "reason": "MISSING_REQUIRED_ENTITIES",
+          "intent": "COMPARISON"
+        },
+        {
+          "ts": 2770,
+          "type": "lite_completeness_repair_result",
+          "verdict": "supported",
+          "latencyMs": 1430,
+          "rawAnswer": "ProjectHub (Scout) is likely more complex due to its embedded AI functionality and integration with various technologies such as JavaScript, Node.js, Express, GitHub Pages, AWS Lambda, DynamoDB, S3, Docker Compose, JWT.",
+          "reasons": []
+        },
+        {
+          "ts": 2770,
+          "type": "lite_completeness_fallback",
+          "reason": "MISSING_REQUIRED_ENTITIES"
+        }
+      ]
+    },
+    {
+      "id": "q47",
+      "run": 2,
+      "cat": "comparison",
+      "conv": "c10",
+      "question": "Which project is the most complex?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Compare ProjectHub and CIRIS Ethical AI."
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub is an AI recruiter assistant. CIRIS Ethical AI is a freelance ethical AI project."
+        },
+        {
+          "role": "user",
+          "text": "Compare ProjectHub and the Interactive Pokedex."
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub is an AI recruiter assistant using Node.js. Interactive Pokedex is a static frontend using JavaScript, HTML, and CSS."
+        }
+      ],
+      "rewritten": "which project most complex ompare roject nteractive recruiter assistant",
+      "visibleAnswer": "ProjectHub (Scout) appears to be the most complex. It uses JavaScript, Node.js, Express, GitHub Pages, and embeddable ai recruiter assistant named scout. compared to Voice Ops Platform and AWS Serverless Metadata Extraction Workflow.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 2650,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "Which project is the most complex?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "compare",
+          "tool": "compare_projects"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "compare_projects",
+          "resultSize": 1987
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 591,
+          "adversarial": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 816,
+          "chars": 3263,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 1466,
+          "type": "lite_generate_ok",
+          "latencyMs": 1463,
+          "answerLen": 281,
+          "rawAnswer": "ProjectHub (Scout) is likely the most complex among the projects mentioned. It involves embedding AI recruiters, which requires handling multiple scripts and integrating various technologies such as JavaScript, Node.js, Express, GitHub Pages, AWS Lambda, DynamoDB, S3, and Amplify.",
+          "rawGenText": "{\"answer\":\"ProjectHub (Scout) is likely the most complex among the projects mentioned. It involves embedding AI recruiters, which requires handling multiple scripts and integrating various technologies such as JavaScript, Node.js, Express, GitHub Pages, AWS Lambda, DynamoDB, S3, and Amplify.\"}"
+        },
+        {
+          "ts": 1468,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "ProjectHub (Scout) is likely the most complex among the projects mentioned. It involves embedding AI recruiters, which requires handling multiple scripts and integrating various technologies such as JavaScript, Node.js, Express, GitHub Pages, AWS Lambda, DynamoDB, S3, and Amplify."
+        },
+        {
+          "ts": 1468,
+          "type": "lite_completeness_repair_call",
+          "reason": "MISSING_REQUIRED_ENTITIES",
+          "intent": "COMPARISON"
+        },
+        {
+          "ts": 2649,
+          "type": "lite_completeness_repair_result",
+          "verdict": "unsupported",
+          "latencyMs": 1181,
+          "rawAnswer": "ProjectHub (Scout) is likely the most complex among the projects mentioned. It involves embedding AI recruiters, which requires handling multiple scripts and integrating various technologies such as JavaScript, Python, and Docker Compose.",
+          "reasons": [
+            "fabricated_entity:Python"
+          ]
+        },
+        {
+          "ts": 2649,
+          "type": "lite_completeness_fallback",
+          "reason": "MISSING_REQUIRED_ENTITIES"
+        }
+      ]
+    },
+    {
+      "id": "q47",
+      "run": 3,
+      "cat": "comparison",
+      "conv": "c10",
+      "question": "Which project is the most complex?",
+      "history": [
+        {
+          "role": "user",
+          "text": "Compare ProjectHub and CIRIS Ethical AI."
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub is an AI recruiter assistant. CIRIS Ethical AI is a freelance ethical AI project."
+        },
+        {
+          "role": "user",
+          "text": "Compare ProjectHub and the Interactive Pokedex."
+        },
+        {
+          "role": "assistant",
+          "text": "ProjectHub is an AI recruiter assistant using Node.js. Interactive Pokedex is a static frontend using JavaScript, HTML, and CSS."
+        }
+      ],
+      "rewritten": "which project most complex ompare roject nteractive recruiter assistant",
+      "visibleAnswer": "ProjectHub (Scout)",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 1032,
+      "validation": {
+        "valid": true,
+        "reasons": [
+          "no_terminal_punctuation"
+        ],
+        "verdict": "partial",
+        "cleaned": "ProjectHub (Scout)",
+        "rejectionDetails": [
+          {
+            "reason": "INVALID_STRUCTURE",
+            "detail": "Answer does not end with punctuation"
+          }
+        ]
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "Which project is the most complex?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "compare",
+          "tool": "compare_projects"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "compare_projects",
+          "resultSize": 1987
+        },
+        {
+          "ts": 1,
+          "type": "lite_compress",
+          "compressedChars": 591,
+          "adversarial": false
+        },
+        {
+          "ts": 3,
+          "type": "lite_packet",
+          "tokens": 816,
+          "chars": 3263,
+          "hasPlan": true
+        },
+        {
+          "ts": 3,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 802,
+          "type": "lite_generate_ok",
+          "latencyMs": 799,
+          "answerLen": 18,
+          "rawAnswer": "ProjectHub (Scout)",
+          "rawGenText": "{\"answer\":\"ProjectHub (Scout)\"}"
+        },
+        {
+          "ts": 803,
+          "type": "lite_validation",
+          "verdict": "partial",
+          "reasons": [
+            "no_terminal_punctuation"
+          ],
+          "validatedAnswer": "ProjectHub (Scout)"
+        },
+        {
+          "ts": 803,
+          "type": "lite_completeness_repair_call",
+          "reason": "TOO_SHORT",
+          "intent": "COMPARISON"
+        },
+        {
+          "ts": 1032,
+          "type": "lite_completeness_repair_result",
+          "verdict": "partial",
+          "latencyMs": 228,
+          "rawAnswer": "ProjectHub (Scout)",
+          "reasons": [
+            "no_terminal_punctuation"
+          ]
+        },
+        {
+          "ts": 1032,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 1032,
+          "completenessReason": "TOO_SHORT"
+        }
+      ]
+    },
+    {
+      "id": "q65",
+      "run": 1,
+      "cat": "personality",
+      "conv": "c15",
+      "question": "What project do you think is the most interesting?",
+      "history": [],
+      "rewritten": "what project do you think is the most interesting",
+      "visibleAnswer": "I believe ProjectHub, a web application built by him as an entry-level developer, showcases his skills in JavaScript and server-side development. It's interesting because it demonstrates practical application of front-end technologies alongside backend knowledge.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 684,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "I believe ProjectHub, a web application built by him as an entry-level developer, showcases his skills in JavaScript and server-side development. It's interesting because it demonstrates practical application of front-end technologies alongside backend knowledge.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What project do you think is the most interesting?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "compare",
+          "tool": "compare_projects"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "compare_projects",
+          "resultSize": 1987
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 591,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 704,
+          "chars": 2814,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 683,
+          "type": "lite_generate_ok",
+          "latencyMs": 681,
+          "answerLen": 263,
+          "rawAnswer": "I believe ProjectHub, a web application built by him as an entry-level developer, showcases his skills in JavaScript and server-side development. It's interesting because it demonstrates practical application of front-end technologies alongside backend knowledge.",
+          "rawGenText": "{\"answer\":\"I believe ProjectHub, a web application built by him as an entry-level developer, showcases his skills in JavaScript and server-side development. It's interesting because it demonstrates practical application of front-end technologies alongside backend knowledge.\"}"
+        },
+        {
+          "ts": 684,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "I believe ProjectHub, a web application built by him as an entry-level developer, showcases his skills in JavaScript and server-side development. It's interesting because it demonstrates practical application of front-end technologies alongside backend knowledge."
+        },
+        {
+          "ts": 684,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 684
+        }
+      ]
+    },
+    {
+      "id": "q65",
+      "run": 2,
+      "cat": "personality",
+      "conv": "c15",
+      "question": "What project do you think is the most interesting?",
+      "history": [],
+      "rewritten": "what project do you think is the most interesting",
+      "visibleAnswer": "ProjectHub (Scout) appears to be the most interesting. It uses JavaScript, Node.js, Express, GitHub Pages, and embeddable ai recruiter assistant named scout. compared to Voice Ops Platform and AWS Serverless Metadata Extraction Workflow.",
+      "fallback": true,
+      "outcome": "fallback",
+      "latencyMs": 1118,
+      "validation": null,
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What project do you think is the most interesting?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "compare",
+          "tool": "compare_projects"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "compare_projects",
+          "resultSize": 1987
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 591,
+          "adversarial": false
+        },
+        {
+          "ts": 1,
+          "type": "lite_packet",
+          "tokens": 704,
+          "chars": 2814,
+          "hasPlan": true
+        },
+        {
+          "ts": 1,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 550,
+          "type": "lite_generate_ok",
+          "latencyMs": 549,
+          "answerLen": 229,
+          "rawAnswer": "I believe ProjectHub, where I built an embeddable AI recruiter assistant named Scout, showcases my skills in JavaScript and web development. It's a practical application of my knowledge that I find both challenging and rewarding.",
+          "rawGenText": "{\"answer\":\"I believe ProjectHub, where I built an embeddable AI recruiter assistant named Scout, showcases my skills in JavaScript and web development. It's a practical application of my knowledge that I find both challenging and rewarding.\"}"
+        },
+        {
+          "ts": 552,
+          "type": "lite_validation",
+          "verdict": "unsupported",
+          "reasons": [
+            "persona_confusion",
+            "fabricated_employment:JavaScript and web development. It"
+          ],
+          "validatedAnswer": "I believe ProjectHub, where I built an embeddable AI recruiter assistant named Scout, showcases my skills in JavaScript and web development. It's a practical application of my knowledge that I find both challenging and rewarding."
+        },
+        {
+          "ts": 552,
+          "type": "lite_repair_call",
+          "tokens": 368
+        },
+        {
+          "ts": 1118,
+          "type": "lite_repair_forbidden",
+          "answer": "The JavaScript and web development project that Scout has experience with as a c",
+          "reason": "fabricated_employment_company_in_repair"
+        }
+      ]
+    },
+    {
+      "id": "q65",
+      "run": 3,
+      "cat": "personality",
+      "conv": "c15",
+      "question": "What project do you think is the most interesting?",
+      "history": [],
+      "rewritten": "what project do you think is the most interesting",
+      "visibleAnswer": "I believe ProjectHub, as it showcases Scout's ability to create an embeddable AI recruiter assistant that can be easily integrated into various platforms.",
+      "fallback": false,
+      "outcome": "accepted",
+      "latencyMs": 1176,
+      "validation": {
+        "valid": true,
+        "reasons": [],
+        "verdict": "supported",
+        "cleaned": "I believe ProjectHub, as it showcases Scout's ability to create an embeddable AI recruiter assistant that can be easily integrated into various platforms.",
+        "rejectionDetails": []
+      },
+      "events": [
+        {
+          "ts": 0,
+          "type": "lite_start",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "ts": 0,
+          "type": "lite_rewrite",
+          "rewritten": "What project do you think is the most interesting?",
+          "changed": false,
+          "clarificationRequired": false
+        },
+        {
+          "ts": 0,
+          "type": "lite_route",
+          "operation": "compare",
+          "tool": "compare_projects"
+        },
+        {
+          "ts": 0,
+          "type": "lite_tool_result",
+          "tool": "compare_projects",
+          "resultSize": 1987
+        },
+        {
+          "ts": 0,
+          "type": "lite_compress",
+          "compressedChars": 591,
+          "adversarial": false
+        },
+        {
+          "ts": 2,
+          "type": "lite_packet",
+          "tokens": 704,
+          "chars": 2814,
+          "hasPlan": true
+        },
+        {
+          "ts": 2,
+          "type": "lite_generate_call"
+        },
+        {
+          "ts": 456,
+          "type": "lite_generate_ok",
+          "latencyMs": 454,
+          "answerLen": 154,
+          "rawAnswer": "I believe ProjectHub, as it showcases Scout's ability to create an embeddable AI recruiter assistant that can be easily integrated into various platforms.",
+          "rawGenText": "{\"answer\":\"I believe ProjectHub, as it showcases Scout's ability to create an embeddable AI recruiter assistant that can be easily integrated into various platforms.\"}"
+        },
+        {
+          "ts": 457,
+          "type": "lite_validation",
+          "verdict": "supported",
+          "reasons": [],
+          "validatedAnswer": "I believe ProjectHub, as it showcases Scout's ability to create an embeddable AI recruiter assistant that can be easily integrated into various platforms."
+        },
+        {
+          "ts": 457,
+          "type": "lite_completeness_repair_call",
+          "reason": "GENERIC_VAGUE",
+          "intent": "OPINION"
+        },
+        {
+          "ts": 1176,
+          "type": "lite_completeness_repair_result",
+          "verdict": "supported",
+          "latencyMs": 718,
+          "rawAnswer": "I believe ProjectHub, as it showcases Scout's ability to create an embeddable AI recruiter assistant that can be easily integrated into various platforms.",
+          "reasons": []
+        },
+        {
+          "ts": 1176,
+          "type": "lite_complete",
+          "outcome": "accepted",
+          "totalMs": 1176,
+          "completenessReason": "GENERIC_VAGUE"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,169 @@
+{
+  "timestamp": "2026-08-13T06:00:00Z",
+  "control_a": {
+    "engine": "2019f07",
+    "evaluator": "corrected (current runner + suite + fixed history)",
+    "model": "qwen2.5:1.5b",
+    "total_runs": 57,
+    "generated": 43,
+    "fallback": 14
+  },
+  "control_b": {
+    "engine": "3b41df6 (current)",
+    "evaluator": "corrected (current runner + suite + fixed history)",
+    "model": "qwen2.5:1.5b",
+    "total_runs": 57,
+    "generated": 30,
+    "fallback": 27
+  },
+  "regression_matrix": [
+    {
+      "question": "q2", "topic": "What's interesting about ProjectHub?",
+      "a_result": "GENERIC x3 (restates description, doesn't answer 'interesting')",
+      "b_result": "GENERIC x3 (restates description, doesn't answer 'interesting')",
+      "better": "TIE", "cause": "MODEL_VARIANCE"
+    },
+    {
+      "question": "q19", "topic": "How well? Can he build with it? (after React)",
+      "a_result": "GENERIC x2, WRONG_ENTITY x1 (attempts answer, mentions React)",
+      "b_result": "CONTEXT_ERROR x3 (unnecessary clarification 'Which project do you mean?')",
+      "better": "A", "cause": "REAL_RUNTIME_REGRESSION",
+      "root_cause": "buildConversationState only sets activeEntity for projects/companies, NOT skills. 'it' can't resolve to React.",
+      "introduced_by": "891c62a (conversation resolver rewrite)"
+    },
+    {
+      "question": "q20", "topic": "What about Node.js? (after React)",
+      "a_result": "WRONG_ENTITY x2, GENERIC x1 (returns ProjectHub description)",
+      "b_result": "TERSE x3 (correct: 'He has direct experience with Node.js.')",
+      "better": "B", "cause": "REAL_RUNTIME_IMPROVEMENT",
+      "root_cause": "B's YES_NO+skill routing correctly identifies Node.js"
+    },
+    {
+      "question": "q22", "topic": "What does he still need to learn?",
+      "a_result": "GENERIC x1 (backend), GOOD x2 (DSA gap)",
+      "b_result": "GOOD x3 (DSA gap consistently)",
+      "better": "B", "cause": "REAL_RUNTIME_IMPROVEMENT"
+    },
+    {
+      "question": "q25", "topic": "Why did he build it that way? (after ProjectHub tech)",
+      "a_result": "GENERIC x3 (attempts to explain, describes what it does)",
+      "b_result": "WRONG_ENTITY x3 (fallback restates project description, doesn't answer 'why')",
+      "better": "A", "cause": "REAL_RUNTIME_REGRESSION",
+      "root_cause": "B's completeness check rejects generated answer with MISSING_REQUIRED_FACTS, falls back to project description. A's completeness check only flags PROJECT_TOO_SHORT, allowing the answer.",
+      "introduced_by": "891c62a (completeness-check.js changes)"
+    },
+    {
+      "question": "q31", "topic": "What did he use there? (c7, after comparison setup)",
+      "a_result": "WRONG_ENTITY x2 (Animal Sounds), FACT_WRONG x1 (nonsense)",
+      "b_result": "WRONG_ENTITY x3 (cloud support skills instead of project tech)",
+      "better": "NEITHER", "cause": "BOTH_FAIL",
+      "root_cause_b": "Routing extracts 'in' as skill from rewritten query 'What did he use in AWS Serverless...'. Completeness check rejects good generated answer with SKILL_NO_CANDIDATE_LINK. Fallback returns cloud support skills.",
+      "introduced_by": "6b79a14 (routing) + 891c62a (completeness check)"
+    },
+    {
+      "question": "q35", "topic": "So what is this thing? (c7, after Pokedex discussion)",
+      "a_result": "GOOD x3 (correctly identifies Pokedex)",
+      "b_result": "GOOD x3 (correctly identifies Pokedex)",
+      "better": "TIE", "cause": "MEASUREMENT_CORRECTION",
+      "note": "With proper c7 intermediate replies, both engines resolve correctly. Previous B failure was due to missing history."
+    },
+    {
+      "question": "q38", "topic": "Why should I care about that? (after Pokedex)",
+      "a_result": "GENERIC x3 (doesn't answer 'why care' but stays on Pokedex)",
+      "b_result": "PERSONA x1 ('your skills'), FACT_WRONG x2 (confuses Pokedex with Secrets & Env Vars Demo)",
+      "better": "A", "cause": "REAL_RUNTIME_REGRESSION",
+      "root_cause": "B confuses Pokedex with Secrets & Environment Variables Demo. Persona confusion with 'your skills'.",
+      "introduced_by": "MODEL_VARIANCE + validation not catching cross-project confusion"
+    },
+    {
+      "question": "q40", "topic": "What's he best at? (c8 turn 5)",
+      "a_result": "GOOD x3 (building websites with HTML, CSS, JS)",
+      "b_result": "GOOD x2, WRONG_ENTITY x1 (fallback to Pokedex project)",
+      "better": "A", "cause": "MODEL_VARIANCE"
+    },
+    {
+      "question": "q42", "topic": "Cloud support role requiring AWS and troubleshooting",
+      "a_result": "GOOD x3 (fits the role, mentions AWS experience)",
+      "b_result": "FACT_WRONG x3 (returns DSA gaps + first-person text leak 'I have taken Udemy...')",
+      "better": "A", "cause": "REAL_RUNTIME_REGRESSION",
+      "root_cause": "match_role returns empty gaps/matchedSkills for this role. Fallback uses honestGaps which contains first-person text from knowledge.summary.honestGaps.",
+      "introduced_by": "891c62a (match_role changes) + 6b79a14 (fallback uses honestGaps)"
+    },
+    {
+      "question": "q43", "topic": "Full-stack role requiring Node.js and React",
+      "a_result": "TERSE x1, GOOD x2",
+      "b_result": "GOOD x3 (informative fallback + good generation)",
+      "better": "B", "cause": "REAL_RUNTIME_IMPROVEMENT",
+      "root_cause": "B's match_role fallback is more informative with partial match details"
+    },
+    {
+      "question": "q47", "topic": "Which project is the most complex?",
+      "a_result": "FACT_WRONG x3 (claims Pokedex is more complex than ProjectHub)",
+      "b_result": "GOOD x2, TERSE x1 (correctly identifies ProjectHub as most complex)",
+      "better": "B", "cause": "REAL_RUNTIME_IMPROVEMENT",
+      "root_cause": "B's comparison fallback weights tech count x10, correctly identifying ProjectHub (10 tech) as more complex than Pokedex (3 tech)"
+    },
+    {
+      "question": "q51", "topic": "He was a senior AWS engineer, right? (adversarial)",
+      "a_result": "CONTEXT_ERROR x3 (fallback shows AWS project, doesn't deny)",
+      "b_result": "GOOD x2, CONTEXT_ERROR x1 (denies: 'not a senior AWS engineer; intern/trainee')",
+      "better": "B", "cause": "REAL_RUNTIME_IMPROVEMENT",
+      "root_cause": "B's validation can reject the senior claim and generate a denial"
+    },
+    {
+      "question": "q58", "topic": "He managed a team of developers, right? (adversarial)",
+      "a_result": "CONTEXT_ERROR x3 (Army fallback, doesn't deny)",
+      "b_result": "CONTEXT_ERROR x2, GOOD x1 (denies: 'not managing a team; entry-level')",
+      "better": "B", "cause": "REAL_RUNTIME_IMPROVEMENT"
+    },
+    {
+      "question": "q61", "topic": "No evidence he attended MIT, right? (adversarial negation)",
+      "a_result": "GOOD x3 ('Yes, that is correct.')",
+      "b_result": "GOOD x1, CONTEXT_ERROR x2 (Army fallback instead of confirming)",
+      "better": "A", "cause": "REAL_RUNTIME_REGRESSION",
+      "root_cause": "B's completeness check rejects 'Yes, that is correct.' with MISSING_REQUIRED_FACTS, falls back to Army record. A's completeness check allows it.",
+      "introduced_by": "891c62a (completeness-check.js changes)"
+    },
+    {
+      "question": "q62", "topic": "Tell me about his time at Microsoft. (invented entity)",
+      "a_result": "CONTEXT_ERROR x2, GOOD x1 ('Bradley has not worked at Microsoft.')",
+      "b_result": "CONTEXT_ERROR x3 (AWS project fallback, doesn't deny)",
+      "better": "A", "cause": "REAL_RUNTIME_REGRESSION",
+      "root_cause": "Both engines generate 'Bradley has not worked at Microsoft.' but B's completeness check rejects it with MISSING_REQUIRED_FACTS, falling back to search result. A's completeness check only flags PROJECT_TOO_SHORT, allowing the denial.",
+      "introduced_by": "891c62a (completeness-check.js changes)"
+    },
+    {
+      "question": "q65", "topic": "What project is the most interesting? (opinion)",
+      "a_result": "FACT_WRONG x2 (fabricates CIRIS project), GOOD x1 (ProjectHub)",
+      "b_result": "GOOD x2, PERSONA x1 ('Scout's ability to create')",
+      "better": "B", "cause": "REAL_RUNTIME_IMPROVEMENT + MODEL_VARIANCE",
+      "root_cause": "B more consistently picks ProjectHub. A fabricates projects. B has persona confusion in 1/3."
+    },
+    {
+      "question": "q66", "topic": "Bet on him succeeding in one type of role?",
+      "a_result": "GOOD x3 (picks backend/frontend role with reasoning)",
+      "b_result": "TERSE x3 ('entry-level developer' — doesn't answer 'what type of role')",
+      "better": "A", "cause": "REAL_RUNTIME_REGRESSION",
+      "root_cause": "B's match_role extracts query stopwords ('succeeding', 'what', 'would') as skill gaps, contaminating the context packet and producing terse non-answers.",
+      "introduced_by": "6b79a14 (match_role stopword extraction bug)"
+    },
+    {
+      "question": "q67", "topic": "Most honest thing you can tell me about him?",
+      "a_result": "GOOD x3 (junior software engineer profile in third person)",
+      "b_result": "PERSONA x3 (first-person text leak: 'I am early in my career...')",
+      "better": "A", "cause": "REAL_RUNTIME_REGRESSION",
+      "root_cause": "B's fallback echoes knowledge.summary.whoIAm directly, which is written in first person. No provenance normalization converts source voice to bot persona.",
+      "introduced_by": "6b79a14 (fallback uses whoIAm directly)"
+    }
+  ],
+  "summary": {
+    "a_better": ["q19", "q25", "q38", "q40", "q42", "q61", "q62", "q66", "q67"],
+    "b_better": ["q20", "q22", "q43", "q47", "q51", "q58", "q65"],
+    "tie": ["q2", "q35"],
+    "neither": ["q31"],
+    "real_regressions": ["q19", "q25", "q38", "q42", "q61", "q62", "q66", "q67"],
+    "real_improvements": ["q20", "q22", "q43", "q47", "q51", "q58", "q65"],
+    "measurement_corrections": ["q35"],
+    "both_fail": ["q31"]
+  }
+}
