@@ -2097,3 +2097,151 @@ test('contract: is domain-neutral (no hardcoded entity names in logic)', () => {
   assert.ok(!src.includes("'CIRIS'"), 'contract should not hardcode CIRIS string');
   assert.ok(!src.includes("'Interactive Pokedex'"), 'contract should not hardcode Interactive Pokedex string');
 });
+
+// ============================================================
+// REGRESSION TESTS — Targeted fixes from apples-to-apples analysis
+// Domain-neutral, no hardcoded Bradley-specific entity names in logic
+// ============================================================
+
+// Synthetic domain-neutral knowledge fixture for regression tests
+const syntheticKnowledge = {
+  profile: { name: 'Jane' },
+  projects: [
+    { name: 'Project Alpha', tech: ['Redis', 'Python'], description: 'A caching service using Redis for fast lookups.' },
+    { name: 'Project Beta', tech: ['PostgreSQL', 'Node.js'], description: 'A data analytics dashboard with PostgreSQL backend.' },
+  ],
+  skills: { core: ['PostgreSQL', 'Redis', 'Python', 'Node.js'] },
+  experience: [{ company: 'Acme Corp', role: 'Developer', skills: ['Python'] }],
+};
+
+// 1. Active referent can be a skill
+test('regression: active referent can be a skill (q19 fix)', () => {
+  const { buildConversationState, resolveReferent } = require('../lib/conversation-resolver');
+  const history = [{ user: 'Does Jane know PostgreSQL?', assistant: 'Yes, she has used PostgreSQL in Project Delta.' }];
+  const convState = buildConversationState(history, syntheticKnowledge);
+  assert.ok(convState.activeEntity, 'activeEntity should be set when only a skill is in context');
+  assert.equal(convState.activeEntity.type, 'skill');
+  assert.equal(convState.activeEntity.name, 'PostgreSQL');
+  // "it" should resolve to PostgreSQL
+  const result = resolveReferent('How well can she actually use it?', convState, syntheticKnowledge, 'How well can she actually use it?');
+  assert.equal(result.resolved, true);
+  assert.equal(result.entity, 'PostgreSQL');
+});
+
+// 2. Project-tech question routes to project tool
+test('regression: project-tech question routes to get_project (q31 fix)', () => {
+  const { preRoute } = require('../lib/lite-agent');
+  const state = { recentTurns: [], currentProjects: [] };
+  // Rewritten query with explicit project name
+  const route = preRoute('What did she use in Project Alpha?', state, syntheticKnowledge);
+  assert.equal(route.tool, 'get_project');
+  assert.equal(route.args.name, 'Project Alpha');
+});
+
+// 3. Prepositions never become skills
+test('regression: prepositions never extracted as skills (q31 fix)', () => {
+  const { extractSkill } = require('../lib/lite-agent');
+  // "use in" should not extract "in" as a skill
+  const skill = extractSkill('What did she use in Project Alpha?', syntheticKnowledge);
+  assert.notEqual(skill, 'in');
+  assert.notEqual(skill, 'at');
+  assert.notEqual(skill, 'on');
+  // Should return null or a real skill, never a preposition
+  if (skill) {
+    const prepositions = ['in', 'at', 'on', 'with', 'for', 'from', 'of', 'the', 'a', 'an', 'there', 'it', 'that'];
+    assert.ok(!prepositions.includes(skill.toLowerCase()), `extracted skill "${skill}" should not be a preposition`);
+  }
+});
+
+// 4. Correct adversarial denial passes completeness
+test('regression: correct adversarial denial passes completeness (q61 fix)', () => {
+  const { evaluateCompleteness } = require('../lib/completeness-check');
+  const contract = { directAnswer: 'NO', keyFacts: ['No evidence of MIT attendance'] };
+  const result = evaluateCompleteness('Yes, that is correct.', 'No evidence he attended MIT, right?', [], contract);
+  assert.equal(result.complete, true, 'Short denial confirmation should be complete');
+});
+
+// 5. Invented employment fallback denies employment
+test('regression: invented employment fallback denies employment (q62 fix)', () => {
+  const { buildGroundedFallback } = require('../lib/lite-agent');
+  const toolResult = { results: [{ name: 'Project Alpha', description: 'A caching service.' }] };
+  const fallback = buildGroundedFallback(toolResult, { operation: 'search' }, 'Tell me about his time at Microsoft.', '', syntheticKnowledge);
+  assert.ok(/no (?:verified )?evidence/i.test(fallback), 'Fallback should deny employment at unknown company');
+  assert.ok(!/Project Alpha/.test(fallback), 'Fallback should not show unrelated project for invented employer');
+});
+
+// 6. Team-management unsupported fallback denies management
+test('regression: team-management unsupported fallback denies management (q58 fix)', () => {
+  const { buildGroundedFallback } = require('../lib/lite-agent');
+  const toolResult = { results: [{ role: 'Developer', company: 'Acme Corp', summary: 'Built things.' }] };
+  const fallback = buildGroundedFallback(toolResult, { operation: 'search' }, 'He managed a team of developers, right?', '', syntheticKnowledge);
+  assert.ok(/\bno\b|not\b/i.test(fallback), 'Fallback should deny team management');
+});
+
+// 7. Source first person converted to subject perspective
+test('regression: source first person converted to subject perspective (q67 fix)', () => {
+  const { normalizeSourceVoice } = require('../lib/lite-agent');
+  const firstPerson = 'I am early in my career, but I learn quickly.';
+  const normalized = normalizeSourceVoice(firstPerson, syntheticKnowledge);
+  assert.ok(!/\bI\b/.test(normalized), 'First person "I" should be converted');
+  assert.ok(/Jane/.test(normalized) || /\bhe\b|\bshe\b/i.test(normalized), 'Should use subject name or third person');
+  assert.ok(/his|her/i.test(normalized), 'my → his/her');
+});
+
+// 8. Role requirement parser rejects stopwords
+test('regression: role requirement parser rejects stopwords (q66 fix)', () => {
+  const { executeAgentTool } = require('../lib/agent-tools');
+  const result = executeAgentTool('match_role', { role: '', jobDescription: 'If you had to bet on him succeeding in one type of role, what would it be?' }, syntheticKnowledge);
+  // Should not extract "succeeding", "what", "would", "bet" as skill gaps
+  const gapSkills = (result.gaps || []).map(g => g.skill.toLowerCase());
+  for (const stopword of ['succeeding', 'what', 'would', 'bet', 'one', 'type']) {
+    assert.ok(!gapSkills.includes(stopword), `"${stopword}" should not be a skill gap`);
+  }
+});
+
+// 9. No-explicit-requirements recommendation does not call gap parser incorrectly
+test('regression: no-explicit-requirements recommendation produces no spurious gaps (q66 fix)', () => {
+  const { executeAgentTool } = require('../lib/agent-tools');
+  const result = executeAgentTool('match_role', { role: '', jobDescription: 'What role would you recommend for him?' }, syntheticKnowledge);
+  // Should have zero or very few gaps (only real known-skill gaps, not query words)
+  const gapSkills = (result.gaps || []).map(g => g.skill.toLowerCase());
+  for (const stopword of ['what', 'role', 'recommend', 'him', 'would', 'you']) {
+    assert.ok(!gapSkills.includes(stopword), `"${stopword}" should not be a skill gap`);
+  }
+});
+
+// 10. Cross-project provenance rejected
+test('regression: cross-project provenance rejected (q38 fix)', () => {
+  // Project Alpha uses Redis. Project Beta uses PostgreSQL.
+  // A sentence about Project Alpha claiming PostgreSQL should be flagged.
+  const result = validateAnswer(
+    'Project Alpha uses PostgreSQL for its backend.',
+    'Project Alpha uses Redis for fast lookups. Project Beta uses PostgreSQL for analytics.',
+    'What does Project Alpha use?',
+    syntheticKnowledge
+  );
+  assert.equal(result.valid, false, 'Cross-project tech attribution should be rejected');
+});
+
+// 11. Clarification only when truly ambiguous
+test('regression: clarification only when truly ambiguous (q19 fix)', () => {
+  const { buildConversationState, resolveReferent } = require('../lib/conversation-resolver');
+  // When there's exactly one active entity (a skill), "it" should resolve
+  const history = [{ user: 'Does Jane know PostgreSQL?', assistant: 'Yes, she has used PostgreSQL in Project Delta.' }];
+  const convState = buildConversationState(history, syntheticKnowledge);
+  const result = resolveReferent('Can she build something with it?', convState, syntheticKnowledge, 'Can she build something with it?');
+  assert.equal(result.resolved, true, 'Should resolve "it" to the single active skill, not clarify');
+});
+
+// 12. Project rationale without verified rationale does not hallucinate motivation
+test('regression: project rationale without verified rationale is not rejected as incomplete (q25 fix)', () => {
+  const { evaluateCompleteness } = require('../lib/completeness-check');
+  const contract = { subIntent: 'RATIONALE', directAnswer: 'UNKNOWN', keyFacts: ['No documented rationale'] };
+  const result = evaluateCompleteness(
+    'The verified sources describe the implementation but do not establish the motivation.',
+    'Why did he build it that way?',
+    [],
+    contract
+  );
+  assert.equal(result.complete, true, 'Truthful rationale limitation should be complete');
+});

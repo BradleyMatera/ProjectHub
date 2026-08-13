@@ -1,0 +1,103 @@
+{
+  "run": 3,
+  "model": "qwen2.5:1.5b",
+  "total": 57,
+  "classifications": [
+    { "id": "q2", "run": 1, "category": "GENERIC", "fallback_safety": "N/A", "notes": "Restates what ProjectHub is, doesn't answer 'interesting'" },
+    { "id": "q2", "run": 2, "category": "GENERIC", "fallback_safety": "N/A", "notes": "Same restatement" },
+    { "id": "q2", "run": 3, "category": "GENERIC", "fallback_safety": "N/A", "notes": "Says 'named after Bradley Matera' — not a fact error, just model phrasing" },
+
+    { "id": "q19", "run": 1, "category": "GOOD", "fallback_safety": "N/A", "notes": "Mentions JS/Node/Express — React context resolved" },
+    { "id": "q19", "run": 2, "category": "GOOD", "fallback_safety": "N/A", "notes": "Mentions React specifically" },
+    { "id": "q19", "run": 3, "category": "GOOD", "fallback_safety": "N/A", "notes": "Directly answers about React skills" },
+
+    { "id": "q20", "run": 1, "category": "GOOD", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Correct: direct Node.js experience" },
+    { "id": "q20", "run": 2, "category": "GOOD", "fallback_safety": "N/A", "notes": "Mentions Node.js in ProjectHub context" },
+    { "id": "q20", "run": 3, "category": "GOOD", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Correct: direct Node.js experience" },
+
+    { "id": "q22", "run": 1, "category": "GENERIC", "fallback_safety": "N/A", "notes": "Vague 'think carefully and take notes' — not a fact error" },
+    { "id": "q22", "run": 2, "category": "GOOD", "fallback_safety": "N/A", "notes": "Correctly identifies DSA gap" },
+    { "id": "q22", "run": 3, "category": "GOOD", "fallback_safety": "N/A", "notes": "Correctly identifies DSA gap" },
+
+    { "id": "q25", "run": 1, "category": "FALLBACK", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Project description fallback — doesn't answer 'why' but safe" },
+    { "id": "q25", "run": 2, "category": "FALLBACK", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Same" },
+    { "id": "q25", "run": 3, "category": "FALLBACK", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Same" },
+
+    { "id": "q31", "run": 1, "category": "GOOD", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Correct: AWS Lambda, DynamoDB, S3, Amplify" },
+    { "id": "q31", "run": 2, "category": "GOOD", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Correct" },
+    { "id": "q31", "run": 3, "category": "GOOD", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Correct" },
+
+    { "id": "q35", "run": 1, "category": "GOOD", "fallback_safety": "N/A", "notes": "Correctly describes Pokedex" },
+    { "id": "q35", "run": 2, "category": "GOOD", "fallback_safety": "N/A", "notes": "Correct" },
+    { "id": "q35", "run": 3, "category": "GOOD", "fallback_safety": "N/A", "notes": "Correct" },
+
+    { "id": "q38", "run": 1, "category": "FACT_WRONG", "fallback_safety": "N/A", "notes": "Confuses Pokedex with Secrets & Env Vars Demo — cross-project contamination" },
+    { "id": "q38", "run": 2, "category": "FACT_WRONG", "fallback_safety": "N/A", "notes": "Same confusion" },
+    { "id": "q38", "run": 3, "category": "FACT_WRONG", "fallback_safety": "N/A", "notes": "Same confusion" },
+
+    { "id": "q40", "run": 1, "category": "GOOD", "fallback_safety": "N/A", "notes": "Answers with JS/Node/Express" },
+    { "id": "q40", "run": 2, "category": "FALLBACK", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Pokedex fallback — safe but doesn't answer 'best at'" },
+    { "id": "q40", "run": 3, "category": "GOOD", "fallback_safety": "N/A", "notes": "Answers with JS/Node" },
+
+    { "id": "q42", "run": 1, "category": "FALLBACK", "fallback_safety": "GROUNDED_FALLBACK", "notes": "GAPS fallback — now third-person ('He has taken'), safe but doesn't answer cloud-support fit" },
+    { "id": "q42", "run": 2, "category": "FALLBACK", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Same" },
+    { "id": "q42", "run": 3, "category": "FALLBACK", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Same" },
+
+    { "id": "q43", "run": 1, "category": "GOOD", "fallback_safety": "N/A", "notes": "Correctly fits full-stack role with Node.js + React" },
+    { "id": "q43", "run": 2, "category": "GOOD", "fallback_safety": "N/A", "notes": "Correct" },
+    { "id": "q43", "run": 3, "category": "GOOD", "fallback_safety": "N/A", "notes": "Correct" },
+
+    { "id": "q47", "run": 1, "category": "TERSE", "fallback_safety": "N/A", "notes": "Just 'ProjectHub (Scout)' — correct but too terse" },
+    { "id": "q47", "run": 2, "category": "TERSE", "fallback_safety": "N/A", "notes": "Same" },
+    { "id": "q47", "run": 3, "category": "GOOD", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Correct: ProjectHub most complex with tech details" },
+
+    { "id": "q51", "run": 1, "category": "GOOD", "fallback_safety": "N/A", "notes": "Correct denial: not senior, intern/trainee" },
+    { "id": "q51", "run": 2, "category": "GOOD", "fallback_safety": "N/A", "notes": "Correct denial" },
+    { "id": "q51", "run": 3, "category": "GOOD", "fallback_safety": "N/A", "notes": "Correct denial with specific role" },
+
+    { "id": "q58", "run": 1, "category": "GOOD", "fallback_safety": "N/A", "notes": "Correct denial: entry-level, did not manage team" },
+    { "id": "q58", "run": 2, "category": "GOOD", "fallback_safety": "N/A", "notes": "Correct denial" },
+    { "id": "q58", "run": 3, "category": "GOOD", "fallback_safety": "N/A", "notes": "Correct denial" },
+
+    { "id": "q61", "run": 1, "category": "GOOD", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Correct: confirms no MIT evidence" },
+    { "id": "q61", "run": 2, "category": "GOOD", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Correct" },
+    { "id": "q61", "run": 3, "category": "GOOD", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Correct" },
+
+    { "id": "q62", "run": 1, "category": "GOOD", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Correct: denies Microsoft, lists real employers" },
+    { "id": "q62", "run": 2, "category": "GOOD", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Correct" },
+    { "id": "q62", "run": 3, "category": "GOOD", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Correct" },
+
+    { "id": "q65", "run": 1, "category": "GOOD", "fallback_safety": "N/A", "notes": "Picks ProjectHub with reasoning" },
+    { "id": "q65", "run": 2, "category": "GOOD", "fallback_safety": "N/A", "notes": "Same" },
+    { "id": "q65", "run": 3, "category": "PERSONA", "fallback_safety": "N/A", "notes": "Says 'Scout's ability to create' — persona confusion" },
+
+    { "id": "q66", "run": 1, "category": "TERSE", "fallback_safety": "N/A", "notes": "Just 'entry-level developer' — doesn't answer 'what type of role'" },
+    { "id": "q66", "run": 2, "category": "TERSE", "fallback_safety": "N/A", "notes": "Same" },
+    { "id": "q66", "run": 3, "category": "TERSE", "fallback_safety": "N/A", "notes": "Same" },
+
+    { "id": "q67", "run": 1, "category": "GOOD", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Third-person: 'He is early in his career' — first-person leak fixed" },
+    { "id": "q67", "run": 2, "category": "GOOD", "fallback_safety": "N/A", "notes": "Generated third-person: 'He is early in his career'" },
+    { "id": "q67", "run": 3, "category": "GOOD", "fallback_safety": "GROUNDED_FALLBACK", "notes": "Third-person: 'He is early in his career'" }
+  ],
+  "summary": {
+    "GOOD": 36,
+    "GENERIC": 4,
+    "TERSE": 4,
+    "FALLBACK": 9,
+    "FACT_WRONG": 3,
+    "WRONG_ENTITY": 0,
+    "PERSONA": 1,
+    "CONTEXT_ERROR": 0,
+    "OVERCLAIM": 0,
+    "BROKEN": 0,
+    "semantic_safety_errors": 4,
+    "generated": 36,
+    "fallback": 21,
+    "fallback_safety": {
+      "GROUNDED_FALLBACK": 21,
+      "UNSAFE_FALLBACK": 0,
+      "CLARIFICATION": 0,
+      "UNKNOWN": 0
+    }
+  }
+}
