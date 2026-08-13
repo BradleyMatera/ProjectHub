@@ -501,22 +501,9 @@ function warmResponseCache(knowledge) {
     'What are his strengths?',
     'Is he good at algorithms?',
   ];
-  let added = 0;
-  for (const q of commonQuestions) {
-    const key = normalizeQuestion(q);
-    if (responseCache.has(key)) continue;
-    try {
-      const payload = buildGroundedFallbackPayload(knowledge, q, []);
-      if (payload?.reply) {
-        payload.reply = shapeReply(payload.reply, q, knowledge);
-        responseCache.set(key, { ts: Date.now(), payload: { ...payload, provider: 'grounded', model: 'knowledge-json', fallback: true, pipeline: ['cache-warm'] } });
-        added++;
-      }
-    } catch (e) {
-      console.error(`Cache warm failed for "${q}":`, e.message);
-    }
-  }
-  console.log(`Response cache warmed with ${added} entries`);
+  // Cache warming removed — cache should only contain generated+validated replies.
+  // Deterministic prose is no longer used as final user-visible text.
+  console.log('Response cache warming skipped (generative-only policy)');
 }
 
 function normalizeQuestion(question, knowledge = null) {
