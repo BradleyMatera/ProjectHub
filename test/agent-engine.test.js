@@ -7,6 +7,7 @@ const { buildReasoningPacket, buildSynthesisPacket, buildRawPacket, estimateToke
 const { freshState, updateState, getState, clearState, detectTopic, detectProjects, resolveReferents } = require('../lib/session-state');
 const { parseDecision, clampArgs, clampObservation, allToolNames } = require('../lib/agent-engine');
 const router = require('../lib/local-model-router');
+const recruiterKnowledge = require('../data/recruiter-knowledge.json');
 
 // Grounding validator
 test('validateAnswer accepts a grounded answer', () => {
@@ -28,6 +29,30 @@ test('validateAnswer rejects unsupported entity', () => {
   const result = validateAnswer('Bradley built ProjectHub and also worked at Google with Kubernetes.', source, 'What did Bradley build?');
   assert.equal(result.valid, false);
   assert.ok(result.reasons.some(r => r.startsWith('entity_not_grounded:')));
+});
+
+test('validateAnswer rejects entry-level professional title inflation', () => {
+  const source = 'Bradley has project-based Node.js and React evidence and is early in his career.';
+  const answer = 'He fits the role as an experienced Full Stack Engineer with proficiency in Node.js and React.';
+  const result = validateAnswer(answer, source, 'How does he fit a full-stack role?', recruiterKnowledge);
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.some(r => r.startsWith('expanded_overclaim:')));
+});
+
+test('validateAnswer rejects cross-project fact provenance', () => {
+  const source = JSON.stringify(recruiterKnowledge);
+  const answer = 'ProjectHub is interesting because it integrates AI through freelance contributions.';
+  const result = validateAnswer(answer, source, 'What project is most interesting?', recruiterKnowledge);
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.some(r => r.startsWith('wrong_relationship:project_provenance:')));
+});
+
+test('validateAnswer rejects bracketed internal entity labels', () => {
+  const source = 'Interactive Pokedex is a static Gen 1 Pokedex UI with all 151 entries.';
+  const answer = '[Interactive Pokedex] Static Gen 1 Pokedex UI with all 151 entries.';
+  const result = validateAnswer(answer, source, 'What did he build?', recruiterKnowledge);
+  assert.equal(result.valid, false);
+  assert.ok(result.reasons.includes('leaked_prompt_language'));
 });
 
 test('validateAnswer rejects unsupported number', () => {
