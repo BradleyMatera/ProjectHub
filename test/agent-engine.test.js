@@ -1851,3 +1851,249 @@ test('regression: leaked context_drift reason name is rejected', () => {
   assert.equal(result.valid, false, `Leaked context_drift should be rejected, got: ${result.reasons.join(', ')}`);
   assert.ok(result.reasons.includes('leaked_relation_syntax'), `Should flag leaked context_drift, got: ${result.reasons.join(', ')}`);
 });
+
+// ============================================================
+// Conversation Resolver — domain-neutral coreference and ambiguity
+// ============================================================
+const {
+  buildConversationState,
+  resolveReferent,
+} = require('../lib/conversation-resolver');
+
+const synthKnowledge = {
+  projects: [
+    { name: 'Product Alpha', tech: ['Python', 'FastAPI'], description: 'A data pipeline.' },
+    { name: 'Product Beta', tech: ['JavaScript', 'React'], description: 'A dashboard.' },
+  ],
+  experience: [
+    { company: 'Acme Corp', role: 'Junior Developer', description: 'Built internal tools.' },
+  ],
+  skills: ['Python', 'JavaScript', 'React', 'FastAPI'],
+};
+
+test('resolver: no-history "there" does not resolve', () => {
+  const state = buildConversationState([], synthKnowledge);
+  const result = resolveReferent('What did she learn there?', state, synthKnowledge);
+  assert.equal(result.resolved, false, 'should not resolve without history');
+});
+
+test('resolver: no-history "that" does not resolve', () => {
+  const state = buildConversationState([], synthKnowledge);
+  const result = resolveReferent('Did she do that professionally?', state, synthKnowledge);
+  assert.equal(result.resolved, false, 'should not resolve without history');
+});
+
+test('resolver: no-history "this thing" does not resolve', () => {
+  const state = buildConversationState([], synthKnowledge);
+  const result = resolveReferent('So what is this thing?', state, synthKnowledge);
+  assert.equal(result.resolved, false, 'should not resolve without history');
+});
+
+test('resolver: no-history "the other project" does not resolve', () => {
+  const state = buildConversationState([], synthKnowledge);
+  const result = resolveReferent('What about the other project?', state, synthKnowledge);
+  assert.equal(result.resolved, false, 'should not resolve without an active entity');
+});
+
+test('resolver: "there" resolves to active project', () => {
+  const history = [
+    { role: 'user', text: 'Tell me about Product Alpha.' },
+    { role: 'assistant', text: 'Product Alpha is a data pipeline using Python and FastAPI.' },
+  ];
+  const state = buildConversationState(history, synthKnowledge);
+  const result = resolveReferent('What did she learn there?', state, synthKnowledge);
+  assert.equal(result.resolved, true);
+  assert.ok(result.entity.includes('Product Alpha'), `got ${result.entity}`);
+});
+
+test('resolver: "there" resolves to company with "at" preposition', () => {
+  const history = [
+    { role: 'user', text: 'Tell me about Acme Corp.' },
+    { role: 'assistant', text: 'She was a Junior Developer at Acme Corp.' },
+  ];
+  const state = buildConversationState(history, synthKnowledge);
+  const result = resolveReferent('What did she learn there?', state, synthKnowledge);
+  assert.equal(result.resolved, true);
+  assert.ok(result.entity.includes('Acme Corp'), `got ${result.entity}`);
+  assert.ok(result.rewrittenQuery.toLowerCase().includes('at acme corp'), `should use "at" for company, got: ${result.rewrittenQuery}`);
+});
+
+test('resolver: "the other project" resolves to different project from knowledge', () => {
+  const history = [
+    { role: 'user', text: 'Tell me about Product Alpha.' },
+    { role: 'assistant', text: 'Product Alpha is a data pipeline using Python and FastAPI.' },
+  ];
+  const state = buildConversationState(history, synthKnowledge);
+  const result = resolveReferent('What about the other project?', state, synthKnowledge);
+  assert.equal(result.resolved, true);
+  assert.ok(result.entity.includes('Product Beta'), `should resolve to Product Beta, got ${result.entity}`);
+});
+
+test('resolver: "the other project" does not resolve to active entity', () => {
+  const history = [
+    { role: 'user', text: 'Tell me about Product Alpha.' },
+    { role: 'assistant', text: 'Product Alpha is a data pipeline using Python and FastAPI.' },
+  ];
+  const state = buildConversationState(history, synthKnowledge);
+  const result = resolveReferent('What about the other project?', state, synthKnowledge);
+  assert.equal(result.resolved, true);
+  assert.ok(!result.entity.includes('Product Alpha'), `should not resolve to active entity, got ${result.entity}`);
+});
+
+test('resolver: "it" resolves to active entity for short questions', () => {
+  const history = [
+    { role: 'user', text: 'Tell me about Product Alpha.' },
+    { role: 'assistant', text: 'Product Alpha is a data pipeline.' },
+  ];
+  const state = buildConversationState(history, synthKnowledge);
+  const result = resolveReferent('What does it use?', state, synthKnowledge);
+  assert.equal(result.resolved, true);
+  assert.ok(result.entity.includes('Product Alpha'), `got ${result.entity}`);
+});
+
+test('resolver: comparison state tracks two entities in same turn', () => {
+  const history = [
+    { role: 'user', text: 'Compare Product Alpha and Product Beta.' },
+    { role: 'assistant', text: 'Product Alpha is a pipeline; Product Beta is a dashboard.' },
+  ];
+  const state = buildConversationState(history, synthKnowledge);
+  assert.equal(state.comparisonEntities.length, 2, `should have 2 comparison entities, got ${state.comparisonEntities.length}`);
+});
+
+test('resolver: "the other project" uses comparison entity when available', () => {
+  const history = [
+    { role: 'user', text: 'Compare Product Alpha and Product Beta.' },
+    { role: 'assistant', text: 'Product Alpha is a pipeline; Product Beta is a dashboard.' },
+  ];
+  const state = buildConversationState(history, synthKnowledge);
+  const result = resolveReferent('What about the other project?', state, synthKnowledge);
+  assert.equal(result.resolved, true);
+  // Should resolve to the entity that is NOT the active entity
+  assert.ok(!result.entity.includes(state.activeEntity.name), `should not resolve to active entity, got ${result.entity}`);
+});
+
+test('resolver: handles {user, assistant} turn format', () => {
+  const history = [
+    { user: 'Tell me about Product Alpha.', assistant: 'Product Alpha is a data pipeline.' },
+  ];
+  const state = buildConversationState(history, synthKnowledge);
+  assert.ok(state.activeEntity, 'should have an active entity');
+  assert.ok(state.activeEntity.name.includes('Product Alpha'), `got ${state.activeEntity.name}`);
+});
+
+test('resolver: is domain-neutral (no hardcoded entity names)', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(require('path').join(__dirname, '..', 'lib', 'conversation-resolver.js'), 'utf8');
+  // Should not contain Bradley-specific entity names
+  assert.ok(!src.includes('ProjectHub'), 'resolver should not hardcode ProjectHub');
+  assert.ok(!src.includes('CIRIS'), 'resolver should not hardcode CIRIS');
+  assert.ok(!src.includes('Interactive Pokedex'), 'resolver should not hardcode Interactive Pokedex');
+  assert.ok(!src.includes('AWS Serverless'), 'resolver should not hardcode AWS Serverless');
+});
+
+// ============================================================
+// Response Contract — intent subtypes, polarity, and boundaries
+// ============================================================
+const {
+  buildResponseContract,
+  classifySubIntent,
+} = require('../lib/response-contract');
+
+test('contract: rationale question with no documented rationale gets UNKNOWN', () => {
+  const c = buildResponseContract(
+    'Why did he build ProjectHub that way?',
+    'ProjectHub is a chatbot called Scout. No rationale documented.',
+    testKnowledge,
+    []
+  );
+  assert.equal(c.subIntent, 'RATIONALE');
+  assert.equal(c.directAnswer, 'UNKNOWN');
+});
+
+test('contract: skill evidence question gets SKILL_EVIDENCE sub-intent', () => {
+  const c = buildResponseContract(
+    'What about Node.js?',
+    'Bradley built ProjectHub with Node.js. AWS capstone uses Node.js.',
+    testKnowledge,
+    [{ role: 'user', text: 'What is he best at?' }, { role: 'assistant', text: 'He is best at JavaScript and React.' }]
+  );
+  assert.equal(c.subIntent, 'SKILL_EVIDENCE');
+});
+
+test('contract: comparison decision identifies a selected project', () => {
+  const c = buildResponseContract(
+    'Which project is the most complex?',
+    'ProjectHub is an AI chatbot with multiple components. Interactive Pokedex is a static UI.',
+    testKnowledge,
+    []
+  );
+  assert.equal(c.subIntent, 'COMPARISON_DECISION');
+  assert.ok(c.directAnswer, 'should have a direct answer for comparison decision');
+});
+
+test('contract: recruiter recommendation gets YES polarity', () => {
+  const c = buildResponseContract(
+    'Is he someone worth interviewing?',
+    'Bradley has AWS internship, CIRIS freelance work, React and Node.js projects.',
+    testKnowledge,
+    []
+  );
+  assert.equal(c.intent, 'RECRUITER');
+  assert.equal(c.directAnswer, 'YES');
+  assert.ok(c.boundary, 'should have entry-level boundary');
+});
+
+test('contract: job-fit with required skills gets FIT or PARTIAL_FIT', () => {
+  const c = buildResponseContract(
+    'How does he fit a full-stack role requiring Node.js and React?',
+    'Bradley has React and Node.js project evidence.',
+    testKnowledge,
+    []
+  );
+  assert.equal(c.intent, 'JOB_FIT');
+  assert.ok(['FIT', 'PARTIAL_FIT'].includes(c.directAnswer), `should be FIT or PARTIAL_FIT, got ${c.directAnswer}`);
+  assert.ok(c.requiredEntities.includes('Node.js'), 'should require Node.js');
+  assert.ok(c.requiredEntities.includes('React'), 'should require React');
+});
+
+test('contract: job-fit with missing skills gets NOT_FIT', () => {
+  const c = buildResponseContract(
+    'How does he fit a DevOps role requiring Kubernetes and CI/CD?',
+    'Bradley has AWS experience. No Kubernetes evidence.',
+    testKnowledge,
+    []
+  );
+  assert.equal(c.intent, 'JOB_FIT');
+  assert.equal(c.directAnswer, 'NOT_FIT');
+});
+
+test('contract: entry-level boundary is present for job-fit', () => {
+  const c = buildResponseContract(
+    'How does he fit a junior frontend developer role requiring React and TypeScript?',
+    'Bradley has React and TypeScript skills.',
+    testKnowledge,
+    []
+  );
+  assert.ok(c.boundary, 'should have boundary for entry-level candidate');
+  // Boundary should not claim professional production ownership
+  assert.ok(!c.boundary.toLowerCase().includes('experienced engineer'), 'boundary should not inflate title');
+});
+
+test('contract: classifySubIntent distinguishes skill evidence from generic follow-up', () => {
+  const sub = classifySubIntent('What about Node.js?', 'FOLLOW_UP', testKnowledge);
+  assert.equal(sub, 'SKILL_EVIDENCE');
+});
+
+test('contract: classifySubIntent distinguishes rationale from generic', () => {
+  const sub = classifySubIntent('Why did he build it that way?', 'FOLLOW_UP', 'project');
+  assert.equal(sub, 'RATIONALE');
+});
+
+test('contract: is domain-neutral (no hardcoded entity names in logic)', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(require('path').join(__dirname, '..', 'lib', 'response-contract.js'), 'utf8');
+  // May reference knowledge structure but should not hardcode specific entity names in logic
+  assert.ok(!src.includes("'ProjectHub'"), 'contract should not hardcode ProjectHub string');
+  assert.ok(!src.includes("'CIRIS'"), 'contract should not hardcode CIRIS string');
+  assert.ok(!src.includes("'Interactive Pokedex'"), 'contract should not hardcode Interactive Pokedex string');
+});
