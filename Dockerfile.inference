@@ -1,4 +1,4 @@
-FROM ollama/ollama:latest
+FROM ollama/ollama:0.3.14
 
 # Model is pulled at startup via entrypoint script
 ENV OLLAMA_HOST=0.0.0.0:11434

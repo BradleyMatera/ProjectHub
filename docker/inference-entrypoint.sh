@@ -31,6 +31,14 @@ echo "Pre-warming $MODEL..."
 curl -sf http://127.0.0.1:11434/api/chat -d "{\"model\":\"$MODEL\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}],\"stream\":false,\"options\":{\"num_predict\":1}}" >/dev/null 2>&1 || true
 echo "Model pre-warmed"
 
+# Record model digest for reproducibility verification
+echo "=== Model Identity ==="
+ollama show "$MODEL" --modelfile 2>/dev/null | grep -E "^FROM " || true
+DIGEST=$(ollama show "$MODEL" --modelfile 2>/dev/null | grep "^FROM " | awk '{print $2}')
+echo "MODEL_DIGEST: ${DIGEST:-unknown}"
+ollama list 2>/dev/null || true
+echo "=== End Model Identity ==="
+
 echo "Inference service ready"
 
 # Wait for the Ollama process

@@ -52,6 +52,12 @@ services:
       - OLLAMA_AGENT_CONTEXT=2048
       - OLLAMA_AGENT_KEEP_ALIVE=-1
       - AGENT_ENABLED=true
+      - SCOUT_AGENT_ENGINE_ENABLED=true
+      - SCOUT_AGENT_MODE=lite
+      - SCOUT_LITE_TIMEOUT_MS=25000
+      - SCOUT_LITE_REPAIR_TIMEOUT_MS=15000
+      - SCOUT_LITE_NUM_CTX=2048
+      - SCOUT_LITE_NUM_PREDICT=120
       - USE_BM25_RETRIEVAL=true
       - RATE_LIMIT_MAX=20
       - KNOWLEDGE_FILE=data/recruiter-knowledge.json
@@ -92,6 +98,8 @@ services:
       - OLLAMA_URL=http://inference:11434
       - GEN_MODEL=qwen2.5:1.5b
       - OLLAMA_AGENT_MODEL=qwen2.5:1.5b
+      - SCOUT_AGENT_ENGINE_ENABLED=true
+      - SCOUT_AGENT_MODE=lite
       - PROJECTHUB_API_URL=http://api:3000
     command: ["node", "--test", "test/**/*.test.js"]
     networks:

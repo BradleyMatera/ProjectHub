@@ -3933,6 +3933,35 @@ app.post('/api/chat', async (req, res) => {
           };
           agentEvents = agentResult.events;
           generated = true;
+        } else if (agentResult.inferenceUnavailable) {
+          // All generative attempts failed — return typed service-unavailable response
+          pipeline.push(`scout-agent-${SCOUT_AGENT_MODE}:inference-unavailable`);
+          agentEvents = agentResult.events;
+          agentMeta = {
+            used: true,
+            engine: SCOUT_AGENT_MODE === 'lite' ? 'scout-lite' : 'scout-agent',
+            agentMode: SCOUT_AGENT_MODE,
+            tools: (agentResult.toolResults || []).map(t => t.tool),
+            steps: agentResult.steps.length,
+            contextTokens: agentResult.contextTokens,
+            outcome: 'inference_unavailable',
+            generationAttempts: agentResult.generationAttempts || 0,
+            ...(SCOUT_AGENT_MODE === 'lite' ? {
+              operation: agentResult.operation,
+              queryRewritten: agentResult.rewritten
+            } : {})
+          };
+          return res.json({
+            ok: false,
+            error: 'INFERENCE_UNAVAILABLE',
+            reply: 'Scout is temporarily unavailable. Please try again in a moment.',
+            pipeline,
+            provider: 'ollama-recovery',
+            model: agentResult.model,
+            latencyMs: Date.now() - reqStart,
+            agentMeta,
+            agentEvents
+          });
         } else {
           pipeline.push(`scout-agent-${SCOUT_AGENT_MODE}:fallback:${agentResult.fallback ? 'true' : 'false'}`);
           // Store events even on fallback for diagnostics
