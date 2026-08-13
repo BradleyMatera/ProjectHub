@@ -1,0 +1,20 @@
+FROM ollama/ollama:latest
+
+# Model is pulled at startup via entrypoint script
+ENV OLLAMA_HOST=0.0.0.0:11434
+ENV OLLAMA_MODEL=qwen2.5:1.5b
+ENV OLLAMA_KEEP_ALIVE=-1
+ENV OLLAMA_NUM_THREAD=2
+ENV OLLAMA_CONTEXT_SIZE=2048
+
+# Copy the model pull script
+COPY docker/inference-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Health check — Ollama /api/tags responds when ready
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
+  CMD ollama list | grep -q "qwen2.5:1.5b" || exit 1
+
+EXPOSE 11434
+
+ENTRYPOINT ["/entrypoint.sh"]

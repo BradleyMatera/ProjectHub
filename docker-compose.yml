@@ -1,0 +1,107 @@
+services:
+  inference:
+    build:
+      context: .
+      dockerfile: Dockerfile.inference
+    container_name: scout-inference
+    expose:
+      - "11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+      - OLLAMA_MODEL=qwen2.5:1.5b
+      - OLLAMA_KEEP_ALIVE=-1
+      - OLLAMA_NUM_THREAD=2
+      - OLLAMA_CONTEXT_SIZE=2048
+    volumes:
+      - ollama-models:/root/.ollama
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+        reservations:
+          memory: 1G
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list | grep -q 'qwen2.5:1.5b' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 5
+    networks:
+      - scout-net
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scout-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+      - OLLAMA_URL=http://inference:11434
+      - GEN_ENABLED=true
+      - GEN_MODEL=qwen2.5:1.5b
+      - GEN_TIMEOUT_MS=12500
+      - OLLAMA_AGENT_ENABLED=true
+      - OLLAMA_AGENT_MODEL=qwen2.5:1.5b
+      - OLLAMA_AGENT_TIMEOUT_MS=2500
+      - OLLAMA_AGENT_CONTEXT=2048
+      - OLLAMA_AGENT_KEEP_ALIVE=-1
+      - AGENT_ENABLED=true
+      - USE_BM25_RETRIEVAL=true
+      - RATE_LIMIT_MAX=20
+      - KNOWLEDGE_FILE=data/recruiter-knowledge.json
+      - ALLOWED_ORIGINS=https://bradleymatera.dev,https://www.bradleymatera.dev,https://bradleymatera.github.io
+      - COST_TRACKER=false
+    depends_on:
+      inference:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    networks:
+      - scout-net
+    restart: unless-stopped
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scout-test-runner
+    depends_on:
+      api:
+        condition: service_healthy
+      inference:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=test
+      - OLLAMA_URL=http://inference:11434
+      - GEN_MODEL=qwen2.5:1.5b
+      - OLLAMA_AGENT_MODEL=qwen2.5:1.5b
+      - PROJECTHUB_API_URL=http://api:3000
+    command: ["node", "--test", "test/**/*.test.js"]
+    networks:
+      - scout-net
+    profiles:
+      - test
+
+volumes:
+  ollama-models:
+
+networks:
+  scout-net:
+    driver: bridge
