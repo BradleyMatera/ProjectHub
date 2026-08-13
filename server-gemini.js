@@ -3789,22 +3789,49 @@ app.post('/api/chat', async (req, res) => {
   const reqStart = Date.now();
   const referrer = extractReferrer(req);
   const pipeline = [];
+
+  // 15-second absolute request deadline — if the response hasn't been sent
+  // by this point, return INFERENCE_UNAVAILABLE regardless of what stage
+  // the agent pipeline is in.
+  const REQUEST_DEADLINE_MS = 15000;
+  let deadlineFired = false;
+  const deadlineTimer = setTimeout(() => {
+    if (!res.headersSent) {
+      deadlineFired = true;
+      pipeline.push('deadline-exceeded');
+      console.error(`[chat] 15s deadline exceeded for session ${sessionId}`);
+      res.json({
+        ok: false,
+        error: 'INFERENCE_UNAVAILABLE',
+        reply: 'Scout is temporarily unavailable. Please try again in a moment.',
+        pipeline,
+        provider: 'deadline',
+        latencyMs: Date.now() - reqStart
+      });
+    }
+  }, REQUEST_DEADLINE_MS);
+
+  // Ensure timer doesn't keep process alive
+  if (deadlineTimer.unref) deadlineTimer.unref();
+
   try {
     lastChatActivityAt = Date.now();
     sessionId = String(req.body.sessionId || '').slice(0, 128);
     if (req.body.action === 'clear') {
+      clearTimeout(deadlineTimer);
       clearConversationMemory(sessionId);
       return res.json({ ok: true, cleared: true });
     }
     userMessage = String(req.body.message || '').trim();
-    if (!userMessage) return res.status(400).json({ error: 'Missing message.' });
-    if (userMessage.length > 600) return res.status(400).json({ error: 'Message is too long.' });
+    if (!userMessage) { clearTimeout(deadlineTimer); return res.status(400).json({ error: 'Missing message.' }); }
+    if (userMessage.length > 600) { clearTimeout(deadlineTimer); return res.status(400).json({ error: 'Message is too long.' }); }
 
     const history = getConversationHistory(sessionId, req.body.history);
     const hasHistory = history.length > 0;
     const cacheKey = normalizeQuestion(userMessage);
     const cached = !hasHistory ? responseCache.get(cacheKey) : null;
     if (cached && (Date.now() - cached.ts) < RESPONSE_CACHE_MS) {
+      clearTimeout(deadlineTimer);
       pipeline.push('cache-hit');
       lastReplyProvider = cached.payload.provider || 'cached';
       recordRequest(userMessage, 'cached', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: cached.payload.reply, groundedReply: cached.payload.reply, sessionId });
@@ -3815,6 +3842,7 @@ app.post('/api/chat', async (req, res) => {
 
     const knowledge = await fetchKnowledge();
     if (!knowledge) {
+      clearTimeout(deadlineTimer);
       pipeline.push('knowledge-unavailable');
       return res.json({
         ok: false,
@@ -3835,9 +3863,6 @@ app.post('/api/chat', async (req, res) => {
     // 1b. Learned answers provide EVIDENCE only, not final prose.
     const learnedAns = getLearnedAnswer(userMessage);
     pipeline.push(`learned-check:${learnedAns ? 'hit' : 'miss'}`);
-
-    // 1c. Grounded payload provides EVIDENCE only (allowedFacts), not final prose.
-    const grounded = buildGroundedFallbackPayload(knowledge, userMessage, history);
 
     // Default reply is NOT set — all prose must come from generative inference.
     // If inference fails, we return INFERENCE_UNAVAILABLE.
@@ -3881,9 +3906,9 @@ app.post('/api/chat', async (req, res) => {
         // Policy contract from classifyResponsePolicy is injected to guide generation
         const policyContract = {
           mode: policy.mode,
-          allowedFacts: policy.allowedFacts,
-          ...policy.contract,
+          ...policy,
         };
+        delete policyContract.contract; // flatten — no nested contract object
         const agentResult = SCOUT_AGENT_MODE === 'lite'
           ? await runLiteAgent({
               question: userMessage,
@@ -3998,7 +4023,7 @@ app.post('/api/chat', async (req, res) => {
     if (!generated && GEN_ENABLED && history.length < CONVERSATION_MAX_TURNS) {
       try {
         const genReply = await resolveWithin(
-          callGenerativeRag(knowledge, userMessage, grounded.reply, history, CHAT_GENERATION_BUDGET_MS),
+          callGenerativeRag(knowledge, userMessage, null, history, CHAT_GENERATION_BUDGET_MS),
           CHAT_RESPONSE_BUDGET_MS
         );
         if (genReply && validateFallbackReply(genReply)) {
@@ -4086,9 +4111,8 @@ app.post('/api/chat', async (req, res) => {
 
     lastReplyProvider = payload.provider;
     const intent = detectVisitorIntent(userMessage, history);
-    trackSession(sessionId, userMessage, payload.provider, referrer, intent, reply, grounded.reply);
-    recordStance(sessionId, userMessage, reply);
-    recordRequest(userMessage, payload.provider, { referrer, pipeline, latencyMs: Date.now() - reqStart, reply, groundedReply: grounded.reply, sessionId });
+    trackSession(sessionId, userMessage, payload.provider, referrer, intent, reply, null);
+    recordRequest(userMessage, payload.provider, { referrer, pipeline, latencyMs: Date.now() - reqStart, reply, groundedReply: null, sessionId });
     // Stash weak answers for think mode learning
     if (isWeakAnswer(reply, userMessage, provider)) {
       stashQuestion(userMessage, reply, provider);
@@ -4097,10 +4121,12 @@ app.post('/api/chat', async (req, res) => {
     // Update server-owned structured conversation state (topic, projects, job, references)
     sessionState.updateState(sessionId, userMessage, reply, knowledge, null);
     payload.sessionMemory = { turns: Math.min(history.length + 1, CONVERSATION_MAX_TURNS), retained: true };
+    clearTimeout(deadlineTimer);
     return res.json(payload);
   } catch (err) {
     console.error('Chat error:', err);
     pipeline.push('error');
+    clearTimeout(deadlineTimer);
     return res.json({
       ok: false,
       error: 'INFERENCE_UNAVAILABLE',
@@ -4184,15 +4210,50 @@ if (COST_TRACKER && costLedger) {
   }, 60 * 1000).unref();
 }
 
+// Model/image digest enforcement — verify the exact model image is loaded
+// at startup to prevent silent model drift in production.
+async function verifyModelDigest() {
+  const expectedModel = process.env.GEN_MODEL || 'qwen2.5:1.5b';
+  const expectedDigest = process.env.OLLAMA_MODEL_DIGEST || ''; // optional pin
+  try {
+    const resp = await fetch(`${OLLAMA_URL}/api/tags`, { method: 'GET' });
+    if (!resp.ok) {
+      console.error(`[startup] Ollama /api/tags returned ${resp.status} — model verification skipped`);
+      return;
+    }
+    const data = await resp.json();
+    const models = data.models || [];
+    const found = models.find(m => m.name === expectedModel);
+    if (!found) {
+      console.error(`[startup] MODEL NOT FOUND: expected "${expectedModel}", available: [${models.map(m => m.name).join(', ')}]`);
+      console.error(`[startup] Pull the model with: ollama pull ${expectedModel}`);
+      return;
+    }
+    const digest = found.digest || 'unknown';
+    const size = found.size || 0;
+    const details = found.details || {};
+    console.log(`[startup] Model verified: ${found.name} (digest: ${digest}, size: ${(size / 1e9).toFixed(2)}GB, quant: ${details.quantization_level || 'unknown'})`);
+    if (expectedDigest && digest !== expectedDigest) {
+      console.error(`[startup] DIGEST MISMATCH: expected ${expectedDigest}, got ${digest}`);
+      console.error(`[startup] Repull with: ollama pull ${expectedModel}`);
+    } else if (expectedDigest) {
+      console.log(`[startup] Digest matches expected pin: ${expectedDigest}`);
+    }
+  } catch (e) {
+    console.error(`[startup] Model verification failed: ${e.message}`);
+  }
+}
+
 app.listen(PORT, HOST, () => {
   console.log(`Recruiter chat API running on http://${HOST}:${PORT} with Ollama backend`);
   // Pre-warm knowledge cache in background (non-blocking)
   setTimeout(() => {
     fetchKnowledge().then(() => console.log('Knowledge cache pre-warmed')).catch(e => console.log('Pre-warm failed:', e.message));
   }, 100);
-  // Ping Ollama to start loading the model into memory early
+  // Verify model digest and start loading the model into memory early
   if (GEN_ENABLED) {
     setTimeout(() => {
+      verifyModelDigest();
       fetch(`${OLLAMA_URL}/api/tags`, { method: 'GET' })
         .then(r => r.ok ? console.log('Ollama is reachable') : console.log('Ollama ping returned', r.status))
         .catch(e => console.log('Ollama ping failed:', e.message));
