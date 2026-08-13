@@ -1,27 +1,54 @@
 # Scout Local-Only Feature Handoff
 
-**Updated:** 2026-08-12
+**Updated:** 2026-08-13
 
 **Working branch:** `feat/agent-systems-network`
 
-**Code baseline:** Response planning and conversational parity phase (post-`72ccf6b`)
+**Code baseline:** Conversation engineering phase (post-`3f6b5be`)
 
-**Response planner:** `lib/response-planner.js` computes a semantic answer plan
-before LLM generation. The plan operates on generic slots (intent, subject,
-directAnswer, entities, evidenceStrength, caveats, jobFit, recruiterBrief)
-and is domain-neutral. For high-risk intents (ADVERSARIAL, JOB_FIT, SKILL,
-COMPARISON, YES_NO, RECRUITER), a compact ANSWER GUIDE is injected into the
-prompt. For conversational intents, the model gets full evidence budget.
+**Conversation resolver:** `lib/conversation-resolver.js` provides generic
+coreference resolution. It builds conversation state from history and
+knowledge entities, then resolves referents like "there", "it", "this thing",
+"the other project", and "that" to specific entities. The harness resolves
+references BEFORE retrieval so the model doesn't have to. Domain-neutral —
+uses knowledge entities, not hardcoded names.
 
-**Adversarial confirmation check:** If the question triggers an adversarial
-caveat and the answer confirms the claim (starts with Yes/Correct without
-negation), the answer is blocked and falls back deterministically.
+**Intent precedence fix:** `lib/completeness-check.js` classifyIntent() now
+checks specialized intents (RECRUITER, JOB_FIT, COMPARISON, OPINION, gaps)
+BEFORE generic YES_NO. This fixes q68 ("Is he someone worth interviewing?")
+being classified as YES_NO instead of RECRUITER. FOLLOW_UP is checked after
+specialized intents and YES_NO.
 
-**Plan vs packet comparison:** The 1.5B model does not consistently benefit
-from structured plan constraints. The plan helps safety (0 unsafe blocked)
-and specific categories (job-fit, invented entities) but slightly hurts
-overall quality due to reduced evidence budget. The remaining gap is mostly
-model capacity. See `data/plan-vs-packet-results.json`.
+**Response Contract V2:** `lib/response-contract.js` now produces:
+- `requiredEntities` — entities that MUST be named in the answer
+- `evidenceStrength` — INTERNSHIP, PROJECT, CERTIFICATION, or PROFESSIONAL
+- `boundary` — important limitation to mention (e.g., entry-level)
+- `directAnswer` — deterministic polarity (YES/NO/MIXED/FIT/PARTIAL_FIT/NOT_FIT)
+- `keyFacts` — top 3 evidence facts scored by entity relevance (generic, no hardcoded tech names)
+
+**Required fact coverage:** `lib/completeness-check.js` evaluateCompleteness()
+now accepts a responseContract parameter and checks:
+- MISSING_REQUIRED_ENTITIES — answer must name required entities
+- MISSING_REQUIRED_FACTS — very short answers (< 12 words) must cover at least 20% of key fact words
+- POLARITY_MISMATCH — answer must match contract directAnswer polarity
+
+**Targeted repair:** `lib/lite-agent.js` buildCompletenessRepairPacket() now
+includes missing entities, polarity, and boundary instructions. A new
+`meaningPreserved()` function checks that repair doesn't reverse negation
+or polarity.
+
+**Targeted quality suite:** `scripts/run-targeted-quality-suite.js` tests
+intent classification, coreference resolution, response contract, completeness,
+and meaning preservation with 49 synthetic + benchmark tests. All pass.
+
+**Full 68-eval (v2b):** 41 GOOD, 7 BORDERLINE, 8 NOT_GOOD, 12 FALLBACK,
+0 safety errors. Fallback within threshold (12 ≤ 13). Generated GOOD
+(41-48) below 55 threshold. Verdict: NOT YET.
+
+**Remaining issues:** q31 context error (first in c7, no history for "there"),
+q20 generic Node.js definition, q25 doesn't answer "why", q43 overclaim,
+q65 factual error (ProjectHub vs CIRIS confusion), several terse answers.
+Many fallbacks are from pre-existing grounding validator failures.
 
 **Release state:** committed locally, not promoted to `develop` or `master`, not deployed. Production is unchanged.
 
