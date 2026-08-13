@@ -2,6 +2,12 @@
 # deploy-gcp.sh - Deploy server-gemini.js to the production GCP VM
 # Run this from your local machine after merging to master.
 #
+# LEGACY DEPLOYMENT PATH: This script SCPs source files to the VM and restarts
+# a systemd/PM2 service. It does NOT deploy a Docker image and does NOT provide
+# build-test-deploy parity. The new containerized deployment path (Docker image
+# build → test → deploy same image) is being built separately. Do NOT use this
+# script for the new containerized path.
+#
 # Requirements:
 #   - Must be on the master branch
 #   - Working tree must be clean

@@ -299,8 +299,8 @@ test('unknown tool fails closed', () => {
 });
 
 // Local model router
-test('router defaultModel is qwen2.5:0.5b', () => {
-  assert.equal(router.defaultModel(), 'qwen2.5:0.5b');
+test('router defaultModel is qwen2.5:1.5b', () => {
+  assert.equal(router.defaultModel(), 'qwen2.5:1.5b');
 });
 
 test('router modelInfo returns pinned metadata', () => {

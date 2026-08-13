@@ -57,8 +57,9 @@ app.use((req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '127.0.0.1';
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:0.5b';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:1.5b';
 const OLLAMA_AGENT_ENABLED = process.env.OLLAMA_AGENT_ENABLED === 'true';
 const OLLAMA_AGENT_MODEL = process.env.OLLAMA_AGENT_MODEL || OLLAMA_MODEL;
 const OLLAMA_AGENT_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.OLLAMA_AGENT_TIMEOUT_MS || '2500', 10), 5000));
@@ -2482,7 +2483,7 @@ function cleanModelReply(reply, knowledge, question, history) {
 // Retrieval over the full knowledge JSON + constrained generation on the local
 // warm local model, hard-capped at GEN_TIMEOUT_MS so answers stay
 // inside the 15-second budget. Grounded answer is the guaranteed fallback.
-const GEN_MODEL = process.env.GEN_MODEL || 'qwen2.5:0.5b';
+const GEN_MODEL = process.env.GEN_MODEL || 'qwen2.5:1.5b';
 const GEN_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.GEN_TIMEOUT_MS || '12500', 10), 12500));
 const GEN_ENABLED = process.env.GEN_ENABLED !== 'false';
 // Reserve enough time for retrieval, validation, response shaping, and tunnel
@@ -4161,8 +4162,8 @@ if (COST_TRACKER && costLedger) {
   }, 60 * 1000).unref();
 }
 
-app.listen(PORT, '127.0.0.1', () => {
-  console.log(`Recruiter chat API running on http://127.0.0.1:${PORT} with Ollama backend`);
+app.listen(PORT, HOST, () => {
+  console.log(`Recruiter chat API running on http://${HOST}:${PORT} with Ollama backend`);
   // Pre-warm knowledge cache in background (non-blocking)
   setTimeout(() => {
     fetchKnowledge().then(() => console.log('Knowledge cache pre-warmed')).catch(e => console.log('Pre-warm failed:', e.message));

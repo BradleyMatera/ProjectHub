@@ -10,9 +10,9 @@ ProjectHub is an embeddable, AI-powered chat widget that showcases Bradley Mater
 
 - **Tech stack:** Vanilla JavaScript (ES6 modules via IIFE), HTML/CSS-in-JS, GitHub Pages; live analytics uses Vite + @carbon/charts + @carbon/web-components + @carbon/styles
 - **Runtime:** Browser only; chat widget has no frontend framework or bundler; analytics section is bundled with Vite
-- **AI backend:** Recruiter chat API at `https://projecthub-chat.bradleymatera.dev/api/chat` on a free GCP e2-micro VM with Caddy HTTPS. Inference is exclusively a pre-warmed local `qwen2.5:0.5b` model through Ollama. Deterministic evidence tools, BM25 retrieval, bundled knowledge, memory, stance consistency, and strict validation compensate for the small model. Invalid or slow generations fall back to a useful grounded answer from `data/recruiter-knowledge.json`.
+- **AI backend:** Recruiter chat API at `https://projecthub-chat.bradleymatera.dev/api/chat`. ProjectHub/Scout is being developed as the cloud-hosted replacement for the existing generative AI chatbot (Groq-hosted Llama 8B, retiring August 16, 2026). Development/evaluation uses `qwen2.5:1.5b` via Ollama as the inference runtime; production will use cloud-hosted inference. The inference layer is behind an adapter boundary (`lib/local-model-router.js`) for swappability (local Ollama, cloud, or future browser WebGPU). Deterministic evidence tools, BM25 retrieval, bundled knowledge, memory, stance consistency, and strict validation compensate for the small model. All user-visible conversational replies must come from generative inference — deterministic code may decide, route, and build contracts but may NOT write final chatbot prose.
 - **Session memory:** Browser sends a per-tab session id and recent turns. The local RAG layer uses the five newest sanitized turns; the browser keeps up to 10.
-- **Generative usage:** Grounded-first deterministic logic answers factual and safety-sensitive queries. Evidence-heavy requests execute five read-only tools deterministically. Open-ended recruiter conversation uses local Ollama RAG with up to five recent turns plus per-topic stances. Generated replies must pass safety, entity, number, length, source-overlap, and overclaim validation; otherwise the grounded answer is returned. Unknown tools fail closed and no public tool performs writes or arbitrary web access. 15s end-to-end response budget. Out-of-scope questions are forced to grounded replies.
+- **Generative usage:** Deterministic logic handles understanding, routing, evidence gathering, and contract construction. Open-ended recruiter conversation uses generative inference (Ollama in dev/test) with up to five recent turns plus per-topic stances. Generated replies must pass safety, entity, number, length, source-overlap, polarity, and overclaim validation. If invalid, generative repair is attempted, then strict constrained recovery generation. All user-visible conversational replies are generative. Unknown tools fail closed and no public tool performs writes or arbitrary web access. 15s end-to-end response budget.
 - **Retrieval pipeline:** Local Okapi BM25 (`lib/bm25.js`) with query understanding (`lib/query-understanding.js` — typo correction, intent classification, contextual rewriting). Standalone questions use the strongest BM25 view; conversational follow-ups fuse literal, alias-expanded, and context-rewritten BM25 rankings with local Reciprocal Rank Fusion (`lib/rrf.js`, k=60) so the explicit subject is not lost. BM25 Recall@6=1.000 on the current 40-query golden eval set.
 - **Stance consistency:** Per-session topic stances injected into local prompts to prevent contradictions across turns. 60-minute TTL, cap 12 per session.
 - **Agent name & persona:** The assistant is named **Scout**: helpful, calm, concise, honest, and never over-hype.
@@ -20,8 +20,8 @@ ProjectHub is an embeddable, AI-powered chat widget that showcases Bradley Mater
 - **Data sources:** `data.js` (projects/CodePens), `data/recruiter-knowledge.json` (canonical facts), and `sourceMaterial` (ingested blog posts, pages, and resume guardrails from `scripts/build-knowledge.js`).
 - **Think Mode:** A local self-improvement loop runs every 20 minutes. It stashes weak answers, asks Ollama for improved grounded wording, scores and judges candidates, and retains only validated improvements in the local learned file. It never writes to GitHub or another external system.
 - **Test suites:** 6 legacy API suites (adversarial, coverage, load/stress, regression, edge cases, full system verification) plus 63 checked-in Node unit tests, a 61-request local API evaluation, a 132-input conversation regression (126 production-retained inputs plus a six-turn unknown-technology repair), and a 40-query retrieval golden set.
-- **Current branch/focus:** `feat/agent-systems-network` — local-only Ollama conversation, grounded agent tools, coherent memory, strict validation, and a private SSH-tunneled preview
-- **Continuation status:** Read `docs/current-feature-handoff.md` before editing or deploying this branch. Commit `0e0c606` passed local acceptance but still needs the 132-input live private-preview run; production is unchanged.
+- **Current branch/focus:** `feat/agent-systems-network` — cloud-hosted generative replacement, generative recovery contracts, evidence tools, coherent memory, strict validation, and Docker production-parity testing
+- **Continuation status:** Read `docs/current-feature-handoff.md` before editing or deploying this branch. Commit `e5a74ad` is the verified baseline; deterministic fallback as final prose is being replaced by generative recovery contracts. Production is unchanged.
 
 ---
 
@@ -98,14 +98,14 @@ Live widget URL for embedding:
 | `logic.js` | Query intent detection, response generation, AI fallback orchestration |
 | `ui.js` | DOM creation, event handling, rendering of the floating chat widget |
 | `utils.js` | Shared helpers (GitHub API fetching) |
-| `server-gemini.js` | Backend server — local Ollama chat, Think Mode, safety, analytics, BM25 retrieval, and memory |
+| `server-gemini.js` | Backend server — generative chat, Think Mode, safety, analytics, BM25 retrieval, and memory |
 | `lib/rag-chunks.js` | Shared RAG chunk builder — flattens knowledge JSON into retrievable fact chunks |
 | `lib/bm25.js` | Okapi BM25 retrieval index — TF saturation, IDF weighting, document-length normalization |
 | `lib/rrf.js` | Dependency-free Reciprocal Rank Fusion for local literal, expanded, and contextual BM25 rankings |
 | `lib/query-understanding.js` | Query understanding pipeline — normalization, typo correction, intent classification, contextual rewriting |
 | `lib/agent-tools.js` | Allowlisted read-only agent tools for portfolio search, project comparison, role matching, and public profile evidence |
-| `lib/agent-fallback.js` | Deterministic local agent planning and evidence-based answers |
-| `lib/local-conversation.js` | Five-turn local memory shaping and strict Ollama RAG output validation |
+| `lib/agent-fallback.js` | Deterministic agent planning and evidence-based recovery contracts (transitional — being converted to generative) |
+| `lib/local-conversation.js` | Five-turn memory shaping and strict generative RAG output validation |
 | `lib/cost-ledger.js` | Metering tracker for every billable-adjacent event |
 | `lib/cost-insights.js` | Cost insights builder for the /api/costs dev endpoint |
 | `data/recruiter-knowledge.json` | Canonical bundled knowledge base |
@@ -117,8 +117,8 @@ Live widget URL for embedding:
 | `test/query-understanding.test.js` | Query understanding unit tests (15 tests) |
 | `test/agent-tools.test.js` | Read-only agent tool selection, evidence, privacy, and fail-closed tests |
 | `test/agent-fallback.test.js` | Local project comparison, role evidence, and interview workflow tests |
-| `deploy-gcp.sh` | Deploy script — copies server-gemini.js + lib/ to prod GCP VM and restarts service |
-| `deploy-gcp-dev.sh` | Deploy script — copies server-gemini.js + lib/ to dev GCP VM and restarts service |
+| `deploy-gcp.sh` | LEGACY deploy script — SCPs source to prod GCP VM. Being replaced by Docker image deployment |
+| `deploy-gcp-dev.sh` | LEGACY deploy script — SCPs source to dev GCP VM. Being replaced by Docker image deployment |
 | `.github/workflows/test.yml` | CI — runs unit tests, retrieval eval, syntax checks on develop |
 | `.github/workflows/sync-staging.yml` | CI — syncs develop to ProjectHub-dev staging repo |
 | `.github/workflows/pages.yml` | CI — deploys master to GitHub Pages |
@@ -203,14 +203,14 @@ Add an entry to `data.js` `projects` array and mirror it in `ProjectHub.js` if t
 | **Release, staging, branching, or rollback** | **`PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md`** |
 | **Branch protection or environment setup** | **`docs/branch-protection-setup.md`** |
 | Bounded agent tools, Ollama fallback, or private preview | `docs/agent-systems.md` |
-| Continue the active local-only feature branch | `docs/current-feature-handoff.md` |
+| Continue the active cloud-hosted generative feature branch | `docs/current-feature-handoff.md` |
 | Understand data flow, hosting, or backend migration | `docs/architecture-overview.md` |
 | Add a project, CodePen, suggestion, or update data | `docs/data-guide.md` |
 | Add/modify intents, AI fallback, response logic | `docs/api-guide.md` |
 | Run, test, publish, or do routine maintenance | `docs/common-tasks.md` |
 | Follow naming, file organization, or style rules | `docs/coding-standards.md` |
 | Deploy, secure, or monitor the GCP backend | `docs/backend-guide.md` |
-| Understand the local AI runtime | `docs/local-ai-runtime.md` |
+| Understand the AI inference runtime | `docs/local-ai-runtime.md` |
 
 ---
 
@@ -225,7 +225,7 @@ Add an entry to `data.js` `projects` array and mirror it in `ProjectHub.js` if t
 7. `docs/backend-guide.md` — GCP VM deployment, Caddy HTTPS, systemd, environment variables, cost checklist.
 8. `docs/local-ai-runtime.md` — Ollama runtime, retrieval, memory, validation, and local learning.
 9. `docs/branch-protection-setup.md` — Branch protection rules and GitHub environment configuration.
-10. `docs/agent-systems.md` — Local agent tools, constrained Ollama control, and the private SSH-tunneled feature preview.
+10. `docs/agent-systems.md` — Agent tools, constrained generative inference, and the private SSH-tunneled feature preview.
 11. `docs/current-feature-handoff.md` — Current commit, completed evidence, pending live acceptance, and continuation checklist.
 
 ---

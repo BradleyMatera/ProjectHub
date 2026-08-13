@@ -1,6 +1,6 @@
 # ProjectHub
 
-ProjectHub is Bradley Matera's embeddable portfolio and recruiter assistant. The browser widget is vanilla JavaScript and GitHub Pages friendly; Scout's backend runs local Ollama inference with grounded retrieval, memory, and read-only evidence tools.
+ProjectHub is Bradley Matera's embeddable portfolio and recruiter assistant. The browser widget is vanilla JavaScript and GitHub Pages friendly. Scout's backend is being developed as a cloud-hosted generative AI replacement for the existing website chatbot (Groq-hosted Llama 8B, retiring August 16, 2026). The backend provides grounded retrieval, memory, validation, and orchestration with generative inference.
 
 ```html
 <script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js"></script>
@@ -13,12 +13,13 @@ ProjectHub is Bradley Matera's embeddable portfolio and recruiter assistant. The
 - Retrieves verified facts with local BM25 search.
 - Fuses multiple local BM25 views with RRF for context-dependent follow-ups while leaving stronger standalone rankings unchanged.
 - Retains five recent turns plus topic stances for coherent multi-turn conversation.
-- Uses deterministic local tools for project comparison, role evidence, recruiter briefs, and interview questions.
-- Uses `qwen2.5:0.5b` through local Ollama for natural open-ended phrasing.
-- Rejects unsupported generations and returns a useful grounded answer instead.
-- Learns locally from weak answers, retaining only validated improvements on disk.
+- Uses deterministic read-only tools for evidence gathering (project comparison, role matching, profile lookup).
+- Uses `qwen2.5:1.5b` via Ollama as the development/evaluation inference runtime for natural conversational phrasing.
+- Validates all generated answers for factual accuracy, entity correctness, polarity, and safety.
+- Target architecture: cloud-hosted backend with generative inference for 100% of user-visible chat replies.
+- Future optimization: capable browsers may use WebGPU-assisted generation; incapable browsers use cloud generation.
 
-There are no hosted model APIs or model-routing switches in this codebase.
+The cloud backend remains authoritative for RAG, state, evidence, validation, and orchestration regardless of where generation occurs.
 
 ## Architecture
 
@@ -26,18 +27,33 @@ There are no hosted model APIs or model-routing switches in this codebase.
 GitHub Pages widget
         |
         v
-ProjectHub Express API on free VM
+ProjectHub Express API (cloud-hosted, Docker-containerized)
         |
         +-- query understanding
         +-- BM25 over bundled recruiter knowledge
         +-- five-turn memory and stance retention
-        +-- deterministic read-only tools
-        +-- local Ollama qwen2.5:0.5b
+        +-- deterministic read-only evidence tools
+        +-- generative inference (qwen2.5:1.5b via Ollama in dev/test)
         +-- safety and grounded-output validators
-        +-- deterministic fallback
+        +-- generative recovery contracts (no deterministic final prose)
 ```
 
-The model is intentionally small enough for the free VM. Retrieval, memory, tools, validation, caching, and deterministic fallbacks provide the reliability that raw model size cannot.
+The inference layer is behind an adapter boundary (`lib/local-model-router.js`) so the backend can switch between local Ollama (development), cloud inference (production), or browser WebGPU without rewriting the harness.
+
+## Docker (production-parity testing)
+
+```bash
+# Build and start the full stack (API + inference)
+docker compose up --build -d
+
+# Wait for health
+curl http://localhost:3000/health
+
+# Run tests against the containerized API
+docker compose run --rm test-runner npm test
+```
+
+See `docker-compose.yml` and `Dockerfile` for the production-equivalent container stack.
 
 ## Local development
 

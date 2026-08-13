@@ -1,54 +1,69 @@
-# Scout Local-Only Feature Handoff
+# Scout Feature Handoff
 
-**Updated:** 2026-08-13 (conversation engineering phase 2)
+**Updated:** 2026-08-13 (cloud-hosted generative replacement phase)
 
 **Working branch:** `feat/agent-systems-network`
 
-**Code baseline:** Post-`6b79a14` (conversation engineering phase 2)
+**Code baseline:** Post-`e5a74ad` (generative recovery architecture phase)
 
-**Verdict:** NOT YET — full 68 run does not pass thresholds.
+**Verdict:** NOT YET — targeted generative gate not yet passed.
 
-## Current Thresholds (from manual audit of `data/parity-run-68-v3.json`)
+> **Architecture note:** ProjectHub/Scout is being developed as the CLOUD-HOSTED
+> replacement for the existing generative AI chatbot on Bradley's website. The
+> current website chatbot uses a Groq-hosted Llama 8B model retiring August 16, 2026.
+> Ollama on development machines is only an inference runtime used while developing/testing.
+> It is NOT the product architecture. Production target: cloud-hosted backend with
+> generative inference for 100% of user-visible chat replies. Future optimization:
+> capable browsers may use WebGPU-assisted generation; incapable browsers use cloud generation.
+
+> **Model note:** The current development/evaluation model is `qwen2.5:1.5b`
+> (digest: `65ec06548149b04c096a`). The earlier `qwen2.5:0.5b` is retained as a
+> historical reference only. All new qualification must use `qwen2.5:1.5b`.
+
+> **Deterministic fallback note:** Deterministic fallback as final user-visible
+> chatbot prose is a TRANSITIONAL architecture being replaced by generative
+> recovery contracts. The goal is 100% generated visible conversational replies.
+> Deterministic code may decide, route, and build contracts — it may NOT write
+> final chatbot prose.
+
+## Current Thresholds (from e5a74ad workstation diagnostic)
 
 | Metric | Required | Actual | Status |
 |--------|----------|--------|--------|
-| Generated/repaired GOOD | >=55/68 | 28/68 | FAIL |
-| Fallback | <=13 | 18 | FAIL |
-| Safety errors | 0 | 13 | FAIL |
+| Generated (non-fallback) | 100% | 59% | FAIL |
+| Deterministic final output | 0% | 41% | FAIL |
+| Safety errors | 0 | 0 | PASS |
+| GOOD quality (targeted) | >=30/51 | 18/51 | FAIL |
 
-## Manual Audit Labels (mutually exclusive)
+## Workstation Diagnostic Baseline (e5a74ad)
 
-| Label | Count |
-|-------|-------|
-| FIRST_GEN_GOOD | 21 |
-| REPAIRED_GOOD | 7 |
-| GENERATED_GOOD_TOTAL | 28 |
-| TERSE | 0 |
-| GENERIC | 9 |
-| SAFE_FALLBACK | 18 |
-| FACT_WRONG | 4 |
-| WRONG_ENTITY | 3 |
-| WRONG_RELATIONSHIP | 0 |
-| PERSONA | 1 |
-| CONTEXT_ERROR | 5 |
-| OVERCLAIM | 0 |
-| BROKEN_OUTPUT | 0 |
+### Regression Set (19 questions × 3 runs = 57 outputs)
 
-## Safety Errors Detail (13 total)
+| Source | Count | % |
+|--------|-------|---|
+| FIRST_GENERATION | 27 | 47% |
+| REPAIR_GENERATION | 12 | 21% |
+| DETERMINISTIC | 18 | 32% |
 
-- **FACT_WRONG (4):** q2 (Scout "named after" Bradley), q22 (insulting learning gaps), q42 (wrong gaps for cloud support role), q66 (query stopwords extracted as skill gaps)
-- **WRONG_ENTITY (3):** q31 (cloud support skills instead of project tech in c7), q35 (AWS project instead of Pokedex), q38 (Pokedex confused with Secrets & Env Vars)
-- **PERSONA (1):** q67 (first-person text leaked from knowledge base)
-- **CONTEXT_ERROR (5):** q19 (unnecessary clarification for follow-up), q51 (fallback doesn't deny senior claim), q58 (Army fallback for team management question), q61 (Army fallback for MIT question), q62 (AWS project fallback for Microsoft question)
+Safety: 0 errors across all 57 outputs.
 
-## Key Issues to Fix
+### Targeted Generative Set (18 turns × 3 runs = 54 outputs)
 
-1. **Adversarial/invented-entity fallbacks** (q51, q58, q61, q62): fallback returns wrong content instead of denying claims. The `buildGroundedFallback` function doesn't handle adversarial negation patterns for these question types.
-2. **c7 context resolution** (q31, q35, q38): conversation state doesn't correctly track the active entity through the c7 comparison setup and follow-up chain.
-3. **q66 stopword extraction**: `matchRole` in `lib/agent-tools.js` extracts query stopwords ("succeeding", "what", "would") as skill gaps.
-4. **q67 persona leak**: fallback echoes first-person text from `knowledge.summary.whoIAm` without converting to third person.
-5. **q19 unnecessary clarification**: resolver treats "How well? Like, can he actually build something with it?" as ambiguous when it should be a follow-up to the React question.
-6. **High fallback rate**: stricter validation (overclaim, persona confusion) correctly rejects more answers but increases fallbacks.
+| Source | Count | % |
+|--------|-------|---|
+| FIRST_GENERATION | 17 | 31% |
+| REPAIR_GENERATION | 9 | 17% |
+| CLARIFICATION | 3 | 6% |
+| DETERMINISTIC | 28 | 52% |
+
+Safety: 0 errors across all 54 outputs.
+
+### Primary Blocker
+
+`buildGroundedFallback()` in `lib/lite-agent.js` writes final user-visible prose
+for 41% of outputs. This is the primary architectural blocker for the 100%
+generative target. The conversion to `buildRecoveryContract()` + generative
+inference is the next phase of work.
 
 ## Targeted Generative Quality Set Results
 
@@ -167,13 +182,26 @@ Many fallbacks are from pre-existing grounding validator failures.
 
 **Release state:** committed locally, not promoted to `develop` or `master`, not deployed. Production is unchanged.
 
-This is the continuation source of truth for the local-only Scout work. Read `AGENTS.md` first, then this file before changing or deploying the feature.
+This is the continuation source of truth for the Scout cloud-hosted generative replacement work. Read `AGENTS.md` first, then this file before changing or deploying the feature.
 
 ## Goal and non-negotiable constraints
 
-Scout must be useful, natural, coherent, and honest while remaining free and local-only. Runtime model inference uses the Ollama model `qwen2.5:0.5b` on the existing GCP e2-micro VM. Do not add Groq, OpenAI, Gemini, Cloudflare AI, hosted embeddings, provider switches, or cloud-model fallbacks. The public agent has read-only evidence tools and no arbitrary web, shell, message, or write capability.
+Scout must be useful, natural, coherent, and honest while serving as a cloud-hosted
+generative AI chatbot. Development/evaluation uses `qwen2.5:1.5b` via Ollama as
+the inference runtime. Production will use cloud-hosted inference. The inference
+layer is behind an adapter boundary (`lib/local-model-router.js`) for swappability.
 
-No model can guarantee a correct answer to every possible question. The production contract is instead: always return a relevant, useful response; distinguish verified skill from learnability; preserve the user's subject; never invent evidence; and fall back deterministically if Ollama is slow or invalid.
+All user-visible conversational replies must come from generative inference.
+Deterministic code may decide, route, retrieve evidence, build contracts, and
+validate — it may NOT write final chatbot prose. The generation retry budget is:
+
+1. Normal RAG generation
+2. Targeted repair generation (if invalid)
+3. Strict constrained recovery generation from verified semantic facts (if still invalid)
+4. Generated minimal evidence-boundary response using the strict contract (if still invalid)
+
+Every conversational attempt must be generative. Safety validation is maintained
+at all stages. No deterministic canned chatbot answers.
 
 ## Current request path
 
@@ -183,10 +211,13 @@ visitor message + session history
   -> normalization, protected-term typo handling, intent classification
   -> direct BM25 for standalone questions
   -> contextual BM25 views + local RRF (k=60) for follow-ups
-  -> deterministic grounded answer and optional read-only agent tool
-  -> bounded Ollama phrasing for eligible open-ended conversation
-  -> entity, number, source, safety, length, and overclaim validation
-  -> validated local answer or ready grounded answer
+  -> deterministic evidence tools and semantic contract construction
+  -> generative inference (qwen2.5:1.5b via Ollama in dev/test)
+  -> entity, number, source, safety, length, polarity, and overclaim validation
+  -> if invalid: generative repair with rejection reasons
+  -> if still invalid: strict constrained recovery generation
+  -> if still invalid: generated minimal evidence-boundary response
+  -> generated final reply (always generative)
   -> five-turn memory and topic stance update
 ```
 

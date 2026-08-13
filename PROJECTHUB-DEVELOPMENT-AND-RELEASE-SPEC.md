@@ -2,6 +2,16 @@
 
 This is the canonical release process for ProjectHub. Feature validation and production publication are separate decisions. Passing local tests or the private preview does not authorize a production deployment.
 
+> **Architecture:** ProjectHub/Scout is being developed as the cloud-hosted
+> replacement for the existing generative AI chatbot. The production deployment
+> target is a Docker-containerized backend with generative inference. The
+> current `deploy-gcp.sh` SCP-based deployment is a legacy path that will be
+> replaced by Docker image deployment after qualification. Do NOT use
+> `deploy-gcp.sh` for the new containerized path.
+>
+> **Model:** Current development/evaluation model is `qwen2.5:1.5b`.
+> The earlier `qwen2.5:0.5b` is historical only.
+
 ## Environments
 
 | Stage | Source | Frontend | Backend |
