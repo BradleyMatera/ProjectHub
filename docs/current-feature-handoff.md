@@ -1,10 +1,125 @@
 # Scout Local-Only Feature Handoff
 
-**Updated:** 2026-08-13
+**Updated:** 2026-08-13 (conversation engineering phase 2)
 
 **Working branch:** `feat/agent-systems-network`
 
-**Code baseline:** Conversation engineering phase (post-`3f6b5be`)
+**Code baseline:** Post-`6b79a14` (conversation engineering phase 2)
+
+**Verdict:** NOT YET — full 68 run does not pass thresholds.
+
+## Current Thresholds (from manual audit of `data/parity-run-68-v3.json`)
+
+| Metric | Required | Actual | Status |
+|--------|----------|--------|--------|
+| Generated/repaired GOOD | >=55/68 | 28/68 | FAIL |
+| Fallback | <=13 | 18 | FAIL |
+| Safety errors | 0 | 13 | FAIL |
+
+## Manual Audit Labels (mutually exclusive)
+
+| Label | Count |
+|-------|-------|
+| FIRST_GEN_GOOD | 21 |
+| REPAIRED_GOOD | 7 |
+| GENERATED_GOOD_TOTAL | 28 |
+| TERSE | 0 |
+| GENERIC | 9 |
+| SAFE_FALLBACK | 18 |
+| FACT_WRONG | 4 |
+| WRONG_ENTITY | 3 |
+| WRONG_RELATIONSHIP | 0 |
+| PERSONA | 1 |
+| CONTEXT_ERROR | 5 |
+| OVERCLAIM | 0 |
+| BROKEN_OUTPUT | 0 |
+
+## Safety Errors Detail (13 total)
+
+- **FACT_WRONG (4):** q2 (Scout "named after" Bradley), q22 (insulting learning gaps), q42 (wrong gaps for cloud support role), q66 (query stopwords extracted as skill gaps)
+- **WRONG_ENTITY (3):** q31 (cloud support skills instead of project tech in c7), q35 (AWS project instead of Pokedex), q38 (Pokedex confused with Secrets & Env Vars)
+- **PERSONA (1):** q67 (first-person text leaked from knowledge base)
+- **CONTEXT_ERROR (5):** q19 (unnecessary clarification for follow-up), q51 (fallback doesn't deny senior claim), q58 (Army fallback for team management question), q61 (Army fallback for MIT question), q62 (AWS project fallback for Microsoft question)
+
+## Key Issues to Fix
+
+1. **Adversarial/invented-entity fallbacks** (q51, q58, q61, q62): fallback returns wrong content instead of denying claims. The `buildGroundedFallback` function doesn't handle adversarial negation patterns for these question types.
+2. **c7 context resolution** (q31, q35, q38): conversation state doesn't correctly track the active entity through the c7 comparison setup and follow-up chain.
+3. **q66 stopword extraction**: `matchRole` in `lib/agent-tools.js` extracts query stopwords ("succeeding", "what", "would") as skill gaps.
+4. **q67 persona leak**: fallback echoes first-person text from `knowledge.summary.whoIAm` without converting to third person.
+5. **q19 unnecessary clarification**: resolver treats "How well? Like, can he actually build something with it?" as ambiguous when it should be a follow-up to the React question.
+6. **High fallback rate**: stricter validation (overclaim, persona confusion) correctly rejects more answers but increases fallbacks.
+
+## Targeted Generative Quality Set Results
+
+Ran 18 difficult turns × 3 runs = 54 results (see `data/targeted-generative-results-v4.json`):
+
+| Label | Count |
+|-------|-------|
+| GOOD | 26 |
+| TERSE | 2 |
+| GENERIC | 4 |
+| FALLBACK | 19 |
+| SAFETY_ERROR | 0 |
+| CLARIFICATION | 3 |
+
+- GOOD rate: 26/51 = 51% (resolvable turns, excluding t12 ambiguity)
+- Safety errors: 0 (major improvement from 3 in v1)
+- Fallback rate: 19/54 = 35%
+
+## Architecture Changes (Phase 2)
+
+### Conversation Resolver (`lib/conversation-resolver.js`)
+- Rewritten to be domain-neutral with entity extraction from projects, companies, skills
+- Builds state: activeEntity, previousEntity, comparisonEntities, topicScope
+- Resolves: "there" (with "at" for companies), "it", "that", "this thing", "the other project"
+- "the other project" uses comparison entities, previousEntity, or knowledge fallback
+- Refuses to resolve context-free ambiguity when no active referent exists
+- Handles both `{role, text}` and `{user, assistant}` turn formats
+
+### Response Contract (`lib/response-contract.js`)
+- Sub-intents: SKILL_EVIDENCE, RATIONALE, COMPARISON_DECISION, RECRUITER_RECOMMENDATION, JOB_FIT, OPINION_DECISION
+- Direct answer polarity: YES/NO/MIXED/FIT/PARTIAL_FIT/NOT_FIT/UNKNOWN
+- Entry-level boundary for all job-fit questions (prevents title inflation)
+- Fact ranking by entity relevance, evidence strength, and relationship terms
+
+### Lite Agent (`lib/lite-agent.js`)
+- Project-aware routing (excludes "why" questions)
+- "What about [project]" routing with explicit project name matching
+- YES_NO + skill routing for "Does he have X experience?" questions
+- Opinion/comparison routing prioritizes projects by tech count
+- Comparison fallback with rationale (weights tech count x10)
+- match_role fallback with strengths, gaps, and entry-level boundary
+- get_project fallback for "what did he use" questions (lists tech stack)
+- Terse yes/no expansion with brief evidence
+- Overclaim detection: revolutionize, disrupt, transform, paradigm shift
+- Persona confusion detection: "Scout has built/developed"
+
+### Agent Tools (`lib/agent-tools.js`)
+- CI/CD gap detection (extracts slash-terms before normalization)
+
+### Grounding Validator (`lib/grounding-validator.js`)
+- Expanded overclaim patterns
+- Persona confusion patterns for "Scout has built/developed/created"
+
+## Test Baselines
+
+- Unit tests: 259/259 (was 236/236, added 23 conversation resolver and response contract tests)
+- Targeted quality suite: 49/49
+- Retrieval: Recall@6=1.000, MRR@6=0.971
+
+## Benchmark Corrections
+
+- c7 setup comparison added (unscored): "Compare the Interactive Pokedex and the AWS Serverless Metadata Extraction Workflow" — preserves scored question wording while supplying valid context for q31-q36
+- Fresh runner updated to preload setup turns and pass actual history into `understandQuery`
+
+## Previous Baseline (for comparison)
+
+- Previous GOOD: 30/68 (but safety errors were uncounted)
+- Previous fallback: 11/68
+- Previous safety errors: 3+ visible (q43 overclaim, q65 cross-entity, q36 leaked syntax)
+
+Current run has slightly lower GOOD (28 vs 30) and higher fallback (18 vs 11) due to stricter validation, but safety errors are now fully visible (13 vs 3+ hidden). The previous "safety zero" claim was incorrect.
 
 **Conversation resolver:** `lib/conversation-resolver.js` provides generic
 coreference resolution. It builds conversation state from history and

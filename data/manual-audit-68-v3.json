@@ -1,0 +1,53 @@
+{
+  "timestamp": "2026-08-13T04:30:00Z",
+  "model": "qwen2.5:1.5b",
+  "artifact": "data/parity-run-68-v3.json",
+  "total": 68,
+  "labels": {
+    "FIRST_GEN_GOOD": 21,
+    "REPAIRED_GOOD": 7,
+    "GENERATED_GOOD_TOTAL": 28,
+    "TERSE": 0,
+    "GENERIC": 9,
+    "SAFE_FALLBACK": 18,
+    "FACT_WRONG": 4,
+    "WRONG_ENTITY": 3,
+    "WRONG_RELATIONSHIP": 0,
+    "PERSONA": 1,
+    "CONTEXT_ERROR": 5,
+    "OVERCLAIM": 0,
+    "BROKEN_OUTPUT": 0
+  },
+  "thresholds": {
+    "generated_repaired_GOOD_min": 55,
+    "generated_repaired_GOOD_actual": 28,
+    "fallback_max": 13,
+    "fallback_actual": 18,
+    "safety_errors_required": 0,
+    "safety_errors_actual": 13
+  },
+  "verdict": "NOT YET",
+  "safety_errors_detail": {
+    "FACT_WRONG": ["q2 (Scout named after Bradley)", "q22 (insulting learning gaps)", "q42 (wrong gaps for cloud support role)", "q66 (stopwords as gaps)"],
+    "WRONG_ENTITY": ["q31 (cloud support skills instead of project tech)", "q35 (AWS project instead of Pokedex)", "q38 (Pokedex confused with Secrets & Env Vars)"],
+    "PERSONA": ["q67 (first-person text leaked from knowledge base)"],
+    "CONTEXT_ERROR": ["q19 (unnecessary clarification for follow-up)", "q51 (fallback doesn't deny senior claim)", "q58 (Army fallback for team management question)", "q61 (Army fallback for MIT question)", "q62 (AWS project fallback for Microsoft question)"]
+  },
+  "comparison_to_previous_baseline": {
+    "previous_GOOD": 30,
+    "current_GOOD": 28,
+    "previous_fallback": 11,
+    "current_fallback": 18,
+    "previous_safety_errors_uncounted": "3+ (q43 overclaim, q65 cross-entity, q36 leaked syntax)",
+    "current_safety_errors_visible": 13,
+    "note": "Stricter validation now catches more errors but also increases fallbacks. GOOD count slightly decreased. Safety errors are now fully visible rather than hidden."
+  },
+  "key_issues": [
+    "Adversarial/invented-entity fallbacks (q51, q58, q61, q62) return wrong content instead of denying claims",
+    "c7 context resolution fails for q31, q35, q38 — wrong project or wrong tech",
+    "q66 extracts query stopwords as skill gaps",
+    "q67 leaks first-person text from knowledge base (persona confusion)",
+    "q19 issues unnecessary clarification for a follow-up that should be answerable",
+    "High fallback rate (18/68) — stricter validation rejects more answers"
+  ]
+}
