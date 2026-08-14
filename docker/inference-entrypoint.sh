@@ -28,7 +28,7 @@ fi
 
 # Pre-warm the model with a minimal request
 echo "Pre-warming $MODEL..."
-curl -sf http://127.0.0.1:11434/api/chat -d "{\"model\":\"$MODEL\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}],\"stream\":false,\"options\":{\"num_predict\":1}}" >/dev/null 2>&1 || true
+curl -sf http://127.0.0.1:11434/api/chat -d "{\"model\":\"$MODEL\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}],\"stream\":false,\"keep_alive\":-1,\"options\":{\"num_predict\":1,\"num_ctx\":${OLLAMA_CONTEXT_LENGTH:-1536}}}" >/dev/null 2>&1 || true
 echo "Model pre-warmed"
 
 # Record model digest for reproducibility verification
