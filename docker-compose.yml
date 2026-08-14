@@ -73,6 +73,8 @@ services:
       - ALLOWED_ORIGINS=https://bradleymatera.dev,https://www.bradleymatera.dev,https://bradleymatera.github.io
       - COST_TRACKER=false
       - OLLAMA_NUM_THREAD=4
+      - SCOUT_QUALIFICATION_MODE=true
+      - OLLAMA_MODEL_DIGEST=65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b
     depends_on:
       inference:
         condition: service_healthy
@@ -84,11 +86,11 @@ services:
         reservations:
           memory: 512M
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))\""]
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))\""]
       interval: 10s
       timeout: 5s
-      start_period: 15s
-      retries: 3
+      start_period: 30s
+      retries: 5
     networks:
       - scout-net
     restart: unless-stopped

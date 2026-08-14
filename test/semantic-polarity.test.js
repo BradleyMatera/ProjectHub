@@ -353,3 +353,159 @@ test('P3: entity-type validation uses graph-derived type words, not hardcoded li
   // The key point: the specific nouns are derived from the graph, not hardcoded.
   // This test verifies the function works for any domain.
 });
+
+// ============ P4: Greeting + Introduction Routing ============
+
+const { classifyResponsePolicy } = require('../lib/response-policy');
+
+// Extend test knowledge with collections for routing tests
+const testKnowledgeWithCollections = {
+  ...testKnowledge,
+  codePens: [
+    { name: 'Sourdough Timer', url: 'https://codepen.io/alice/pen/abc', category: 'Baking demo' },
+    { name: 'Recipe Card', url: 'https://codepen.io/alice/pen/def', category: 'Web demo' }
+  ]
+};
+
+test('P4: greeting with visitor name introduction routes to GREETING', () => {
+  const result = classifyResponsePolicy('Hi, my name is Bob', [], testKnowledge);
+  assert.equal(result.mode, 'GREETING', 'Should route to GREETING for intro');
+  assert.ok(result.visitorName, 'Should capture visitor name');
+  assert.equal(result.visitorName, 'Bob', 'Visitor name should be Bob');
+});
+
+test('P4: greeting with "I\'m" introduction routes to GREETING', () => {
+  const result = classifyResponsePolicy("Hello, I'm Sarah", [], testKnowledge);
+  assert.equal(result.mode, 'GREETING', 'Should route to GREETING for I\'m intro');
+  assert.ok(result.visitorName, 'Should capture visitor name');
+  assert.equal(result.visitorName, 'Sarah', 'Visitor name should be Sarah');
+});
+
+test('P4: bare greeting still routes to GREETING', () => {
+  const result = classifyResponsePolicy('Hi', [], testKnowledge);
+  assert.equal(result.mode, 'GREETING', 'Bare greeting should route to GREETING');
+  assert.ok(!result.visitorName, 'Bare greeting should not have visitor name');
+});
+
+test('P4: greeting with introduction is NOT OUT_OF_SCOPE', () => {
+  const result = classifyResponsePolicy('Hey, my name is Alex', [], testKnowledge);
+  assert.notEqual(result.mode, 'OUT_OF_SCOPE', 'Greeting with intro should NOT be OUT_OF_SCOPE');
+});
+
+// ============ P5: Knowledge Collection Discovery ============
+
+test('P5: question about configured collection (codePens) is NOT out-of-scope', () => {
+  const result = classifyResponsePolicy('What codePens has she published?', [], testKnowledgeWithCollections);
+  assert.notEqual(result.mode, 'OUT_OF_SCOPE', 'codePens question should not be OUT_OF_SCOPE');
+});
+
+test('P5: question about projects collection is NOT out-of-scope', () => {
+  const result = classifyResponsePolicy('What projects has she built?', [], testKnowledgeWithCollections);
+  assert.notEqual(result.mode, 'OUT_OF_SCOPE', 'Projects question should not be OUT_OF_SCOPE');
+});
+
+test('P5: question about experience collection is NOT out-of-scope', () => {
+  const result = classifyResponsePolicy('Tell me about her experience', [], testKnowledgeWithCollections);
+  assert.notEqual(result.mode, 'OUT_OF_SCOPE', 'Experience question should not be OUT_OF_SCOPE');
+});
+
+test('P5: project collection question routes to VERIFIED_FACT not PROFILE', () => {
+  const result = classifyResponsePolicy('Tell me about her projects', [], testKnowledgeWithCollections);
+  assert.equal(result.mode, 'VERIFIED_FACT', 'Project collection question should route to VERIFIED_FACT');
+});
+
+// ============ P6: Negative Claim Parsing + Premise Polarity ============
+
+test('P6: negative claim "didn\'t go to" parses with NEGATIVE polarity', () => {
+  const { parseClaim } = require('../lib/response-policy-classifier');
+  const claim = parseClaim("She didn't go to Le Cordon Bleu, right?", 'Alice Chen');
+  assert.ok(claim, 'Should parse a claim');
+  assert.equal(claim.premisePolarity, 'NEGATIVE', 'Should have NEGATIVE polarity');
+  assert.equal(claim.relation, 'attended', 'Should map to attended relation');
+});
+
+test('P6: negative claim "never worked at" parses with NEGATIVE polarity', () => {
+  const { parseClaim } = require('../lib/response-policy-classifier');
+  const claim = parseClaim('She never worked at Google, right?', 'Alice Chen');
+  assert.ok(claim, 'Should parse a claim');
+  assert.equal(claim.premisePolarity, 'NEGATIVE', 'Should have NEGATIVE polarity');
+  assert.equal(claim.relation, 'worked_at', 'Should map to worked_at relation');
+});
+
+test('P6: negative claim "wasn\'t a" parses with NEGATIVE polarity', () => {
+  const { parseClaim } = require('../lib/response-policy-classifier');
+  const claim = parseClaim("She wasn't a head chef, right?", 'Alice Chen');
+  assert.ok(claim, 'Should parse a claim');
+  assert.equal(claim.premisePolarity, 'NEGATIVE', 'Should have NEGATIVE polarity');
+  assert.equal(claim.relation, 'employed_as', 'Should map to employed_as relation');
+});
+
+test('P6: positive claim parses with POSITIVE polarity', () => {
+  const { parseClaim } = require('../lib/response-policy-classifier');
+  const claim = parseClaim('She was a senior chef at Google, right?', 'Alice Chen');
+  assert.ok(claim, 'Should parse a claim');
+  assert.equal(claim.premisePolarity, 'POSITIVE', 'Should have POSITIVE polarity');
+});
+
+test('P6: NEGATIVE + UNSUPPORTED → AFFIRM_NEGATION', () => {
+  const result = classifyResponsePolicy("She didn't go to Le Cordon Bleu, right?", [], testKnowledge);
+  assert.equal(result.mode, 'VERIFIED_FACT', 'NEGATIVE+UNSUPPORTED should be VERIFIED_FACT');
+  assert.equal(result.premisePolarity, 'NEGATIVE');
+  assert.equal(result.evidenceStatus, 'UNSUPPORTED');
+  assert.equal(result.answerStance, 'AFFIRM_NEGATION');
+  assert.equal(result.isNegationConfirmation, true);
+});
+
+test('P6: NEGATIVE + SUPPORTED → DENY_NEGATION', () => {
+  // Alice DID work at Sunrise Bakery, so "didn't work at Sunrise Bakery" is contradicted
+  const result = classifyResponsePolicy("She didn't work at Sunrise Bakery, right?", [], testKnowledge);
+  assert.equal(result.mode, 'FALSE_CLAIM_DENIAL', 'NEGATIVE+SUPPORTED should be FALSE_CLAIM_DENIAL');
+  assert.equal(result.premisePolarity, 'NEGATIVE');
+  assert.equal(result.answerStance, 'DENY_NEGATION');
+});
+
+test('P6: POSITIVE + UNSUPPORTED → DENY (FALSE_CLAIM_DENIAL)', () => {
+  const result = classifyResponsePolicy('She was a senior chef at Google, right?', [], testKnowledge);
+  assert.equal(result.mode, 'FALSE_CLAIM_DENIAL', 'POSITIVE+UNSUPPORTED should be FALSE_CLAIM_DENIAL');
+  assert.equal(result.premisePolarity, 'POSITIVE');
+  assert.equal(result.answerStance, 'DENY');
+});
+
+// ============ P7: OOS Semantic Policy Validator ============
+
+const { answerAddressesExternalTopic } = require('../lib/grounding-validator');
+
+test('P7: redirect answer does NOT address external topic', () => {
+  const answer = "I can't help with weather questions. I'm here to answer questions about Alice's baking experience, projects, and skills. What would you like to know about her?";
+  assert.equal(answerAddressesExternalTopic(answer, 'What is the weather like today?'), false,
+    'Redirect answer should not be flagged as addressing external topic');
+});
+
+test('P7: answer that actually answers the external topic IS flagged', () => {
+  const answer = 'The weather today is sunny with a high of 75 degrees. There is a light breeze from the west and no chance of rain.';
+  assert.equal(answerAddressesExternalTopic(answer, 'What is the weather like today?'), true,
+    'Answer that addresses weather should be flagged');
+});
+
+test('P7: answer about cooking is flagged for cooking question', () => {
+  const answer = 'To make sourdough bread, you need flour, water, salt, and a starter. Mix the ingredients and let it ferment overnight.';
+  assert.equal(answerAddressesExternalTopic(answer, 'How do I make sourdough bread?'), true,
+    'Answer that provides a recipe should be flagged');
+});
+
+test('P7: short redirect with subject mention is NOT flagged', () => {
+  const answer = "I'm not able to help with that. I can tell you about Alice's baking background, her projects like RecipeFinder, or her experience at Sunrise Bakery.";
+  assert.equal(answerAddressesExternalTopic(answer, 'What is the capital of France?'), false,
+    'Redirect mentioning subject topics should not be flagged');
+});
+
+// ============ P8: OUT_OF_SCOPE policy contract has redirect stance ============
+
+test('P8: OUT_OF_SCOPE contract includes requiredStance and boundary', () => {
+  const result = classifyResponsePolicy('What is the capital of France?', [], testKnowledge);
+  assert.equal(result.mode, 'OUT_OF_SCOPE');
+  assert.equal(result.requiredStance, 'REDIRECT_TO_SCOPE');
+  assert.ok(result.boundary, 'OOS contract should have a boundary');
+  assert.ok(result.boundary.includes('NOT answer'), 'Boundary should instruct not to answer');
+});
+

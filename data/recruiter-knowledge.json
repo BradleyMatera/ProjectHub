@@ -574,6 +574,43 @@
       "type": "platform"
     }
   ],
+  "codePens": [
+    {
+      "name": "JavaScript Garbage Collection Tutorial",
+      "url": "https://codepen.io/student-account-bradley-matera/pen/ZYzoWpL",
+      "category": "JavaScript tutorial"
+    },
+    {
+      "name": "React Calculator",
+      "url": "https://codepen.io/student-account-bradley-matera/pen/ogvGZjJ",
+      "category": "React demo"
+    },
+    {
+      "name": "Sound Machine",
+      "url": "https://codepen.io/student-account-bradley-matera/details/dPbVvoa",
+      "category": "JavaScript demo"
+    },
+    {
+      "name": "Markdown Previewer",
+      "url": "https://codepen.io/student-account-bradley-matera/pen/ZYzXeEJ",
+      "category": "JavaScript demo"
+    },
+    {
+      "name": "Random Quote Machine",
+      "url": "https://codepen.io/student-account-bradley-matera/pen/azoLpeG",
+      "category": "JavaScript demo"
+    },
+    {
+      "name": "Random Quote Generator",
+      "url": "https://codepen.io/student-account-bradley-matera/pen/PwYJWMY",
+      "category": "JavaScript demo"
+    },
+    {
+      "name": "Data Visualization",
+      "url": "https://codepen.io/student-account-bradley-matera/details/dyEYbPO",
+      "category": "Data visualization demo"
+    }
+  ],
   "interviewStories": [
     {
       "prompt": "Tell me about yourself",

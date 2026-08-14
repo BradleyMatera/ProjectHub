@@ -82,6 +82,10 @@ let knowledgeCacheAt = 0;
 let bm25Index = null;
 let ragChunks = null;
 const KNOWLEDGE_CACHE_MS = 15 * 60 * 1000;
+
+// Readiness state — service is not ready until model verified and knowledge loaded
+let modelVerified = false;
+let knowledgeReady = false;
 const USE_BM25_RETRIEVAL = process.env.USE_BM25_RETRIEVAL !== 'false';
 const RESPONSE_CACHE_MS = 30 * 60 * 1000; // 30 min — more cache hits = fewer LLM calls
 const RESPONSE_CACHE_LIMIT = 200;
@@ -170,6 +174,22 @@ app.use('/api/chat', rateLimit({
 
 app.get('/', (req, res) => {
   res.json({ ok: true, service: 'Bradley Matera Recruiter Chat API', status: 'online', backend: 'ollama-rag-memory-tools' });
+});
+
+// Liveness probe — process is alive
+app.get('/health/live', (req, res) => {
+  res.status(200).json({ ok: true, status: 'alive' });
+});
+
+// Readiness probe — service is ready to accept traffic only when model verified and knowledge loaded
+app.get('/health/ready', (req, res) => {
+  const ready = modelVerified && knowledgeReady;
+  res.status(ready ? 200 : 503).json({
+    ok: ready,
+    status: ready ? 'ready' : 'warming',
+    modelVerified,
+    knowledgeReady,
+  });
 });
 
 const DEPLOYED_AT = Date.now();
@@ -465,6 +485,7 @@ async function fetchKnowledge() {
     const json = JSON.parse(fs.readFileSync(KNOWLEDGE_FILE, 'utf8'));
     knowledgeCache = json;
     knowledgeCacheAt = now;
+    knowledgeReady = true;
     // Rebuild BM25 index and RAG chunks when knowledge refreshes
     try {
       ragChunks = buildRagChunks(json);
@@ -4272,6 +4293,7 @@ async function verifyModelDigest() {
     } else if (!qualificationMode) {
       console.log('[startup] Development mode: digest not pinned (set OLLAMA_MODEL_DIGEST to pin)');
     }
+    modelVerified = true;
   } catch (e) {
     console.error(`[startup] Model verification failed: ${e.message}`);
     if (qualificationMode && process.env.SCOUT_QUALIFICATION_FAIL_OPEN !== 'true') {
