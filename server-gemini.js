@@ -3794,7 +3794,7 @@ app.post('/api/chat', async (req, res) => {
   // The AbortController is request-scoped and passed through runLiteAgent
   // → router.generate → Ollama fetch. When the timer fires, controller.abort()
   // terminates all outstanding inference calls immediately.
-  const REQUEST_DEADLINE_MS = 15000;
+  const REQUEST_DEADLINE_MS = parseInt(process.env.REQUEST_DEADLINE_MS || '15000', 10);
   const deadlineAt = reqStart + REQUEST_DEADLINE_MS;
   let deadlineFired = false;
   const requestAbortController = new AbortController();
@@ -3803,7 +3803,7 @@ app.post('/api/chat', async (req, res) => {
       deadlineFired = true;
       requestAbortController.abort();
       pipeline.push('deadline-exceeded');
-      console.error(`[chat] 15s deadline exceeded for session ${sessionId}`);
+      console.error(`[chat] ${REQUEST_DEADLINE_MS / 1000}s deadline exceeded for session ${sessionId}`);
       res.json({
         ok: false,
         error: 'INFERENCE_UNAVAILABLE',
@@ -3986,6 +3986,7 @@ app.post('/api/chat', async (req, res) => {
               queryRewritten: agentResult.rewritten
             } : {})
           };
+          if (res.headersSent) return;
           return res.json({
             ok: false,
             error: 'INFERENCE_UNAVAILABLE',
@@ -4052,6 +4053,7 @@ app.post('/api/chat', async (req, res) => {
     //     Deterministic prose is NO LONGER used as final user-visible text.
     if (!generated) {
       pipeline.push('inference-unavailable:no-generative-path');
+      if (res.headersSent) return;
       return res.json({
         ok: false,
         error: 'INFERENCE_UNAVAILABLE',
@@ -4128,12 +4130,12 @@ app.post('/api/chat', async (req, res) => {
     sessionState.updateState(sessionId, userMessage, reply, knowledge, null);
     payload.sessionMemory = { turns: Math.min(history.length + 1, CONVERSATION_MAX_TURNS), retained: true };
     clearTimeout(deadlineTimer);
-    return res.json(payload);
+    if (!res.headersSent) return res.json(payload);
   } catch (err) {
     console.error('Chat error:', err);
     pipeline.push('error');
     clearTimeout(deadlineTimer);
-    return res.json({
+    if (!res.headersSent) return res.json({
       ok: false,
       error: 'INFERENCE_UNAVAILABLE',
       reply: 'Scout is temporarily unavailable. Please try again in a moment.',
@@ -4143,6 +4145,8 @@ app.post('/api/chat', async (req, res) => {
       latencyMs: Date.now() - reqStart
     });
   }
+  // If we reach here without sending a response, the deadline timer fired
+  // and already sent INFERENCE_UNAVAILABLE. Nothing more to do.
 });
 
 // Flush stats after each request if dirty

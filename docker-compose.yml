@@ -20,7 +20,7 @@ services:
       - OLLAMA_MODEL=qwen2.5:1.5b
       - OLLAMA_KEEP_ALIVE=-1
       - OLLAMA_NUM_THREAD=4
-      - OLLAMA_CONTEXT_SIZE=4096
+      - OLLAMA_CONTEXT_SIZE=2048
     volumes:
       - ollama-models:/root/.ollama
     deploy:
@@ -58,7 +58,7 @@ services:
       - OLLAMA_AGENT_ENABLED=true
       - OLLAMA_AGENT_MODEL=qwen2.5:1.5b
       - OLLAMA_AGENT_TIMEOUT_MS=3000
-      - OLLAMA_AGENT_CONTEXT=4096
+      - OLLAMA_AGENT_CONTEXT=2048
       - OLLAMA_AGENT_KEEP_ALIVE=-1
       - AGENT_ENABLED=true
       - SCOUT_AGENT_ENGINE_ENABLED=true
@@ -66,12 +66,13 @@ services:
       - SCOUT_LITE_TIMEOUT_MS=12000
       - SCOUT_LITE_REPAIR_TIMEOUT_MS=8000
       - SCOUT_LITE_NUM_CTX=2048
-      - SCOUT_LITE_NUM_PREDICT=150
+      - SCOUT_LITE_NUM_PREDICT=80
       - USE_BM25_RETRIEVAL=true
       - RATE_LIMIT_MAX=20
       - KNOWLEDGE_FILE=data/recruiter-knowledge.json
       - ALLOWED_ORIGINS=https://bradleymatera.dev,https://www.bradleymatera.dev,https://bradleymatera.github.io
       - COST_TRACKER=false
+      - OLLAMA_NUM_THREAD=4
     depends_on:
       inference:
         condition: service_healthy

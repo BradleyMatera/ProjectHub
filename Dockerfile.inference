@@ -1,6 +1,11 @@
-# Base image pinned by digest for reproducibility.
-# ollama/ollama:0.3.14 @ sha256:bb794447aa8d682a03e620ef0b2bf6d67bee361e1f3565d55224eed059737ad4
-FROM ollama/ollama:0.3.14@sha256:bb794447aa8d682a03e620ef0b2bf6d67bee361e1f3565d55224eed059737ad4
+# Base image — ollama/ollama:0.3.14
+# Force amd64 platform — the arm64 image runs under QEMU emulation on amd64 hosts
+# and is ~10x slower, causing all inference to exceed the 15s deadline.
+# amd64 digest: sha256:85c38297df360dd3742e89af3a23c051b33f3ae4baaf4ca8e92fcf1dfc6ec7ac
+# arm64 digest: sha256:bb794447aa8d682a03e620ef0b2bf6d67bee361e1f3565d55224eed059737ad4
+# Note: Digest pinning with --platform has a Docker builder bug with attestation
+# manifests (application/vnd.in-toto+json). Using tag + platform until fixed.
+FROM --platform=linux/amd64 ollama/ollama:0.3.14
 
 # Model is pulled at startup via entrypoint script
 ENV OLLAMA_HOST=0.0.0.0:11434
