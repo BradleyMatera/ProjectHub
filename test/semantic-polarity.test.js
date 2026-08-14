@@ -447,6 +447,21 @@ test('P6: positive claim parses with POSITIVE polarity', () => {
   assert.equal(claim.premisePolarity, 'POSITIVE', 'Should have POSITIVE polarity');
 });
 
+test('P6: "no evidence" wrapper parses as NEGATIVE polarity', () => {
+  const { parseClaim } = require('../lib/response-policy-classifier');
+  const claim = parseClaim('There is no evidence she attended Le Cordon Bleu, right?', 'Alice Chen');
+  assert.ok(claim, 'Should parse a claim');
+  assert.equal(claim.premisePolarity, 'NEGATIVE', 'Should have NEGATIVE polarity');
+  assert.equal(claim.relation, 'attended', 'Should map to attended relation');
+});
+
+test('P6: "no proof" wrapper parses as NEGATIVE polarity', () => {
+  const { parseClaim } = require('../lib/response-policy-classifier');
+  const claim = parseClaim('No proof she worked at Google, right?', 'Alice Chen');
+  assert.ok(claim, 'Should parse a claim');
+  assert.equal(claim.premisePolarity, 'NEGATIVE', 'Should have NEGATIVE polarity');
+});
+
 test('P6: NEGATIVE + UNSUPPORTED → AFFIRM_NEGATION', () => {
   const result = classifyResponsePolicy("She didn't go to Le Cordon Bleu, right?", [], testKnowledge);
   assert.equal(result.mode, 'VERIFIED_FACT', 'NEGATIVE+UNSUPPORTED should be VERIFIED_FACT');

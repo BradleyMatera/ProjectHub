@@ -152,7 +152,11 @@ const DETERMINISTIC_PATTERNS = [
   /^I don't have enough grounded information/i,
   /^No, he does not have a/i,
   /^He is an entry-level developer with internship/i,
-  /^That was not professional work/i
+  /^That was not professional work/i,
+  // Canned OOS redirect — must be generative, not deterministic
+  /^I'm Scout, a recruiter assistant for .+\. I can only answer questions about his professional background/i,
+  // Canned refusal — must be generative, not deterministic
+  /^I can't share private or personal information about .+\. I can only provide publicly available/i
 ];
 
 function isDeterministicProse(reply) {

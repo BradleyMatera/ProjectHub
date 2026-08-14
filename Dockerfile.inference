@@ -1,18 +1,17 @@
-# Base image — ollama/ollama:0.3.14
+# Base image — ollama/ollama:0.7.1
+# Supports OLLAMA_CONTEXT_LENGTH env var for context window control.
 # Force amd64 platform — the arm64 image runs under QEMU emulation on amd64 hosts
 # and is ~10x slower, causing all inference to exceed the 15s deadline.
-# amd64 digest: sha256:85c38297df360dd3742e89af3a23c051b33f3ae4baaf4ca8e92fcf1dfc6ec7ac
-# arm64 digest: sha256:bb794447aa8d682a03e620ef0b2bf6d67bee361e1f3565d55224eed059737ad4
 # Note: Digest pinning with --platform has a Docker builder bug with attestation
 # manifests (application/vnd.in-toto+json). Using tag + platform until fixed.
-FROM --platform=linux/amd64 ollama/ollama:0.3.14
+FROM --platform=linux/amd64 ollama/ollama:0.7.1
 
 # Model is pulled at startup via entrypoint script
 ENV OLLAMA_HOST=0.0.0.0:11434
 ENV OLLAMA_MODEL=qwen2.5:1.5b
 ENV OLLAMA_KEEP_ALIVE=-1
 ENV OLLAMA_NUM_THREAD=2
-ENV OLLAMA_CONTEXT_SIZE=2048
+ENV OLLAMA_CONTEXT_LENGTH=1536
 
 # Copy the model pull script
 COPY docker/inference-entrypoint.sh /entrypoint.sh

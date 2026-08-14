@@ -20,7 +20,7 @@ services:
       - OLLAMA_MODEL=qwen2.5:1.5b
       - OLLAMA_KEEP_ALIVE=-1
       - OLLAMA_NUM_THREAD=4
-      - OLLAMA_CONTEXT_SIZE=2048
+      - OLLAMA_CONTEXT_LENGTH=1536
     volumes:
       - ollama-models:/root/.ollama
     deploy:
@@ -63,10 +63,12 @@ services:
       - AGENT_ENABLED=true
       - SCOUT_AGENT_ENGINE_ENABLED=true
       - SCOUT_AGENT_MODE=lite
+      - REQUEST_DEADLINE_MS=15000
       - SCOUT_LITE_TIMEOUT_MS=12000
       - SCOUT_LITE_REPAIR_TIMEOUT_MS=8000
-      - SCOUT_LITE_NUM_CTX=2048
-      - SCOUT_LITE_NUM_PREDICT=80
+      - SCOUT_LITE_MAX_TOKENS=200
+      - SCOUT_LITE_NUM_CTX=1536
+      - SCOUT_LITE_NUM_PREDICT=40
       - USE_BM25_RETRIEVAL=true
       - RATE_LIMIT_MAX=20
       - KNOWLEDGE_FILE=data/recruiter-knowledge.json
