@@ -1,4 +1,6 @@
-FROM ollama/ollama:0.3.14
+# Base image pinned by digest for reproducibility.
+# ollama/ollama:0.3.14 @ sha256:bb794447aa8d682a03e620ef0b2bf6d67bee361e1f3565d55224eed059737ad4
+FROM ollama/ollama:0.3.14@sha256:bb794447aa8d682a03e620ef0b2bf6d67bee361e1f3565d55224eed059737ad4
 
 # Model is pulled at startup via entrypoint script
 ENV OLLAMA_HOST=0.0.0.0:11434

@@ -3790,14 +3790,18 @@ app.post('/api/chat', async (req, res) => {
   const referrer = extractReferrer(req);
   const pipeline = [];
 
-  // 15-second absolute request deadline — if the response hasn't been sent
-  // by this point, return INFERENCE_UNAVAILABLE regardless of what stage
-  // the agent pipeline is in.
+  // 15-second absolute request deadline with propagated cancellation.
+  // The AbortController is request-scoped and passed through runLiteAgent
+  // → router.generate → Ollama fetch. When the timer fires, controller.abort()
+  // terminates all outstanding inference calls immediately.
   const REQUEST_DEADLINE_MS = 15000;
+  const deadlineAt = reqStart + REQUEST_DEADLINE_MS;
   let deadlineFired = false;
+  const requestAbortController = new AbortController();
   const deadlineTimer = setTimeout(() => {
     if (!res.headersSent) {
       deadlineFired = true;
+      requestAbortController.abort();
       pipeline.push('deadline-exceeded');
       console.error(`[chat] 15s deadline exceeded for session ${sessionId}`);
       res.json({
@@ -3917,7 +3921,9 @@ app.post('/api/chat', async (req, res) => {
               knowledge,
               sessionId,
               model: localModelRouter.agentModel(),
-              policyContract
+              policyContract,
+              deadlineAt,
+              abortSignal: requestAbortController.signal
             })
           : await runAgentLoop({
               question: userMessage,
@@ -4212,9 +4218,22 @@ if (COST_TRACKER && costLedger) {
 
 // Model/image digest enforcement — verify the exact model image is loaded
 // at startup to prevent silent model drift in production.
+// In qualification mode (SCOUT_QUALIFICATION_MODE=true), a pinned digest
+// is REQUIRED. In development mode, the digest pin is optional.
 async function verifyModelDigest() {
   const expectedModel = process.env.GEN_MODEL || 'qwen2.5:1.5b';
-  const expectedDigest = process.env.OLLAMA_MODEL_DIGEST || ''; // optional pin
+  const expectedDigest = process.env.OLLAMA_MODEL_DIGEST || '';
+  const qualificationMode = process.env.SCOUT_QUALIFICATION_MODE === 'true';
+
+  if (qualificationMode && !expectedDigest) {
+    console.error('[startup] QUALIFICATION MODE: OLLAMA_MODEL_DIGEST is required but not set.');
+    console.error('[startup] Set OLLAMA_MODEL_DIGEST to the known-qualified digest or disable SCOUT_QUALIFICATION_MODE.');
+    if (process.env.SCOUT_QUALIFICATION_FAIL_OPEN !== 'true') {
+      console.error('[startup] STARTUP FAILED: qualification requires pinned digest.');
+      process.exit(1);
+    }
+  }
+
   try {
     const resp = await fetch(`${OLLAMA_URL}/api/tags`, { method: 'GET' });
     if (!resp.ok) {
@@ -4227,6 +4246,10 @@ async function verifyModelDigest() {
     if (!found) {
       console.error(`[startup] MODEL NOT FOUND: expected "${expectedModel}", available: [${models.map(m => m.name).join(', ')}]`);
       console.error(`[startup] Pull the model with: ollama pull ${expectedModel}`);
+      if (qualificationMode && process.env.SCOUT_QUALIFICATION_FAIL_OPEN !== 'true') {
+        console.error('[startup] STARTUP FAILED: qualification requires model to be present.');
+        process.exit(1);
+      }
       return;
     }
     const digest = found.digest || 'unknown';
@@ -4236,11 +4259,21 @@ async function verifyModelDigest() {
     if (expectedDigest && digest !== expectedDigest) {
       console.error(`[startup] DIGEST MISMATCH: expected ${expectedDigest}, got ${digest}`);
       console.error(`[startup] Repull with: ollama pull ${expectedModel}`);
+      if (qualificationMode && process.env.SCOUT_QUALIFICATION_FAIL_OPEN !== 'true') {
+        console.error('[startup] STARTUP FAILED: qualification requires exact digest match.');
+        process.exit(1);
+      }
     } else if (expectedDigest) {
       console.log(`[startup] Digest matches expected pin: ${expectedDigest}`);
+    } else if (!qualificationMode) {
+      console.log('[startup] Development mode: digest not pinned (set OLLAMA_MODEL_DIGEST to pin)');
     }
   } catch (e) {
     console.error(`[startup] Model verification failed: ${e.message}`);
+    if (qualificationMode && process.env.SCOUT_QUALIFICATION_FAIL_OPEN !== 'true') {
+      console.error('[startup] STARTUP FAILED: qualification requires model verification.');
+      process.exit(1);
+    }
   }
 }
 

@@ -1,3 +1,12 @@
+# ProjectHub Docker Compose — Candidate Resource Profile
+#
+# Resource limits below are CANDIDATE settings for local/Docker qualification
+# testing with qwen2.5:1.5b. They are NOT claimed as production-parity.
+# Production deployment will use a cloud-hosted inference provider with
+# right-sized resources determined during cloud qualification.
+#
+# Inference container: 4 vCPU / 4 GB (candidate for local Ollama with 1.5B model)
+# API container: 2 vCPU / 1 GB (candidate for Node.js API server)
 services:
   inference:
     build:
