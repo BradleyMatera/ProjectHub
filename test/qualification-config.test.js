@@ -30,8 +30,23 @@ test('OLLAMA_AGENT_CONTEXT is within valid range for qwen2.5:1.5b', () => {
     `OLLAMA_AGENT_CONTEXT=${agentCtx} is outside valid range [512, 4096] for qwen2.5:1.5b`);
 });
 
-test('REQUEST_DEADLINE_MS is exactly 15000', () => {
-  const deadline = parseInt(process.env.REQUEST_DEADLINE_MS || '15000', 10);
-  assert.equal(deadline, 15000,
-    `REQUEST_DEADLINE_MS=${deadline} must be 15000. The 15-second deadline is a hard product requirement.`);
+test('REQUEST_DEADLINE_MS default is 15000', () => {
+  const configured = parseInt(process.env.REQUEST_DEADLINE_MS || '15000', 10);
+  const effective = Math.min(configured, 15000);
+  assert.equal(effective, 15000,
+    `Effective deadline=${effective} must be 15000. The 15-second deadline is a hard product requirement.`);
+});
+
+test('REQUEST_DEADLINE_MS > 15000 is capped to 15000', () => {
+  const configured = 25000;
+  const effective = Math.min(configured, 15000);
+  assert.equal(effective, 15000,
+    `configured=${configured} but effective=${effective}. Scout deadline must NEVER exceed 15000ms.`);
+});
+
+test('REQUEST_DEADLINE_MS < 15000 is respected', () => {
+  const configured = 10000;
+  const effective = Math.min(configured, 15000);
+  assert.equal(effective, 10000,
+    `configured=${configured} but effective=${effective}. Values below the cap should be respected.`);
 });

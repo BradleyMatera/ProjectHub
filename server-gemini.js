@@ -173,7 +173,8 @@ app.use('/api/chat', rateLimit({
 }));
 
 app.get('/', (req, res) => {
-  res.json({ ok: true, service: 'Bradley Matera Recruiter Chat API', status: 'online', backend: 'ollama-rag-memory-tools' });
+  const provider = process.env.SCOUT_INFERENCE_PROVIDER || 'ollama';
+  res.json({ ok: true, service: 'Bradley Matera Recruiter Chat API', status: 'online', backend: `scout-rag-memory-tools:${provider}` });
 });
 
 // Liveness probe — process is alive
@@ -218,7 +219,7 @@ app.get('/health', async (req, res) => {
     providerHealth: persistentStats.providerHealth,
     recentSessions: getRecentSessions(),
     localOnly: false,
-    models: [{ engine: 'ollama', model: GEN_MODEL, local: true }],
+    models: [{ engine: process.env.SCOUT_INFERENCE_PROVIDER || 'ollama', model: GEN_MODEL, local: (process.env.SCOUT_INFERENCE_PROVIDER || 'ollama') === 'ollama' }],
     agent: {
       enabled: AGENT_ENABLED,
       scoutEngineEnabled: SCOUT_AGENT_ENGINE_ENABLED,
@@ -3815,7 +3816,7 @@ app.post('/api/chat', async (req, res) => {
   // The AbortController is request-scoped and passed through runLiteAgent
   // → router.generate → Ollama fetch. When the timer fires, controller.abort()
   // terminates all outstanding inference calls immediately.
-  const REQUEST_DEADLINE_MS = parseInt(process.env.REQUEST_DEADLINE_MS || '15000', 10);
+  const REQUEST_DEADLINE_MS = Math.min(parseInt(process.env.REQUEST_DEADLINE_MS || '15000', 10), 15000);
   const deadlineAt = reqStart + REQUEST_DEADLINE_MS;
   let deadlineFired = false;
   const requestAbortController = new AbortController();
@@ -3861,6 +3862,7 @@ app.post('/api/chat', async (req, res) => {
       lastReplyProvider = cached.payload.provider || 'cached';
       recordRequest(userMessage, 'cached', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: cached.payload.reply, groundedReply: cached.payload.reply, sessionId });
       rememberConversation(sessionId, userMessage, cached.payload.reply);
+      sessionState.updateState(sessionId, userMessage, cached.payload.reply, knowledgeCache || null, null);
       return res.json({ ...cached.payload, cached: true, pipeline, sessionMemory: { turns: Math.min(history.length + 1, CONVERSATION_MAX_TURNS), retained: true } });
     }
     pipeline.push('cache-miss');
@@ -3955,10 +3957,13 @@ app.post('/api/chat', async (req, res) => {
               model: localModelRouter.agentModel()
             });
 
-        // Meter each Ollama call
+        // Derive actual inference provider from router (not hardcoded)
+        const inferenceProvider = localModelRouter.inferenceProvider || 'ollama';
+
+        // Meter each generative call with correct provider
         for (const evt of (agentResult.events || [])) {
           if (evt.type === 'reasoning_call' || evt.type === 'synthesis_call' || evt.type === 'lite_generate_call' || evt.type === 'lite_repair_call') {
-            meterEvent({ source: 'ollama', kind: 'llm', meta: { model: agentResult.model, agentEngine: true, mode: SCOUT_AGENT_MODE, step: evt.step } });
+            meterEvent({ source: inferenceProvider, kind: 'llm', meta: { model: agentResult.model, agentEngine: true, mode: SCOUT_AGENT_MODE, step: evt.step } });
           }
           if (evt.type === 'tool_result' || evt.type === 'lite_tool_result') {
             meterEvent({ source: 'agent-engine', kind: 'tool', meta: { tool: evt.tool, agentEngine: true, mode: SCOUT_AGENT_MODE } });
@@ -3966,25 +3971,29 @@ app.post('/api/chat', async (req, res) => {
         }
 
         if (!agentResult.fallback && agentResult.reply) {
-          pipeline.push(`scout-agent-${SCOUT_AGENT_MODE}:ollama-agent:${agentResult.outcome || 'success'}`);
+          pipeline.push(`scout-agent-${SCOUT_AGENT_MODE}:${inferenceProvider}:${agentResult.outcome || 'success'}`);
           reply = agentResult.reply;
-          provider = SCOUT_AGENT_MODE === 'lite' ? 'ollama-lite' : 'ollama-agent';
+          provider = inferenceProvider;
           model = agentResult.model;
           agentMeta = {
             used: true,
             engine: SCOUT_AGENT_MODE === 'lite' ? 'scout-lite' : 'scout-agent',
             agentMode: SCOUT_AGENT_MODE,
+            inferenceProvider,
             tools: (agentResult.toolResults || []).map(t => t.tool),
             steps: agentResult.steps.length,
             contextTokens: agentResult.contextTokens,
             validation: agentResult.validation?.verdict || null,
             outcome: agentResult.outcome || 'accepted',
-            languageLayer: 'ollama',
+            executionEngine: SCOUT_AGENT_MODE === 'lite' ? 'scout-lite' : 'scout-agent',
+            languageLayer: inferenceProvider,
             languageModel: agentResult.model,
             ...(SCOUT_AGENT_MODE === 'lite' ? {
               operation: agentResult.operation,
               queryRewritten: agentResult.rewritten,
-              rewrittenQuery: agentResult.rewrittenQuery
+              rewrittenQuery: agentResult.rewrittenQuery,
+              generationCalls: agentResult.generationCalls || [],
+              actualProviderCalls: agentResult.actualProviderCalls ?? null
             } : {})
           };
           agentEvents = agentResult.events;
@@ -3996,7 +4005,9 @@ app.post('/api/chat', async (req, res) => {
           agentMeta = {
             used: true,
             engine: SCOUT_AGENT_MODE === 'lite' ? 'scout-lite' : 'scout-agent',
+            executionEngine: SCOUT_AGENT_MODE === 'lite' ? 'scout-lite' : 'scout-agent',
             agentMode: SCOUT_AGENT_MODE,
+            inferenceProvider,
             tools: (agentResult.toolResults || []).map(t => t.tool),
             steps: agentResult.steps.length,
             contextTokens: agentResult.contextTokens,
@@ -4004,7 +4015,9 @@ app.post('/api/chat', async (req, res) => {
             generationAttempts: agentResult.generationAttempts || 0,
             ...(SCOUT_AGENT_MODE === 'lite' ? {
               operation: agentResult.operation,
-              queryRewritten: agentResult.rewritten
+              queryRewritten: agentResult.rewritten,
+              generationCalls: agentResult.generationCalls || [],
+              actualProviderCalls: agentResult.actualProviderCalls ?? null
             } : {})
           };
           if (res.headersSent) return;
@@ -4013,7 +4026,7 @@ app.post('/api/chat', async (req, res) => {
             error: 'INFERENCE_UNAVAILABLE',
             reply: 'Scout is temporarily unavailable. Please try again in a moment.',
             pipeline,
-            provider: 'ollama-recovery',
+            provider: inferenceProvider,
             model: agentResult.model,
             latencyMs: Date.now() - reqStart,
             agentMeta,
@@ -4026,7 +4039,9 @@ app.post('/api/chat', async (req, res) => {
           agentMeta = {
             used: true,
             engine: SCOUT_AGENT_MODE === 'lite' ? 'scout-lite' : 'scout-agent',
+            executionEngine: SCOUT_AGENT_MODE === 'lite' ? 'scout-lite' : 'scout-agent',
             agentMode: SCOUT_AGENT_MODE,
+            inferenceProvider,
             tools: (agentResult.toolResults || []).map(t => t.tool),
             steps: agentResult.steps.length,
             contextTokens: agentResult.contextTokens,
@@ -4034,7 +4049,9 @@ app.post('/api/chat', async (req, res) => {
             fallbackReason: agentResult.events?.find(e => e.type === 'agent_fallback' || e.type === 'lite_fallback')?.reason || 'unknown',
             ...(SCOUT_AGENT_MODE === 'lite' ? {
               operation: agentResult.operation,
-              queryRewritten: agentResult.rewritten
+              queryRewritten: agentResult.rewritten,
+              generationCalls: agentResult.generationCalls || [],
+              actualProviderCalls: agentResult.actualProviderCalls ?? null
             } : {})
           };
         }
@@ -4246,6 +4263,13 @@ if (COST_TRACKER && costLedger) {
 // In qualification mode (SCOUT_QUALIFICATION_MODE=true), a pinned digest
 // is REQUIRED. In development mode, the digest pin is optional.
 async function verifyModelDigest() {
+  // When using Cloudflare Workers AI, there is no local Ollama model to verify.
+  if (process.env.SCOUT_INFERENCE_PROVIDER === 'cloudflare') {
+    const cfModel = process.env.CLOUDFLARE_MODEL || '@cf/meta/llama-3.2-3b-instruct';
+    console.log(`[startup] Cloudflare Workers AI provider active, model: ${cfModel} (no local digest verification needed)`);
+    modelVerified = true;
+    return;
+  }
   const expectedModel = process.env.GEN_MODEL || 'qwen2.5:1.5b';
   const expectedDigest = process.env.OLLAMA_MODEL_DIGEST || '';
   const qualificationMode = process.env.SCOUT_QUALIFICATION_MODE === 'true';
@@ -4304,7 +4328,8 @@ async function verifyModelDigest() {
 }
 
 app.listen(PORT, HOST, () => {
-  console.log(`Recruiter chat API running on http://${HOST}:${PORT} with Ollama backend`);
+  const _provider = process.env.SCOUT_INFERENCE_PROVIDER || 'ollama';
+  console.log(`Recruiter chat API running on http://${HOST}:${PORT} with ${_provider} backend`);
   // Pre-warm knowledge cache in background (non-blocking)
   setTimeout(() => {
     fetchKnowledge().then(() => console.log('Knowledge cache pre-warmed')).catch(e => console.log('Pre-warm failed:', e.message));
@@ -4313,9 +4338,13 @@ app.listen(PORT, HOST, () => {
   if (GEN_ENABLED) {
     setTimeout(() => {
       verifyModelDigest();
-      fetch(`${OLLAMA_URL}/api/tags`, { method: 'GET' })
-        .then(r => r.ok ? console.log('Ollama is reachable') : console.log('Ollama ping returned', r.status))
-        .catch(e => console.log('Ollama ping failed:', e.message));
+      if (process.env.SCOUT_INFERENCE_PROVIDER === 'cloudflare') {
+        console.log('Cloudflare Workers AI provider active — skipping Ollama reachability check');
+      } else {
+        fetch(`${OLLAMA_URL}/api/tags`, { method: 'GET' })
+          .then(r => r.ok ? console.log('Ollama is reachable') : console.log('Ollama ping returned', r.status))
+          .catch(e => console.log('Ollama ping failed:', e.message));
+      }
     }, 2000);
   }
 });

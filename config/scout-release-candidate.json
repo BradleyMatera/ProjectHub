@@ -1,0 +1,42 @@
+{
+  "releaseDate": "2026-08-16",
+  "releaseId": "scout-rc-2026-08-16",
+  "agentMode": "lite-agent",
+  "maximumDeadlineMs": 15000,
+  "provider": "cloudflare",
+  "model": "@cf/meta/llama-3.2-3b-instruct",
+  "spendingPolicy": "FREE_ONLY",
+  "freeDailyNeuronLimit": 10000,
+  "contextLimits": {
+    "maxInputTokens": 4096,
+    "maxOutputTokens": 256,
+    "numCtx": 4096,
+    "numPredict": 256
+  },
+  "recoveryStrategy": {
+    "maxAttempts": 3,
+    "attemptTypes": ["PRIMARY", "COMPLETENESS_REPAIR", "TARGETED_REPAIR", "ADV_EXPAND", "TERSE_EXPAND", "RECOVERY_1", "RECOVERY_2", "RECOVERY_3"],
+    "fallbackBehavior": "TECHNICAL_FAILURE",
+    "deterministicProse": false
+  },
+  "entitySemanticsVersion": "4-way-v1",
+  "responseContractVersion": "c2-v1",
+  "qualityRulerVersion": "canonical-13-v1",
+  "retrievalVersion": "bm25-rrf-v1",
+  "telemetrySchemaVersion": "v2",
+  "neuronEstimatorVersion": "cf-pricing-2026-08-07",
+  "policyModes": ["NORMAL", "REFUSAL", "OUT_OF_SCOPE"],
+  "validationLayers": ["grounding", "completeness", "relationship", "negation", "safety", "policy"],
+  "portability": {
+    "tenantIsolation": true,
+    "noHardcodedNames": true,
+    "knowledgeDriven": true
+  },
+  "deprecatedModels": [
+    "qwen2.5:0.5b",
+    "groq/llama-3.1-8b-instant"
+  ],
+  "productionEligibleModels": [
+    "@cf/meta/llama-3.2-3b-instruct"
+  ]
+}
