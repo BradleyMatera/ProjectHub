@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "sourceOfTruth": "GitHub",
+  "workspaces": [
+    {
+      "branch": "feat/agent-systems-network",
+      "purpose": "Current Scout local-model conversational parity and agent-systems work",
+      "status": "local-unpublished",
+      "note": "Reserved for the existing local workspace that currently contains unpushed work. Do not create this branch from another machine while origin/feat/agent-systems-network is absent. The original workspace must publish it first."
+    }
+  ]
+}

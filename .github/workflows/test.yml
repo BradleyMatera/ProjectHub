@@ -41,6 +41,13 @@ jobs:
       - name: Check server syntax
         run: node --check server-gemini.js
 
+      - name: Check workspace safety script syntax
+        run: |
+          node --check scripts/setup-git-safety.js
+          node --check scripts/workspace-preflight.js
+          node --check scripts/workspace-start.js
+          node --check scripts/workspace-publish.js
+
       - name: Check analytics bundle syntax
         run: node --check analytics/dist/analytics.iife.js
 
@@ -112,6 +119,10 @@ jobs:
             echo "$UNMETERED"
             exit 1
           fi
+
+      - name: Report npm dependency audit
+        continue-on-error: true
+        run: npm audit --audit-level=moderate
 
       # Live tests are run manually against the deployed backend.
       # Uncomment the next step only after adding a safe test endpoint or mock.
