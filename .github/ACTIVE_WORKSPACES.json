@@ -5,8 +5,10 @@
     {
       "branch": "feat/agent-systems-network",
       "purpose": "Current Scout local-model conversational parity and agent-systems work",
-      "status": "local-unpublished",
-      "note": "Reserved for the existing local workspace that currently contains unpushed work. Do not create this branch from another machine while origin/feat/agent-systems-network is absent. The original workspace must publish it first."
+      "status": "github-backed-active",
+      "remote": "origin/feat/agent-systems-network",
+      "checkpoint": "adbf81914294b92dfd43bf216726a38691c18cd3",
+      "note": "Active Scout workspace. Resume this exact GitHub branch on any PC, IDE, or coding agent. Fetch origin first; do not recreate it from master or develop. Publish committed work back to this branch before switching environments."
     }
   ]
 }
