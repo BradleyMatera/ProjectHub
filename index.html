@@ -6,28 +6,46 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta name="description" content="ProjectHub is a free, embeddable AI recruiter assistant named Scout. It uses local Ollama inference, conversational memory, BM25 retrieval, and grounded project data." />
-  <title>ProjectHub · Scout Recruiter Assistant</title>
+  <meta name="description" content="Scout is a portable intelligence engine powering ProjectHub Recruiter Alpha. Cloudflare Workers AI inference, BM25 retrieval, session memory, grounded validation, and a 15-second response contract." />
+  <meta name="keywords" content="Scout, ProjectHub, AI recruiter assistant, Cloudflare Workers AI, RAG, BM25 retrieval, grounded validation, conversational AI, browser WebGPU" />
+  <meta property="og:title" content="ProjectHub · Scout Intelligence Engine" />
+  <meta property="og:description" content="Scout — a portable intelligence engine powering ProjectHub Recruiter Alpha with Cloudflare Workers AI, grounded RAG, and a 15-second response contract." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://bradleymatera.github.io/ProjectHub/" />
+  <title>ProjectHub · Scout Intelligence Engine</title>
   <script>
     (function () {
       if (!/projecthub-dev/i.test(window.location.hostname + window.location.pathname)) return;
-      document.title = document.title.replace("ProjectHub", "ProjectHub (dev)");
+      document.title = "ProjectHub (dev) · Scout Engineering Lab";
       document.documentElement.classList.add("is-dev-site");
       if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", markDev);
+        document.addEventListener("DOMContentLoaded", initDevLab);
       } else {
-        markDev();
+        initDevLab();
       }
-      function markDev() {
-        const title = document.getElementById("page-title");
-        if (title) title.textContent = title.textContent.replace("Meet Scout", "Meet Scout (dev)");
-        const eyebrow = document.querySelector(".eyebrow-row");
+      function initDevLab() {
+        var title = document.getElementById("page-title");
+        if (title) title.textContent = "Scout Engineering Lab";
+        var eyebrow = document.querySelector(".eyebrow-row");
         if (eyebrow && !eyebrow.querySelector(".pill-dev")) {
-          const devPill = document.createElement("span");
+          var devPill = document.createElement("span");
           devPill.className = "pill pill-dev";
-          devPill.textContent = "dev environment";
+          devPill.textContent = "experimental";
           eyebrow.appendChild(devPill);
         }
+        var subtitle = document.querySelector(".subtitle");
+        if (subtitle) {
+          subtitle.textContent =
+            "The Scout Engineering Lab is the experimental development surface for ProjectHub Recruiter Alpha. " +
+            "It loads dev assets, connects to the dev backend, and exposes the full pipeline, validation layers, " +
+            "failure taxonomy, and browser capability probes. Nothing here is production-ready unless it ships to the production site.";
+        }
+        var heroKicker = document.querySelector(".hero-kicker");
+        if (heroKicker) heroKicker.textContent = "Scout Engineering Lab · Experimental";
+        var heroText = document.querySelector(".hero-text");
+        if (heroText) heroText.textContent =
+          "Active development on feat/agent-systems-network. Cloudflare Workers AI in production, Ollama in dev/test, " +
+          "browser WebGPU on the horizon. All replies generative, all validated, all grounded.";
       }
     })();
   </script>
@@ -343,6 +361,84 @@
       .hero-panel { align-items: flex-start; }
     }
 
+    /* Dev-only engineering lab sections */
+    .dev-only { display: none; }
+    .is-dev-site .dev-only { display: block; }
+    .is-dev-site .prod-only { display: none; }
+
+    .dev-section {
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      border: 1px solid var(--carbon-gray-80);
+      background: var(--carbon-gray-90);
+    }
+    .dev-section h2 { margin: 0 0 0.75rem; font-size: 1.25rem; font-weight: 400; letter-spacing: 0; }
+    .dev-section h3 { margin: 1.5rem 0 0.5rem; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .dev-section h3:first-child { margin-top: 0; }
+    .dev-section p { margin: 0.5rem 0; color: var(--muted); font-size: 0.875rem; line-height: 1.6; }
+
+    .dev-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin: 1rem 0 0;
+    }
+
+    .dev-card {
+      padding: 1rem;
+      border: 1px solid var(--carbon-gray-80);
+      background: var(--carbon-gray-90);
+    }
+    .dev-card strong { display: block; margin-bottom: 0.25rem; color: var(--text); font-size: 0.95rem; font-weight: 600; }
+    .dev-card p { margin: 0; color: var(--soft); font-size: 0.875rem; line-height: 1.55; }
+    .dev-card code { font-size: 0.8rem; color: var(--cyan); }
+
+    .dev-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0 0;
+      font-size: 0.875rem;
+    }
+    .dev-table th, .dev-table td {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--carbon-gray-80);
+      text-align: left;
+    }
+    .dev-table th {
+      color: var(--cyan);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: var(--carbon-gray-100);
+    }
+    .dev-table td { color: var(--muted); }
+    .dev-table td strong { color: var(--text); }
+
+    .cap-panel {
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 1px solid var(--carbon-blue-60);
+      background: var(--carbon-gray-100);
+    }
+    .cap-panel h3 { color: var(--carbon-blue-40); }
+    .cap-result {
+      margin: 0.5rem 0;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--carbon-gray-80);
+      background: var(--carbon-gray-90);
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+    .cap-result strong { color: var(--text); }
+    .cap-result .cap-ok { color: var(--carbon-green-40); }
+    .cap-result .cap-no { color: var(--carbon-red-50); }
+    .cap-result .cap-pending { color: var(--carbon-yellow-30); }
+
+    @media (max-width: 860px) {
+      .dev-grid { grid-template-columns: 1fr; }
+    }
+
     @media (max-width: 540px) {
       .page { padding: 1rem; }
       .card { padding: 1rem; }
@@ -364,69 +460,92 @@
           <span class="pill pill-free">100% free stack</span>
         </div>
 
-        <h1 id="page-title">Meet Scout, my AI recruiter assistant</h1>
+        <h1 id="page-title">Scout — Intelligence Engine for ProjectHub Recruiter Alpha</h1>
 
         <p class="subtitle">
-          Scout helps visitors ask questions about my projects, background, skills, blogs, resume details,
-          and career fit without digging through every page manually. Model inference runs locally through
-          Ollama on a free GCP VM; the frontend stays on GitHub Pages.
+          Scout is a portable intelligence engine that powers an AI recruiter assistant for Bradley Matera's
+          portfolio. It uses Cloudflare Workers AI for generative inference, local BM25 retrieval for evidence
+          gathering, server-owned session state for multi-turn coherence, and strict grounded validation —
+          all within a 15-second response contract. The frontend widget runs on GitHub Pages with zero build step.
         </p>
 
-        <div class="hero-panel" aria-label="Scout assistant summary">
+        <div class="hero-panel" aria-label="Scout engine summary">
           <div class="scout-avatar" aria-hidden="true">S</div>
           <div>
             <p class="hero-kicker">Bradley Matera · Recruiter assistant</p>
             <p class="hero-text">
-              Calm, concise, honest, and grounded in my real project data — with a zero-cost local Ollama runtime behind it.
+              Calm, concise, honest, and grounded in real project data — powered by Cloudflare Workers AI free-tier inference.
             </p>
           </div>
         </div>
       </header>
 
       <section class="card-section">
-        <h2>What this is</h2>
+        <h2>What Scout is</h2>
         <p>
-          ProjectHub is a vanilla JavaScript, no-build chat widget that can be embedded on a site with one script tag.
-          It showcases my web development projects, CodePens, GitHub work, recruiter information, and
-          portfolio data through a floating assistant named Scout.
+          Scout is a portable intelligence engine — not a hard-coded FAQ bot. It retrieves from real project data,
+          recruiter knowledge, and source material using local BM25 retrieval, then generates conversational replies
+          through Cloudflare Workers AI. Every generated reply passes safety, entity, number, length, source-overlap,
+          polarity, and overclaim validation before it reaches the visitor.
         </p>
         <p>
-          The goal is not a hard-coded FAQ bot. Scout retrieves from real project data, recruiter knowledge, source
-          material, local Qwen conversation, and short-term memory so it can answer follow-ups coherently instead of repeating canned responses.
+          The frontend widget is vanilla JavaScript with no build step, embeddable via a single script tag on GitHub Pages.
+          The backend runs on a free GCP e2-micro VM with Cloudflare Workers AI free-tier inference.
         </p>
       </section>
 
       <section class="card-section status-section">
-        <h2>Current status</h2>
+        <h2>Live deployment status</h2>
+
+        <div class="status-grid">
+          <div class="status-card">
+            <span class="status-label">Inference</span>
+            <strong>Cloudflare Workers AI</strong>
+            <p>Model: <code>@cf/meta/llama-3.2-3b-instruct</code> on Cloudflare free tier. Lite agent mode with up to 3 recovery attempts.</p>
+          </div>
+
+          <div class="status-card">
+            <span class="status-label">Response contract</span>
+            <strong>15-second deadline</strong>
+            <p>Every request has a hard 15,000 ms budget. If generation exceeds it, Scout falls back to a grounded constrained recovery.</p>
+          </div>
+
+          <div class="status-card">
+            <span class="status-label">Backend</span>
+            <strong>GCP e2-micro (free tier)</strong>
+            <p>Node.js Express API with server-owned session state, BM25 retrieval, and Cloudflare inference routing.</p>
+          </div>
+        </div>
 
         <div class="status-grid">
           <div class="status-card">
             <span class="status-label">Frontend</span>
             <strong>GitHub Pages widget</strong>
-            <p>Loaded through the public ProjectHub script. No build step, no hosting cost.</p>
+            <p>Vanilla JavaScript, no build step. Embedded via a single script tag. Zero hosting cost.</p>
           </div>
 
           <div class="status-card">
-            <span class="status-label">Backend</span>
-            <strong>Free local Ollama intelligence</strong>
-            <p>Uses Qwen 2.5 0.5B, deterministic tools, five-turn memory, and BM25 retrieval on one GCP VM.</p>
+            <span class="status-label">Validation</span>
+            <strong>Strict grounded validation</strong>
+            <p>Safety, entity grounding, number accuracy, source overlap, polarity, overclaim detection, and length checks on every reply.</p>
           </div>
 
           <div class="status-card">
-            <span class="status-label">AI</span>
-            <strong>Grounded-first RAG</strong>
-            <p>Deterministic answers for facts; local Qwen adds natural phrasing only when grounded validation passes.</p>
+            <span class="status-label">Memory</span>
+            <strong>Server-owned session state</strong>
+            <p>Per-tab session ID with topic tracking, referent resolution, and per-topic stance consistency (60-min TTL, cap 12).</p>
           </div>
         </div>
 
         <p>
-          The current direction is a zero-cost recruiter assistant that uses the resources already available:
-          GitHub Pages, ProjectHub data files, a free GCP VM tier, local Ollama, and structured recruiter knowledge.
+          Production is live at <a href="https://bradleymatera.dev/recruiter/" target="_blank" rel="noopener noreferrer">bradleymatera.dev/recruiter</a>.
+          The Scout Engineering Lab (experimental dev surface) is at
+          <a href="https://bradleymatera.github.io/ProjectHub-dev/" target="_blank" rel="noopener noreferrer">bradleymatera.github.io/ProjectHub-dev</a>.
         </p>
       </section>
 
       <section class="card-section">
-        <h2>What Scout should answer</h2>
+        <h2>What Scout answers</h2>
 
         <ul class="feature-list">
           <li>
@@ -440,55 +559,94 @@
             DevOps, technical writing, QA, or data-focused work.
           </li>
           <li>
-            <strong>Grounded answers:</strong> Use real data from ProjectHub, recruiter knowledge, source material, blogs, pages, and resume guardrails.
+            <strong>Grounded replies:</strong> All conversational responses are generated by the inference layer, then validated against
+            retrieved evidence before delivery. No deterministic prose reaches the visitor.
           </li>
           <li>
-            <strong>Honest limits:</strong> If the data does not support an answer, Scout says that instead of inventing experience.
+            <strong>Honest limits:</strong> If the evidence does not support an answer, Scout says so instead of inventing experience.
+            Unknown tools fail closed; no public tool performs writes or arbitrary web access.
           </li>
         </ul>
       </section>
 
       <section class="card-section">
-        <h2>Architecture</h2>
+        <h2>Scout pipeline</h2>
 
         <div class="flow-box">
-          <div class="flow-step">Recruiter Hub page</div>
+          <div class="flow-step">Visitor message</div>
           <div class="flow-arrow">→</div>
-          <div class="flow-step">ProjectHub widget</div>
+          <div class="flow-step">Query understanding</div>
           <div class="flow-arrow">→</div>
-          <div class="flow-step">Local Ollama + tools</div>
+          <div class="flow-step">BM25 retrieval</div>
           <div class="flow-arrow">→</div>
-          <div class="flow-step">ProjectHub data + RAG</div>
+          <div class="flow-step">Response contract</div>
           <div class="flow-arrow">→</div>
-          <div class="flow-step">Scout response</div>
+          <div class="flow-step">Cloudflare inference</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">Validation</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">Scout reply</div>
         </div>
 
+        <h3>How it works</h3>
         <p>
-          Scout first checks whether a question can be answered deterministically from the knowledge JSON.
-          For evidence-heavy questions, deterministic tools build a verified answer and local Ollama may select an allowlisted presentation style without rewriting facts.
-          Open-ended questions use local Qwen through Ollama before the grounded fallback.
-          Every generative reply is validated against the source facts before it is returned.
+          Deterministic logic handles query understanding, intent classification, BM25 evidence retrieval, and response contract
+          construction. The contract specifies required entities, forbidden entities, evidence facts, and response shape.
+          Cloudflare Workers AI (<code>@cf/meta/llama-3.2-3b-instruct</code>) generates the conversational reply from the contract.
+          The grounding validator checks entity correctness, number accuracy, source overlap, polarity, overclaim detection, and safety.
+          If validation fails, Scout attempts generative recovery (up to 3 attempts with progressively lenient validation).
+          If all recovery fails, Scout delivers a constrained grounded fallback — never unvalidated prose.
         </p>
       </section>
 
       <section class="card-section">
-        <h2>Free stack breakdown</h2>
+        <h2>Inference efficiency</h2>
+        <p>
+          Scout is designed for free-tier sustainability. The inference layer minimizes unnecessary generation calls
+          and prompt size through several strategies:
+        </p>
+        <ul class="feature-list">
+          <li><strong>Response cache:</strong> Identical recent questions return cached validated replies without a new inference call.</li>
+          <li><strong>Policy-aware contracts:</strong> GREETING mode uses relaxed validation; fact-heavy queries get stricter contracts with more evidence requirements.</li>
+          <li><strong>Lenient recovery:</strong> Later recovery attempts accept minor grounding imperfections to avoid wasting inference cycles on near-misses.</li>
+          <li><strong>Context budget:</strong> Prompts include only the 5 most recent turns plus per-topic stances — not the full conversation history.</li>
+          <li><strong>Adapter boundary:</strong> The inference layer (<code>lib/local-model-router.js</code>) abstracts the provider, enabling swaps between Cloudflare, Ollama, or future browser WebGPU without rewriting the harness.</li>
+        </ul>
+      </section>
+
+      <section class="card-section">
+        <h2>Browser WebGPU direction</h2>
+        <p>
+          The inference adapter boundary is designed for future browser-side WebGPU generation. In this model, capable browsers
+          would run inference locally on the visitor's GPU, eliminating cloud inference costs entirely. Incapable browsers
+          would fall back to cloud generation transparently. The server remains authoritative for RAG, state, evidence,
+          validation, and orchestration regardless of where generation occurs.
+        </p>
+        <p>
+          This is an active research direction, not a current production feature. The Scout Engineering Lab
+          (<a href="https://bradleymatera.github.io/ProjectHub-dev/" target="_blank" rel="noopener noreferrer">ProjectHub-dev</a>)
+          includes a browser capability panel that probes WebGPU support, memory, and adapter info.
+        </p>
+      </section>
+
+      <section class="card-section">
+        <h2>Free-tier stack</h2>
         <div class="free-grid">
           <div class="free-card">
             <strong>GitHub Pages</strong>
             <p>Hosts the widget, landing page, and knowledge JSON for free.</p>
           </div>
           <div class="free-card">
-            <strong>GCP VM (free tier)</strong>
-            <p>Runs the Node.js chat API and local Ollama fallback without a monthly bill.</p>
+            <strong>Cloudflare Workers AI</strong>
+            <p>Free-tier inference with <code>@cf/meta/llama-3.2-3b-instruct</code>. Neuron-based pricing with generous free allocation.</p>
+          </div>
+          <div class="free-card">
+            <strong>GCP e2-micro (free tier)</strong>
+            <p>Runs the Node.js Express API, BM25 retrieval, session state, and validation.</p>
           </div>
           <div class="free-card">
             <strong>Bundled knowledge</strong>
-            <p>Verified recruiter facts and BM25 retrieval require no model API or key.</p>
-          </div>
-          <div class="free-card">
-            <strong>Local Ollama</strong>
-            <p>A memory-bounded local language model; deterministic knowledge tools remain authoritative.</p>
+            <p>Verified recruiter facts and BM25 retrieval require no external database or API key.</p>
           </div>
         </div>
       </section>
@@ -499,10 +657,10 @@
           This is the script tag used to load the floating ProjectHub chat widget:
         </p>
 
-        <pre class="code-block"><code>&lt;script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=12"&gt;&lt;/script&gt;</code></pre>
+        <pre class="code-block"><code>&lt;script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=13"&gt;&lt;/script&gt;</code></pre>
 
         <p class="note">
-          If the script is cached aggressively, bump the version query like <code>?v=12</code>.
+          If the script is cached aggressively, bump the version query like <code>?v=13</code>.
         </p>
       </section>
 
@@ -532,6 +690,13 @@
           </li>
 
           <li>
+            <strong>Scout Engineering Lab:</strong>
+            <a href="https://bradleymatera.github.io/ProjectHub-dev/" target="_blank" rel="noopener noreferrer">
+              bradleymatera.github.io/ProjectHub-dev
+            </a>
+          </li>
+
+          <li>
             <strong>CodePen:</strong>
             <a href="https://codepen.io/student-account-bradley-matera/full/yyLmYKR"
                target="_blank" rel="noopener noreferrer">
@@ -541,6 +706,410 @@
         </ul>
       </section>
 
+      <!-- ===== DEV-ONLY: Scout Engineering Lab ===== -->
+      <section class="dev-only">
+        <div class="dev-section">
+          <h2>Development state</h2>
+          <p>
+            Active branch: <code>feat/agent-systems-network</code>. The Scout alpha backend is deployed to production
+            on the GCP e2-micro VM with Cloudflare Workers AI. The dev backend runs on a separate free GCP e2-micro
+            at <code>dev.projecthub-chat.bradleymatera.dev</code>. This page loads dev widget assets and connects to
+            the dev backend.
+          </p>
+          <h3>Latest commit</h3>
+          <p>
+            <code>9b5728f</code> — Scout alpha production state: Cloudflare Workers AI inference, session state fixes,
+            lenient validation, GREETING mode relaxation, clarification fallback fix, cache-hit session state update.
+            667 unit tests passing, 29 retrieval tests passing.
+          </p>
+        </div>
+
+        <div class="dev-section">
+          <h2>Scout pipeline (detailed)</h2>
+          <div class="flow-box">
+            <div class="flow-step">Visitor message</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Session state lookup</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Query understanding</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Policy classification</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">BM25 retrieval (RRF)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Response contract</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Inference generation</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Grounding validation</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Recovery (×3)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Session state update</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Scout reply</div>
+          </div>
+          <h3>Stage details</h3>
+          <table class="dev-table">
+            <thead>
+              <tr><th>Stage</th><th>Module</th><th>What happens</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Session state</strong></td><td><code>lib/session-state.js</code></td><td>Look up per-tab session ID. Track current topic, projects, recent turns, stances.</td></tr>
+              <tr><td><strong>Query understanding</strong></td><td><code>lib/query-understanding.js</code></td><td>Normalize, typo-correct, classify intent, rewrite bare follow-ups with context.</td></tr>
+              <tr><td><strong>Policy classification</strong></td><td><code>lib/response-policy-classifier.js</code></td><td>Determine response mode: GREETING, VERIFIED_FACT, PROFILE, OUT_OF_SCOPE, REFUSAL, FALSE_CLAIM_DENIAL.</td></tr>
+              <tr><td><strong>BM25 retrieval</strong></td><td><code>lib/bm25.js</code>, <code>lib/rrf.js</code></td><td>Okapi BM25 with TF saturation, IDF weighting, doc-length normalization. RRF fuses literal, alias-expanded, and context-rewritten rankings (k=60).</td></tr>
+              <tr><td><strong>Response contract</strong></td><td><code>lib/response-contract.js</code></td><td>Build requiredFacts, optionalFacts, contextEntities, mustMentionEntities, evidenceEntities, forbiddenEntities, responseShape.</td></tr>
+              <tr><td><strong>Inference</strong></td><td><code>lib/local-model-router.js</code>, <code>lib/cloudflare-provider.js</code></td><td>Generate conversational reply from contract + evidence + conversation state. Cloudflare Workers AI in prod, Ollama in dev.</td></tr>
+              <tr><td><strong>Validation</strong></td><td><code>lib/grounding-validator.js</code></td><td>Entity grounding, number accuracy, source overlap, polarity, overclaim, safety, length, fabricated entity detection.</td></tr>
+              <tr><td><strong>Recovery</strong></td><td><code>lib/lite-agent.js</code></td><td>Up to 3 attempts with progressively lenient validation. Final attempt uses <code>lenientValidate</code> (safety-critical only).</td></tr>
+              <tr><td><strong>Session update</strong></td><td><code>lib/session-state.js</code></td><td>Record turn, update topic, projects, stances. 60-min TTL, cap 12 stances.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="dev-section">
+          <h2>Production vs. development</h2>
+          <table class="dev-table">
+            <thead>
+              <tr><th>Dimension</th><th>Production</th><th>Development</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Backend URL</strong></td><td><code>projecthub-chat.bradleymatera.dev</code></td><td><code>dev.projecthub-chat.bradleymatera.dev</code></td></tr>
+              <tr><td><strong>Widget asset</strong></td><td><code>bradleymatera.github.io/ProjectHub/ProjectHub.js</code></td><td><code>./ProjectHub.js</code> (local dev asset)</td></tr>
+              <tr><td><strong>Inference provider</strong></td><td>Cloudflare Workers AI</td><td>Ollama (<code>qwen2.5:1.5b</code>)</td></tr>
+              <tr><td><strong>Model</strong></td><td><code>@cf/meta/llama-3.2-3b-instruct</code></td><td><code>qwen2.5:1.5b</code></td></tr>
+              <tr><td><strong>Agent mode</strong></td><td>Lite agent (production-safe)</td><td>Full agent (experimental tools enabled)</td></tr>
+              <tr><td><strong>Validation</strong></td><td>Strict + lenient recovery</td><td>Strict + lenient recovery (same)</td></tr>
+              <tr><td><strong>Session state</strong></td><td>Server-owned, in-memory</td><td>Server-owned, in-memory (same)</td></tr>
+              <tr><td><strong>Response cache</strong></td><td>Enabled (5-min TTL)</td><td>Enabled (5-min TTL)</td></tr>
+              <tr><td><strong>Think Mode</strong></td><td>Disabled</td><td>Enabled (20-min interval)</td></tr>
+              <tr><td><strong>Deadline</strong></td><td>15,000 ms</td><td>15,000 ms (same)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="dev-section">
+          <h2>Inference routing</h2>
+          <p>
+            The inference adapter (<code>lib/local-model-router.js</code>) abstracts the provider behind a unified
+            <code>generate()</code> interface. Provider selection is driven by environment variables:
+          </p>
+          <table class="dev-table">
+            <thead>
+              <tr><th>Env var</th><th>Production value</th><th>Dev value</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>SCOUT_INFERENCE_PROVIDER</strong></td><td><code>cloudflare</code></td><td><code>ollama</code></td></tr>
+              <tr><td><strong>CLOUDFLARE_ACCOUNT_ID</strong></td><td>Set</td><td>Not set</td></tr>
+              <tr><td><strong>CLOUDFLARE_API_TOKEN</strong></td><td>Set</td><td>Not set</td></tr>
+              <tr><td><strong>OLLAMA_BASE_URL</strong></td><td>Not set</td><td><code>http://127.0.0.1:11434</code></td></tr>
+              <tr><td><strong>SCOUT_AGENT_ENGINE_ENABLED</strong></td><td><code>true</code></td><td><code>true</code></td></tr>
+              <tr><td><strong>SCOUT_AGENT_MODE</strong></td><td><code>lite</code></td><td><code>full</code></td></tr>
+            </tbody>
+          </table>
+          <h3>Future: browser WebGPU routing</h3>
+          <p>
+            The adapter is designed for a third provider: <code>browser-webgpu</code>. In this mode, the server would
+            send the contract + evidence to the browser, which runs inference locally via WebGPU. The server remains
+            authoritative for RAG, state, validation, and orchestration. This is not yet implemented.
+          </p>
+        </div>
+
+        <div class="dev-section">
+          <h2>WebGPU research</h2>
+          <p>
+            Browser-side WebGPU inference would eliminate cloud inference costs for capable browsers. The research
+            direction involves:
+          </p>
+          <ul class="feature-list">
+            <li><strong>Adapter detection:</strong> Probe <code>navigator.gpu</code>, request adapter, query device limits.</li>
+            <li><strong>Model selection:</strong> Identify browser-runnable models (ONNX, GGUF via WebLLM) that fit GPU memory.</li>
+            <li><strong>Fallback chain:</strong> WebGPU → Cloudflare Workers AI → constrained grounded recovery.</li>
+            <li><strong>Validation parity:</strong> Server-side validation must still run on browser-generated text.</li>
+            <li><strong>Contract transport:</strong> Server sends JSON contract; browser generates; server validates.</li>
+          </ul>
+          <p>
+            The browser capability panel below probes your current browser for WebGPU support.
+          </p>
+        </div>
+
+        <div class="dev-section">
+          <h2>Neuron economics</h2>
+          <p>
+            Cloudflare Workers AI uses neuron-based pricing. Each generation call consumes neurons proportional to
+            input + output tokens. The free tier provides a generous monthly allocation. Scout's efficiency strategies:
+          </p>
+          <table class="dev-table">
+            <thead>
+              <tr><th>Strategy</th><th>Impact</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Response cache</strong></td><td>Eliminates inference calls for repeated questions within 5-min window</td></tr>
+              <tr><td><strong>Context budget (5 turns)</strong></td><td>Reduces input tokens vs. full history</td></tr>
+              <tr><td><strong>Policy-aware contracts</strong></td><td>GREETING mode = smaller contract = fewer input tokens</td></tr>
+              <tr><td><strong>Lenient recovery</strong></td><td>Avoids 4th+ inference call when answer is "close enough"</td></tr>
+              <tr><td><strong>Max 3 recovery attempts</strong></td><td>Hard cap on inference calls per request</td></tr>
+              <tr><td><strong>15s deadline</strong></td><td>Prevents runaway generation from consuming neurons</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="dev-section">
+          <h2>15-second budget</h2>
+          <p>
+            Every request has a hard 15,000 ms deadline enforced by <code>server-gemini.js</code>. The budget is
+            allocated across pipeline stages:
+          </p>
+          <table class="dev-table">
+            <thead>
+              <tr><th>Stage</th><th>Budget</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Session + query understanding</strong></td><td>~50 ms</td><td>In-memory lookup + sync processing</td></tr>
+              <tr><td><strong>BM25 retrieval + RRF</strong></td><td>~100 ms</td><td>Local index, no network</td></tr>
+              <tr><td><strong>Response contract</strong></td><td>~20 ms</td><td>Sync contract construction</td></tr>
+              <tr><td><strong>Inference generation</strong></td><td>~5–12 s</td><td>Cloudflare Workers AI round-trip</td></tr>
+              <tr><td><strong>Validation</strong></td><td>~50 ms</td><td>Sync validation checks</td></tr>
+              <tr><td><strong>Recovery (if needed)</strong></td><td>remaining budget</td><td>Up to 3 attempts, each with inference</td></tr>
+              <tr><td><strong>Session update</strong></td><td>~10 ms</td><td>In-memory state update</td></tr>
+            </tbody>
+          </table>
+          <p>
+            If the deadline fires during generation, Scout delivers a constrained grounded fallback — never an
+            incomplete or unvalidated reply.
+          </p>
+        </div>
+
+        <div class="dev-section">
+          <h2>Retrieval</h2>
+          <h3>BM25 configuration</h3>
+          <table class="dev-table">
+            <thead>
+              <tr><th>Parameter</th><th>Value</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>k1 (TF saturation)</strong></td><td>1.2</td></tr>
+              <tr><td><strong>b (doc-length normalization)</strong></td><td>0.75</td></tr>
+              <tr><td><strong>RRF k</strong></td><td>60</td></tr>
+              <tr><td><strong>Views fused</strong></td><td>Literal, alias-expanded, context-rewritten</td></tr>
+              <tr><td><strong>Golden eval set</strong></td><td>40 queries</td></tr>
+              <tr><td><strong>Recall@6</strong></td><td>1.000</td></tr>
+            </tbody>
+          </table>
+          <h3>Query understanding pipeline</h3>
+          <ul class="feature-list">
+            <li><strong>Normalization:</strong> Lowercase, strip punctuation, collapse whitespace.</li>
+            <li><strong>Typo correction:</strong> Damerau-Levenshtein against vocabulary (edit distance ≤ 2).</li>
+            <li><strong>Intent classification:</strong> Contact, role-fit, experience, smalltalk, frustration, factual-lookup.</li>
+            <li><strong>Contextual rewriting:</strong> Bare follow-ups ("tell me more about that") rewritten using recent turns.</li>
+          </ul>
+        </div>
+
+        <div class="dev-section">
+          <h2>Response contracts</h2>
+          <p>
+            The response contract (<code>lib/response-contract.js</code>) defines what the generated reply must contain
+            and what it must not contain:
+          </p>
+          <table class="dev-table">
+            <thead>
+              <tr><th>Field</th><th>Purpose</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>requiredFacts</strong></td><td>Facts that must appear in the reply</td></tr>
+              <tr><td><strong>optionalFacts</strong></td><td>Facts that may be included for context</td></tr>
+              <tr><td><strong>contextEntities</strong></td><td>Entities from the question context</td></tr>
+              <tr><td><strong>mustMentionEntities</strong></td><td>Entities that must appear in the reply</td></tr>
+              <tr><td><strong>evidenceEntities</strong></td><td>Entities from retrieved evidence</td></tr>
+              <tr><td><strong>forbiddenEntities</strong></td><td>Entities that must NOT appear (e.g., wrong person, wrong company)</td></tr>
+              <tr><td><strong>responseShape</strong></td><td>Min sentences, max sentences, expected structure</td></tr>
+              <tr><td><strong>policyMode</strong></td><td>GREETING, VERIFIED_FACT, REFUSAL, etc. — drives validation strictness</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="dev-section">
+          <h2>Validation layers</h2>
+          <table class="dev-table">
+            <thead>
+              <tr><th>Check</th><th>Module</th><th>What it catches</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Safety</strong></td><td>Grounding validator</td><td>PII leakage, harmful content, private data</td></tr>
+              <tr><td><strong>Entity grounding</strong></td><td>Grounding validator</td><td>Entities in reply not supported by evidence</td></tr>
+              <tr><td><strong>Fabricated entity</strong></td><td>Grounding validator</td><td>Entities not in knowledge base</td></tr>
+              <tr><td><strong>Number accuracy</strong></td><td>Grounding validator</td><td>Numbers in reply not matching evidence</td></tr>
+              <tr><td><strong>Source overlap</strong></td><td>Grounding validator</td><td>Reply doesn't overlap with retrieved evidence</td></tr>
+              <tr><td><strong>Polarity</strong></td><td>Grounding validator</td><td>Affirming a false claim or denying a true one</td></tr>
+              <tr><td><strong>Overclaim</strong></td><td>Grounding validator</td><td>Claiming more than evidence supports</td></tr>
+              <tr><td><strong>Cross-project provenance</strong></td><td>Grounding validator</td><td>Attributing one project's facts to another</td></tr>
+              <tr><td><strong>Technology claims</strong></td><td><code>lib/claim-extractor.js</code></td><td>Unsupported tech stack claims with alias matching</td></tr>
+              <tr><td><strong>Relationship validity</strong></td><td><code>lib/relationship-validator.js</code></td><td>Unsupported entity relationships (e.g., "uses_tech" not in graph)</td></tr>
+              <tr><td><strong>Completeness</strong></td><td><code>lib/completeness-check.js</code></td><td>Reply too short or missing required content</td></tr>
+              <tr><td><strong>Negation scope</strong></td><td><code>lib/negation-scope.js</code></td><td>Negated claims incorrectly flagged or affirmed</td></tr>
+            </tbody>
+          </table>
+          <h3>Policy-aware validation</h3>
+          <p>
+            GREETING mode skips entity grounding, fabricated entity, and relevance checks — greetings don't need
+            topic overlap or knowledge-base entity support. All other modes run full validation.
+          </p>
+        </div>
+
+        <div class="dev-section">
+          <h2>Recovery</h2>
+          <p>
+            When the initial generation fails validation, Scout attempts generative recovery:
+          </p>
+          <table class="dev-table">
+            <thead>
+              <tr><th>Attempt</th><th>Validation</th><th>Prompt strategy</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>1 (initial)</strong></td><td>Full strict</td><td>Standard contract + evidence</td></tr>
+              <tr><td><strong>2 (recovery 1)</strong></td><td>Lenient</td><td>Rejection reason + "fix this issue" instruction</td></tr>
+              <tr><td><strong>3 (recovery 2)</strong></td><td>Lenient</td><td>Stricter constraint emphasis + evidence re-injection</td></tr>
+              <tr><td><strong>4 (recovery 3)</strong></td><td>Lenient (safety-critical only)</td><td>Minimal prompt — accept any safe answer</td></tr>
+              <tr><td><strong>5 (fallback)</strong></td><td>N/A</td><td>Constrained grounded recovery — no inference call</td></tr>
+            </tbody>
+          </table>
+          <p>
+            <strong>Lenient validation</strong> only rejects on safety-critical issues (PII leakage, harmful content).
+            It accepts minor grounding imperfections to avoid wasting inference cycles on near-misses from the small model.
+          </p>
+        </div>
+
+        <div class="dev-section">
+          <h2>Conversation state</h2>
+          <p>
+            Server-owned session state (<code>lib/session-state.js</code>) enables multi-turn coherence:
+          </p>
+          <ul class="feature-list">
+            <li><strong>currentTopic:</strong> Tracks what the conversation is about (e.g., "projects", "skills", "experience").</li>
+            <li><strong>currentProjects:</strong> Which projects were recently mentioned — enables "tell me more about that one."</li>
+            <li><strong>recentTurns:</strong> Last 5 turns for context window construction.</li>
+            <li><strong>topicStances:</strong> Per-topic positions Scout has taken (e.g., "Bradley's main stack is JavaScript") — prevents contradictions. 60-min TTL, cap 12.</li>
+            <li><strong>Cache-hit update:</strong> Even cached responses update session state so follow-ups work after a cache hit.</li>
+          </ul>
+        </div>
+
+        <div class="dev-section">
+          <h2>Referent resolution</h2>
+          <p>
+            When a visitor says "tell me more about that" or "what tech does it use", Scout resolves the referent
+            ("that", "it") using <code>lib/conversation-resolver.js</code>:
+          </p>
+          <ul class="feature-list">
+            <li><strong>Build conversation state:</strong> Construct context from recent turns + session state.</li>
+            <li><strong>Resolve referent:</strong> Map pronouns to the most recent subject in session state.</li>
+            <li><strong>Rewrite query:</strong> Replace "it" → "ProjectHub", "that" → "the weather dashboard", etc.</li>
+            <li><strong>BM25 with rewritten query:</strong> Retrieval uses the rewritten query for better evidence matching.</li>
+          </ul>
+        </div>
+
+        <div class="dev-section">
+          <h2>Failure taxonomy</h2>
+          <table class="dev-table">
+            <thead>
+              <tr><th>Failure type</th><th>Cause</th><th>Recovery</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>entity_not_grounded</strong></td><td>Reply mentions entity not in evidence</td><td>Recovery with entity constraint</td></tr>
+              <tr><td><strong>fabricated_entity</strong></td><td>Reply mentions entity not in knowledge base</td><td>Recovery with entity allowlist</td></tr>
+              <tr><td><strong>not_relevant_to_question</strong></td><td>Reply doesn't address the question topic</td><td>Recovery with topic emphasis</td></tr>
+              <tr><td><strong>number_mismatch</strong></td><td>Numbers in reply don't match evidence</td><td>Recovery with number constraint</td></tr>
+              <tr><td><strong>polarity_violation</strong></td><td>Affirming false claim or denying true one</td><td>Recovery with polarity correction</td></tr>
+              <tr><td><strong>overclaim</strong></td><td>Reply claims more than evidence supports</td><td>Recovery with scope limitation</td></tr>
+              <tr><td><strong>cross_project_provenance</strong></td><td>One project's facts attributed to another</td><td>Recovery with project disambiguation</td></tr>
+              <tr><td><strong>unsupported_tech_claim</strong></td><td>Tech mentioned not in evidence</td><td>Recovery with tech allowlist</td></tr>
+              <tr><td><strong>relationship_violation</strong></td><td>Unsupported entity relationship</td><td>Recovery with relationship graph</td></tr>
+              <tr><td><strong>incomplete_answer</strong></td><td>Reply too short or missing required content</td><td>Recovery with completeness emphasis</td></tr>
+              <tr><td><strong>safety_violation</strong></td><td>PII leakage or harmful content</td><td>Immediate fallback, no recovery</td></tr>
+              <tr><td><strong>deadline_exceeded</strong></td><td>15s budget exhausted</td><td>Constrained grounded fallback</td></tr>
+              <tr><td><strong>clarification_required</strong></td><td>Question too ambiguous to answer</td><td>Scout asks for clarification</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="dev-section">
+          <h2>Current experiments</h2>
+          <div class="dev-grid">
+            <div class="dev-card">
+              <strong>Browser WebGPU inference</strong>
+              <p>Probe WebGPU adapter, identify runnable models, design contract transport protocol.</p>
+            </div>
+            <div class="dev-card">
+              <strong>Think Mode self-improvement</strong>
+              <p>20-min loop: stash weak answers, generate improved wording, score, judge, retain validated improvements locally.</p>
+            </div>
+            <div class="dev-card">
+              <strong>Relationship graph expansion</strong>
+              <p>Graph-derived type words replace hardcoded lists. Entity-type validation uses <code>is_type</code> triples.</p>
+            </div>
+            <div class="dev-card">
+              <strong>Negation-aware claim parsing</strong>
+              <p><code>lib/negation-scope.js</code> prevents negated tech claims from being flagged as unsupported.</p>
+            </div>
+            <div class="dev-card">
+              <strong>Tenant portability</strong>
+              <p>Engine works with non-Bradley knowledge sets. Two-tenant test suite validates cross-tenant isolation.</p>
+            </div>
+            <div class="dev-card">
+              <strong>Docker production-parity</strong>
+              <p><code>docker-compose.yml</code> provides Ollama-parity testing. Cloudflare production uses GCP VM direct deploy.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="dev-section">
+          <h2>Latest benchmarks</h2>
+          <table class="dev-table">
+            <thead>
+              <tr><th>Metric</th><th>Value</th><th>Source</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Unit tests</strong></td><td>667 pass, 0 fail</td><td><code>npm test</code></td></tr>
+              <tr><td><strong>Retrieval tests</strong></td><td>29 pass, 0 fail</td><td><code>npm run test:retrieval</code></td></tr>
+              <tr><td><strong>BM25 Recall@6</strong></td><td>1.000</td><td>40-query golden set</td></tr>
+              <tr><td><strong>Test suites</strong></td><td>11</td><td>Node test runner</td></tr>
+              <tr><td><strong>Production smoke</strong></td><td>10/10 pass</td><td><code>scripts/prod-smoke-test.js</code></td></tr>
+              <tr><td><strong>Conversation regression</strong></td><td>132 inputs</td><td>126 production + 6-turn unknown-tech repair</td></tr>
+              <tr><td><strong>Local API eval</strong></td><td>61 requests</td><td><code>scripts/eval-local-api.js</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="dev-section">
+          <h2>Known limitations</h2>
+          <ul class="feature-list">
+            <li><strong>Small model constraints:</strong> <code>@cf/meta/llama-3.2-3b-instruct</code> (prod) and <code>qwen2.5:1.5b</code> (dev) are small models. They can hallucinate, miss nuances, or produce awkward phrasing. Validation and recovery compensate but cannot eliminate all errors.</li>
+            <li><strong>No persistent storage:</strong> Session state is in-memory on the GCP VM. A VM restart loses all sessions. No external database.</li>
+            <li><strong>Free-tier rate limits:</strong> Cloudflare Workers AI free tier has neuron allocation limits. High traffic could exhaust the monthly allocation.</li>
+            <li><strong>Single VM:</strong> One GCP e2-micro instance. No horizontal scaling, no load balancer, no redundancy.</li>
+            <li><strong>No streaming:</strong> Responses are delivered as complete JSON, not streamed. The 15s budget includes full round-trip.</li>
+            <li><strong>WebGPU not implemented:</strong> Browser-side inference is a research direction, not a current feature.</li>
+            <li><strong>Think Mode is dev-only:</strong> The self-improvement loop runs only on the dev backend. It never writes to GitHub or external systems.</li>
+            <li><strong>No multi-language:</strong> Scout speaks English only. No internationalization layer.</li>
+          </ul>
+        </div>
+
+        <div class="dev-section">
+          <h2>Browser capability panel</h2>
+          <div class="cap-panel" id="cap-panel">
+            <h3>Probing your browser…</h3>
+            <div class="cap-result" id="cap-webgpu"><strong>WebGPU:</strong> <span class="cap-pending">checking…</span></div>
+            <div class="cap-result" id="cap-adapter"><strong>GPU Adapter:</strong> <span class="cap-pending">checking…</span></div>
+            <div class="cap-result" id="cap-memory"><strong>GPU Memory:</strong> <span class="cap-pending">checking…</span></div>
+            <div class="cap-result" id="cap-webllm"><strong>WebLLM support:</strong> <span class="cap-pending">checking…</span></div>
+            <div class="cap-result" id="cap-wasm"><strong>WebAssembly:</strong> <span class="cap-pending">checking…</span></div>
+            <div class="cap-result" id="cap-workers"><strong>Hardware concurrency:</strong> <span class="cap-pending">checking…</span></div>
+            <div class="cap-result" id="cap-device"><strong>Device memory:</strong> <span class="cap-pending">checking…</span></div>
+          </div>
+        </div>
+      </section>
+      <!-- ===== END DEV-ONLY ===== -->
+
       <section id="projecthub-analytics" class="ph-dark" aria-label="ProjectHub live analytics">
         <!-- Analytics dashboard is injected here by analytics/dist/analytics.iife.js -->
       </section>
@@ -548,8 +1117,9 @@
       <footer class="card-footer">
         <div class="chip-row">
           <span class="chip">Vanilla JavaScript</span>
-          <span class="chip">Local Ollama inference</span>
+          <span class="chip">Cloudflare Workers AI</span>
           <span class="chip">Grounded RAG</span>
+          <span class="chip">BM25 Retrieval</span>
           <span class="chip">GitHub Pages</span>
           <span class="chip">Scout</span>
         </div>
@@ -569,6 +1139,64 @@
     })();
   </script>
 
+  <!-- Browser capability probe (dev-only) -->
+  <script>
+    (function () {
+      if (!/projecthub-dev/i.test(window.location.hostname + window.location.pathname)) return;
+      function setResult(id, status, detail) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var span = el.querySelector("span");
+        if (!span) return;
+        span.className = status === "ok" ? "cap-ok" : status === "no" ? "cap-no" : "cap-pending";
+        span.textContent = detail;
+      }
+      function probe() {
+        var panel = document.getElementById("cap-panel");
+        if (!panel) { setTimeout(probe, 500); return; }
+        var heading = panel.querySelector("h3");
+        if (heading) heading.textContent = "Browser capability results";
+
+        setResult("cap-wasm", "ok", typeof WebAssembly !== "undefined" ? "supported" : "not supported");
+        setResult("cap-workers", "ok", navigator.hardwareConcurrency + " cores");
+        setResult("cap-device", "ok", (navigator.deviceMemory || "unknown") + " GB");
+
+        if ("gpu" in navigator) {
+          setResult("cap-webgpu", "ok", "API available");
+          navigator.gpu.requestAdapter().then(function (adapter) {
+            if (!adapter) {
+              setResult("cap-adapter", "no", "no adapter available");
+              setResult("cap-memory", "no", "N/A");
+              return;
+            }
+            setResult("cap-adapter", "ok", adapter.info.vendor + " " + adapter.info.architecture);
+            adapter.requestDevice().then(function (device) {
+              var maxBuffer = device.limits.maxBufferSize;
+              var maxMem = (maxBuffer / (1024 * 1024)).toFixed(0);
+              setResult("cap-memory", "ok", "~" + maxMem + " MB max buffer");
+            }).catch(function () {
+              setResult("cap-memory", "no", "device request failed");
+            });
+          }).catch(function () {
+            setResult("cap-adapter", "no", "adapter request failed");
+            setResult("cap-memory", "no", "N/A");
+          });
+        } else {
+          setResult("cap-webgpu", "no", "not available");
+          setResult("cap-adapter", "no", "N/A");
+          setResult("cap-memory", "no", "N/A");
+        }
+
+        setResult("cap-webllm", "pending", "not tested (requires WebGPU + model download)");
+      }
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", probe);
+      } else {
+        probe();
+      }
+    })();
+  </script>
+
   <!-- ProjectHub chat widget -->
   <script>
     (function () {
@@ -576,11 +1204,11 @@
       if (isDev) {
         window.__PROJECTHUB_CHAT_API__ = "https://dev.projecthub-chat.bradleymatera.dev/api/chat";
         var s = document.createElement("script");
-        s.src = "./ProjectHub.js?v=12";
+        s.src = "./ProjectHub.js?v=13";
         document.body.appendChild(s);
       } else {
         var s = document.createElement("script");
-        s.src = "https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=12";
+        s.src = "https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=13";
         document.body.appendChild(s);
       }
     })();

@@ -1,6 +1,6 @@
 # ProjectHub
 
-ProjectHub is Bradley Matera's embeddable portfolio and recruiter assistant. The browser widget is vanilla JavaScript and GitHub Pages friendly. Scout's backend is being developed as a cloud-hosted generative AI replacement for the existing website chatbot (Groq-hosted Llama 8B, retiring August 16, 2026). The backend provides grounded retrieval, memory, validation, and orchestration with generative inference.
+ProjectHub is Bradley Matera's embeddable portfolio and recruiter assistant. The browser widget is vanilla JavaScript and GitHub Pages friendly. Scout is a portable intelligence engine that powers ProjectHub Recruiter Alpha using Cloudflare Workers AI for generative inference, local BM25 retrieval, server-owned session state, and strict grounded validation — all within a 15-second response contract.
 
 ```html
 <script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js"></script>
@@ -14,10 +14,11 @@ ProjectHub is Bradley Matera's embeddable portfolio and recruiter assistant. The
 - Fuses multiple local BM25 views with RRF for context-dependent follow-ups while leaving stronger standalone rankings unchanged.
 - Retains five recent turns plus topic stances for coherent multi-turn conversation.
 - Uses deterministic read-only tools for evidence gathering (project comparison, role matching, profile lookup).
-- Uses `qwen2.5:1.5b` via Ollama as the development/evaluation inference runtime for natural conversational phrasing.
-- Validates all generated answers for factual accuracy, entity correctness, polarity, and safety.
-- Target architecture: cloud-hosted backend with generative inference for 100% of user-visible chat replies.
-- Future optimization: capable browsers may use WebGPU-assisted generation; incapable browsers use cloud generation.
+- Uses Cloudflare Workers AI (`@cf/meta/llama-3.2-3b-instruct`) for production generative inference on the free tier.
+- Uses `qwen2.5:1.5b` via Ollama as the development/evaluation inference runtime (behind the same adapter boundary).
+- Validates all generated answers for factual accuracy, entity correctness, polarity, safety, source overlap, and overclaim detection.
+- All user-visible conversational replies are generative — deterministic code decides, routes, and builds contracts but never writes final prose.
+- Future optimization: capable browsers may use WebGPU-assisted generation; incapable browsers use cloud generation transparently.
 
 The cloud backend remains authoritative for RAG, state, evidence, validation, and orchestration regardless of where generation occurs.
 
@@ -33,12 +34,12 @@ ProjectHub Express API (cloud-hosted, Docker-containerized)
         +-- BM25 over bundled recruiter knowledge
         +-- five-turn memory and stance retention
         +-- deterministic read-only evidence tools
-        +-- generative inference (qwen2.5:1.5b via Ollama in dev/test)
+        +-- generative inference (Cloudflare Workers AI in production, Ollama in dev/test)
         +-- safety and grounded-output validators
         +-- generative recovery contracts (no deterministic final prose)
 ```
 
-The inference layer is behind an adapter boundary (`lib/local-model-router.js`) so the backend can switch between local Ollama (development), cloud inference (production), or browser WebGPU without rewriting the harness.
+The inference layer is behind an adapter boundary (`lib/local-model-router.js`) so the backend can switch between Cloudflare Workers AI (production), local Ollama (development), or browser WebGPU without rewriting the harness.
 
 ## Docker (production-parity testing)
 
