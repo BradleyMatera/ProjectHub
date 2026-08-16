@@ -76,7 +76,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   // - Safety/injection blocking
   // - False-claim refusal
   // - Grounded deterministic answers (contact, projects, role-fit, etc.)
-  // - Local Ollama RAG for conversational questions
+  // - Generative RAG for conversational questions
   // - Follow-up suggestions
   // - Session memory and conversation context
   const aiResult = await askAIBackend();

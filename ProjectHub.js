@@ -28,7 +28,7 @@ const projects = [
   },
   {
     name: "ProjectHub (Scout)",
-    desc: "Embeddable recruiter assistant named Scout. One script tag adds a chat widget to any site. It combines local Ollama inference, BM25 retrieval, conversational memory, deterministic evidence tools, strict safety checks, local learning, and a live analytics dashboard. Frontend is vanilla JS on GitHub Pages; backend runs on a free GCP e2-micro VM.",
+    desc: "Embeddable recruiter assistant named Scout. One script tag adds a chat widget to any site. It combines Cloudflare Workers AI inference, BM25 retrieval, conversational memory, deterministic evidence tools, strict safety checks, local learning, and a live analytics dashboard. Frontend is vanilla JS on GitHub Pages; backend runs on a free GCP e2-micro VM.",
     url: "https://bradleymatera.github.io/ProjectHub/",
     platform: "GitHub Pages",
     repo: "https://github.com/BradleyMatera/ProjectHub",
@@ -167,7 +167,8 @@ async function fetchAllGitHubData(projects) {
     }
   })).catch(() => {});
   return projectData;
-}function buildServerHistory(context) {
+}
+function buildServerHistory(context) {
   return (Array.isArray(context) ? context : []).reduce((turns, turn) => {
     if (turn.role === 'user') {
       turns.push({ user: turn.content, assistant: '' });
@@ -245,7 +246,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
   // - Safety/injection blocking
   // - False-claim refusal
   // - Grounded deterministic answers (contact, projects, role-fit, etc.)
-  // - Local Ollama RAG for conversational questions
+  // - Generative RAG for conversational questions
   // - Follow-up suggestions
   // - Session memory and conversation context
   const aiResult = await askAIBackend();
@@ -1093,7 +1094,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
         <div class="projecthub-title">Scout${devLabel}</div>
         <div class="projecthub-subtitle-row">
           <span class="projecthub-subtitle">Ask me about Bradley's projects, skills, fit, or contact info${devLabel}</span>
-          <span class="projecthub-free-badge" title="Scout uses GitHub Pages and local Ollama on a free-tier VM — no hosted model API required.">100% free</span>
+          <span class="projecthub-free-badge" title="Scout runs on free-tier infrastructure — GitHub Pages and Cloudflare Workers AI.">100% free</span>
         </div>
       </div>
       <div class="projecthub-actions">
@@ -1527,7 +1528,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     chatDiv.classList.toggle("projecthub-compact", e.matches || Boolean(chatSettings.compactMode));
   });
   renderSuggestions();
-  const freeNote = `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(57,217,138,0.12);border:1px solid rgba(57,217,138,0.28);color:#b8f5d3;font-size:12px;">🟢 My model runs locally through Ollama on the free ProjectHub VM. Your chat is not sent to a hosted AI model.</span>`;
+  const freeNote = `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(57,217,138,0.12);border:1px solid rgba(57,217,138,0.28);color:#b8f5d3;font-size:12px;">🟢 Scout runs on free-tier infrastructure — GitHub Pages and Cloudflare Workers AI.</span>`;
   const devNote = isDevHost ? `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(255,193,7,0.12);border:1px solid rgba(255,193,7,0.35);color:#ffd54f;font-size:12px;">⚠️ You are on the dev/staging environment.</span>` : "";
   const welcomeHtml = visitorName
     ? `Welcome back, ${escapeHtml(visitorName)}. I’m Scout${devLabel}, Bradley’s assistant. Ask about his projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.${freeNote}${devNote}`
