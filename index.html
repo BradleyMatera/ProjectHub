@@ -657,10 +657,10 @@
           This is the script tag used to load the floating ProjectHub chat widget:
         </p>
 
-        <pre class="code-block"><code>&lt;script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=13"&gt;&lt;/script&gt;</code></pre>
+        <pre class="code-block"><code>&lt;script src="https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=14"&gt;&lt;/script&gt;</code></pre>
 
         <p class="note">
-          If the script is cached aggressively, bump the version query like <code>?v=13</code>.
+          If the script is cached aggressively, bump the version query like <code>?v=14</code>.
         </p>
       </section>
 
@@ -1204,11 +1204,11 @@
       if (isDev) {
         window.__PROJECTHUB_CHAT_API__ = "https://dev.projecthub-chat.bradleymatera.dev/api/chat";
         var s = document.createElement("script");
-        s.src = "./ProjectHub.js?v=13";
+        s.src = "./ProjectHub.js?v=14";
         document.body.appendChild(s);
       } else {
         var s = document.createElement("script");
-        s.src = "https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=13";
+        s.src = "https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=14";
         document.body.appendChild(s);
       }
     })();

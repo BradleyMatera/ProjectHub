@@ -1539,10 +1539,16 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 }
 
 // Run the chat widget once the DOM is ready
-document.addEventListener("DOMContentLoaded", () => {
+function initProjectHub() {
   try {
     setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData);
   } catch (error) {
     console.error("Error initializing ProjectHub:", error);
   }
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initProjectHub);
+} else {
+  initProjectHub();
+}
