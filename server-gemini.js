@@ -1577,7 +1577,8 @@ app.post('/api/chat', async (req, res) => {
     // Direct KB short-circuit: if the question matches a non-adversarial directAnswer
     // record, return it immediately with provenance. The model is not invoked.
     const directAnswer = SCOUT_AGENT_ENGINE_ENABLED ? findDirectAnswer(knowledge, userMessage) : null;
-    if (directAnswer && directAnswer.answer && Array.isArray(directAnswer.intents) && directAnswer.intents.includes('direct')) {
+    const directIntentAllowed = Array.isArray(directAnswer?.intents) && (directAnswer.intents.includes('direct') || directAnswer.intents.includes('adversarial_deny') || directAnswer.intents.includes('negation_confirm'));
+    if (directAnswer && directAnswer.answer && directIntentAllowed) {
       pipeline.push('direct-kb');
       const directReply = directAnswer.answer;
       const directPayload = {
