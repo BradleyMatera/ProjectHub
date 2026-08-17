@@ -1921,7 +1921,9 @@ app.get('/api/chat-log', (req, res) => {
 });
 
 // ============ COST LEDGER ENDPOINT + SAMPLER ============
-// Dev-only endpoint: full ledger snapshot with headroom, trends, and insights.
+// Cost ledger endpoint: full snapshot with headroom, trends, and insights when
+// the tracker is enabled. When disabled, mount a stub that returns 200 so the
+// analytics dashboard sees a clean "offline" state instead of a 404.
 if (COST_TRACKER && costLedger) {
   const { buildInsights } = require('./lib/cost-insights');
   app.get('/api/costs', (req, res) => {
@@ -1946,6 +1948,11 @@ if (COST_TRACKER && costLedger) {
     } catch { /* sampler must never throw */ }
     costLedger.flush();
   }, 60 * 1000).unref();
+} else {
+  app.get('/api/costs', (req, res) => {
+    res.set('Cache-Control', 'no-store, max-age=0');
+    res.json({ ok: false, offline: true, reason: 'COST_TRACKER is not enabled on this backend' });
+  });
 }
 
 // Model/image digest enforcement — verify the exact model image is loaded
