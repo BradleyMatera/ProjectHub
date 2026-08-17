@@ -119,6 +119,7 @@ const suggestions = [
   "List all CodePens",
   "How can I contact Bradley?"
 ];
+
 // In-memory cache for GitHub metadata so we never block on repeated or slow API calls
 const __githubCache = {};
 
@@ -263,6 +264,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { buildServerHistory };
 }
+
 function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData) {
   const isDevHost = typeof window !== "undefined" && /projecthub-dev/i.test(window.location.hostname + window.location.pathname);
   const devLabel = isDevHost ? " (dev)" : "";
@@ -1539,10 +1541,16 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 }
 
 // Run the chat widget once the DOM is ready
-document.addEventListener("DOMContentLoaded", () => {
+function initProjectHub() {
   try {
     setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData);
   } catch (error) {
     console.error("Error initializing ProjectHub:", error);
   }
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initProjectHub);
+} else {
+  initProjectHub();
+}
