@@ -9858,14 +9858,14 @@
     {
       "id": "tech-stack",
       "intents": ["direct"],
-      "questionPatterns": ["what.*technolog", "what.*tech stack", "what.*tech.*use", "what.*skills.*(?:have|use)", "what.*(?:languages|frameworks).*use"],
+      "questionPatterns": ["^(?!.*projecthub).*?what.*technolog", "^(?!.*projecthub).*?what.*tech.*use", "what.*tech stack", "what.*skills.*(?:have|use)", "what.*(?:languages|frameworks).*use"],
       "answer": "Bradley's documented skills include JavaScript, TypeScript, React, Node.js, SQL, AWS, Git, and related web technologies.",
       "sourceIds": ["skills"]
     },
     {
       "id": "web-projects",
       "intents": ["direct"],
-      "questionPatterns": ["web project", "some of.*project", "what.*project.*work", "tell me about.*project"],
+      "questionPatterns": ["^(?!.*projecthub).*?(?:web project|some of.*project|what.*project.*work|tell me about.*project)"],
       "answer": "Bradley's web projects include ProjectHub, an interactive Pokedex, CheeseMath, a Voice Ops Platform, CodePen experiments, and CIRIS Ethical AI. Details and links are available in the projects section.",
       "sourceIds": ["projects"]
     },
@@ -9879,7 +9879,7 @@
     {
       "id": "projecthub-tech",
       "intents": ["direct"],
-      "questionPatterns": ["what.*technology.*(?:it|projecthub).*use", "what.*tech.*(?:it|projecthub).*use", "what stack.*(?:it|projecthub)"],
+      "questionPatterns": ["what.*technology.*projecthub.*use", "what.*tech.*projecthub.*use", "what stack.*projecthub"],
       "answer": "ProjectHub uses vanilla JavaScript, HTML/CSS, GitHub Pages, and a Vite + Carbon Design System bundle for the live analytics dashboard. The Scout backend uses Node.js and Cloudflare Workers AI for inference.",
       "sourceIds": ["projects", "summary"]
     },
