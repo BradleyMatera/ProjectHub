@@ -97,7 +97,10 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   echo 'Installing new release...'
   sudo mv /tmp/\${RELEASE_TAG}-server.js server.js
   sudo chmod 644 server.js
-  sudo rm -rf lib.new && sudo mv /tmp/\${RELEASE_TAG}-lib lib
+  # Properly replace the lib directory (do not move new lib inside existing lib)
+  sudo rm -rf lib.new
+  sudo mv lib lib.new || true
+  sudo mv /tmp/\${RELEASE_TAG}-lib lib
   sudo mv /tmp/\${RELEASE_TAG}-free-tier.json data/free-tier-limits.json
   sudo chmod 644 data/free-tier-limits.json
 

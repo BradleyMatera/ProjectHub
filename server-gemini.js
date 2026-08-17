@@ -24,6 +24,14 @@ const { buildFalseClaimsRegex, shouldAbortGeneration, validateFallbackReply } = 
 const { classifyResponsePolicy, findRoleInQuestion: policyFindRole } = require('./lib/response-policy');
 const sessionState = require('./lib/session-state');
 
+// Legacy Think Mode data stub — learning/Think Mode removed from runtime.
+// These objects are kept only so /health and /api/knowledge-health continue
+// to return well-formed telemetry without undefined variable errors.
+let learnedData = { stashed: [], learned: [], scoredHistory: [], learnedCount: 0, lastThinkAt: 0 };
+let thinkRunning = false;
+let lastThinkAt = 0;
+const THINK_INTERVAL_MS = 20 * 60 * 1000;
+
 const app = express();
 
 // ============ COST LEDGER ============
