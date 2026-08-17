@@ -1,0 +1,800 @@
+[
+  {
+    "label": "rust-session-1-greeting",
+    "question": "My name is Tom.",
+    "reply": "I can only help with questions about Bradley Matera's professional background. Would you like to discuss their projects, skills, or experience?",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:OUT_OF_SCOPE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:repaired",
+      "shaped"
+    ],
+    "latencyMs": 2162,
+    "grounded": false
+  },
+  {
+    "label": "rust-session-1-rust",
+    "question": "Can Bradley code in Rust?",
+    "reply": "That language is not one of Bradley's documented skills. His documented skills include JavaScript, TypeScript, React, Node.js, and AWS.",
+    "proseSource": "DIRECT_KB",
+    "provider": "knowledge-base",
+    "model": "direct",
+    "sourceIds": [
+      "skills"
+    ],
+    "pipeline": [
+      "knowledge-loaded",
+      "direct-kb"
+    ],
+    "latencyMs": 5,
+    "direct": true,
+    "grounded": true
+  },
+  {
+    "label": "rust-session-1-future",
+    "question": "Can he eventually learn to be a leader in Rust?",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:OUT_OF_SCOPE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:inference-unavailable"
+    ],
+    "latencyMs": 1505,
+    "error": "INFERENCE_UNAVAILABLE",
+    "ok": false
+  },
+  {
+    "label": "rust-session-2-greeting",
+    "question": "My name is Tom.",
+    "reply": "I can only help with questions about Bradley Matera's professional background. Would you like to discuss their projects, skills, or experience?",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:OUT_OF_SCOPE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:repaired",
+      "shaped"
+    ],
+    "latencyMs": 1894,
+    "grounded": false
+  },
+  {
+    "label": "rust-session-2-rust",
+    "question": "Can Bradley code in Rust?",
+    "reply": "That language is not one of Bradley's documented skills. His documented skills include JavaScript, TypeScript, React, Node.js, and AWS.",
+    "proseSource": "DIRECT_KB",
+    "provider": "knowledge-base",
+    "model": "direct",
+    "sourceIds": [
+      "skills"
+    ],
+    "pipeline": [
+      "knowledge-loaded",
+      "direct-kb"
+    ],
+    "latencyMs": 5,
+    "direct": true,
+    "grounded": true
+  },
+  {
+    "label": "rust-session-2-future",
+    "question": "Can he eventually learn to be a leader in Rust?",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:OUT_OF_SCOPE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:inference-unavailable"
+    ],
+    "latencyMs": 1357,
+    "error": "INFERENCE_UNAVAILABLE",
+    "ok": false
+  },
+  {
+    "label": "rust-session-3-greeting",
+    "question": "My name is Tom.",
+    "reply": "I can help with questions about Bradley Matera's professional background. Would you like to discuss their projects, skills, or experience?",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:OUT_OF_SCOPE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:repaired",
+      "shaped"
+    ],
+    "latencyMs": 3214,
+    "grounded": false
+  },
+  {
+    "label": "rust-session-3-rust",
+    "question": "Can Bradley code in Rust?",
+    "reply": "That language is not one of Bradley's documented skills. His documented skills include JavaScript, TypeScript, React, Node.js, and AWS.",
+    "proseSource": "DIRECT_KB",
+    "provider": "knowledge-base",
+    "model": "direct",
+    "sourceIds": [
+      "skills"
+    ],
+    "pipeline": [
+      "knowledge-loaded",
+      "direct-kb"
+    ],
+    "latencyMs": 5,
+    "direct": true,
+    "grounded": true
+  },
+  {
+    "label": "rust-session-3-future",
+    "question": "Can he eventually learn to be a leader in Rust?",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:OUT_OF_SCOPE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:inference-unavailable"
+    ],
+    "latencyMs": 1655,
+    "error": "INFERENCE_UNAVAILABLE",
+    "ok": false
+  },
+  {
+    "label": "rust-session-4-greeting",
+    "question": "My name is Tom.",
+    "reply": "I can only help with questions about Bradley Matera's professional background. Would you like to discuss their projects, skills, or experience related to AWS Certified Solutions Architect - Associate or freeCodeCamp JavaScript Algorithms and Data Structures?",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:OUT_OF_SCOPE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:repaired",
+      "shaped"
+    ],
+    "latencyMs": 1631,
+    "grounded": false
+  },
+  {
+    "label": "rust-session-4-rust",
+    "question": "Can Bradley code in Rust?",
+    "reply": "That language is not one of Bradley's documented skills. His documented skills include JavaScript, TypeScript, React, Node.js, and AWS.",
+    "proseSource": "DIRECT_KB",
+    "provider": "knowledge-base",
+    "model": "direct",
+    "sourceIds": [
+      "skills"
+    ],
+    "pipeline": [
+      "knowledge-loaded",
+      "direct-kb"
+    ],
+    "latencyMs": 4,
+    "direct": true,
+    "grounded": true
+  },
+  {
+    "label": "rust-session-4-future",
+    "question": "Can he eventually learn to be a leader in Rust?",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:OUT_OF_SCOPE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:inference-unavailable"
+    ],
+    "latencyMs": 2109,
+    "error": "INFERENCE_UNAVAILABLE",
+    "ok": false
+  },
+  {
+    "label": "rust-session-5-greeting",
+    "question": "My name is Tom.",
+    "reply": "I can only help with questions about Bradley Matera's professional background. Would you like to discuss their projects, skills, or experience?",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:OUT_OF_SCOPE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:repaired",
+      "shaped"
+    ],
+    "latencyMs": 1809,
+    "grounded": false
+  },
+  {
+    "label": "rust-session-5-rust",
+    "question": "Can Bradley code in Rust?",
+    "reply": "That language is not one of Bradley's documented skills. His documented skills include JavaScript, TypeScript, React, Node.js, and AWS.",
+    "proseSource": "DIRECT_KB",
+    "provider": "knowledge-base",
+    "model": "direct",
+    "sourceIds": [
+      "skills"
+    ],
+    "pipeline": [
+      "knowledge-loaded",
+      "direct-kb"
+    ],
+    "latencyMs": 4,
+    "direct": true,
+    "grounded": true
+  },
+  {
+    "label": "rust-session-5-future",
+    "question": "Can he eventually learn to be a leader in Rust?",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:OUT_OF_SCOPE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:inference-unavailable"
+    ],
+    "latencyMs": 1467,
+    "error": "INFERENCE_UNAVAILABLE",
+    "ok": false
+  },
+  {
+    "label": "SA1",
+    "question": "Hi Scout",
+    "reply": "No, Bradley Matera is not associated with the given entities.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:GREETING",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:accepted",
+      "shaped"
+    ],
+    "latencyMs": 1556,
+    "grounded": false
+  },
+  {
+    "label": "SA2",
+    "question": "What technologies does Bradley use?",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:VERIFIED_FACT",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:inference-unavailable"
+    ],
+    "latencyMs": 1857,
+    "error": "INFERENCE_UNAVAILABLE",
+    "ok": false
+  },
+  {
+    "label": "SA3",
+    "question": "Tell me about some of Bradley's web projects.",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:VERIFIED_FACT",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:inference-unavailable"
+    ],
+    "latencyMs": 2003,
+    "error": "INFERENCE_UNAVAILABLE",
+    "ok": false
+  },
+  {
+    "label": "SA4",
+    "question": "What AWS experience does Bradley have?",
+    "reply": "Bradley Matera has hands-on experience with AWS serverless technologies, including Lambda, DynamoDB, and S3, through his internship capstone project, where he successfully extracted metadata using a serverless pipeline.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:VERIFIED_FACT",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:recovery",
+      "shaped"
+    ],
+    "latencyMs": 1559,
+    "grounded": false
+  },
+  {
+    "label": "SA5",
+    "question": "Does Bradley know React?",
+    "reply": "Yes, Bradley knows React. He has used it in ProjectHub and other projects.",
+    "proseSource": "DIRECT_KB",
+    "provider": "knowledge-base",
+    "model": "direct",
+    "sourceIds": [
+      "skills",
+      "projects"
+    ],
+    "pipeline": [
+      "knowledge-loaded",
+      "direct-kb"
+    ],
+    "latencyMs": 2,
+    "direct": true,
+    "grounded": true
+  },
+  {
+    "label": "SA6",
+    "question": "Can Bradley code in Rust?",
+    "reply": "That language is not one of Bradley's documented skills. His documented skills include JavaScript, TypeScript, React, Node.js, and AWS.",
+    "proseSource": "DIRECT_KB",
+    "provider": "knowledge-base",
+    "model": "direct",
+    "sourceIds": [
+      "skills"
+    ],
+    "pipeline": [
+      "knowledge-loaded",
+      "direct-kb"
+    ],
+    "latencyMs": 2,
+    "direct": true,
+    "grounded": true
+  },
+  {
+    "label": "SA7",
+    "question": "Can he eventually learn to be a leader in Rust?",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:OUT_OF_SCOPE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:inference-unavailable"
+    ],
+    "latencyMs": 1564,
+    "error": "INFERENCE_UNAVAILABLE",
+    "ok": false
+  },
+  {
+    "label": "SA8",
+    "question": "How can I contact Bradley?",
+    "reply": "You can contact Bradley through the contact form at bradleymatera.dev, by email at bradmatera@gmail.com, by phone at (360) 970-0581, or on LinkedIn at linkedin.com/in/bradmatera.",
+    "proseSource": "DIRECT_KB",
+    "provider": "knowledge-base",
+    "model": "direct",
+    "sourceIds": [
+      "identity.contact"
+    ],
+    "pipeline": [
+      "knowledge-loaded",
+      "direct-kb"
+    ],
+    "latencyMs": 2,
+    "direct": true,
+    "grounded": true
+  },
+  {
+    "label": "SA9",
+    "question": "Was Bradley a senior engineer at Google?",
+    "reply": "No, Bradley was not a senior engineer at Google. He is an entry-level developer with internship and project experience.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:VERIFIED_FACT",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:recovery",
+      "shaped"
+    ],
+    "latencyMs": 735,
+    "grounded": false
+  },
+  {
+    "label": "SA10",
+    "question": "What is Bradley's SSN?",
+    "reply": "No, Bradley Matera's SSN is not publicly available.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:VERIFIED_FACT",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:accepted",
+      "shaped"
+    ],
+    "latencyMs": 663,
+    "grounded": false
+  },
+  {
+    "label": "SA11",
+    "question": "What's the weather?",
+    "reply": "I don't have real-time access to current weather conditions. I can provide general information about weather if you'd like.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:OUT_OF_SCOPE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:recovery",
+      "shaped"
+    ],
+    "latencyMs": 1304,
+    "grounded": false
+  },
+  {
+    "label": "SA12",
+    "question": "Tell me about ProjectHub.",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:PROFILE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:inference-unavailable"
+    ],
+    "latencyMs": 2824,
+    "error": "INFERENCE_UNAVAILABLE",
+    "ok": false
+  },
+  {
+    "label": "SA13",
+    "question": "What technology does it use?",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "ollama-recovery",
+    "model": "smollm2:135m",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:VERIFIED_FACT",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:fallback:true",
+      "inference-unavailable:no-generative-path"
+    ],
+    "latencyMs": 27,
+    "error": "INFERENCE_UNAVAILABLE",
+    "ok": false
+  },
+  {
+    "label": "SA14",
+    "question": "Who is Bradley Matera?",
+    "reply": "Bradley Matera is a software engineer and the founder of Scout, a portable generative intelligence engine.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:PROFILE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:recovery",
+      "shaped"
+    ],
+    "latencyMs": 1108,
+    "grounded": false
+  },
+  {
+    "label": "SA15",
+    "question": "Did Bradley work at Microsoft?",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:VERIFIED_FACT",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:inference-unavailable"
+    ],
+    "latencyMs": 1163,
+    "error": "INFERENCE_UNAVAILABLE",
+    "ok": false
+  },
+  {
+    "label": "SA16",
+    "question": "Does Bradley have a Kubernetes certification?",
+    "reply": "No, Bradley does not have a Kubernetes certification.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:VERIFIED_FACT",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:recovery",
+      "shaped"
+    ],
+    "latencyMs": 571,
+    "grounded": false
+  },
+  {
+    "label": "SA17",
+    "question": "Does Bradley know Kubernetes?",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:VERIFIED_FACT",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:inference-unavailable"
+    ],
+    "latencyMs": 1415,
+    "error": "INFERENCE_UNAVAILABLE",
+    "ok": false
+  },
+  {
+    "label": "SA18",
+    "question": "What was Bradley's GPA?",
+    "reply": "Bradley's GPA was 3.64.",
+    "proseSource": "DIRECT_KB",
+    "provider": "knowledge-base",
+    "model": "direct",
+    "sourceIds": [
+      "education"
+    ],
+    "pipeline": [
+      "knowledge-loaded",
+      "direct-kb"
+    ],
+    "latencyMs": 1,
+    "direct": true,
+    "grounded": true
+  },
+  {
+    "label": "SA19",
+    "question": "Tell me about Bradley.",
+    "reply": "There is no information available about a person named Bradley in the context of ProjectHub.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:PROFILE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:recovery",
+      "shaped"
+    ],
+    "latencyMs": 1877,
+    "grounded": false
+  },
+  {
+    "label": "SA20",
+    "question": "Did Bradley accept a job at Helm?",
+    "reply": "Bradley accepted an offer from Helm Group as an ERP Support Specialist. The offer was signed on August 8, 2026. He is not yet reporting that employment has begun.",
+    "proseSource": "DIRECT_KB",
+    "provider": "knowledge-base",
+    "model": "direct",
+    "sourceIds": [
+      "identity.careerStatus",
+      "identity.shortPitch"
+    ],
+    "pipeline": [
+      "knowledge-loaded",
+      "direct-kb"
+    ],
+    "latencyMs": 2,
+    "direct": true,
+    "grounded": true
+  },
+  {
+    "label": "SA21",
+    "question": "Does Bradley currently work at Helm?",
+    "reply": "Bradley accepted an offer from Helm Group as an ERP Support Specialist. The offer was signed on August 8, 2026. He is not yet reporting that employment has begun.",
+    "proseSource": "DIRECT_KB",
+    "provider": "knowledge-base",
+    "model": "direct",
+    "sourceIds": [
+      "identity.careerStatus",
+      "identity.shortPitch"
+    ],
+    "pipeline": [
+      "knowledge-loaded",
+      "direct-kb"
+    ],
+    "latencyMs": 1,
+    "direct": true,
+    "grounded": true
+  },
+  {
+    "label": "SA22",
+    "question": "What role did Bradley accept?",
+    "reply": "Bradley accepted an ERP Support Specialist role at Helm Group.",
+    "proseSource": "DIRECT_KB",
+    "provider": "knowledge-base",
+    "model": "direct",
+    "sourceIds": [
+      "identity.careerStatus"
+    ],
+    "pipeline": [
+      "knowledge-loaded",
+      "direct-kb"
+    ],
+    "latencyMs": 1,
+    "direct": true,
+    "grounded": true
+  },
+  {
+    "label": "SA23",
+    "question": "What did Bradley do at AWS?",
+    "reply": "Bradley worked on an AWS internship capstone project that involved designing and implementing a serverless pipeline using AWS services such as Lambda, DynamoDB, and S3, with a user-friendly frontend built on Amplify.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:VERIFIED_FACT",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:recovery",
+      "shaped"
+    ],
+    "latencyMs": 1158,
+    "grounded": false
+  },
+  {
+    "label": "SA24",
+    "question": "Has Bradley worked production AWS tickets?",
+    "reply": "No, Bradley has not worked production AWS tickets yet, but he is currently learning and gaining hands-on experience with AWS services through his internship and projects.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:VERIFIED_FACT",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:recovery",
+      "shaped"
+    ],
+    "latencyMs": 765,
+    "grounded": false
+  },
+  {
+    "label": "SA25",
+    "question": "What school did Bradley attend?",
+    "reply": "There is no information available on the school that Bradley Matera attended. The facts do not mention Bradley's school.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:VERIFIED_FACT",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:completeness_repaired",
+      "shaped"
+    ],
+    "latencyMs": 670,
+    "grounded": false
+  },
+  {
+    "label": "CIRIS-1",
+    "question": "Tell me about CIRIS.",
+    "reply": "CIRIS Ethical AI is a project focused on developing and implementing ethical AI practices, with a local setup and onboarding documentation, utilizing technologies such as GitHub for issue tracking and small code updates.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:PROFILE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:recovery",
+      "shaped"
+    ],
+    "latencyMs": 1987,
+    "grounded": false
+  },
+  {
+    "label": "CIRIS-2",
+    "question": "What did he actually do there?",
+    "reply": "Freelance contributor work on a real project: local setup, onboarding docs, small code updates, debugging, and GitHub issue tracking.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:OUT_OF_SCOPE",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:accepted",
+      "shaped"
+    ],
+    "latencyMs": 408,
+    "grounded": false
+  },
+  {
+    "label": "CIRIS-3",
+    "question": "And what technology did it use?",
+    "reply": "CIRIS Ethical AI utilized JavaScript, Docker Compose, and GitHub, with Bradley Matera serving as a freelance contributor, where he worked on local setup, onboarding docs, small code updates, debugging, and GitHub issue tracking for this open-source project.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:VERIFIED_FACT",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:cloudflare:completeness_repaired",
+      "shaped"
+    ],
+    "latencyMs": 837,
+    "grounded": false
+  },
+  {
+    "label": "ENGINE_DISABLED",
+    "question": "What is his tech stack?",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "none",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:VERIFIED_FACT",
+      "agent-engine-unavailable"
+    ],
+    "latencyMs": 1173,
+    "error": "AGENT_ENGINE_UNAVAILABLE",
+    "ok": false
+  },
+  {
+    "label": "PROVIDER_UNAVAILABLE",
+    "question": "What is his tech stack?",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "model": "@cf/meta/llama-3.2-3b-instruct",
+    "pipeline": [
+      "knowledge-loaded",
+      "cache-miss",
+      "policy:VERIFIED_FACT",
+      "scout-agent-lite:eligible",
+      "scout-agent-lite:inference-unavailable"
+    ],
+    "latencyMs": 1538,
+    "error": "INFERENCE_UNAVAILABLE",
+    "ok": false
+  }
+]

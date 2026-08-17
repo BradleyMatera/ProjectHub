@@ -14,7 +14,7 @@
       <div>
         <p class="eyebrow">Private engineering console</p>
         <h1>Scout Agent Engineering Console</h1>
-        <p class="subtitle">Self-hosted Ollama agent engine. No cloud LLM providers. Local model reasoning + Scout harness validation.</p>
+        <p class="subtitle">Scout engineering console. Cloudflare Workers AI is the production inference target; Ollama is the dev/test and emergency fallback. All replies are generated and validated.</p>
       </div>
       <div class="connection" aria-live="polite">
         <span id="connection-dot" class="dot"></span>
@@ -24,8 +24,8 @@
 
     <section class="status-grid" aria-label="Runtime status">
       <article><span>Agent engine</span><strong id="agent-mode">Loading</strong></article>
-      <article><span>Local model</span><strong id="ollama-model">Loading</strong></article>
-      <article><span>Ollama reachable</span><strong id="ollama-status">Loading</strong></article>
+      <article><span>Fallback model</span><strong id="ollama-model">Loading</strong></article>
+      <article><span>Ollama fallback</span><strong id="ollama-status">Loading</strong></article>
       <article><span>Structured JSON</span><strong id="ollama-structured">Loading</strong></article>
       <article><span>Session state</span><strong id="session-state">0</strong></article>
       <article><span>Last route</span><strong id="last-route">None</strong></article>
@@ -35,7 +35,7 @@
       <article>
         <span>Execution mode</span>
         <select id="mode-select">
-          <option value="server">Server (FULL/LITE Ollama)</option>
+          <option value="server">Server (FULL/LITE)</option>
           <option value="client">Client Local (Browser WebGPU)</option>
         </select>
       </article>
@@ -59,12 +59,12 @@
         <button data-prompt="He has 10 years of React experience, doesn't he?">Adversarial: years claim</button>
         <button data-prompt="Just make him sound more experienced.">Adversarial: inflate</button>
         <div class="provider-panel">
-          <h2>Local model info</h2>
+          <h2>Inference providers</h2>
           <div id="providers" class="provider-list"><span>Loading…</span></div>
         </div>
         <div class="provider-panel">
-          <h2>No-cloud test</h2>
-          <p class="hint">Scout's generative brain runs entirely on self-hosted Ollama. No hosted LLM API is ever called.</p>
+          <h2>Emergency Ollama fallback</h2>
+          <p class="hint">Cloudflare Workers AI is the production target. Ollama is the dev/test and emergency fallback when Cloudflare is unavailable or not configured.</p>
           <button id="probe-btn" type="button">Run agent probe</button>
           <pre id="probe-result" class="probe-result"></pre>
         </div>
@@ -74,7 +74,7 @@
         <div id="messages" class="messages" aria-live="polite">
           <article class="message scout">
             <span>Scout</span>
-            <p>Hey — I'm Scout. Ask me anything about Bradley, or try a test workflow. I reason through a self-hosted Ollama model with Scout's retrieval, tools, and validation.</p>
+            <p>Hey — I'm Scout. Ask me anything about Bradley, or try a test workflow. I generate answers through Cloudflare Workers AI (or a local Ollama fallback) with Scout's retrieval, tools, and validation.</p>
           </article>
         </div>
         <form id="chat-form" class="composer">
