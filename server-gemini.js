@@ -1632,6 +1632,7 @@ app.post('/api/chat', async (req, res) => {
     let agentResult = null;
     let agentMeta = null;
     let agentEvents = null;
+    let inferenceProvider = localModelRouter.inferenceProvider || 'ollama';
     currentStanceContext = getStanceContext(sessionId);
 
     // 2a. Scout Agent Engine — the ONLY generative path. Policy contract
@@ -1688,7 +1689,7 @@ app.post('/api/chat', async (req, res) => {
             });
 
         // Derive actual inference provider from router (not hardcoded)
-        const inferenceProvider = localModelRouter.inferenceProvider || 'ollama';
+        inferenceProvider = localModelRouter.inferenceProvider || 'ollama';
 
         // Meter each generative call with correct provider
         for (const evt of (agentResult.events || [])) {

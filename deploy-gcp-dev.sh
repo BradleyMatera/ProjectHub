@@ -70,6 +70,7 @@ echo "Uploading to /tmp/${RELEASE_TAG}..."
 gcloud compute scp "$LOCAL_FILE" "$VM_NAME:/tmp/${RELEASE_TAG}-server.js" --zone="$ZONE" --project="$PROJECT"
 gcloud compute scp --recurse "$LOCAL_LIB_DIR" "$VM_NAME:/tmp/${RELEASE_TAG}-lib" --zone="$ZONE" --project="$PROJECT"
 gcloud compute scp "$REMOTE_DATA_DIR/free-tier-limits.json" "$VM_NAME:/tmp/${RELEASE_TAG}-free-tier.json" --zone="$ZONE" --project="$PROJECT"
+gcloud compute scp "$REMOTE_DATA_DIR/recruiter-knowledge.json" "$VM_NAME:/tmp/${RELEASE_TAG}-knowledge.json" --zone="$ZONE" --project="$PROJECT"
 
 echo "Upload complete"
 echo ""
@@ -91,6 +92,7 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   if [ -f server.js ]; then sudo cp server.js \"\$BACKUP_DIR/server.js\"; fi
   if [ -d lib ]; then sudo cp -r lib \"\$BACKUP_DIR/lib\"; fi
   if [ -f data/free-tier-limits.json ]; then sudo cp data/free-tier-limits.json \"\$BACKUP_DIR/free-tier-limits.json\"; fi
+  if [ -f data/recruiter-knowledge.json ]; then sudo cp data/recruiter-knowledge.json \"\$BACKUP_DIR/recruiter-knowledge.json\"; fi
   echo \"Backup saved to \$BACKUP_DIR\"
 
   # Install new release
@@ -102,7 +104,8 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --project="$PROJECT" --command="
   sudo mv lib lib.new || true
   sudo mv /tmp/\${RELEASE_TAG}-lib lib
   sudo mv /tmp/\${RELEASE_TAG}-free-tier.json data/free-tier-limits.json
-  sudo chmod 644 data/free-tier-limits.json
+  sudo mv /tmp/\${RELEASE_TAG}-knowledge.json data/recruiter-knowledge.json
+  sudo chmod 644 data/free-tier-limits.json data/recruiter-knowledge.json
 
   # Verify syntax on VM
   node --check server.js
