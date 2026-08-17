@@ -8,19 +8,32 @@
   "identity": {
     "name": "Bradley Matera",
     "preferredName": "Brad",
-    "title": "Junior Software Engineer",
-    "location": "Davis, Illinois (open to relocation)",
+    "title": "Early-career Software Engineer",
+    "location": "Davis, Illinois",
     "email": "bradmatera@gmail.com",
     "phone": "(360) 970-0581",
     "portfolioUrl": "https://bradleymatera.dev/",
     "linkedInUrl": "https://www.linkedin.com/in/bradmatera",
     "gitHubUrl": "https://github.com/BradleyMatera",
-    "shortPitch": "I am a junior software engineer based in Davis, Illinois, open to relocation. My background is in web development, AWS support engineering training, troubleshooting, documentation, and AI-assisted development. I am open to any entry-level tech, IT, or support role where I can learn hands-on, and I do best with mentorship or a structured teaching program because I learn quickly and can prove value fast."
+    "shortPitch": "I am an early-career software engineer based in Davis, Illinois. My background is in web development, AWS support engineering training, troubleshooting, documentation, and AI-assisted development. I have accepted an offer for an ERP Support Specialist role at Helm Group (signed August 8, 2026); I am not yet reporting that employment has begun.",
+    "careerStatus": {
+      "status": "incoming",
+      "summary": "Accepted offer for ERP Support Specialist at Helm Group; start date not yet reported.",
+      "acceptedOffer": {
+        "role": "ERP Support Specialist",
+        "company": "Helm Group",
+        "signedDate": "2026-08-08",
+        "startDate": null,
+        "authoritative": true
+      },
+      "employmentHasBegun": false,
+      "activelyJobSeeking": false
+    }
   },
   "summary": {
-    "whoIAm": "Junior software engineer focused on JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation. I am early in my career, but I learn quickly, work carefully in existing codebases, and like building useful software that can be explained and maintained.",
+    "whoIAm": "Early-career software engineer focused on JavaScript, TypeScript, React, Node.js, AWS projects, debugging, and clear documentation. I am early in my career, but I learn quickly, work carefully in existing codebases, and like building useful software that can be explained and maintained.",
     "whatIDo": "Build and support web applications, write documentation, debug issues, integrate APIs, and work with cloud services in training and project environments.",
-    "whatIAmLookingFor": "Any entry-level tech role where I can contribute on day one and learn hands-on. I do best with mentorship or a structured teaching program, and my past learning shows I can pick up new tech quickly and prove value fast.",
+    "whatIAmLookingFor": "To start strong in the accepted ERP Support Specialist role at Helm Group, continue building useful software, and grow into a well-rounded support and engineering professional.",
     "coreStrengths": [
       "Learning quickly in unfamiliar codebases",
       "Writing clear documentation and onboarding guides",
@@ -43,7 +56,7 @@
     ]
   },
   "goals": {
-    "shortTerm": "Land any entry-level tech role where I can learn hands-on, improve my debugging and communication skills, and contribute to a team. I'm especially drawn to places that offer mentorship or a structured teaching program, because I learn quickly and can prove value fast.",
+    "shortTerm": "Start strong in the accepted ERP Support Specialist role at Helm Group, build rapport with the team, and apply my debugging, documentation, and learning skills on day one.",
     "longTerm": "Grow into a well-rounded engineer or support professional who can own features, support systems, mentor others, and keep software understandable and maintainable.",
     "targetRoles": [
       "Junior Software Engineer",
@@ -101,6 +114,11 @@
     "location": "Winter Park, Florida",
     "graduationDate": "October 30, 2025",
     "gpa": "3.64",
+    "gpaVisibility": {
+      "public": true,
+      "volunteer": false,
+      "publicOnRequest": true
+    },
     "relevantCoursework": [
       "Interfaces and Usability",
       "Database Systems",
@@ -519,7 +537,7 @@
     {
       "name": "ProjectHub (Scout)",
       "url": "https://bradleymatera.github.io/ProjectHub/",
-      "description": "Embeddable AI recruiter assistant named Scout. One script tag adds a chat widget to any site. It answers questions about Bradley's projects, skills, AWS experience, education, target roles, and contact details from a grounded knowledge base. It runs Qwen 2.5 0.5B locally through Ollama with BM25 retrieval, deterministic evidence tools, five-turn memory, stance consistency, strict generated-output validation, and a live analytics dashboard. Frontend is vanilla JavaScript served from GitHub Pages; backend is a Node.js API on a free GCP e2-micro VM with Caddy HTTPS.",
+      "description": "ProjectHub Recruiter Alpha is the first application built on Scout, a portable generative intelligence engine. The embeddable chat widget answers questions about Bradley's work and background. Scout uses deterministic query understanding, BM25/RRF retrieval, evidence tools, five-turn session memory, structured response contracts, and strict grounded validation. The production target is Cloudflare Workers AI free inference; Ollama is used for dev/test and possible emergency fallback; browser WebGPU is an experimental future option. Frontend is vanilla JavaScript served from GitHub Pages; the current backend is a Node.js API on a free GCP e2-micro VM.",
       "tech": [
         "JavaScript",
         "Node.js",
@@ -529,11 +547,14 @@
         "Caddy",
         "Vite",
         "Carbon Design System",
-        "Ollama",
-        "Qwen 2.5",
+        "Cloudflare Workers AI",
         "Okapi BM25",
+        "Reciprocal Rank Fusion",
         "RAG",
-        "Conversational memory"
+        "Conversational memory",
+        "Structured response contracts",
+        "Ollama",
+        "Qwen 2.5"
       ],
       "category": "Portfolio / AI recruiter assistant",
       "aliases": [
@@ -752,6 +773,11 @@
     "typos": {
       "brad": "bradley",
       "brads": "bradley",
+      "bradly": "bradley",
+      "bradely": "bradley",
+      "bradlee": "bradley",
+      "materra": "matera",
+      "matara": "matera",
       "no": "know",
       "experince": "experience",
       "exprience": "experience",
@@ -9583,5 +9609,321 @@
       "AWS internship did not include live customer production tickets.",
       "AI assistance should be disclosed when relevant; Bradley reviews, debugs, edits, and verifies generated work."
     ]
-  }
+  },
+  "subjectAliases": ["Bradley", "Brad", "Matera"],
+  "knownProjects": ["Voice Ops Platform", "Convo AI", "Car Match", "SecureLearn", "Bradley's Fairway"],
+  "knowledgeCompleteness": {
+    "employmentHistory": {
+      "mode": "open_world",
+      "complete": false,
+      "authoritative": false,
+      "authoritativeForListedClaims": true
+    },
+    "education": {
+      "mode": "closed_world",
+      "complete": true,
+      "authoritative": true
+    },
+    "certifications": {
+      "mode": "closed_world",
+      "complete": true,
+      "authoritative": true
+    }
+  },
+  "boundaries": [
+    {
+      "id": "no-senior-level",
+      "category": "seniority",
+      "claim": "senior engineer, architect, lead engineer, manager, or expert-level experience",
+      "correction": "He is early career, entry-level, learning stage. No team management. No expert-level claims.",
+      "authoritative": true
+    },
+    {
+      "id": "no-executive",
+      "category": "seniority",
+      "claim": "executive role (CEO, CTO, founder, owner)",
+      "correction": "He is an individual contributor, not an executive.",
+      "authoritative": true
+    },
+    {
+      "id": "no-team-management",
+      "category": "seniority",
+      "claim": "managed or supervised a team of developers",
+      "correction": "He is an individual contributor. He has not managed or supervised a team.",
+      "authoritative": true
+    },
+    {
+      "id": "no-production-aws",
+      "category": "experience",
+      "claim": "live customer production ticket work from the AWS internship",
+      "correction": "The AWS internship used guided training environments with no customer data, not live production ticket work.",
+      "authoritative": true
+    },
+    {
+      "id": "no-enterprise-scale",
+      "category": "scale",
+      "claim": "Fortune 500, enterprise clients, or million-user scale work",
+      "correction": "No evidence of Fortune 500 or enterprise-scale work.",
+      "authoritative": true
+    },
+    {
+      "id": "no-erp-experience",
+      "category": "experience",
+      "claim": "3+ years of ERP experience or direct ERP employment",
+      "correction": "No evidence of direct ERP experience or ERP employment.",
+      "authoritative": true
+    },
+    {
+      "id": "no-csharp-professional",
+      "category": "experience",
+      "claim": "professional C#/.NET experience",
+      "correction": "He is currently learning and refreshing C#/.NET fundamentals, not professional experience.",
+      "authoritative": true
+    },
+    {
+      "id": "no-fake-history",
+      "category": "employment",
+      "claim": "work history not present in the canonical resume",
+      "correction": "Do not replace removed work history with fake experience.",
+      "authoritative": true
+    }
+  ],
+  "claimCorrections": [
+    {
+      "id": "years-experience",
+      "triggerPattern": "\\b(\\d+)\\s+years?\\b",
+      "correction": "Only confirm years if the knowledge base explicitly states a duration.",
+      "category": "experience"
+    },
+    {
+      "id": "senior-terms",
+      "triggerPattern": "\\b(expert|led|architected|managed a team|managed the team|principal|staff)\\b",
+      "correction": "He is early career, entry-level, learning stage. No team management. No expert-level claims.",
+      "category": "seniority"
+    },
+    {
+      "id": "executive-terms",
+      "triggerPattern": "\\b(ceo|cto|founder|owner)\\b",
+      "correction": "He is an individual contributor, not an executive.",
+      "category": "seniority"
+    },
+    {
+      "id": "mit-school",
+      "triggerPattern": "\\bmit\\b",
+      "correction": "He attended Full Sail University, not MIT.",
+      "category": "education"
+    },
+    {
+      "id": "cs-degree",
+      "triggerPattern": "\\bcomputer science degree\\b",
+      "correction": "His degree is from Full Sail University, not a CS program.",
+      "category": "education"
+    },
+    {
+      "id": "other-schools",
+      "triggerPattern": "\\b(stanford|harvard|berkeley|princeton|yale|oxford|cambridge|caltech|carnegie mellon)\\b",
+      "correction": "He attended Full Sail University, not this school.",
+      "category": "education"
+    },
+    {
+      "id": "big-tech-companies",
+      "triggerPattern": "\\b(google|microsoft|apple|meta|facebook|netflix|tesla|openai|anthropic)\\b",
+      "correction": "He has not worked at this company. His tech experience is AWS internship and CIRIS freelance.",
+      "category": "employment"
+    },
+    {
+      "id": "kubernetes-cert",
+      "triggerPattern": "\\b(kubernetes|cka|ckad)\\b",
+      "correction": "He does not have a Kubernetes certification. His certs are AWS SAA and AWS AI Practitioner.",
+      "category": "certification"
+    },
+    {
+      "id": "advanced-degree",
+      "triggerPattern": "\\b(master'?s|ph\\.?d|doctorate)\\b",
+      "correction": "He has a Bachelor of Science in Web Development from Full Sail University. No master's or PhD.",
+      "category": "education"
+    },
+    {
+      "id": "team-management",
+      "triggerPattern": "\\b(team of developers|managed developers|supervised|directed)\\b",
+      "correction": "He is an individual contributor. He has not managed or supervised a team.",
+      "category": "seniority"
+    },
+    {
+      "id": "enterprise-scale",
+      "triggerPattern": "\\b(fortune 500|enterprise clients|million users)\\b",
+      "correction": "No evidence of Fortune 500 or enterprise-scale work.",
+      "category": "scale"
+    }
+  ],
+  "directAnswers": [
+    {
+      "id": "masters-degree",
+      "intents": ["adversarial_deny"],
+      "questionPatterns": ["master'?s", "phd", "doctorate", "postdoc"],
+      "answer": "He does not have a master's degree or PhD. His education is a Bachelor of Science in Web Development from Full Sail University.",
+      "sourceIds": ["education"]
+    },
+    {
+      "id": "kubernetes-cert",
+      "intents": ["adversarial_deny"],
+      "questionPatterns": ["kubernetes.*certification", "cka", "ckad"],
+      "answer": "He does not have a Kubernetes certification. His certifications include AWS Certified Solutions Architect - Associate and AWS Certified AI Practitioner.",
+      "sourceIds": ["certifications"]
+    },
+    {
+      "id": "production-incident",
+      "intents": ["adversarial_deny"],
+      "questionPatterns": ["production.*incident"],
+      "answer": "He did not handle production AWS incidents. He was an entry-level developer and intern.",
+      "sourceIds": ["experience", "boundaries.no-production-aws"]
+    },
+    {
+      "id": "senior-engineer",
+      "intents": ["adversarial_deny"],
+      "questionPatterns": ["senior.*engineer", "lead.*engineer", "principal.*engineer", "senior.*developer", "lead.*developer", "senior.*architect"],
+      "answer": "He was not a senior or lead engineer. He is an entry-level developer with internship and project experience.",
+      "sourceIds": ["boundaries.no-senior-level"]
+    },
+    {
+      "id": "team-management",
+      "intents": ["adversarial_deny"],
+      "questionPatterns": ["manag\\w+\\s+(?:a\\s+)?team"],
+      "answer": "He did not manage a team. He is an entry-level developer.",
+      "sourceIds": ["boundaries.no-team-management"]
+    },
+    {
+      "id": "masters-degree-education",
+      "intents": ["adversarial_deny"],
+      "questionPatterns": ["master'?s\\s+degree"],
+      "answer": "He does not have a master's degree or PhD. His education is a Bachelor of Science in Web Development from Full Sail University.",
+      "sourceIds": ["education"]
+    },
+    {
+      "id": "contact-info",
+      "intents": ["direct"],
+      "questionPatterns": ["how can i contact", "contact bradley", "contact info", "\\bemail\\b", "phone number"],
+      "answer": "You can contact Bradley through the contact form at bradleymatera.dev, by email at bradmatera@gmail.com, by phone at (360) 970-0581, or on LinkedIn at linkedin.com/in/bradmatera.",
+      "sourceIds": ["identity.contact"]
+    },
+    {
+      "id": "gpa-public",
+      "intents": ["direct"],
+      "questionPatterns": ["gpa", "grade point average", "what was.*gpa"],
+      "answer": "Bradley's GPA was 3.64.",
+      "sourceIds": ["education"]
+    },
+    {
+      "id": "helm-accepted-offer",
+      "intents": ["direct"],
+      "questionPatterns": ["\\bhelm\\b", "accepted.*(?:offer|job)", "did.*accept.*(?:offer|job)", "has.*accepted.*(?:offer|job)"],
+      "answer": "Bradley accepted an offer from Helm Group as an ERP Support Specialist. The offer was signed on August 8, 2026. He is not yet reporting that employment has begun.",
+      "sourceIds": ["identity.careerStatus", "identity.shortPitch"]
+    },
+    {
+      "id": "helm-role",
+      "intents": ["direct"],
+      "questionPatterns": ["what role.*(?:accept|helm)", "which role.*(?:accept|helm)", "role.*\\bhelm\\b"],
+      "answer": "Bradley accepted an ERP Support Specialist role at Helm Group.",
+      "sourceIds": ["identity.careerStatus"]
+    },
+    {
+      "id": "react-skill",
+      "intents": ["direct"],
+      "questionPatterns": ["does .* know react", "do .* know react", "is .* proficient in react", "\\breact\\b.*\\b(know|use|have)\\b", "\\b(know|use|have)\\b.*\\breact\\b"],
+      "answer": "Yes, Bradley knows React. He has used it in ProjectHub and other projects.",
+      "sourceIds": ["skills", "projects"]
+    },
+    {
+      "id": "rust-not-documented",
+      "intents": ["direct"],
+      "questionPatterns": ["does .* (?:know|use|code in) rust", "can .* code in rust", "is .* proficient in rust", "\\brust\\b.*\\bskill"],
+      "answer": "That language is not one of Bradley's documented skills. His documented skills include JavaScript, TypeScript, React, Node.js, and AWS.",
+      "sourceIds": ["skills"]
+    },
+    {
+      "id": "rust-future-leader",
+      "intents": ["direct"],
+      "questionPatterns": ["leader in rust", "eventually.*rust", "future.*rust", "learn to be a leader"],
+      "answer": "Rust is not one of Bradley's documented skills. He could learn it over time, but there is no current evidence he leads anything in it.",
+      "sourceIds": ["skills"]
+    },
+    {
+      "id": "school-attended",
+      "intents": ["direct"],
+      "questionPatterns": ["what.*school", "where.*study", "where.*go to school", "what.*university", "where.*attend"],
+      "answer": "Bradley attended Full Sail University, where he earned a Bachelor of Science in Web Development (B.S.).",
+      "sourceIds": ["education"]
+    },
+    {
+      "id": "tech-stack",
+      "intents": ["direct"],
+      "questionPatterns": ["what.*technolog", "what.*tech stack", "what.*tech.*use", "what.*skills.*(?:have|use)", "what.*(?:languages|frameworks).*use"],
+      "answer": "Bradley's documented skills include JavaScript, TypeScript, React, Node.js, SQL, AWS, Git, and related web technologies.",
+      "sourceIds": ["skills"]
+    },
+    {
+      "id": "web-projects",
+      "intents": ["direct"],
+      "questionPatterns": ["web project", "some of.*project", "what.*project.*work", "tell me about.*project"],
+      "answer": "Bradley's web projects include ProjectHub, an interactive Pokedex, CheeseMath, a Voice Ops Platform, CodePen experiments, and CIRIS Ethical AI. Details and links are available in the projects section.",
+      "sourceIds": ["projects"]
+    },
+    {
+      "id": "projecthub-summary",
+      "intents": ["direct"],
+      "questionPatterns": ["what is projecthub", "tell me about projecthub"],
+      "answer": "ProjectHub is an embeddable, AI-powered recruiter chat widget and portfolio site that showcases Bradley Matera's web development projects and CodePens. It is built with vanilla JavaScript and served from GitHub Pages, and its live analytics dashboard is built with Vite and Carbon. It is powered by Scout, a portable generative intelligence engine Bradley is building.",
+      "sourceIds": ["projects", "summary"]
+    },
+    {
+      "id": "projecthub-tech",
+      "intents": ["direct"],
+      "questionPatterns": ["what.*technology.*(?:it|projecthub).*use", "what.*tech.*(?:it|projecthub).*use", "what stack.*(?:it|projecthub)"],
+      "answer": "ProjectHub uses vanilla JavaScript, HTML/CSS, GitHub Pages, and a Vite + Carbon Design System bundle for the live analytics dashboard. The Scout backend uses Node.js and Cloudflare Workers AI for inference.",
+      "sourceIds": ["projects", "summary"]
+    },
+    {
+      "id": "aws-experience",
+      "intents": ["direct"],
+      "questionPatterns": ["what.*aws.*(?:do|work|experience)", "aws.*(?:do|experience|work)", "what did.*do at aws"],
+      "answer": "Bradley completed an AWS support engineering internship from May 2025 to August 2025. The work focused on guided troubleshooting labs, support engineering training, and a serverless capstone project using Lambda, DynamoDB, S3, and Amplify.",
+      "sourceIds": ["experience", "education"]
+    },
+    {
+      "id": "aws-production-tickets",
+      "intents": ["direct"],
+      "questionPatterns": ["production.*aws.*ticket", "production.*ticket", "worked production"],
+      "answer": "No, Bradley has not worked production AWS tickets. His AWS experience is from the internship training and capstone project.",
+      "sourceIds": ["experience", "boundaries.no-production-aws"]
+    },
+    {
+      "id": "kubernetes-skill",
+      "intents": ["direct"],
+      "questionPatterns": ["does .* know kubernetes", "do .* know kubernetes", "\\bkubernetes\\b.*\\bskill", "\\bkubernetes\\b.*\\b(use|have)"],
+      "answer": "That technology is not one of Bradley's documented skills. His documented skills include JavaScript, TypeScript, React, Node.js, and AWS.",
+      "sourceIds": ["skills"]
+    },
+    {
+      "id": "kubernetes-certification",
+      "intents": ["direct"],
+      "questionPatterns": ["kubernetes.*certification", "certification.*kubernetes"],
+      "answer": "No, Bradley does not have a certification in that technology. His certifications are AWS Certified Solutions Architect - Associate and AWS Certified AI Practitioner.",
+      "sourceIds": ["certifications"]
+    },
+    {
+      "id": "microsoft-employment",
+      "intents": ["direct"],
+      "questionPatterns": ["work at microsoft", "microsoft.*work", "did .* work.*microsoft"],
+      "answer": "There is no verified record of Bradley working at Microsoft. His documented work history does not include Microsoft.",
+      "sourceIds": ["experience"]
+    },
+    {
+      "id": "tell-me-about-bradley",
+      "intents": ["direct"],
+      "questionPatterns": ["tell me about bradley", "who is bradley matera"],
+      "answer": "Bradley Matera is a junior software engineer based in Davis, Illinois, open to relocation. He has a B.S. in Web Development from Full Sail University, AWS support engineering internship experience, and works on projects like ProjectHub and CIRIS Ethical AI. He accepted an ERP Support Specialist role at Helm Group.",
+      "sourceIds": ["identity", "summary", "education", "experience"]
+    }
+  ]
 }
