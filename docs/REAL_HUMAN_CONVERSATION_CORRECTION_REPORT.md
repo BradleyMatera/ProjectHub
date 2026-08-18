@@ -83,7 +83,7 @@ The immediate failure transcript was six turns long and is reproduced below.
 ```text
 npm test                 793 / 793 passing
 npm run test:retrieval   passing
-npm run eval-retrieval   Recall@6 = 1.000, MRR@6 = 0.931
+npm run eval-retrieval   Recall@6 = 1.000, MRR@6 = 0.971
 ```
 
 No regressions in existing unit or retrieval suites.

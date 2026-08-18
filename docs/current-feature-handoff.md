@@ -4,7 +4,7 @@
 
 **Working branch:** `develop` (integration branch; `feat/agent-systems-network` is historical)
 
-**Code baseline:** `c3effbc` on `origin/develop` — verified pushed to GitHub, mirrored to `ProjectHub-dev:main`, and deployed to the dev backend VM.
+**Code baseline:** `364c39e` on `origin/develop` (docs-only ahead of the runtime baseline). The runtime/code baseline deployed to the dev VM is `c3effbc`.
 
 **Verdict:** Staging-validated. Production (`master`) remains frozen; no production promotion yet.
 
@@ -13,10 +13,11 @@
 > inference for staging/production is **Cloudflare Workers AI**
 > (`@cf/meta/llama-3.2-3b-instruct`). Ollama is the dev/test runtime and an
 > optional fallback architecture — it is NOT qualified for production.
-> Browser/WebGPU inference is experimental. 100% of user-visible conversational
-> replies are generative; every reply carries a `proseSource` of `DIRECT_KB`,
-> `MODEL_GENERATION`, or `TECHNICAL_ERROR`. There is no deterministic chatbot
-> fallback prose. Default release mode is `SCOUT_AGENT_MODE=lite`.
+> Browser/WebGPU inference is experimental. Runtime JS never authors normal
+> chatbot prose; every user-visible reply carries a `proseSource`: `DIRECT_KB`
+> (canonical tenant facts), `MODEL_GENERATION` (model output), or
+> `TECHNICAL_ERROR` (infrastructure). There is no deterministic chatbot fallback
+> prose. Default release mode is `SCOUT_AGENT_MODE=lite`.
 
 > **Conversation-control note:** `classifyResponsePolicy` detects control
 > intents (`GREETING`, `USER_PROFILE_UPDATE`, `USER_PROFILE_QUERY`, `THANKS`,
@@ -31,12 +32,10 @@
 
 ## Current State (2026-08-18)
 
-- `origin/develop` = `c3effbc193fa28d73f9af0cd74007d71ff502e4e`
-- `ProjectHub-dev:main` = `fb46a4f` (manual mirror of develop@`c3effbc`; the
-  sync-staging workflow's `PROJECTHUB_DEV_TOKEN` secret is failing and needs
-  rotation — the workflow auth username was also fixed to `x-access-token`)
-- Dev backend (`https://dev.projecthub-chat.bradleymatera.dev/`) runs
-  develop@`c3effbc` via `scripts/manual-deploy-dev.js`
+- **Remote develop HEAD** = `364c39e4fde639333b03136b30de76528d82a643` (source of truth for source code)
+- **Runtime/code baseline** = `c3effbc193fa28d73f9af0cd74007d71ff502e4e` (last source commit that affects runtime; deployed to the dev backend)
+- **Staging frontend source** = `ProjectHub-dev:main` = `fb46a4f` (manual mirror of the runtime baseline `c3effbc`; the sync-staging workflow's `PROJECTHUB_DEV_TOKEN` secret is failing and needs rotation)
+- **Staging backend deployed source** = `c3effbc` (clean committed tree pushed to GitHub before `scripts/manual-deploy-dev.js`)
 - Tests: 793/793 unit tests pass; retrieval Recall@6 = 1.000, MRR@6 = 0.971
 - Staging manual transcript re-run: 6/6 turns correct
   (`docs/REAL_HUMAN_CONVERSATION_CORRECTION_REPORT.md`)
