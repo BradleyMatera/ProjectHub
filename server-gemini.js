@@ -1671,6 +1671,7 @@ app.post('/api/chat', async (req, res) => {
     let agentResult = null;
     let agentMeta = null;
     let agentEvents = null;
+    let evidence = [];
     let inferenceProvider = localModelRouter.inferenceProvider || 'ollama';
     currentStanceContext = getStanceContext(sessionId);
 
@@ -1682,7 +1683,6 @@ app.post('/api/chat', async (req, res) => {
       try {
         // Retrieve evidence via BM25 for the agent context packet.
         // Pure conversational control modes do not need candidate facts.
-        let evidence = [];
         if (!NO_RETRIEVAL_MODES.has(policy.mode)) {
           const understood = understandQuery(userMessage, history, ragChunks || buildRagChunks(knowledge));
           const bm25Results = bm25Index
