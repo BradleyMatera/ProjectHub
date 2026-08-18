@@ -1318,7 +1318,7 @@ process.on('SIGINT', () => { flushStats(); process.exit(0); });
 // 1. /api/client-packet: Server prepares a compact evidence packet for browser generation
 // 2. /api/client-validate: Server validates a browser-generated answer against the same evidence
 
-const { preRoute, compressToolResult, buildLitePacket, detectAdversarialCaveat, rewriteQuery } = require('./lib/lite-agent');
+const { preRoute, compressToolResult, buildLitePacket, detectAdversarialCaveat } = require('./lib/lite-agent');
 const { buildCompactProfileSummary } = require('./lib/profile-summary');
 
 // In-memory store for evidence packets (short TTL, identified by runId)
