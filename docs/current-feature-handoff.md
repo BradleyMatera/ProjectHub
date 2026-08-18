@@ -32,15 +32,15 @@
 
 ## Current State (2026-08-18)
 
-- **Remote develop HEAD** = `364c39e4fde639333b03136b30de76528d82a643` (source of truth for source code)
-- **Runtime/code baseline** = `c3effbc193fa28d73f9af0cd74007d71ff502e4e` (last source commit that affects runtime; deployed to the dev backend)
-- **Staging frontend source** = `ProjectHub-dev:main` = `fb46a4f` (manual mirror of the runtime baseline `c3effbc`; the sync-staging workflow's `PROJECTHUB_DEV_TOKEN` secret is failing and needs rotation)
-- **Staging backend deployed source** = `c3effbc` (clean committed tree pushed to GitHub before `scripts/manual-deploy-dev.js`)
-- Tests: 793/793 unit tests pass; retrieval Recall@6 = 1.000, MRR@6 = 0.971
-- Staging manual transcript re-run: 6/6 turns correct
-  (`docs/REAL_HUMAN_CONVERSATION_CORRECTION_REPORT.md`)
-- Next step: broader staging evaluation, then a `develop` → `master` release PR
-  per `PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md`
+- **Remote develop HEAD** = `8f96ca25e86616bf8fed75bb578d7421b3a5c02a` (source of truth for source code; docs-only commits may follow)
+- **Runtime/code baseline** = `8f96ca25e86616bf8fed75bb578d7421b3a5c02a` (last source commit that affects runtime; deployed to the dev backend)
+- **Staging frontend source** = `ProjectHub-dev:main` = `8f96ca2` (manual mirror of the runtime baseline; the sync-staging workflow's `PROJECTHUB_DEV_TOKEN` secret remains failing and needs rotation)
+- **Staging backend deployed source** = `8f96ca2` (clean committed tree pushed to GitHub before `scripts/manual-deploy-dev.js`)
+- Tests: 797/797 unit tests pass; retrieval Recall@6 = 1.000, MRR@6 = 0.971
+- Latest human staging evaluation (`data/human-staging-evaluation.json`):
+  - Control-mode fixes landed: `USER_PROFILE_QUERY`/`USER_PROFILE_UPDATE` correctly recall/greet by name; `REFUSAL`/`OUT_OF_SCOPE` no longer overridden by `direct-kb`; `evaluateCompleteness` repair no longer overwrites correct short control answers.
+  - Remaining failures are primarily `VERIFIED_FACT`/`PROJECT_DETAIL` hallucinations or overclaim from the small 3b model (e.g., c3/c8/c9 false seniority/background claims, c10/c12 empty project-list replies). These need further root cause analysis in `validateAnswer`/grounding.
+- Next step: continue analyzing the `data/human-staging-evaluation.json` failures, fix the next generic engine layer, then `develop` → `master` release PR per `PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md`
 
 ---
 
