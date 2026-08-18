@@ -1,30 +1,55 @@
 # Scout Feature Handoff
 
-**Updated:** 2026-08-13 (cloud-hosted generative replacement phase)
+**Updated:** 2026-08-18 (conversation-control + staging reconciliation phase)
 
-**Working branch:** `feat/agent-systems-network`
+**Working branch:** `develop` (integration branch; `feat/agent-systems-network` is historical)
 
-**Code baseline:** Post-`e5a74ad` (generative recovery architecture phase)
+**Code baseline:** `c3effbc` on `origin/develop` — verified pushed to GitHub, mirrored to `ProjectHub-dev:main`, and deployed to the dev backend VM.
 
-**Verdict:** NOT YET — targeted generative gate not yet passed.
+**Verdict:** Staging-validated. Production (`master`) remains frozen; no production promotion yet.
 
-> **Architecture note:** ProjectHub/Scout is being developed as the CLOUD-HOSTED
-> replacement for the existing generative AI chatbot on Bradley's website. The
-> current website chatbot uses a Groq-hosted Llama 8B model retiring August 16, 2026.
-> Ollama on development machines is only an inference runtime used while developing/testing.
-> It is NOT the product architecture. Production target: cloud-hosted backend with
-> generative inference for 100% of user-visible chat replies. Future optimization:
-> capable browsers may use WebGPU-assisted generation; incapable browsers use cloud generation.
+> **Architecture note:** **Scout** is the portable intelligence/orchestration
+> engine; **ProjectHub Recruiter Alpha** is the app powered by Scout. Primary
+> inference for staging/production is **Cloudflare Workers AI**
+> (`@cf/meta/llama-3.2-3b-instruct`). Ollama is the dev/test runtime and an
+> optional fallback architecture — it is NOT qualified for production.
+> Browser/WebGPU inference is experimental. 100% of user-visible conversational
+> replies are generative; every reply carries a `proseSource` of `DIRECT_KB`,
+> `MODEL_GENERATION`, or `TECHNICAL_ERROR`. There is no deterministic chatbot
+> fallback prose. Default release mode is `SCOUT_AGENT_MODE=lite`.
 
-> **Model note:** The current development/evaluation model is `qwen2.5:1.5b`
-> (digest: `65ec06548149b04c096a`). The earlier `qwen2.5:0.5b` is retained as a
-> historical reference only. All new qualification must use `qwen2.5:1.5b`.
+> **Conversation-control note:** `classifyResponsePolicy` detects control
+> intents (`GREETING`, `USER_PROFILE_UPDATE`, `USER_PROFILE_QUERY`, `THANKS`,
+> `FAREWELL`, `HELP`, `CONVERSATIONAL`, `SMALL_TALK`, `REQUEST_TO_SAY`,
+> `CLARIFY_PREVIOUS_ASSISTANT`) before retrieval. Control turns skip anaphora
+> rewriting and BM25 retrieval, route to `no_tool` with a compact fact-free
+> prompt, and use relaxed length validation. Speaker/addressee roles prevent
+> agent-directed patterns from firing on candidate questions.
+> `sessionState.applyControlIntent` commits visitor names and control state
+> before generation. Employment claims are open-world with three-valued
+> TRUE/FALSE/UNKNOWN evidence status. Think Mode is removed.
 
-> **Deterministic fallback note:** Deterministic fallback as final user-visible
-> chatbot prose is a TRANSITIONAL architecture being replaced by generative
-> recovery contracts. The goal is 100% generated visible conversational replies.
-> Deterministic code may decide, route, and build contracts — it may NOT write
-> final chatbot prose.
+## Current State (2026-08-18)
+
+- `origin/develop` = `c3effbc193fa28d73f9af0cd74007d71ff502e4e`
+- `ProjectHub-dev:main` = `fb46a4f` (manual mirror of develop@`c3effbc`; the
+  sync-staging workflow's `PROJECTHUB_DEV_TOKEN` secret is failing and needs
+  rotation — the workflow auth username was also fixed to `x-access-token`)
+- Dev backend (`https://dev.projecthub-chat.bradleymatera.dev/`) runs
+  develop@`c3effbc` via `scripts/manual-deploy-dev.js`
+- Tests: 793/793 unit tests pass; retrieval Recall@6 = 1.000, MRR@6 = 0.971
+- Staging manual transcript re-run: 6/6 turns correct
+  (`docs/REAL_HUMAN_CONVERSATION_CORRECTION_REPORT.md`)
+- Next step: broader staging evaluation, then a `develop` → `master` release PR
+  per `PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md`
+
+---
+
+# HISTORICAL CONTENT BELOW (2026-08-13 phase — superseded)
+
+> Everything below reflects the earlier `feat/agent-systems-network` /
+> `qwen2.5:1.5b` qualification phase and is retained only for provenance.
+> Do NOT act on the instructions below.
 
 ## Current Thresholds (from e5a74ad workstation diagnostic)
 
