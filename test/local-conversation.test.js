@@ -28,6 +28,43 @@ test('local conversation can retain two complete natural sentences', () => {
   );
 });
 
+test('temporal grounding validator rejects unsupported current/past mismatches', () => {
+  // Reply claims current without source support.
+  assert.equal(validateLocalConversationReply(
+    'Bradley is currently working at AWS.',
+    'Bradley worked at AWS in 2020.',
+    'What is Bradley doing now?'
+  ), false);
+
+  // Reply uses past tense for a current-state question.
+  assert.equal(validateLocalConversationReply(
+    'Bradley worked at AWS in 2020.',
+    'Bradley is open to new opportunities at AWS.',
+    'Where is Bradley working now?'
+  ), false);
+
+  // Reply uses current tense for a past-state question.
+  assert.equal(validateLocalConversationReply(
+    'Bradley is currently an intern at AWS.',
+    'Bradley was an intern at AWS in 2020.',
+    'Was Bradley an intern at AWS in the past?'
+  ), false);
+
+  // Consistent past answer to past question is accepted.
+  assert.equal(validateLocalConversationReply(
+    'Bradley was an intern at AWS in 2020.',
+    'Bradley was an intern at AWS in 2020.',
+    'Did Bradley intern at AWS in 2020?'
+  ), true);
+
+  // Current answer with explicit current marker in the source is accepted.
+  assert.equal(validateLocalConversationReply(
+    'Bradley is currently open to new roles.',
+    'Bradley is currently open to new opportunities (2024).',
+    'What is Bradley doing now?'
+  ), true);
+});
+
 test('local reply validator accepts grounded phrasing and rejects new entities and hype', () => {
   const source = 'Bradley built ProjectHub with JavaScript, Node.js, BM25 retrieval, session memory, and local Ollama.';
   assert.equal(validateLocalConversationReply(

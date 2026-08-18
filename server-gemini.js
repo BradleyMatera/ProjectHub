@@ -1583,14 +1583,23 @@ app.post('/api/chat', async (req, res) => {
     const preGenerationState = sessionState.getState(sessionId);
     let resolvedMessage = userMessage;
     let queryRewritten = false;
-    if (SCOUT_AGENT_ENGINE_ENABLED) {
+
+    // Classify the conversational act FIRST. Greetings, small talk, request-to-say,
+    // and clarification do not require candidate evidence and must not be rewritten
+    // into candidate queries by anaphora resolution.
+    const NO_RETRIEVAL_MODES = new Set(['GREETING', 'USER_PROFILE_UPDATE', 'USER_PROFILE_QUERY', 'THANKS', 'FAREWELL', 'HELP', 'CONVERSATIONAL', 'SMALL_TALK', 'REQUEST_TO_SAY', 'CLARIFY_PREVIOUS_ASSISTANT']);
+    let policy = classifyResponsePolicy(userMessage, history, knowledge);
+
+    if (SCOUT_AGENT_ENGINE_ENABLED && !NO_RETRIEVAL_MODES.has(policy.mode)) {
       const rewrite = rewriteQuery(userMessage, preGenerationState, knowledge, history);
       if (rewrite && rewrite.rewritten_ && rewrite.rewritten !== userMessage) {
         resolvedMessage = rewrite.rewritten;
         queryRewritten = true;
         pipeline.push('query-rewrite');
       }
+      policy = classifyResponsePolicy(resolvedMessage, history, knowledge);
     }
+    pipeline.push(`policy:${policy.mode}`);
 
     const cacheKey = normalizeQuery(resolvedMessage, knowledge);
 
@@ -1638,8 +1647,7 @@ app.post('/api/chat', async (req, res) => {
 
     // 1. Classify response policy — deterministic code decides WHAT to say,
     //    not the final prose. The policy contract guides generative inference.
-    const policy = classifyResponsePolicy(resolvedMessage, history, knowledge);
-    pipeline.push(`policy:${policy.mode}`);
+    //    (Policy was already classified earlier; it is reused here.)
 
     // Commit any conversational control intent (greeting, name update, etc.)
     // BEFORE generation, so the model can see the just-introduced user state.
@@ -1666,21 +1674,25 @@ app.post('/api/chat', async (req, res) => {
     if (SCOUT_AGENT_ENGINE_ENABLED) {
       pipeline.push(`scout-agent-${SCOUT_AGENT_MODE}:eligible`);
       try {
-        // Retrieve evidence via BM25 for the agent context packet
-        const understood = understandQuery(userMessage, history, ragChunks || buildRagChunks(knowledge));
-        const bm25Results = bm25Index
-          ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 5)
-          : [];
-        const evidence = bm25Results.map(r => ({
-          kind: r.tag || r.chunk?.kind || 'evidence',
-          name: r.chunk?.title || r.chunk?.name || '',
-          description: r.text || r.chunk?.text || r.chunk?.description || '',
-          tech: r.chunk?.tech || [],
-          skills: r.chunk?.skills || [],
-          category: r.chunk?.category || null,
-          url: r.chunk?.url || null,
-          evidenceScore: r.rrfScore || r.score
-        })).filter(e => e.description);
+        // Retrieve evidence via BM25 for the agent context packet.
+        // Pure conversational control modes do not need candidate facts.
+        let evidence = [];
+        if (!NO_RETRIEVAL_MODES.has(policy.mode)) {
+          const understood = understandQuery(userMessage, history, ragChunks || buildRagChunks(knowledge));
+          const bm25Results = bm25Index
+            ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 5)
+            : [];
+          evidence = bm25Results.map(r => ({
+            kind: r.tag || r.chunk?.kind || 'evidence',
+            name: r.chunk?.title || r.chunk?.name || '',
+            description: r.text || r.chunk?.text || r.chunk?.description || '',
+            tech: r.chunk?.tech || [],
+            skills: r.chunk?.skills || [],
+            category: r.chunk?.category || null,
+            url: r.chunk?.url || null,
+            evidenceScore: r.rrfScore || r.score
+          })).filter(e => e.description);
+        }
 
         // Get server-owned structured conversation state (now includes any just-
         // committed conversational-control intent, e.g. userName).
