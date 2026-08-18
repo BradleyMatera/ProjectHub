@@ -4,9 +4,19 @@
 
 **Working branch:** `develop` (integration branch; `feat/agent-systems-network` is historical)
 
-**Code baseline:** `364c39e` on `origin/develop` (docs-only ahead of the runtime baseline). The runtime/code baseline deployed to the dev VM is `c3effbc`.
+**Code baseline / current runtime source:** `7037e0d24d570ecafbdeb0e3e73629a0f45607a3` — this is the last commit that changes runtime code and is the source of truth deployed to the dev backend and mirrored to the staging frontend repo.
 
-**Verdict:** Staging-validated. Production (`master`) remains frozen; no production promotion yet.
+**Remote develop HEAD:** `ee40bb22feac5036c7afcf3919834ef98758f369` — docs-only handoff update ahead of the runtime baseline; does not change execution.
+
+**Production (`master`):** `3cf6a24812489217ad5b4e3a51f51a45158adef0` — frozen; not promoted.
+
+**Staging repo HEAD (`BradleyMatera/ProjectHub-dev:main`):** `89ee23f96a4c5ca1cde6c897acd044fa6a12986f` — forced manual mirror from `7037e0d`; the automatic sync-staging workflow token is still broken.
+
+**Staging source (`STAGING-SOURCE.json`):** `7037e0d24d570ecafbdeb0e3e73629a0f45607a3` (source repository `BradleyMatera/ProjectHub`, branch `develop`).
+
+**Dev backend source:** `7037e0d24d570ecafbdeb0e3e73629a0f45607a3` (deployed from clean committed tree).
+
+**Verdict:** Staging re-synchronized; runtime source-of-truth established. Remaining `VERIFIED_FACT` hallucinations, empty replies, role-fit/unknown-tech collapses are release blockers under investigation.
 
 > **Architecture note:** **Scout** is the portable intelligence/orchestration
 > engine; **ProjectHub Recruiter Alpha** is the app powered by Scout. Primary
@@ -32,16 +42,17 @@
 
 ## Current State (2026-08-18)
 
-- **Remote develop HEAD** = `7037e0d24d570ecafbdeb0e3e73629a0f45607a3` (source of truth for source code; docs-only commits may follow)
-- **Runtime/code baseline** = `7037e0d24d570ecafbdeb0e3e73629a0f45607a3` (last source commit that affects runtime; deployed to the dev backend)
-- **Staging frontend source** = `ProjectHub-dev:main` = `7037e0d` (manual mirror of the runtime baseline; the sync-staging workflow's `PROJECTHUB_DEV_TOKEN` secret remains failing and needs rotation)
-- **Staging backend deployed source** = `7037e0d` (clean committed tree pushed to GitHub before `scripts/manual-deploy-dev.js`)
+- **Remote `ProjectHub/develop` HEAD:** `ee40bb22feac5036c7afcf3919834ef98758f369` (docs-only handoff and evaluation artifact commits; ahead of the runtime source)
+- **Current runtime source:** `7037e0d24d570ecafbdeb0e3e73629a0f45607a3` (last commit that changes execution code; also the `sourceCommit` written in `STAGING-SOURCE.json`)
+- **ProjectHub-dev:main HEAD (staging frontend repo):** `89ee23f96a4c5ca1cde6c897acd044fa6a12986f` (manual force push from runtime source `7037e0d`; automatic sync token is broken)
+- **Staging source marker:** `STAGING-SOURCE.json` on `ProjectHub-dev:main` declares `sourceCommit` = `7037e0d24d570ecafbdeb0e3e73629a0f45607a3`
+- **Dev backend deployed source:** `7037e0d24d570ecafbdeb0e3e73629a0f45607a3` (clean committed, pushed tree)
+- **Production `master`:** `3cf6a24812489217ad5b4e3a51f51a45158adef0` — frozen; no promotion
 - Tests: 797/797 unit tests pass; retrieval Recall@6 = 1.000, MRR@6 = 0.971
-- Latest human staging evaluation (`data/human-staging-evaluation.json`):
-  - **Fixed:** user name recall (`USER_PROFILE_QUERY`/`USER_PROFILE_UPDATE`), `direct-kb` short-circuit not overriding `REFUSAL`/`OUT_OF_SCOPE`, and `evaluateCompleteness` repair overwrites short control answers.
-  - **Fixed:** fabricated-entity false positives for terms that appear in the evidence (e.g., `Alpha` in `ProjectHub Recruiter Alpha`). This now allows c12 turn 4 and c5/c11 to return real project descriptions.
-  - **Still failing:** c3/c8/c9 `VERIFIED_FACT` turns still generate false seniority/background claims ("early-career", "struggled with consistency", "not senior or lead"); c10 turn 2 and c12 turn 1 sometimes return empty; c7/c8 role-fit and unknown-technology turns still collapse. These appear to be deeper `validateAnswer`/prompt-boundary or model-capacity issues.
-- Next step: decide whether to continue fixing the `VERIFIED_FACT` false-claim/empty-reply engine layer, or promote current fixes to a `develop` → `master` release PR per `PROJECTHUB-DEVELOPMENT-AND-RELEASE-SPEC.md`
+- Latest human staging evaluation (see `data/human-staging-evaluation.json` when checked in; currently local-only and will be committed in a sanitized form during this pass)
+  - **Fixed:** user name recall (`USER_PROFILE_QUERY`/`USER_PROFILE_UPDATE`), `direct-kb` short-circuit not overriding `REFUSAL`/`OUT_OF_SCOPE`, `evaluateCompleteness` repair overwrites short control answers, and fabricated-entity false positives for terms present in evidence.
+  - **Still failing:** c3/c8/c9 `VERIFIED_FACT` turns still generate false seniority/background claims ("early-career", "struggled with consistency", "not senior or lead"); c10 turn 2 and c12 turn 1 sometimes return empty; c7/c8 role-fit and unknown-technology turns still collapse. These are release blockers being traced from first principles.
+- Next step: trace each remaining failure with Scout conversation/debug/diagnosis skills, fix generic engine causes, and re-evaluate before any `develop` → `master` release PR.
 
 ---
 
