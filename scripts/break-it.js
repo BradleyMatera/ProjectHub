@@ -20,6 +20,8 @@ process.chdir(repoRoot);
 
 const knowledge = require('../data/recruiter-knowledge.json');
 const knowledgeAccess = require('../lib/knowledge-access');
+const { buildConversationState, resolveReferent } = require('../lib/conversation-resolver');
+const sessionState = require('../lib/session-state');
 
 // 1. No hardcoded Ollama provider labels in final response objects
 const liteAgent = fs.readFileSync(path.join(repoRoot, 'lib', 'lite-agent.js'), 'utf8');
@@ -41,7 +43,7 @@ const directCases = [
   { q: 'Did Bradley work at Microsoft?', needle: 'no verified record' },
   { q: 'Does Bradley know Kubernetes?', needle: 'not one of Bradley' },
   { q: 'Does Bradley have a Kubernetes certification?', needle: 'does not have' },
-  { q: 'Can he eventually learn to be a leader in Rust?', needle: 'Rust is not' },
+  { q: 'Does Bradley know React?', needle: 'Yes, Bradley knows React' },
 ];
 
 for (const { q, needle } of directCases) {
@@ -79,7 +81,58 @@ const hasAws = companies.some(c => /\baws\b|amazon web services/i.test(c));
 if (!hasAws && companies.some(c => /\bamazon\b/i.test(c))) fail('KB lists "amazon" as a known company without AWS context');
 ok('No Microsoft/Google falsely listed as known companies');
 
-// 4. Runtime source check: the chat endpoint should not author replies itself
+// 4. Multi-turn referent, memory, CIRIS, and identity sanity
+(function() {
+  const referentCases = [
+    { name: 'ProjectHub -> it', history: [{ user: 'Tell me about ProjectHub', assistant: 'ProjectHub is an AI chatbot widget built with vanilla JavaScript.' }], q: 'What did he use in it?', expected: 'ProjectHub' },
+    { name: 'Rust -> it', history: [{ user: 'Can Bradley become good at Rust?', assistant: 'Rust is not in his documented skills.' }], q: 'Could he become a leader in it?', expected: 'Rust' },
+    { name: 'Bradley -> he', history: [{ user: 'What about Bradley?', assistant: 'Bradley is a junior developer.' }], q: 'Does he know React?', expected: 'Bradley' },
+    { name: 'Helm Group -> there', history: [{ user: 'What happened with Helm Group?', assistant: 'He accepted a role there.' }], q: 'What happened there?', expected: 'Helm' },
+    { name: 'CIRIS -> it', history: [{ user: 'What is CIRIS Ethical AI?', assistant: 'CIRIS Ethical AI is a project about ethical AI tooling.' }], q: 'What tech did it use?', expected: 'CIRIS' },
+  ];
+  for (const tc of referentCases) {
+    const convState = buildConversationState(tc.history, knowledge);
+    const res = resolveReferent(tc.q, convState, knowledge);
+    const rewritten = (res.rewrittenQuery || '').toLowerCase();
+    const entity = (res.entity || '').toLowerCase();
+    const expected = tc.expected.toLowerCase();
+    if (res.resolved && (entity.includes(expected) || rewritten.includes(expected))) {
+      ok(`Referent resolution: ${tc.name} -> ${res.entity}`);
+    } else {
+      fail(`Referent resolution: ${tc.name} expected ${tc.expected}, got ${JSON.stringify(res)}`);
+    }
+  }
+
+  // Session memory: userName committed before generation should persist.
+  const sid = 'break-it-memory-' + Date.now();
+  sessionState.applyControlIntent(sid, 'Hi, my name is Casey', knowledge, 'GREETING');
+  const s1 = sessionState.getState(sid);
+  if (s1?.userName?.toLowerCase() === 'casey') ok('Session state captured userName Casey');
+  else fail(`Session state did not capture userName: ${JSON.stringify(s1?.userName)}`);
+
+  sessionState.applyControlIntent(sid, 'What is my name?', knowledge, 'USER_PROFILE_QUERY');
+  const s2 = sessionState.getState(sid);
+  if (s2?.userName?.toLowerCase() === 'casey') ok('Session state preserved userName across turns');
+  else fail(`Session state lost userName: ${JSON.stringify(s2?.userName)}`);
+
+  // CIRIS identity guard: a follow-up about CIRIS should resolve 'it' to CIRIS and 'he' to Bradley.
+  const cirisHistory = [{ user: 'What is CIRIS Ethical AI?', assistant: 'CIRIS Ethical AI is a project about ethical AI tooling.' }];
+  const cirisState = buildConversationState(cirisHistory, knowledge);
+  const cirisRes = resolveReferent('What did he build it with?', cirisState, knowledge);
+  const cirisRewritten = (cirisRes.rewrittenQuery || '').toLowerCase();
+  if ((cirisRes.entity || '').toLowerCase().includes('ciris') && cirisRewritten.includes('bradley') && cirisRewritten.includes('ciris')) {
+    ok('CIRIS referent resolved correctly (Bradley subject, CIRIS object)');
+  } else {
+    fail(`CIRIS referent failed: ${JSON.stringify(cirisRes)}`);
+  }
+
+  // Identity guard: no summary-style direct answer for "Who is Bradley?".
+  const summaryDirect = knowledgeAccess.findDirectAnswer(knowledge, 'Who is Bradley Matera?');
+  if (summaryDirect) fail('Direct answer table still has a summary-style "Who is Bradley" entry');
+  else ok('No summary-style "Who is Bradley" direct answer (frozen table)');
+})();
+
+// 5. Runtime source check: the chat endpoint should not author replies itself
 const hasForbiddenProse =
   /res\.json\(\{[\s\S]{0,200}?reply\s*:/.test(server) &&
   !/reply:\s*agentResult\.reply/.test(server);
@@ -87,7 +140,7 @@ const hasForbiddenProse =
 if (hasForbiddenProse) fail('server-gemini.js appears to build a reply inline (heuristic)');
 else ok('server-gemini.js does not appear to author reply prose inline');
 
-// 5. Live endpoint probe (optional)
+// 6. Live endpoint probe (optional)
 const urlArg = process.argv.find(a => a.startsWith('--url='))?.split('=')[1] || process.env.SCOUT_BREAKIT_URL;
 (async () => {
   if (urlArg) {

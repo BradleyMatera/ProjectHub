@@ -9765,13 +9765,6 @@
       "sourceIds": ["education"]
     },
     {
-      "id": "kubernetes-cert",
-      "intents": ["adversarial_deny"],
-      "questionPatterns": ["kubernetes.*certification", "cka", "ckad"],
-      "answer": "He does not have a Kubernetes certification. His certifications include AWS Certified Solutions Architect - Associate and AWS Certified AI Practitioner.",
-      "sourceIds": ["certifications"]
-    },
-    {
       "id": "production-incident",
       "intents": ["adversarial_deny"],
       "questionPatterns": ["production.*incident"],
@@ -9793,13 +9786,6 @@
       "sourceIds": ["boundaries.no-team-management"]
     },
     {
-      "id": "masters-degree-education",
-      "intents": ["adversarial_deny"],
-      "questionPatterns": ["master'?s\\s+degree"],
-      "answer": "He does not have a master's degree or PhD. His education is a Bachelor of Science in Web Development from Full Sail University.",
-      "sourceIds": ["education"]
-    },
-    {
       "id": "contact-info",
       "intents": ["direct"],
       "questionPatterns": ["how can i contact", "contact bradley", "contact info", "\\bemail\\b", "phone number"],
@@ -9812,13 +9798,6 @@
       "questionPatterns": ["gpa", "grade point average", "what was.*gpa"],
       "answer": "Bradley's GPA was 3.64.",
       "sourceIds": ["education"]
-    },
-    {
-      "id": "helm-accepted-offer",
-      "intents": ["direct"],
-      "questionPatterns": ["\\bhelm\\b", "accepted.*(?:offer|job)", "did.*accept.*(?:offer|job)", "has.*accepted.*(?:offer|job)"],
-      "answer": "Bradley accepted an offer from Helm Group as an ERP Support Specialist. The offer was signed on August 8, 2026. He is not yet reporting that employment has begun.",
-      "sourceIds": ["identity.careerStatus", "identity.shortPitch"]
     },
     {
       "id": "helm-role",
@@ -9839,13 +9818,6 @@
       "intents": ["direct"],
       "questionPatterns": ["does .* (?:know|use|code in) rust", "can .* code in rust", "is .* proficient in rust", "\\brust\\b.*\\bskill"],
       "answer": "That language is not one of Bradley's documented skills. His documented skills include JavaScript, TypeScript, React, Node.js, and AWS.",
-      "sourceIds": ["skills"]
-    },
-    {
-      "id": "rust-future-leader",
-      "intents": ["direct"],
-      "questionPatterns": ["leader in rust", "eventually.*rust", "future.*rust", "learn to be a leader"],
-      "answer": "Rust is not one of Bradley's documented skills. He could learn it over time, but there is no current evidence he leads anything in it.",
       "sourceIds": ["skills"]
     },
     {
@@ -9907,7 +9879,7 @@
     {
       "id": "kubernetes-certification",
       "intents": ["direct"],
-      "questionPatterns": ["kubernetes.*certification", "certification.*kubernetes"],
+      "questionPatterns": ["kubernetes.*certification", "certification.*kubernetes", "\\bcka\\b", "\\bckad\\b"],
       "answer": "No, Bradley does not have a certification in that technology. His certifications are AWS Certified Solutions Architect - Associate and AWS Certified AI Practitioner.",
       "sourceIds": ["certifications"]
     },
@@ -9917,13 +9889,6 @@
       "questionPatterns": ["work at microsoft", "microsoft.*work", "did .* work.*microsoft"],
       "answer": "There is no verified record of Bradley working at Microsoft. His documented work history does not include Microsoft.",
       "sourceIds": ["experience"]
-    },
-    {
-      "id": "tell-me-about-bradley",
-      "intents": ["direct"],
-      "questionPatterns": ["tell me about bradley", "who is bradley matera"],
-      "answer": "Bradley Matera is a junior software engineer based in Davis, Illinois, open to relocation. He has a B.S. in Web Development from Full Sail University, AWS support engineering internship experience, and works on projects like ProjectHub and CIRIS Ethical AI. He accepted an ERP Support Specialist role at Helm Group.",
-      "sourceIds": ["identity", "summary", "education", "experience"]
     }
   ]
 }

@@ -17,7 +17,7 @@ const { buildLocalConversationMemory, extractCompleteSentences, validateLocalCon
 const { findDirectAnswer } = require('./lib/knowledge-access');
 const localModelRouter = require('./lib/local-model-router');
 const { runAgentLoop, probeAgent } = require('./lib/agent-engine');
-const { runLiteAgent } = require('./lib/lite-agent');
+const { runLiteAgent, rewriteQuery } = require('./lib/lite-agent');
 const { buildReasoningPacket, buildSynthesisPacket, estimateTokens } = require('./lib/context-packet');
 const { validateAnswer, validateToolDecision, attemptJsonRepair } = require('./lib/grounding-validator');
 const { buildFalseClaimsRegex, shouldAbortGeneration, validateFallbackReply } = require('./lib/response-validator');
@@ -81,7 +81,11 @@ const OLLAMA_AGENT_KEEP_ALIVE = /^-?\d+$/.test(OLLAMA_AGENT_KEEP_ALIVE_RAW)
 
 const AGENT_ENABLED = process.env.AGENT_ENABLED !== 'false';
 const SCOUT_AGENT_ENGINE_ENABLED = process.env.SCOUT_AGENT_ENGINE_ENABLED === 'true';
-const SCOUT_AGENT_MODE = process.env.SCOUT_AGENT_MODE || (SCOUT_AGENT_ENGINE_ENABLED ? 'full' : 'full');
+// Release mode is LITE: it is validated on the GCP e2-micro target, uses deterministic
+// pre-routing, a compact context packet, and a single generation + repair — all within
+// the 15s end-to-end deadline. FULL (agent-engine.js) remains available for development
+// but is not the production default.
+const SCOUT_AGENT_MODE = process.env.SCOUT_AGENT_MODE || (SCOUT_AGENT_ENGINE_ENABLED ? 'lite' : 'legacy');
 const FEATURE_PREVIEW_ENABLED = process.env.FEATURE_PREVIEW_ENABLED === 'true';
 const KNOWLEDGE_FILE = path.join(__dirname, process.env.KNOWLEDGE_FILE || 'data/recruiter-knowledge.json');
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -1572,11 +1576,27 @@ app.post('/api/chat', async (req, res) => {
     }
     pipeline.push('knowledge-loaded');
 
-    const cacheKey = normalizeQuery(userMessage, knowledge);
+    // Resolve anaphoric references using the server-owned conversation state and
+    // history BEFORE routing or direct-answer matching. This makes "What
+    // technology does it use?" resolve to "What technology does ProjectHub (Scout)
+    // use?" and prevents broad direct-answer patterns from misfiring.
+    const preGenerationState = sessionState.getState(sessionId);
+    let resolvedMessage = userMessage;
+    let queryRewritten = false;
+    if (SCOUT_AGENT_ENGINE_ENABLED) {
+      const rewrite = rewriteQuery(userMessage, preGenerationState, knowledge, history);
+      if (rewrite && rewrite.rewritten_ && rewrite.rewritten !== userMessage) {
+        resolvedMessage = rewrite.rewritten;
+        queryRewritten = true;
+        pipeline.push('query-rewrite');
+      }
+    }
+
+    const cacheKey = normalizeQuery(resolvedMessage, knowledge);
 
     // Direct KB short-circuit: if the question matches a non-adversarial directAnswer
     // record, return it immediately with provenance. The model is not invoked.
-    const directAnswer = SCOUT_AGENT_ENGINE_ENABLED ? findDirectAnswer(knowledge, userMessage) : null;
+    const directAnswer = SCOUT_AGENT_ENGINE_ENABLED ? findDirectAnswer(knowledge, resolvedMessage) : null;
     const directIntentAllowed = Array.isArray(directAnswer?.intents) && (directAnswer.intents.includes('direct') || directAnswer.intents.includes('adversarial_deny') || directAnswer.intents.includes('negation_confirm'));
     if (directAnswer && directAnswer.answer && directIntentAllowed) {
       pipeline.push('direct-kb');
@@ -1618,8 +1638,12 @@ app.post('/api/chat', async (req, res) => {
 
     // 1. Classify response policy — deterministic code decides WHAT to say,
     //    not the final prose. The policy contract guides generative inference.
-    const policy = classifyResponsePolicy(userMessage, history, knowledge);
+    const policy = classifyResponsePolicy(resolvedMessage, history, knowledge);
     pipeline.push(`policy:${policy.mode}`);
+
+    // Commit any conversational control intent (greeting, name update, etc.)
+    // BEFORE generation, so the model can see the just-introduced user state.
+    sessionState.applyControlIntent(sessionId, resolvedMessage, knowledge, policy.mode);
 
     // Default reply is NOT set — all prose must come from generative inference.
     // If inference fails, we return INFERENCE_UNAVAILABLE.
@@ -1658,7 +1682,8 @@ app.post('/api/chat', async (req, res) => {
           evidenceScore: r.rrfScore || r.score
         })).filter(e => e.description);
 
-        // Get server-owned structured conversation state
+        // Get server-owned structured conversation state (now includes any just-
+        // committed conversational-control intent, e.g. userName).
         const convState = sessionState.getState(sessionId);
 
         // Select execution strategy based on SCOUT_AGENT_MODE

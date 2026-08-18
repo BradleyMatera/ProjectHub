@@ -315,13 +315,13 @@ curl http://127.0.0.1:3199/api/diagnose
 ## Fallback Behavior
 
 ```text
-Ollama available + FULL mode (SCOUT_AGENT_MODE=full, default)
-  → Scout Agent Engine (bounded loop, structured decisions, tools, validation)
-  → Grounded Ollama-generated answer
-
-Ollama available + LITE mode (SCOUT_AGENT_MODE=lite)
+Ollama available + LITE mode (SCOUT_AGENT_MODE=lite, default release mode)
   → Scout Lite Agent (pre-route → tool → compress → single generation → validate)
   → Grounded Ollama-generated answer or deterministic fallback
+
+Ollama available + FULL mode (SCOUT_AGENT_MODE=full, development only)
+  → Scout Agent Engine (bounded loop, structured decisions, tools, validation)
+  → Grounded Ollama-generated answer
 
 Ollama unavailable or validation fails
   → Deterministic grounded answer from BM25 retrieval + knowledge JSON
