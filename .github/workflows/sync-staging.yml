@@ -63,5 +63,5 @@ jobs:
             echo "To sync manually: git push projecthub-dev develop:main --force"
             exit 0
           fi
-          git remote add projecthub-dev https://x-access:${PROJECTHUB_DEV_TOKEN}@github.com/BradleyMatera/ProjectHub-dev.git
+          git remote add projecthub-dev https://x-access-token:${PROJECTHUB_DEV_TOKEN}@github.com/BradleyMatera/ProjectHub-dev.git
           git push projecthub-dev HEAD:main --force
