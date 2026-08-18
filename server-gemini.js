@@ -109,6 +109,10 @@ const RESPONSE_CACHE_MS = 30 * 60 * 1000; // 30 min — more cache hits = fewer 
 const RESPONSE_CACHE_LIMIT = 200;
 const responseCache = new Map();
 
+// Deterministic technical-error prose. ProseSource is TECHNICAL_ERROR; this is not
+// a chatbot fallback and is only emitted when generative inference is unavailable.
+const INFERENCE_UNAVAILABLE_REPLY = "I couldn't generate a reliable answer right now. Please try again or rephrase your question.";
+
 // ============ LEARNING SYSTEM ============
 // Learning / Think Mode state removed. Scout no longer runs a background
 // self-improvement loop that rewrites and caches answers. All visible prose
@@ -1794,6 +1798,7 @@ app.post('/api/chat', async (req, res) => {
           return res.json({
             ok: false,
             error: 'INFERENCE_UNAVAILABLE',
+            reply: INFERENCE_UNAVAILABLE_REPLY,
             proseSource: 'TECHNICAL_ERROR',
             pipeline,
             provider: inferenceProvider,
@@ -1836,6 +1841,7 @@ app.post('/api/chat', async (req, res) => {
       return res.json({
         ok: false,
         error: 'AGENT_ENGINE_UNAVAILABLE',
+        reply: INFERENCE_UNAVAILABLE_REPLY,
         proseSource: 'TECHNICAL_ERROR',
         pipeline,
         provider: 'none',
@@ -1851,6 +1857,7 @@ app.post('/api/chat', async (req, res) => {
       return res.json({
         ok: false,
         error: 'INFERENCE_UNAVAILABLE',
+        reply: INFERENCE_UNAVAILABLE_REPLY,
         proseSource: 'TECHNICAL_ERROR',
         pipeline,
         provider: inferenceProvider || 'none',
