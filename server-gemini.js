@@ -1607,7 +1607,8 @@ app.post('/api/chat', async (req, res) => {
     // record, return it immediately with provenance. The model is not invoked.
     const directAnswer = SCOUT_AGENT_ENGINE_ENABLED ? findDirectAnswer(knowledge, resolvedMessage) : null;
     const directIntentAllowed = Array.isArray(directAnswer?.intents) && (directAnswer.intents.includes('direct') || directAnswer.intents.includes('adversarial_deny') || directAnswer.intents.includes('negation_confirm'));
-    if (directAnswer && directAnswer.answer && directIntentAllowed) {
+    const policyBlocksDirect = policy.mode === 'REFUSAL' || policy.mode === 'OUT_OF_SCOPE';
+    if (directAnswer && directAnswer.answer && directIntentAllowed && !policyBlocksDirect) {
       pipeline.push('direct-kb');
       const directReply = directAnswer.answer;
       const directPayload = {
