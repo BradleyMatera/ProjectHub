@@ -17,6 +17,29 @@ const commitSha = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
 const shortSha = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
 const tag = `release-${shortSha}`;
 
+// Verify clean, committed, pushed source before deploying
+const status = execSync('git status --short', { encoding: 'utf8' }).trim();
+if (status) {
+  console.error('ERROR: Working tree is not clean. Commit all changes before deploy.');
+  console.error(status);
+  process.exit(1);
+}
+const remoteDevelopSha = execSync('git rev-parse origin/develop', { encoding: 'utf8' }).trim();
+if (commitSha !== remoteDevelopSha) {
+  console.error(`ERROR: Local HEAD ${commitSha} does not match origin/develop ${remoteDevelopSha}. Push first.`);
+  process.exit(1);
+}
+
+const buildInfo = {
+  sourceRepository: 'BradleyMatera/ProjectHub',
+  sourceBranch: 'develop',
+  sourceCommit: commitSha,
+  deployedAt: new Date().toISOString(),
+  generatedBy: 'manual-deploy-dev'
+};
+const buildInfoPath = path.join(__dirname, '..', `${tag}-deploy-source.json`);
+fs.writeFileSync(buildInfoPath, JSON.stringify(buildInfo, null, 2) + '\n', 'utf8');
+
 console.log('=== Manual Dev GCP Deploy ===');
 console.log(`Commit: ${commitSha}`);
 console.log(`Tag: ${tag}`);
@@ -41,6 +64,7 @@ gcloud(['compute', 'scp', 'server-gemini.js', `${VM_NAME}:/tmp/${tag}-server.js`
 gcloud(['compute', 'scp', libTar, `${VM_NAME}:/tmp/${tag}-lib.tar.gz`]);
 gcloud(['compute', 'scp', 'data/free-tier-limits.json', `${VM_NAME}:/tmp/${tag}-free-tier.json`]);
 gcloud(['compute', 'scp', 'data/recruiter-knowledge.json', `${VM_NAME}:/tmp/${tag}-knowledge.json`]);
+gcloud(['compute', 'scp', buildInfoPath, `${VM_NAME}:/tmp/${tag}-deploy-source.json`]);
 
 console.log('Building remote swap script...');
 const swapScript = `#!/bin/bash
@@ -63,6 +87,7 @@ sudo tar -xzf "/tmp/${tag}-lib.tar.gz" -C "${REMOTE_DIR}"
 sudo rm -rf "${REMOTE_DIR}/lib.bak."*
 sudo mv "/tmp/${tag}-free-tier.json" "${REMOTE_DIR}/data/free-tier-limits.json"
 sudo mv "/tmp/${tag}-knowledge.json" "${REMOTE_DIR}/data/recruiter-knowledge.json"
+sudo mv "/tmp/${tag}-deploy-source.json" "${REMOTE_DIR}/data/deploy-source.json"
 if command -v systemctl >/dev/null 2>&1; then
   sudo systemctl restart ${SERVICE_NAME}
   echo 'Service restarted via systemd'
@@ -85,6 +110,7 @@ gcloud(['compute', 'ssh', VM_NAME, '--command', `"${remoteCmd}"`]);
 console.log('Cleaning up local pack...');
 fs.unlinkSync(libTar);
 fs.unlinkSync(swapPath);
+fs.unlinkSync(buildInfoPath);
 
 console.log('Health check...');
 let health = '000';

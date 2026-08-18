@@ -91,6 +91,21 @@ const FEATURE_PREVIEW_ENABLED = process.env.FEATURE_PREVIEW_ENABLED === 'true';
 const KNOWLEDGE_FILE = path.join(__dirname, process.env.KNOWLEDGE_FILE || 'data/recruiter-knowledge.json');
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 
+// Build provenance — set by the deploy script into data/deploy-source.json
+let buildInfo = null;
+function loadBuildInfo() {
+  const buildFile = path.join(__dirname, 'data', 'deploy-source.json');
+  try {
+    if (fs.existsSync(buildFile)) {
+      buildInfo = JSON.parse(fs.readFileSync(buildFile, 'utf8').replace(/^\uFEFF/, ''));
+    }
+  } catch (e) {
+    console.error('[build] failed to read deploy-source.json:', e.message);
+  }
+  return buildInfo;
+}
+loadBuildInfo();
+
 let knowledgeCache = null;
 let knowledgeCacheAt = 0;
 let bm25Index = null;
@@ -183,6 +198,16 @@ app.get('/health', async (req, res) => {
     ok: true,
     status: 'online',
     deployedAt: DEPLOYED_AT,
+    build: buildInfo || { sourceCommit: 'unknown' },
+    buildEnv: {
+      sourceRepository: process.env.SCOUT_SOURCE_REPOSITORY || (buildInfo?.sourceRepository || 'BradleyMatera/ProjectHub'),
+      sourceBranch: process.env.SCOUT_SOURCE_BRANCH || (buildInfo?.sourceBranch || 'develop'),
+      sourceCommit: process.env.SCOUT_SOURCE_COMMIT || (buildInfo?.sourceCommit || 'unknown'),
+      agentMode: SCOUT_AGENT_MODE,
+      provider: process.env.SCOUT_INFERENCE_PROVIDER || 'auto',
+      primaryModel: localModelRouter.defaultModel() || GEN_MODEL,
+      deadlineMs: parseInt(process.env.REQUEST_DEADLINE_MS || '15000', 10)
+    },
     uptimeSeconds: Math.floor(process.uptime()),
     // This-restart stats
     totalRequestsServed,
@@ -1163,6 +1188,26 @@ function getStanceContext(sessionId) {
   return stances.map(s => `${s.topic}: ${s.stanceSummary}`).join('; ');
 }
 
+function safeContractProjection(contract) {
+  if (!contract || typeof contract !== 'object') return { error: 'no_plan' };
+  if (contract.error) return { error: contract.error, detail: contract.detail };
+  return {
+    intent: contract.intent,
+    subIntent: contract.subIntent,
+    policyMode: contract.policyMode,
+    directAnswer: contract.directAnswer,
+    factState: contract.factState,
+    evidenceStrength: contract.evidenceStrength,
+    claimCeiling: contract.claimCeiling,
+    requestedRole: contract.requestedRole,
+    requestedTopic: contract.requestedTopic,
+    boundary: contract.boundary,
+    forbiddenClaims: contract.forbiddenClaims,
+    visitorName: contract.visitorName,
+    userName: contract.userName
+  };
+}
+
 function trackSession(sessionId, question, provider, referrer, intent, reply, groundedReply) {
   if (!sessionId) return;
   if (!activeSessions.has(sessionId)) {
@@ -1619,8 +1664,16 @@ app.post('/api/chat', async (req, res) => {
       const directEvidence = (directAnswer?.answer || '');
       let directContract = null;
       try {
-        directContract = buildResponseContract(userMessage, directEvidence, knowledge, history || []);
+        directContract = buildResponseContract(resolvedMessage, directEvidence, knowledge, history || []);
       } catch (e) { directContract = { error: 'contract_build_failed', detail: e.message }; }
+      // A direct answer is semantically applicable only if it matches the resolved plan.
+      // Example: a historical seniority boundary must not answer a future-potential question.
+      const isAdversarialDenial = Array.isArray(directAnswer.intents) && directAnswer.intents.includes('adversarial_deny');
+      const isFutureQuestion = ['FUTURE_CAPABILITY', 'FUTURE_ROLE'].includes(directContract?.intent);
+      const directApplicable = !(isAdversarialDenial && isFutureQuestion);
+      if (!directApplicable) {
+        pipeline.push('direct-kb-skipped');
+      } else {
       const directPayload = {
         ok: true,
         reply: directReply,
@@ -1644,6 +1697,7 @@ app.post('/api/chat', async (req, res) => {
       recordRequest(userMessage, 'knowledge-base', { referrer, pipeline, latencyMs: Date.now() - reqStart, reply: directReply, groundedReply: directReply, sessionId });
       clearTimeout(deadlineTimer);
       if (!res.headersSent) return res.json(directPayload);
+      }
     }
 
     const cached = !hasHistory ? responseCache.get(cacheKey) : null;
@@ -1813,7 +1867,10 @@ app.post('/api/chat', async (req, res) => {
             model: agentResult.model,
             latencyMs: Date.now() - reqStart,
             agentMeta,
-            agentEvents
+            agentEvents,
+            failureStage: 'GENERATION',
+            generationAttempts: agentResult.generationAttempts || 0,
+            contract: safeContractProjection(agentResult.responseContract)
           });
         } else {
           pipeline.push(`scout-agent-${SCOUT_AGENT_MODE}:fallback:${agentResult.fallback ? 'true' : 'false'}`);
@@ -1872,7 +1929,10 @@ app.post('/api/chat', async (req, res) => {
         model: agentResult?.model || localModelRouter.defaultModel() || GEN_MODEL,
         latencyMs: Date.now() - reqStart,
         agentMeta,
-        agentEvents
+        agentEvents,
+        failureStage: 'GENERATION',
+        generationAttempts: agentResult?.generationAttempts ?? 0,
+        contract: safeContractProjection(agentResult?.responseContract)
       });
     }
 
@@ -1892,26 +1952,45 @@ app.post('/api/chat', async (req, res) => {
     // 3c. Follow-up suggestions are model-generated or KB-driven, not hardcoded
     const followUps = [];
 
-    // Build a client-safe contract summary for the acceptance harness.
-    const compressedEvidence = (evidence || []).map(e => e.description || '').filter(Boolean).join('\n');
+    // Build a client-safe contract summary from the executed semantic plan.
+    // The lite agent already computed and returned the authoritative responseContract.
+    // Rebuilding it here is only a defensive fallback and must not become the primary source.
     let contractSummary = null;
-    try {
-      const responseContract = buildResponseContract(agentResult?.rewrittenQuery || agentResult?.rewritten || userMessage, compressedEvidence, knowledge, history || []);
+    const executedPlan = agentResult?.responseContract;
+    if (executedPlan && !executedPlan.error) {
       contractSummary = {
-        intent: responseContract.intent,
-        subIntent: responseContract.subIntent,
-        policyMode: responseContract.policyMode,
-        directAnswer: responseContract.directAnswer,
-        factState: responseContract.factState,
-        evidenceStrength: responseContract.evidenceStrength,
-        claimCeiling: responseContract.claimCeiling,
-        requestedRole: responseContract.requestedRole,
-        requestedTopic: responseContract.requestedTopic,
-        boundary: responseContract.boundary,
-        forbiddenClaims: responseContract.forbiddenClaims
+        intent: executedPlan.intent,
+        subIntent: executedPlan.subIntent,
+        policyMode: executedPlan.policyMode,
+        directAnswer: executedPlan.directAnswer,
+        factState: executedPlan.factState,
+        evidenceStrength: executedPlan.evidenceStrength,
+        claimCeiling: executedPlan.claimCeiling,
+        requestedRole: executedPlan.requestedRole,
+        requestedTopic: executedPlan.requestedTopic,
+        boundary: executedPlan.boundary,
+        forbiddenClaims: executedPlan.forbiddenClaims
       };
-    } catch (e) {
-      contractSummary = { error: 'contract_build_failed', detail: e.message };
+    } else {
+      const compressedEvidence = (evidence || []).map(e => e.description || '').filter(Boolean).join('\n');
+      try {
+        const responseContract = buildResponseContract(agentResult?.rewrittenQuery || userMessage, compressedEvidence, knowledge, history || []);
+        contractSummary = {
+          intent: responseContract.intent,
+          subIntent: responseContract.subIntent,
+          policyMode: responseContract.policyMode,
+          directAnswer: responseContract.directAnswer,
+          factState: responseContract.factState,
+          evidenceStrength: responseContract.evidenceStrength,
+          claimCeiling: responseContract.claimCeiling,
+          requestedRole: responseContract.requestedRole,
+          requestedTopic: responseContract.requestedTopic,
+          boundary: responseContract.boundary,
+          forbiddenClaims: responseContract.forbiddenClaims
+        };
+      } catch (e) {
+        contractSummary = { error: 'contract_build_failed', detail: e.message };
+      }
     }
 
     const payload = { ok: true, reply, provider, model, fallback: false, grounded: provider === 'grounded' || provider === 'local-agent', pipeline, followUps, proseSource: agentResult?.proseSource || 'MODEL_GENERATION', contract: contractSummary };
@@ -1939,13 +2018,15 @@ app.post('/api/chat', async (req, res) => {
     console.error('Chat error:', err);
     pipeline.push('error');
     clearTimeout(deadlineTimer);
-    if (!res.headersSent) return res.json({
+    if (!res.headersSent)    return res.json({
       ok: false,
       error: 'INTERNAL_ERROR',
       proseSource: 'TECHNICAL_ERROR',
       pipeline,
       provider: 'none',
-      latencyMs: Date.now() - reqStart
+      latencyMs: Date.now() - reqStart,
+      failureStage: 'INTERNAL_ERROR',
+      contract: safeContractProjection(agentResult?.responseContract)
     });
   }
   // If we reach here without sending a response, the deadline timer fired
