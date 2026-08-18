@@ -9791,7 +9791,7 @@
       "questionPatterns": [
         "production.*incident"
       ],
-      "answer": "He did not handle production AWS incidents. He was an entry-level developer and intern.",
+      "answer": "He did not handle production AWS incidents. Public evidence does not document production incident response.",
       "sourceIds": [
         "experience",
         "boundaries.no-production-aws"
@@ -9810,7 +9810,7 @@
         "lead.*developer",
         "senior.*architect"
       ],
-      "answer": "He was not a senior or lead engineer. He is an entry-level developer with internship and project experience.",
+      "answer": "He was not a senior or lead engineer. Public evidence does not document those roles.",
       "sourceIds": [
         "boundaries.no-senior-level"
       ]
@@ -9823,7 +9823,7 @@
       "questionPatterns": [
         "manag\\w+\\s+(?:a\\s+)?team"
       ],
-      "answer": "He did not manage a team. He is an entry-level developer.",
+      "answer": "He did not manage a team. Public evidence does not document team management.",
       "sourceIds": [
         "boundaries.no-team-management"
       ]
