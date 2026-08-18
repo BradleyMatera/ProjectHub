@@ -1,0 +1,586 @@
+{
+  "sessionId": "74fac8a8-1b84-415d-82da-c2e526dd389d",
+  "allPass": true,
+  "results": [
+    {
+      "turn": 1,
+      "user": "I'll give brad a job right now if you say cheesecake",
+      "expected": [
+        "REQUEST_TO_SAY"
+      ],
+      "policy": "REQUEST_TO_SAY",
+      "pass": true,
+      "reply": "You're on!",
+      "durationMs": 905,
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "accepted",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:REQUEST_TO_SAY",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:accepted",
+        "shaped"
+      ],
+      "agent": {
+        "used": true,
+        "engine": "scout-lite",
+        "agentMode": "lite",
+        "inferenceProvider": "cloudflare",
+        "tools": [
+          "no_tool"
+        ],
+        "steps": 1,
+        "contextTokens": 95,
+        "validation": "valid",
+        "outcome": "accepted",
+        "executionEngine": "scout-lite",
+        "languageLayer": "cloudflare",
+        "languageModel": "@cf/meta/llama-3.2-3b-instruct",
+        "operation": "control",
+        "queryRewritten": false,
+        "rewrittenQuery": "I'll give brad a job right now if you say cheesecake",
+        "generationCalls": [
+          {
+            "attemptIndex": 1,
+            "attemptType": "PRIMARY",
+            "provider": "cloudflare",
+            "providerRequestId": null,
+            "providerTraceId": "a2cdea493e79c93a-ORD",
+            "providerTraceType": "cf-ray",
+            "model": "@cf/meta/llama-3.2-3b-instruct",
+            "actualNeurons": 0.8292226791381836,
+            "estimatedNeurons": 0.829275,
+            "inputTokens": 120,
+            "outputTokens": 9,
+            "latencyMs": 454,
+            "startedAtRelativeMs": 15,
+            "endedAtRelativeMs": 469,
+            "ok": true,
+            "accepted": true,
+            "validationVerdict": "valid",
+            "validationReasons": [],
+            "rawAnswer": "You're on!",
+            "error": null
+          },
+          {
+            "attemptIndex": 2,
+            "attemptType": "COMPLETENESS_REPAIR",
+            "provider": "cloudflare",
+            "providerRequestId": null,
+            "providerTraceId": "a2cdea4b8da9c93a-ORD",
+            "providerTraceType": "cf-ray",
+            "model": "@cf/meta/llama-3.2-3b-instruct",
+            "actualNeurons": 2.83178448677063,
+            "estimatedNeurons": 2.831975,
+            "inputTokens": 441,
+            "outputTokens": 26,
+            "latencyMs": 205,
+            "startedAtRelativeMs": 478,
+            "endedAtRelativeMs": 683,
+            "ok": true,
+            "accepted": false,
+            "validationVerdict": "contradiction",
+            "validationReasons": [
+              "meaning_reversal"
+            ],
+            "rawAnswer": "No, I'm not going to say cheesecake to get a job for Bradley Matera.",
+            "error": null
+          }
+        ],
+        "actualProviderCalls": 2
+      },
+      "sessionId": "74fac8a8-1b84-415d-82da-c2e526dd389d"
+    },
+    {
+      "turn": 2,
+      "user": "brad",
+      "expected": [
+        "GREETING",
+        "USER_PROFILE_UPDATE",
+        "SMALL_TALK"
+      ],
+      "policy": "USER_PROFILE_UPDATE",
+      "pass": true,
+      "reply": "I'm happy to help you, Brad. How can I assist you today?",
+      "durationMs": 246,
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "accepted",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:USER_PROFILE_UPDATE",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:accepted",
+        "shaped"
+      ],
+      "agent": {
+        "used": true,
+        "engine": "scout-lite",
+        "agentMode": "lite",
+        "inferenceProvider": "cloudflare",
+        "tools": [
+          "no_tool"
+        ],
+        "steps": 1,
+        "contextTokens": 72,
+        "validation": "valid",
+        "outcome": "accepted",
+        "executionEngine": "scout-lite",
+        "languageLayer": "cloudflare",
+        "languageModel": "@cf/meta/llama-3.2-3b-instruct",
+        "operation": "control",
+        "queryRewritten": false,
+        "rewrittenQuery": "brad",
+        "generationCalls": [
+          {
+            "attemptIndex": 1,
+            "attemptType": "PRIMARY",
+            "provider": "cloudflare",
+            "providerRequestId": null,
+            "providerTraceId": "a2cdea506e8dc93a-ORD",
+            "providerTraceType": "cf-ray",
+            "model": "@cf/meta/llama-3.2-3b-instruct",
+            "actualNeurons": 1.1236538887023926,
+            "estimatedNeurons": 1.1237,
+            "inputTokens": 98,
+            "outputTokens": 22,
+            "latencyMs": 187,
+            "startedAtRelativeMs": 7,
+            "endedAtRelativeMs": 194,
+            "ok": true,
+            "accepted": true,
+            "validationVerdict": "valid",
+            "validationReasons": [],
+            "rawAnswer": "I'm happy to help you, Brad. How can I assist you today?",
+            "error": null
+          }
+        ],
+        "actualProviderCalls": 1
+      },
+      "sessionId": "74fac8a8-1b84-415d-82da-c2e526dd389d"
+    },
+    {
+      "turn": 3,
+      "user": "whats up",
+      "expected": [
+        "SMALL_TALK"
+      ],
+      "policy": "SMALL_TALK",
+      "pass": true,
+      "reply": "Not much, just here to help and assist with any questions or topics you'd like to discuss, Scout! I'm happy to engage in some small talk and see where the conversation takes us.",
+      "durationMs": 615,
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "completeness_repaired",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:SMALL_TALK",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:completeness_repaired",
+        "shaped"
+      ],
+      "agent": {
+        "used": true,
+        "engine": "scout-lite",
+        "agentMode": "lite",
+        "inferenceProvider": "cloudflare",
+        "tools": [
+          "no_tool"
+        ],
+        "steps": 2,
+        "contextTokens": 536,
+        "validation": "valid",
+        "outcome": "completeness_repaired",
+        "executionEngine": "scout-lite",
+        "languageLayer": "cloudflare",
+        "languageModel": "@cf/meta/llama-3.2-3b-instruct",
+        "operation": "control",
+        "queryRewritten": false,
+        "rewrittenQuery": "whats up",
+        "generationCalls": [
+          {
+            "attemptIndex": 1,
+            "attemptType": "PRIMARY",
+            "provider": "cloudflare",
+            "providerRequestId": null,
+            "providerTraceId": "a2cdea552866c93a-ORD",
+            "providerTraceType": "cf-ray",
+            "model": "@cf/meta/llama-3.2-3b-instruct",
+            "actualNeurons": 0.8493809700012207,
+            "estimatedNeurons": 0.849425,
+            "inputTokens": 98,
+            "outputTokens": 13,
+            "latencyMs": 236,
+            "startedAtRelativeMs": 5,
+            "endedAtRelativeMs": 241,
+            "ok": true,
+            "accepted": true,
+            "validationVerdict": "valid",
+            "validationReasons": [],
+            "rawAnswer": "Not much, just here to help!",
+            "error": null
+          },
+          {
+            "attemptIndex": 2,
+            "attemptType": "COMPLETENESS_REPAIR",
+            "provider": "cloudflare",
+            "providerRequestId": null,
+            "providerTraceId": "a2cdea569d1ac93a-ORD",
+            "providerTraceType": "cf-ray",
+            "model": "@cf/meta/llama-3.2-3b-instruct",
+            "actualNeurons": 3.3248353004455566,
+            "estimatedNeurons": 3.325025,
+            "inputTokens": 429,
+            "outputTokens": 44,
+            "latencyMs": 322,
+            "startedAtRelativeMs": 242,
+            "endedAtRelativeMs": 564,
+            "ok": true,
+            "accepted": true,
+            "validationVerdict": "valid",
+            "validationReasons": [],
+            "rawAnswer": "Not much, just here to help and assist with any questions or topics you'd like to discuss, Scout! I'm happy to engage in some small talk and see where the conversation takes us.",
+            "error": null
+          }
+        ],
+        "actualProviderCalls": 2
+      },
+      "sessionId": "74fac8a8-1b84-415d-82da-c2e526dd389d"
+    },
+    {
+      "turn": 4,
+      "user": "what does that even mean?",
+      "expected": [
+        "CLARIFY_PREVIOUS_ASSISTANT"
+      ],
+      "policy": "CLARIFY_PREVIOUS_ASSISTANT",
+      "pass": true,
+      "reply": "It appears that Bradley Matera is exploring the concept of recovery contracts, which may involve clarifying previous information or instructions. He seems to be seeking guidance on how to approach this topic with Scout.",
+      "durationMs": 1316,
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "recovery",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:CLARIFY_PREVIOUS_ASSISTANT",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:recovery",
+        "shaped"
+      ],
+      "agent": {
+        "used": true,
+        "engine": "scout-lite",
+        "agentMode": "lite",
+        "inferenceProvider": "cloudflare",
+        "tools": [
+          "no_tool"
+        ],
+        "steps": 1,
+        "contextTokens": 129,
+        "validation": null,
+        "outcome": "recovery",
+        "executionEngine": "scout-lite",
+        "languageLayer": "cloudflare",
+        "languageModel": "@cf/meta/llama-3.2-3b-instruct",
+        "operation": "control",
+        "queryRewritten": "what does that even mean?",
+        "rewrittenQuery": null,
+        "generationCalls": [
+          {
+            "attemptIndex": 1,
+            "attemptType": "PRIMARY",
+            "provider": "cloudflare",
+            "providerRequestId": null,
+            "providerTraceId": "a2cdea5c2fc0c93a-ORD",
+            "providerTraceType": "cf-ray",
+            "model": "@cf/meta/llama-3.2-3b-instruct",
+            "actualNeurons": 2.2552523612976074,
+            "estimatedNeurons": 2.255325,
+            "inputTokens": 145,
+            "outputTokens": 52,
+            "latencyMs": 350,
+            "startedAtRelativeMs": 3,
+            "endedAtRelativeMs": 353,
+            "ok": true,
+            "accepted": true,
+            "validationVerdict": "valid",
+            "validationReasons": [],
+            "rawAnswer": "It means I'll do my best to provide helpful and accurate information, and we can chat about anything that interests you, from topics like science, history, or entertainment to more lighthearted subjects like hobbies or pop culture.",
+            "error": null
+          },
+          {
+            "attemptIndex": 2,
+            "attemptType": "COMPLETENESS_REPAIR",
+            "provider": "cloudflare",
+            "providerRequestId": null,
+            "providerTraceId": "a2cdea5e5ee7c93a-ORD",
+            "providerTraceType": "cf-ray",
+            "model": "@cf/meta/llama-3.2-3b-instruct",
+            "actualNeurons": 5.967010498046875,
+            "estimatedNeurons": 5.967275000000001,
+            "inputTokens": 572,
+            "outputTokens": 109,
+            "latencyMs": 571,
+            "startedAtRelativeMs": 354,
+            "endedAtRelativeMs": 925,
+            "ok": true,
+            "accepted": false,
+            "validationVerdict": "unsupported",
+            "validationReasons": [
+              "too_long"
+            ],
+            "rawAnswer": "That statement means I'll do my best to provide helpful and accurate information, and we can chat about anything that interests you, from topics like science, history, or entertainment to more lighthearted subjects like hobbies or pop culture. I'll aim to engage in a conversation that's informative, yet relaxed and enjoyable.",
+            "error": null
+          },
+          {
+            "attemptIndex": 3,
+            "attemptType": "RECOVERY",
+            "provider": "cloudflare",
+            "providerRequestId": null,
+            "providerTraceId": "a2cdea61fa15c93a-ORD",
+            "providerTraceType": "cf-ray",
+            "model": "@cf/meta/llama-3.2-3b-instruct",
+            "actualNeurons": 2.8142342567443848,
+            "estimatedNeurons": 2.814375,
+            "inputTokens": 312,
+            "outputTokens": 45,
+            "latencyMs": 331,
+            "startedAtRelativeMs": 928,
+            "endedAtRelativeMs": 1259,
+            "ok": true,
+            "accepted": true,
+            "validationVerdict": "valid",
+            "validationReasons": null,
+            "rawAnswer": "It appears that Bradley Matera is exploring the concept of recovery contracts, which may involve clarifying previous information or instructions. He seems to be seeking guidance on how to approach this topic with Scout.",
+            "error": null
+          }
+        ],
+        "actualProviderCalls": 3
+      },
+      "sessionId": "74fac8a8-1b84-415d-82da-c2e526dd389d"
+    },
+    {
+      "turn": 5,
+      "user": "ok, so whats up, how are you",
+      "expected": [
+        "SMALL_TALK"
+      ],
+      "policy": "SMALL_TALK",
+      "pass": true,
+      "reply": "Not much, Scout. Bradley Matera seems to be going through a learning phase, focusing on early career development and entry-level tasks.",
+      "durationMs": 822,
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "recovery",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:SMALL_TALK",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:recovery",
+        "shaped"
+      ],
+      "agent": {
+        "used": true,
+        "engine": "scout-lite",
+        "agentMode": "lite",
+        "inferenceProvider": "cloudflare",
+        "tools": [
+          "no_tool"
+        ],
+        "steps": 1,
+        "contextTokens": 82,
+        "validation": null,
+        "outcome": "recovery",
+        "executionEngine": "scout-lite",
+        "languageLayer": "cloudflare",
+        "languageModel": "@cf/meta/llama-3.2-3b-instruct",
+        "operation": "control",
+        "queryRewritten": "ok, so whats up, how are you",
+        "rewrittenQuery": null,
+        "generationCalls": [
+          {
+            "attemptIndex": 1,
+            "attemptType": "PRIMARY",
+            "provider": "cloudflare",
+            "providerRequestId": null,
+            "providerTraceId": "a2cdea679d8ac93a-ORD",
+            "providerTraceType": "cf-ray",
+            "model": "@cf/meta/llama-3.2-3b-instruct",
+            "actualNeurons": 0.9122278690338135,
+            "estimatedNeurons": 0.912275,
+            "inputTokens": 105,
+            "outputTokens": 14,
+            "latencyMs": 155,
+            "startedAtRelativeMs": 2,
+            "endedAtRelativeMs": 157,
+            "ok": true,
+            "accepted": true,
+            "validationVerdict": "valid",
+            "validationReasons": [],
+            "rawAnswer": "I'm doing well, thanks for asking!",
+            "error": null
+          },
+          {
+            "attemptIndex": 2,
+            "attemptType": "COMPLETENESS_REPAIR",
+            "provider": "cloudflare",
+            "providerRequestId": null,
+            "providerTraceId": "a2cdea689916c93a-ORD",
+            "providerTraceType": "cf-ray",
+            "model": "@cf/meta/llama-3.2-3b-instruct",
+            "actualNeurons": 3.6850781440734863,
+            "estimatedNeurons": 3.685275,
+            "inputTokens": 441,
+            "outputTokens": 54,
+            "latencyMs": 308,
+            "startedAtRelativeMs": 158,
+            "endedAtRelativeMs": 466,
+            "ok": true,
+            "accepted": true,
+            "validationVerdict": "valid",
+            "validationReasons": [],
+            "rawAnswer": "I'm doing well, thanks for asking! I'm functioning within normal parameters, and my conversations are flowing smoothly, thanks to the CONTROL_MODE: SMALL_TALK setting that allows me to engage in casual, everyday discussions with users like you.",
+            "error": null
+          },
+          {
+            "attemptIndex": 3,
+            "attemptType": "RECOVERY",
+            "provider": "cloudflare",
+            "providerRequestId": null,
+            "providerTraceId": "a2cdea6a8831c93a-ORD",
+            "providerTraceType": "cf-ray",
+            "model": "@cf/meta/llama-3.2-3b-instruct",
+            "actualNeurons": 2.2681782245635986,
+            "estimatedNeurons": 2.2683,
+            "inputTokens": 273,
+            "outputTokens": 33,
+            "latencyMs": 302,
+            "startedAtRelativeMs": 468,
+            "endedAtRelativeMs": 770,
+            "ok": true,
+            "accepted": true,
+            "validationVerdict": "valid",
+            "validationReasons": null,
+            "rawAnswer": "Not much, Scout. Bradley Matera seems to be going through a learning phase, focusing on early career development and entry-level tasks.",
+            "error": null
+          }
+        ],
+        "actualProviderCalls": 3
+      },
+      "sessionId": "74fac8a8-1b84-415d-82da-c2e526dd389d"
+    },
+    {
+      "turn": 6,
+      "user": "what do you mean?!",
+      "expected": [
+        "CLARIFY_PREVIOUS_ASSISTANT"
+      ],
+      "policy": "CLARIFY_PREVIOUS_ASSISTANT",
+      "pass": true,
+      "reply": "The previous assistant statement suggests that Bradley Matera, a junior employee, is still developing his skills and taking on basic responsibilities, possibly as a new or entry-level employee in his role at ProjectHub (Scout).",
+      "durationMs": 712,
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "completeness_repaired",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:CLARIFY_PREVIOUS_ASSISTANT",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:completeness_repaired",
+        "shaped"
+      ],
+      "agent": {
+        "used": true,
+        "engine": "scout-lite",
+        "agentMode": "lite",
+        "inferenceProvider": "cloudflare",
+        "tools": [
+          "no_tool"
+        ],
+        "steps": 2,
+        "contextTokens": 684,
+        "validation": "valid",
+        "outcome": "completeness_repaired",
+        "executionEngine": "scout-lite",
+        "languageLayer": "cloudflare",
+        "languageModel": "@cf/meta/llama-3.2-3b-instruct",
+        "operation": "control",
+        "queryRewritten": false,
+        "rewrittenQuery": "what do you mean?!",
+        "generationCalls": [
+          {
+            "attemptIndex": 1,
+            "attemptType": "PRIMARY",
+            "provider": "cloudflare",
+            "providerRequestId": null,
+            "providerTraceId": "a2cdea6fe9a4c93a-ORD",
+            "providerTraceType": "cf-ray",
+            "model": "@cf/meta/llama-3.2-3b-instruct",
+            "actualNeurons": 1.74263596534729,
+            "estimatedNeurons": 1.7427000000000001,
+            "inputTokens": 133,
+            "outputTokens": 37,
+            "latencyMs": 298,
+            "startedAtRelativeMs": 2,
+            "endedAtRelativeMs": 300,
+            "ok": true,
+            "accepted": true,
+            "validationVerdict": "valid",
+            "validationReasons": [],
+            "rawAnswer": "The previous assistant likely means that Bradley Matera is still developing his skills and taking on basic responsibilities, possibly as a new or junior employee in his role.",
+            "error": null
+          },
+          {
+            "attemptIndex": 2,
+            "attemptType": "COMPLETENESS_REPAIR",
+            "provider": "cloudflare",
+            "providerRequestId": null,
+            "providerTraceId": "a2cdea71cee7c93a-ORD",
+            "providerTraceType": "cf-ray",
+            "model": "@cf/meta/llama-3.2-3b-instruct",
+            "actualNeurons": 4.025637149810791,
+            "estimatedNeurons": 4.025875,
+            "inputTokens": 541,
+            "outputTokens": 50,
+            "latencyMs": 357,
+            "startedAtRelativeMs": 301,
+            "endedAtRelativeMs": 658,
+            "ok": true,
+            "accepted": true,
+            "validationVerdict": "valid",
+            "validationReasons": [],
+            "rawAnswer": "The previous assistant statement suggests that Bradley Matera, a junior employee, is still developing his skills and taking on basic responsibilities, possibly as a new or entry-level employee in his role at ProjectHub (Scout).",
+            "error": null
+          }
+        ],
+        "actualProviderCalls": 2
+      },
+      "sessionId": "74fac8a8-1b84-415d-82da-c2e526dd389d"
+    }
+  ]
+}
