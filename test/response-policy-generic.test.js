@@ -146,6 +146,23 @@ describe('Generic Policy Classifier — unrelated fixture', () => {
       assert.ok(req.length < 80, `Requirement "${req}" should be a short constraint, not prose`);
     }
   });
+
+  it('classifies agent-identity questions as META, not OUT_OF_SCOPE', () => {
+    for (const q of ["what's your name", 'whats your name', 'what is your name', 'what is this thing', 'whats this thing', 'what does this thing do', 'who are you', 'what are you']) {
+      const r = classifyResponsePolicy(q, [], fixture);
+      assert.equal(r.mode, 'META', `Expected META for "${q}", got ${r.mode}`);
+      assert.ok(r.requiredEntities.includes('Atlas'));
+    }
+  });
+
+  it('classifies user-name query with and without apostrophe', () => {
+    const r1 = classifyResponsePolicy("what's my name", [{ user: 'hi, call me Jane' }], fixture);
+    assert.equal(r1.mode, 'USER_PROFILE_QUERY');
+    const r2 = classifyResponsePolicy('whats my name', [{ user: 'hi, call me Jane' }], fixture);
+    assert.equal(r2.mode, 'USER_PROFILE_QUERY');
+    const r3 = classifyResponsePolicy('what is my name', [{ user: 'hi, call me Jane' }], fixture);
+    assert.equal(r3.mode, 'USER_PROFILE_QUERY');
+  });
 });
 
 describe('Generic Claim Parsing', () => {
