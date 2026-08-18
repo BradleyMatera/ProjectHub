@@ -1616,7 +1616,13 @@ app.post('/api/chat', async (req, res) => {
     if (directAnswer && directAnswer.answer && directIntentAllowed && !policyBlocksDirect) {
       pipeline.push('direct-kb');
       const directReply = directAnswer.answer;
+      const directEvidence = (directAnswer?.answer || '');
+      let directContract = null;
+      try {
+        directContract = buildResponseContract(userMessage, directEvidence, knowledge, history || []);
+      } catch (e) { directContract = { error: 'contract_build_failed', detail: e.message }; }
       const directPayload = {
+        ok: true,
         reply: directReply,
         provider: 'knowledge-base',
         model: 'direct',
@@ -1627,7 +1633,8 @@ app.post('/api/chat', async (req, res) => {
         proseSource: 'DIRECT_KB',
         direct: true,
         sourceIds: directAnswer.sourceIds || [],
-        sessionMemory: { turns: Math.min(history.length + 1, CONVERSATION_MAX_TURNS), retained: true }
+        sessionMemory: { turns: Math.min(history.length + 1, CONVERSATION_MAX_TURNS), retained: true },
+        contract: directContract
       };
       if (!hasHistory) {
         responseCache.set(cacheKey, { ts: Date.now(), payload: directPayload });
@@ -1889,7 +1896,7 @@ app.post('/api/chat', async (req, res) => {
     const compressedEvidence = (evidence || []).map(e => e.description || '').filter(Boolean).join('\n');
     let contractSummary = null;
     try {
-      const responseContract = buildResponseContract(agentResult?.rewritten || userMessage, compressedEvidence, knowledge, history || []);
+      const responseContract = buildResponseContract(agentResult?.rewrittenQuery || agentResult?.rewritten || userMessage, compressedEvidence, knowledge, history || []);
       contractSummary = {
         intent: responseContract.intent,
         subIntent: responseContract.subIntent,
