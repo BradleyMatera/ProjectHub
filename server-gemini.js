@@ -22,6 +22,7 @@ const { buildReasoningPacket, buildSynthesisPacket, estimateTokens } = require('
 const { validateAnswer, validateToolDecision, attemptJsonRepair } = require('./lib/grounding-validator');
 const { buildFalseClaimsRegex, shouldAbortGeneration, validateFallbackReply } = require('./lib/response-validator');
 const { classifyResponsePolicy, findRoleInQuestion: policyFindRole } = require('./lib/response-policy');
+const { buildResponseContract } = require('./lib/response-contract');
 const sessionState = require('./lib/session-state');
 
 // Legacy Think Mode data stub — learning/Think Mode removed from runtime.
@@ -1884,7 +1885,29 @@ app.post('/api/chat', async (req, res) => {
     // 3c. Follow-up suggestions are model-generated or KB-driven, not hardcoded
     const followUps = [];
 
-    const payload = { reply, provider, model, fallback: false, grounded: provider === 'grounded' || provider === 'local-agent', pipeline, followUps, proseSource: agentResult?.proseSource || 'MODEL_GENERATION' };
+    // Build a client-safe contract summary for the acceptance harness.
+    const compressedEvidence = (evidence || []).map(e => e.description || '').filter(Boolean).join('\n');
+    let contractSummary = null;
+    try {
+      const responseContract = buildResponseContract(agentResult?.rewritten || userMessage, compressedEvidence, knowledge, history || []);
+      contractSummary = {
+        intent: responseContract.intent,
+        subIntent: responseContract.subIntent,
+        policyMode: responseContract.policyMode,
+        directAnswer: responseContract.directAnswer,
+        factState: responseContract.factState,
+        evidenceStrength: responseContract.evidenceStrength,
+        claimCeiling: responseContract.claimCeiling,
+        requestedRole: responseContract.requestedRole,
+        requestedTopic: responseContract.requestedTopic,
+        boundary: responseContract.boundary,
+        forbiddenClaims: responseContract.forbiddenClaims
+      };
+    } catch (e) {
+      contractSummary = { error: 'contract_build_failed', detail: e.message };
+    }
+
+    const payload = { ok: true, reply, provider, model, fallback: false, grounded: provider === 'grounded' || provider === 'local-agent', pipeline, followUps, proseSource: agentResult?.proseSource || 'MODEL_GENERATION', contract: contractSummary };
     payload.local = { only: true, memoryTurns: Math.min(history.length, 5), stanceTopics: (stanceStore.get(sessionId) || []).length, model: model || localModelRouter.defaultModel() };
     if (agentMeta) payload.agent = agentMeta;
     if (agentEvents) payload.agentEvents = agentEvents;
