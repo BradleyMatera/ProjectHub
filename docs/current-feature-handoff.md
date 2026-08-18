@@ -1,22 +1,22 @@
 # Scout Feature Handoff
 
-**Updated:** 2026-08-18 (conversation-control + staging reconciliation phase)
+**Updated:** 2026-08-18 (continued — primary-path hardening pass)
 
 **Working branch:** `develop` (integration branch; `feat/agent-systems-network` is historical)
 
 > **Note on SHAs:** This document is committed inside the same repository it describes, so any `Remote develop HEAD = X` line becomes self-invalidating as soon as a new commit is pushed. Use `git ls-remote origin develop` for the current `ProjectHub/develop` HEAD and `git show projecthub-dev/main:STAGING-SOURCE.json` for the staging source. This file records durable source-of-truth relationships, not exact transient SHAs.
 
-**Current runtime source:** `2088d44a236b0f99ac817d4e05f0628380666a9f` (runtime tree from `c768ab7`; source of truth for the dev backend). The `develop` branch may contain additional docs/skills/staging-tooling commits on top; query the remote for the latest HEAD.
+**Current runtime source:** `ProjectHub/develop` HEAD (query `git ls-remote origin develop`).
 
-**Production (`master`):** `3cf6a24812489217ad5b4e3a51f51a45158adef0` — frozen; not promoted.
+**Production (`master`):** frozen; no promotion.
 
 **Staging frontend source:** `ProjectHub-dev:main` is a prepared staging tree; canonical source is `STAGING-SOURCE.json` on that branch. Manual mirror is performed by the `projecthub-staging-deployer` skill, not a raw `git push develop:main --force`.
 
-**Staging backend source:** whatever clean `ProjectHub/develop` commit was last deployed to `https://dev.projecthub-chat.bradleymatera.dev`.
+**Staging backend source:** the same clean `ProjectHub/develop` commit last deployed to `https://dev.projecthub-chat.bradleymatera.dev`.
 
-**Dev backend source:** `2088d44a236b0f99ac817d4e05f0628380666a9f` (deployed from clean committed tree).
+**Dev backend source:** deployed from the current `ProjectHub/develop` HEAD (health check and smoke test passed).
 
-**Verdict:** Staging re-synchronized with correct packaging (`STAGING-SOURCE.json`, staging `AGENTS.md`, `pages.yml` triggers `main`). Dev backend re-deployed on the restored `c768ab7` runtime tree. Empty-reply fallback and `Moderate`/`Fit` fabricated-entity false positives are fixed. Direct answers with unsupported `entry-level` career-stage derivations have been corrected. The remaining seniority/background, role-fit, and unknown-technology failures live in the primary `lib/response-contract.js` / `lib/grounding-validator.js` path and are release blockers under active repair.
+**Verdict:** Staging re-synchronized with correct packaging (`STAGING-SOURCE.json`, staging `AGENTS.md`, `pages.yml` triggers `main`). Dev backend re-deployed. Primary response contract now carries `factState`, `claimCeiling`, and `requestedRole`; new policy modes `META`, `NEGATIVE_ASSESSMENT`, `FUTURE_CAPABILITY`, and `CLARIFICATION_REQUIRED` are wired through intent classification and prompt instructions. Scout identity configuration and `lib/claim-validator.js` provide structured claim validation. Unit-test suite is green. End-to-end API acceptance still fails due to a mix of Cloudflare rate limiting (HTTP 429) and lingering 3B-model overclaims/negative-trait hallucinations; these remain release blockers and no `develop` -> `master` release PR should be opened.
 
 > **Architecture note:** **Scout** is the portable intelligence/orchestration
 > engine; **ProjectHub Recruiter Alpha** is the app powered by Scout. Primary
@@ -40,34 +40,32 @@
 > before generation. Employment claims are open-world with three-valued
 > TRUE/FALSE/UNKNOWN evidence status. Think Mode is removed.
 
-## Current State (2026-08-18)
+## Current State (2026-08-18 continued)
 
 > Query the actual remotes for current SHAs; this section records durable facts.
 
-- **`ProjectHub/develop`:** current runtime source is the `c768ab7` tree (`2088d44` after docs/skills commits; query `git ls-remote origin develop` for latest).
+- **`ProjectHub/develop`:** current runtime source is the branch HEAD (query `git ls-remote origin develop`).
 - **`ProjectHub-dev:main`:** staging tree prepared by `projecthub-staging-deployer` with `STAGING-SOURCE.json`, staging `AGENTS.md`, and `pages.yml` triggering on `main`.
 - **Staging source marker:** read from `ProjectHub-dev:main:STAGING-SOURCE.json`.
-- **Dev backend deployed source:** `2088d44a236b0f99ac817d4e05f0628380666a9f` (clean committed, pushed tree; health check and smoke test passed).
-- **Production `master`:** `3cf6a24812489217ad5b4e3a51f51a45158adef0` — frozen; no promotion.
-- Tests: 797/797 unit tests pass; retrieval Recall@6 = 1.000, MRR@6 = 0.971.
-- Human staging evaluation artifacts checked in:
-  - `data/human-staging-evaluation.json` — latest full evaluation run.
-  - `data/human-staging-evaluation-294dab0.json` — snapshot of the failed `294dab0` recovery-contract experiment.
+- **Dev backend deployed source:** the current `ProjectHub/develop` HEAD (health check and smoke test passed).
+- **Production `master`:** frozen; no promotion.
+- Tests: 806/806 unit tests pass; retrieval Recall@6 = 1.000, MRR@6 = 0.971.
 - **Fixed in this pass:**
   - Staging packaging restored with proper wrapper commit.
   - `entry-level` / career-stage assertions removed from `senior-engineer`, `team-management`, and `production-incident` direct answers.
-  - Empty `INFERENCE_UNAVAILABLE` replies now return a non-empty technical-error message.
-  - `Moderate`/`Fit` fabricated-entity false positives suppressed.
+  - Scout identity configuration expanded in `data/scout-identity.json` and `lib/scout-identity.js`.
+  - `lib/claim-validator.js` provides structured claim validation (identity, negative traits, roles, employment, skills, proficiency, out-of-scope).
+  - `lib/grounding-validator.js` hard-fails key claim violations.
+  - `lib/response-contract.js` adds `factState`, `claimCeiling`, `requestedRole`, and new policy modes/sub-intents (`META`, `NEGATIVE_ASSESSMENT`, `FUTURE_CAPABILITY`, `CLARIFICATION_REQUIRED`).
+  - `lib/completeness-check.js` recognizes `META` and `FUTURE_CAPABILITY` intents.
+  - `lib/lite-agent.js` passes the full response contract into validation and includes natural instructions in the prompt.
+  - `test/primary-path-regression.test.js` covers the targeted failure classes.
 - **Still failing (release blockers):**
-  - META/Scout identity: model can answer "Assistant" and claim self-learning.
-  - c3 `PROFILE` and c10 referent turns intermittently return `INFERENCE_UNAVAILABLE`.
-  - c6/c12 `OUT_OF_SCOPE` control turns can still hallucinate candidate claims.
-  - c7 Python "is he good at" overclaims from project-only evidence.
-  - c8 role-fit fabricates a job title.
-  - c8 negative assessment invents unsupported traits.
-  - c7/c10 follow-up context collapses (`the other one`, `what about Rust`).
-- **Root-cause finding:** these failures live in the primary `lib/response-contract.js` / `lib/grounding-validator.js` path and in conversation/intent resolution. They are release blockers under active repair.
-- **Next step:** harden primary contracts, validators, and follow-up/entity resolution, add regressions, then re-run the human staging evaluation before any `develop` → `master` release PR.
+  - End-to-end API acceptance (`scripts/eval-local-api.js` against dev) is blocked by Cloudflare rate limiting (HTTP 429) and a harness `source` value mismatch.
+  - A subset of pre-429 replies still overclaim or invent unsupported negative traits/role titles (e.g., `work habits`, `weaknesses`, `role fit`).
+  - Unknown-technology, future-capability, and clarification-required live behavior cannot be reliably measured until the rate-limiting and harness issues are resolved.
+- **Root-cause finding:** the primary `lib/response-contract.js` / `lib/grounding-validator.js` path and `lib/claim-validator.js` are now correctly structured, but the 3B Cloudflare model still sometimes ignores the contract instructions. Additional prompt repair/validator tightening and a paced, harness-corrected eval are needed.
+- **Next step:** update `scripts/eval-local-api.js` to accept current provider source names and add request pacing; re-run the end-to-end acceptance; then iterate on the remaining overclaim/negative-trait cases before any `develop` → `master` release PR.
 
 ---
 
