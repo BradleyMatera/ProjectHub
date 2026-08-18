@@ -23,7 +23,7 @@ description: Verify that a declared completion actually meets all required condi
    - `git rev-parse projecthub-dev/main`
 
 3. **Verify staging packaging (not just SHA updated).**
-   - `git show projecthub-dev/main:STAGING-SOURCE.json` present and correct.
+   - `git show projecthub-dev/main:STAGING-SOURCE.json` must be present and must parse as valid JSON with the intended `sourceCommit`.
    - `git show projecthub-dev/main:.github/workflows/pages.yml` triggers on `main`.
    - `git show projecthub-dev/main:AGENTS.md` is the staging-specific file.
 

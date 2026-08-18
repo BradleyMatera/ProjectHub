@@ -30,7 +30,8 @@ description: Verify git remote state before declaring any publish/deploy step co
 4. **Verify staging packaging (not just SHA equality)**
    - `git show projecthub-dev/main:AGENTS.md` must be staging-specific, not `ProjectHub/AGENTS.md`.
    - `git show projecthub-dev/main:.github/workflows/pages.yml` must trigger on `branches: [main]`.
-   - `git show projecthub-dev/main:STAGING-SOURCE.json` must exist and `sourceCommit` must match intended `ProjectHub/develop` commit.
+   - `git show projecthub-dev/main:STAGING-SOURCE.json` must exist, must parse as valid JSON, and `sourceCommit` must match the intended `ProjectHub/develop` commit.
+   - Run: `node -e "const t=require('fs').readFileSync(0,'utf8').replace(/^\uFEFF/,''); const j=JSON.parse(t); console.log(j);" < <(git show projecthub-dev/main:STAGING-SOURCE.json)`
 
 5. **Verify backend source**
    - If backend was deployed, confirm the deployed SHA matches a pushed `ProjectHub/develop` commit and the runtime files are unchanged from that tree.

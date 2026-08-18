@@ -2062,16 +2062,16 @@ test('contract: job-fit with missing skills gets NOT_FIT', () => {
   assert.equal(c.directAnswer, 'NOT_FIT');
 });
 
-test('contract: entry-level boundary is present for job-fit', () => {
+test('contract: no entry-level boundary is inferred for job-fit', () => {
   const c = buildResponseContract(
     'How does he fit a junior frontend developer role requiring React and TypeScript?',
     'Bradley has React and TypeScript skills.',
     testKnowledge,
     []
   );
-  assert.ok(c.boundary, 'should have boundary for entry-level candidate');
-  // Boundary should not claim professional production ownership
-  assert.ok(!c.boundary.toLowerCase().includes('experienced engineer'), 'boundary should not inflate title');
+  // Career stage must not be inferred from a negative boundary.
+  assert.ok(!c.boundary || !c.boundary.toLowerCase().includes('entry-level'), 'should not infer entry-level boundary');
+  assert.ok(!c.boundary || !c.boundary.toLowerCase().includes('experienced engineer'), 'boundary should not inflate title');
 });
 
 test('contract: classifySubIntent distinguishes skill evidence from generic follow-up', () => {

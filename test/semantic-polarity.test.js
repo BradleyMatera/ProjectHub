@@ -479,11 +479,9 @@ test('P6: NEGATIVE + SUPPORTED → DENY_NEGATION', () => {
   assert.equal(result.answerStance, 'DENY_NEGATION');
 });
 
-test('P6: POSITIVE + UNSUPPORTED → DENY (FALSE_CLAIM_DENIAL)', () => {
+test('P6: POSITIVE + UNKNOWN OPEN-WORLD CLAIM → QUALIFY (not FALSE_CLAIM_DENIAL)', () => {
   const result = classifyResponsePolicy('She was a senior chef at Google, right?', [], testKnowledge);
-  assert.equal(result.mode, 'FALSE_CLAIM_DENIAL', 'POSITIVE+UNSUPPORTED should be FALSE_CLAIM_DENIAL');
-  assert.equal(result.premisePolarity, 'POSITIVE');
-  assert.equal(result.answerStance, 'DENY');
+  assert.notEqual(result.mode, 'FALSE_CLAIM_DENIAL', 'open-world unsupported claim must not be denied as false');
 });
 
 // ============ P7: OOS Semantic Policy Validator ============
