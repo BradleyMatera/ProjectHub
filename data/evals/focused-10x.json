@@ -1,0 +1,643 @@
+{
+  "baseUrl": "https://dev.projecthub-chat.bradleymatera.dev",
+  "startedAt": "2026-08-19T05:47:21.202Z",
+  "runs": 10,
+  "totalScored": 40,
+  "good": 40,
+  "byQuality": {
+    "GOOD": 40
+  },
+  "failedIds": [],
+  "byCase": {
+    "memory-follow-up-b": {
+      "total": 10,
+      "good": 10,
+      "byQuality": {
+        "GOOD": 10
+      },
+      "replies": [
+        "There is no public evidence available to suggest Bradley is actively working on weaknesses related to his learning gaps, as his public profile does not indicate any efforts to address these areas.",
+        "No, Bradley's public profile does not indicate that he is actively working on improving his knowledge of ERP concepts and business workflows, although he has expressed interest in learning more about ",
+        "No, Bradley's public profile does not indicate that he is actively working on improving his knowledge of ERP concepts and business workflows, although he has expressed interest in learning more about ",
+        "No, Bradley's public profile does not indicate that he is actively working on his weaknesses in learning ERP concepts and business workflows, software support, and user support fundamentals.",
+        "No, there is no public evidence that Bradley is actively working on his weaknesses in learning ERP concepts and business workflows, software support, and user support fundamentals.",
+        "No, there is no public evidence to suggest Bradley is actively working on his weaknesses in learning C#/.NET fundamentals, ERP concepts, business workflows, software support, and user support fundamen",
+        "No, there is no public evidence that Bradley is actively working on improving his knowledge of ERP concepts and business workflows, or software support and user support fundamentals. His current learn",
+        "No, Bradley's public profile does not indicate that he is actively working on improving his knowledge of ERP concepts and business workflows, although he has expressed interest in learning about these",
+        "There is no public evidence available to suggest that Bradley is actively working on weaknesses in his knowledge of C#/.NET fundamentals, ERP concepts, business workflows, software support, or user su",
+        "No, Bradley's public profile does not indicate that he is actively working on improving his knowledge of ERP concepts and business workflows, although he has expressed interest in learning more about "
+      ]
+    },
+    "unknown-skill": {
+      "total": 10,
+      "good": 10,
+      "byQuality": {
+        "GOOD": 10
+      },
+      "replies": [
+        "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed.",
+        "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed.",
+        "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed.",
+        "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed.",
+        "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed.",
+        "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed.",
+        "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed.",
+        "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed.",
+        "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed.",
+        "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed."
+      ]
+    },
+    "unknown-tech-2": {
+      "total": 10,
+      "good": 10,
+      "byQuality": {
+        "GOOD": 10
+      },
+      "replies": [
+        "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based",
+        "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based",
+        "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based",
+        "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based",
+        "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based",
+        "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based",
+        "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based",
+        "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based",
+        "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based",
+        "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based"
+      ]
+    },
+    "skill-frame": {
+      "total": 10,
+      "good": 10,
+      "byQuality": {
+        "GOOD": 10
+      },
+      "replies": [
+        "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it.",
+        "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it.",
+        "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it.",
+        "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it.",
+        "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it.",
+        "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it.",
+        "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it.",
+        "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it.",
+        "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it.",
+        "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it."
+      ]
+    }
+  },
+  "results": [
+    {
+      "run": 1,
+      "id": "memory-follow-up-a",
+      "sessionId": "focused-1-mem",
+      "message": "What are his honest weaknesses?",
+      "status": 200,
+      "latencyMs": 1316,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No verified evidence of Bradley's weaknesses is available, as public profile evidence is the only source used, and project evidence only provides insight into his skills and experience with ProjectHub Recruiter Alpha, a portable generative intelligence engine built on Scout, a portable generative intelligence engine, without revealing any documented gaps or areas for improvement."
+    },
+    {
+      "run": 1,
+      "id": "memory-follow-up-b",
+      "sessionId": "focused-1-mem",
+      "message": "Is he working on them?",
+      "status": 200,
+      "latencyMs": 742,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "There is no public evidence available to suggest Bradley is actively working on weaknesses related to his learning gaps, as his public profile does not indicate any efforts to address these areas."
+    },
+    {
+      "run": 1,
+      "id": "unknown-skill",
+      "sessionId": "focused-1-unknown-skill",
+      "message": "Does he know COBOL?",
+      "status": 200,
+      "latencyMs": 825,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed."
+    },
+    {
+      "run": 1,
+      "id": "unknown-tech-2",
+      "sessionId": "focused-1-unknown-tech-2",
+      "message": "But can he learn Rust?",
+      "status": 200,
+      "latencyMs": 1236,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+    },
+    {
+      "run": 1,
+      "id": "skill-frame",
+      "sessionId": "focused-1-skill-frame",
+      "message": "What about TypeScript?",
+      "status": 200,
+      "latencyMs": 431,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it."
+    },
+    {
+      "run": 2,
+      "id": "memory-follow-up-a",
+      "sessionId": "focused-2-mem",
+      "message": "What are his honest weaknesses?",
+      "status": 200,
+      "latencyMs": 51,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No verified evidence of Bradley's weaknesses is available, as public profile evidence is the only source used, and project evidence only provides insight into his skills and experience with ProjectHub Recruiter Alpha, a portable generative intelligence engine built on Scout, a portable generative intelligence engine, without revealing any documented gaps or areas for improvement."
+    },
+    {
+      "run": 2,
+      "id": "memory-follow-up-b",
+      "sessionId": "focused-2-mem",
+      "message": "Is he working on them?",
+      "status": 200,
+      "latencyMs": 576,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No, Bradley's public profile does not indicate that he is actively working on improving his knowledge of ERP concepts and business workflows, although he has expressed interest in learning more about these topics."
+    },
+    {
+      "run": 2,
+      "id": "unknown-skill",
+      "sessionId": "focused-2-unknown-skill",
+      "message": "Does he know COBOL?",
+      "status": 200,
+      "latencyMs": 47,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed."
+    },
+    {
+      "run": 2,
+      "id": "unknown-tech-2",
+      "sessionId": "focused-2-unknown-tech-2",
+      "message": "But can he learn Rust?",
+      "status": 200,
+      "latencyMs": 49,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+    },
+    {
+      "run": 2,
+      "id": "skill-frame",
+      "sessionId": "focused-2-skill-frame",
+      "message": "What about TypeScript?",
+      "status": 200,
+      "latencyMs": 49,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it."
+    },
+    {
+      "run": 3,
+      "id": "memory-follow-up-a",
+      "sessionId": "focused-3-mem",
+      "message": "What are his honest weaknesses?",
+      "status": 200,
+      "latencyMs": 46,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No verified evidence of Bradley's weaknesses is available, as public profile evidence is the only source used, and project evidence only provides insight into his skills and experience with ProjectHub Recruiter Alpha, a portable generative intelligence engine built on Scout, a portable generative intelligence engine, without revealing any documented gaps or areas for improvement."
+    },
+    {
+      "run": 3,
+      "id": "memory-follow-up-b",
+      "sessionId": "focused-3-mem",
+      "message": "Is he working on them?",
+      "status": 200,
+      "latencyMs": 522,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No, Bradley's public profile does not indicate that he is actively working on improving his knowledge of ERP concepts and business workflows, although he has expressed interest in learning more about these topics."
+    },
+    {
+      "run": 3,
+      "id": "unknown-skill",
+      "sessionId": "focused-3-unknown-skill",
+      "message": "Does he know COBOL?",
+      "status": 200,
+      "latencyMs": 47,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed."
+    },
+    {
+      "run": 3,
+      "id": "unknown-tech-2",
+      "sessionId": "focused-3-unknown-tech-2",
+      "message": "But can he learn Rust?",
+      "status": 200,
+      "latencyMs": 50,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+    },
+    {
+      "run": 3,
+      "id": "skill-frame",
+      "sessionId": "focused-3-skill-frame",
+      "message": "What about TypeScript?",
+      "status": 200,
+      "latencyMs": 52,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it."
+    },
+    {
+      "run": 4,
+      "id": "memory-follow-up-a",
+      "sessionId": "focused-4-mem",
+      "message": "What are his honest weaknesses?",
+      "status": 200,
+      "latencyMs": 49,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No verified evidence of Bradley's weaknesses is available, as public profile evidence is the only source used, and project evidence only provides insight into his skills and experience with ProjectHub Recruiter Alpha, a portable generative intelligence engine built on Scout, a portable generative intelligence engine, without revealing any documented gaps or areas for improvement."
+    },
+    {
+      "run": 4,
+      "id": "memory-follow-up-b",
+      "sessionId": "focused-4-mem",
+      "message": "Is he working on them?",
+      "status": 200,
+      "latencyMs": 642,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No, Bradley's public profile does not indicate that he is actively working on his weaknesses in learning ERP concepts and business workflows, software support, and user support fundamentals."
+    },
+    {
+      "run": 4,
+      "id": "unknown-skill",
+      "sessionId": "focused-4-unknown-skill",
+      "message": "Does he know COBOL?",
+      "status": 200,
+      "latencyMs": 50,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed."
+    },
+    {
+      "run": 4,
+      "id": "unknown-tech-2",
+      "sessionId": "focused-4-unknown-tech-2",
+      "message": "But can he learn Rust?",
+      "status": 200,
+      "latencyMs": 47,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+    },
+    {
+      "run": 4,
+      "id": "skill-frame",
+      "sessionId": "focused-4-skill-frame",
+      "message": "What about TypeScript?",
+      "status": 200,
+      "latencyMs": 49,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it."
+    },
+    {
+      "run": 5,
+      "id": "memory-follow-up-a",
+      "sessionId": "focused-5-mem",
+      "message": "What are his honest weaknesses?",
+      "status": 200,
+      "latencyMs": 159,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No verified evidence of Bradley's weaknesses is available, as public profile evidence is the only source used, and project evidence only provides insight into his skills and experience with ProjectHub Recruiter Alpha, a portable generative intelligence engine built on Scout, a portable generative intelligence engine, without revealing any documented gaps or areas for improvement."
+    },
+    {
+      "run": 5,
+      "id": "memory-follow-up-b",
+      "sessionId": "focused-5-mem",
+      "message": "Is he working on them?",
+      "status": 200,
+      "latencyMs": 768,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No, there is no public evidence that Bradley is actively working on his weaknesses in learning ERP concepts and business workflows, software support, and user support fundamentals."
+    },
+    {
+      "run": 5,
+      "id": "unknown-skill",
+      "sessionId": "focused-5-unknown-skill",
+      "message": "Does he know COBOL?",
+      "status": 200,
+      "latencyMs": 46,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed."
+    },
+    {
+      "run": 5,
+      "id": "unknown-tech-2",
+      "sessionId": "focused-5-unknown-tech-2",
+      "message": "But can he learn Rust?",
+      "status": 200,
+      "latencyMs": 47,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+    },
+    {
+      "run": 5,
+      "id": "skill-frame",
+      "sessionId": "focused-5-skill-frame",
+      "message": "What about TypeScript?",
+      "status": 200,
+      "latencyMs": 52,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it."
+    },
+    {
+      "run": 6,
+      "id": "memory-follow-up-a",
+      "sessionId": "focused-6-mem",
+      "message": "What are his honest weaknesses?",
+      "status": 200,
+      "latencyMs": 52,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No verified evidence of Bradley's weaknesses is available, as public profile evidence is the only source used, and project evidence only provides insight into his skills and experience with ProjectHub Recruiter Alpha, a portable generative intelligence engine built on Scout, a portable generative intelligence engine, without revealing any documented gaps or areas for improvement."
+    },
+    {
+      "run": 6,
+      "id": "memory-follow-up-b",
+      "sessionId": "focused-6-mem",
+      "message": "Is he working on them?",
+      "status": 200,
+      "latencyMs": 821,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No, there is no public evidence to suggest Bradley is actively working on his weaknesses in learning C#/.NET fundamentals, ERP concepts, business workflows, software support, and user support fundamentals."
+    },
+    {
+      "run": 6,
+      "id": "unknown-skill",
+      "sessionId": "focused-6-unknown-skill",
+      "message": "Does he know COBOL?",
+      "status": 200,
+      "latencyMs": 47,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed."
+    },
+    {
+      "run": 6,
+      "id": "unknown-tech-2",
+      "sessionId": "focused-6-unknown-tech-2",
+      "message": "But can he learn Rust?",
+      "status": 200,
+      "latencyMs": 54,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+    },
+    {
+      "run": 6,
+      "id": "skill-frame",
+      "sessionId": "focused-6-skill-frame",
+      "message": "What about TypeScript?",
+      "status": 200,
+      "latencyMs": 55,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it."
+    },
+    {
+      "run": 7,
+      "id": "memory-follow-up-a",
+      "sessionId": "focused-7-mem",
+      "message": "What are his honest weaknesses?",
+      "status": 200,
+      "latencyMs": 48,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No verified evidence of Bradley's weaknesses is available, as public profile evidence is the only source used, and project evidence only provides insight into his skills and experience with ProjectHub Recruiter Alpha, a portable generative intelligence engine built on Scout, a portable generative intelligence engine, without revealing any documented gaps or areas for improvement."
+    },
+    {
+      "run": 7,
+      "id": "memory-follow-up-b",
+      "sessionId": "focused-7-mem",
+      "message": "Is he working on them?",
+      "status": 200,
+      "latencyMs": 1072,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No, there is no public evidence that Bradley is actively working on improving his knowledge of ERP concepts and business workflows, or software support and user support fundamentals. His current learning activities appear to be focused on refreshing C#/.NET fundamentals."
+    },
+    {
+      "run": 7,
+      "id": "unknown-skill",
+      "sessionId": "focused-7-unknown-skill",
+      "message": "Does he know COBOL?",
+      "status": 200,
+      "latencyMs": 48,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed."
+    },
+    {
+      "run": 7,
+      "id": "unknown-tech-2",
+      "sessionId": "focused-7-unknown-tech-2",
+      "message": "But can he learn Rust?",
+      "status": 200,
+      "latencyMs": 49,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+    },
+    {
+      "run": 7,
+      "id": "skill-frame",
+      "sessionId": "focused-7-skill-frame",
+      "message": "What about TypeScript?",
+      "status": 200,
+      "latencyMs": 50,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it."
+    },
+    {
+      "run": 8,
+      "id": "memory-follow-up-a",
+      "sessionId": "focused-8-mem",
+      "message": "What are his honest weaknesses?",
+      "status": 200,
+      "latencyMs": 48,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No verified evidence of Bradley's weaknesses is available, as public profile evidence is the only source used, and project evidence only provides insight into his skills and experience with ProjectHub Recruiter Alpha, a portable generative intelligence engine built on Scout, a portable generative intelligence engine, without revealing any documented gaps or areas for improvement."
+    },
+    {
+      "run": 8,
+      "id": "memory-follow-up-b",
+      "sessionId": "focused-8-mem",
+      "message": "Is he working on them?",
+      "status": 200,
+      "latencyMs": 595,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No, Bradley's public profile does not indicate that he is actively working on improving his knowledge of ERP concepts and business workflows, although he has expressed interest in learning about these topics."
+    },
+    {
+      "run": 8,
+      "id": "unknown-skill",
+      "sessionId": "focused-8-unknown-skill",
+      "message": "Does he know COBOL?",
+      "status": 200,
+      "latencyMs": 54,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed."
+    },
+    {
+      "run": 8,
+      "id": "unknown-tech-2",
+      "sessionId": "focused-8-unknown-tech-2",
+      "message": "But can he learn Rust?",
+      "status": 200,
+      "latencyMs": 49,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+    },
+    {
+      "run": 8,
+      "id": "skill-frame",
+      "sessionId": "focused-8-skill-frame",
+      "message": "What about TypeScript?",
+      "status": 200,
+      "latencyMs": 47,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it."
+    },
+    {
+      "run": 9,
+      "id": "memory-follow-up-a",
+      "sessionId": "focused-9-mem",
+      "message": "What are his honest weaknesses?",
+      "status": 200,
+      "latencyMs": 187,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No verified evidence of Bradley's weaknesses is available, as public profile evidence is the only source used, and project evidence only provides insight into his skills and experience with ProjectHub Recruiter Alpha, a portable generative intelligence engine built on Scout, a portable generative intelligence engine, without revealing any documented gaps or areas for improvement."
+    },
+    {
+      "run": 9,
+      "id": "memory-follow-up-b",
+      "sessionId": "focused-9-mem",
+      "message": "Is he working on them?",
+      "status": 200,
+      "latencyMs": 566,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "There is no public evidence available to suggest that Bradley is actively working on weaknesses in his knowledge of C#/.NET fundamentals, ERP concepts, business workflows, software support, or user support fundamentals."
+    },
+    {
+      "run": 9,
+      "id": "unknown-skill",
+      "sessionId": "focused-9-unknown-skill",
+      "message": "Does he know COBOL?",
+      "status": 200,
+      "latencyMs": 48,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed."
+    },
+    {
+      "run": 9,
+      "id": "unknown-tech-2",
+      "sessionId": "focused-9-unknown-tech-2",
+      "message": "But can he learn Rust?",
+      "status": 200,
+      "latencyMs": 49,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+    },
+    {
+      "run": 9,
+      "id": "skill-frame",
+      "sessionId": "focused-9-skill-frame",
+      "message": "What about TypeScript?",
+      "status": 200,
+      "latencyMs": 51,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it."
+    },
+    {
+      "run": 10,
+      "id": "memory-follow-up-a",
+      "sessionId": "focused-10-mem",
+      "message": "What are his honest weaknesses?",
+      "status": 200,
+      "latencyMs": 53,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No verified evidence of Bradley's weaknesses is available, as public profile evidence is the only source used, and project evidence only provides insight into his skills and experience with ProjectHub Recruiter Alpha, a portable generative intelligence engine built on Scout, a portable generative intelligence engine, without revealing any documented gaps or areas for improvement."
+    },
+    {
+      "run": 10,
+      "id": "memory-follow-up-b",
+      "sessionId": "focused-10-mem",
+      "message": "Is he working on them?",
+      "status": 200,
+      "latencyMs": 990,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "No, Bradley's public profile does not indicate that he is actively working on improving his knowledge of ERP concepts and business workflows, although he has expressed interest in learning more about these topics."
+    },
+    {
+      "run": 10,
+      "id": "unknown-skill",
+      "sessionId": "focused-10-unknown-skill",
+      "message": "Does he know COBOL?",
+      "status": 200,
+      "latencyMs": 54,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "There is no verified project evidence of COBOL, and Bradley's knowledge of COBOL cannot be confirmed."
+    },
+    {
+      "run": 10,
+      "id": "unknown-tech-2",
+      "sessionId": "focused-10-unknown-tech-2",
+      "message": "But can he learn Rust?",
+      "status": 200,
+      "latencyMs": 58,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+    },
+    {
+      "run": 10,
+      "id": "skill-frame",
+      "sessionId": "focused-10-skill-frame",
+      "message": "What about TypeScript?",
+      "status": 200,
+      "latencyMs": 51,
+      "quality": "GOOD",
+      "reason": null,
+      "reply": "The candidate has experience with TypeScript, as indicated by their deployment of it for scripts and their involvement in a project that utilized it."
+    }
+  ],
+  "completedAt": "2026-08-19T05:49:59.283Z",
+  "passRate": 100
+}
