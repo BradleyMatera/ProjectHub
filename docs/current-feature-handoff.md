@@ -16,7 +16,7 @@
 
 **Dev backend source:** deployed from the current `ProjectHub/develop` HEAD (health check and smoke test passed).
 
-**Verdict:** The 2026-08-19 pass completed the single-source semantic plan refinement and verification. The dev backend is deployed from `ProjectHub/develop` and `/health` exposes the source SHA. Unit tests pass (812/812). The 23-case live acceptance harness is stable at **82.6% (19/23)** across five runs, up from 60.9% at the start of the pass. Four cases remain below the release gate with identified root causes. See `docs/semantic-foundation-final-report-2026-08-19.md` for full details. No `develop` -> `master` release PR should be opened until the remaining failures are resolved.
+**Verdict:** The 2026-08-19 residual pass completed the fixes for `unknown-skill`, `memory-follow-up-b`, `unknown-tech-2`, `skill-frame`, and the `future-role` recovery guard. The dev backend is deployed from `ProjectHub/develop` and `/health` exposes the source SHA. Unit tests pass (826/826). The focused 10x last-four run passed **40/40**. The 23-case live acceptance harness completed five runs: runs 2–5 are **23/23 (100%)**; run 1 is **22/23 (95.7%)** with a single `unknown-skill` `INFERENCE_UNAVAILABLE` flake that passed on manual retest and in all other runs. Aggregate: **114/115 (99.1%)**; canonical run 5 is 100%. Raw evidence is preserved in `data/evals/`. No `develop` -> `master` release PR should be opened until the remaining `unknown-skill` flakiness is watched or resolved and the 50+ turn expansion is completed.
 
 > **Architecture note:** **Scout** is the portable intelligence/orchestration
 > engine; **ProjectHub Recruiter Alpha** is the app powered by Scout. Primary
@@ -40,7 +40,7 @@
 > before generation. Employment claims are open-world with three-valued
 > TRUE/FALSE/UNKNOWN evidence status. Think Mode is removed.
 
-## Current State (2026-08-18 continued)
+## Current State (2026-08-19 residual pass)
 
 > Query the actual remotes for current SHAs; this section records durable facts.
 
@@ -49,23 +49,19 @@
 - **Staging source marker:** read from `ProjectHub-dev:main:STAGING-SOURCE.json`.
 - **Dev backend deployed source:** the current `ProjectHub/develop` HEAD (health check and smoke test passed).
 - **Production `master`:** frozen; no promotion.
-- Tests: 806/806 unit tests pass; retrieval Recall@6 = 1.000, MRR@6 = 0.971.
+- Tests: 826/826 unit tests pass; retrieval Recall@6 = 1.000, MRR@6 = 0.971; `node --check server-gemini.js`, `npm run build`, `node scripts/break-it.js` all pass.
 - **Fixed in this pass:**
-  - Staging packaging restored with proper wrapper commit.
-  - `entry-level` / career-stage assertions removed from `senior-engineer`, `team-management`, and `production-incident` direct answers.
-  - Scout identity configuration expanded in `data/scout-identity.json` and `lib/scout-identity.js`.
-  - `lib/claim-validator.js` provides structured claim validation (identity, negative traits, roles, employment, skills, proficiency, out-of-scope).
-  - `lib/grounding-validator.js` hard-fails key claim violations.
-  - `lib/response-contract.js` adds `factState`, `claimCeiling`, `requestedRole`, and new policy modes/sub-intents (`META`, `NEGATIVE_ASSESSMENT`, `FUTURE_CAPABILITY`, `CLARIFICATION_REQUIRED`).
-  - `lib/completeness-check.js` recognizes `META` and `FUTURE_CAPABILITY` intents.
-  - `lib/lite-agent.js` passes the full response contract into validation and includes natural instructions in the prompt.
-  - `test/primary-path-regression.test.js` covers the targeted failure classes.
-- **Still failing (release blockers):**
-  - End-to-end API acceptance (`scripts/eval-local-api.js` against dev) is blocked by Cloudflare rate limiting (HTTP 429) and a harness `source` value mismatch.
-  - A subset of pre-429 replies still overclaim or invent unsupported negative traits/role titles (e.g., `work habits`, `weaknesses`, `role fit`).
-  - Unknown-technology, future-capability, and clarification-required live behavior cannot be reliably measured until the rate-limiting and harness issues are resolved.
-- **Root-cause finding:** the primary `lib/response-contract.js` / `lib/grounding-validator.js` path and `lib/claim-validator.js` are now correctly structured, but the 3B Cloudflare model still sometimes ignores the contract instructions. Additional prompt repair/validator tightening and a paced, harness-corrected eval are needed.
-- **Next step:** update `scripts/eval-local-api.js` to accept current provider source names and add request pacing; re-run the end-to-end acceptance; then iterate on the remaining overclaim/negative-trait cases before any `develop` → `master` release PR.
+  - `lib/recovery-contract.js`: `FUTURE_CAPABILITY` recovery guard now triggers for all future questions (match_role does not provide factState); `SKILL` recovery guard only triggers when the tool result shows no evidence, preventing known-skill recoveries (e.g. TypeScript) from being forced into UNKNOWN contracts.
+  - `lib/recovery-contract.js`: FUTURE/SKILL recovery instructions now avoid exact `knows X` and `proficient in X` phrases.
+  - `lib/conversation-resolver.js`: plural referent resolution now matches `working on` and `working on` verb mapping, so `Is he working on them?` resolves to documented learning/gap areas.
+- **Live acceptance results:**
+  - Focused 10x last-four qualification: **40/40 (100%)** on `unknown-skill`, `unknown-tech-2`, `memory-follow-up-b`, `skill-frame`.
+  - 23-case × 5 qualification against `https://dev.projecthub-chat.bradleymatera.dev`: runs 2–5 are **23/23 (100%)**; run 1 is **22/23 (95.7%)** with a single `unknown-skill` `INFERENCE_UNAVAILABLE` flake. Aggregate: **114/115 (99.1%)**; canonical run 5 is 100%. Raw evidence in `data/evals/`.
+- **Still failing / release blockers:**
+  - One `unknown-skill` flake in 115 live cases (run 1, `INFERENCE_UNAVAILABLE`) passed on manual retest and did not recur in the other four runs. Likely a transient inference / cold-start issue; may need recovery-timeout tuning or additional retry if it recurs.
+  - 50+ turn human/adversarial expansion (`g14-expanded`) has not been run.
+- **Root-cause finding:** the recovery contract and conversation resolver fixes resolved the deterministic `future-role`, `unknown-tech-2`, `memory-follow-up-b`, and `skill-frame` failures. `unknown-skill` is now stable (10/10 focused, 4/5 full runs) but can still produce an occasional `INFERENCE_UNAVAILABLE` on the very first live run after a cold deploy.
+- **Next step:** run the 50+ turn human/adversarial expansion, continue monitoring `unknown-skill` stability, and only then open a `develop` → `master` release PR.
 
 ---
 
