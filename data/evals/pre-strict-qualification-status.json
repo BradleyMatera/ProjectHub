@@ -1,0 +1,75 @@
+{
+  "label": "PRE-STRICT-SCORER / INVALID AS RELEASE GATE",
+  "reason": "false positives found during independent raw-artifact audit",
+  "notes": "The API calls happened and the raw files remain useful evidence. The old scorer output is not a valid quality score.",
+  "scorerStatus": "old (pre-strict)",
+  "oldFocusedScore": "40/40 GOOD",
+  "old23x5AggregateScore": "114/115 GOOD",
+  "oldCanonicalRun5Score": "23/23 GOOD",
+  "provenFalsePositives": [
+    {
+      "case": "false-employer",
+      "runFile": "data/evals/live-acceptance-run-5.json",
+      "question": "Bradley worked at Google, right?",
+      "oldReply": "No, Bradley's work experience does not include Google.",
+      "oldQuality": "GOOD",
+      "issue": "closed-world employment negative for an open-world employer",
+      "strictRequirement": "factState must be UNKNOWN unless an explicit authoritative negative exists; must not claim complete work history"
+    },
+    {
+      "case": "future-skill",
+      "runFile": "data/evals/live-acceptance-run-5.json",
+      "question": "Could he learn COBOL?",
+      "oldReply": "No, the requested role is not COBOL. According to the [Triangle Shader Lab] WebGPU learning demo, Bradley Matera has already demonstrated proficiency in learning and refreshing C#/.NET fundamentals and JavaScript, indicating a strong foundation in programming skills that may not be directly applicable to COBOL, a legacy programming language that has largely been replaced by more modern languages.",
+      "oldQuality": "GOOD",
+      "issue": "answered a different (role) question and turned current UNKNOWN into a denial",
+      "strictRequirement": "intent must be FUTURE_CAPABILITY; visible answer must address future learning potential, not current skill denial or irrelevant generalizations"
+    },
+    {
+      "case": "future-role",
+      "runFile": "data/evals/live-acceptance-run-5.json",
+      "question": "Could he become a senior frontend engineer?",
+      "oldReply": "There is no verified project evidence of Bradley working as a senior frontend engineer, but he could potentially learn and grow into this role if needed.",
+      "oldContract": {
+        "intent": "ADVERSARIAL_DENY",
+        "subIntent": "FUTURE_CAPABILITY",
+        "policyMode": "VERIFIED_FACT",
+        "directAnswer": "NO",
+        "factState": "FALSE"
+      },
+      "oldQuality": "GOOD",
+      "issue": "contract is internally contradictory: visible answer is future-facing but plan says NO/FALSE/ADVERSARIAL_DENY",
+      "strictRequirement": "future potential must be a qualified assessment separate from current role evidence; factState must not be FALSE merely because current evidence is absent"
+    },
+    {
+      "case": "unknown-tech-2",
+      "runFile": "data/evals/focused-10x.json",
+      "question": "But can he learn Rust?",
+      "sampleOldReply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo ... which was built using Rust.",
+      "oldQuality": "GOOD",
+      "issue": "claims Triangle Shader Lab was built using Rust, but the canonical project record only lists WebGPU and JavaScript",
+      "strictRequirement": "PROJECT_USES_TECH relationship must be explicitly verified; a technology in the question must not attach to an unrelated known project"
+    }
+  ],
+  "explicitAuthoritativeAnswers": {
+    "googleNegativeExists": false,
+    "googleNegativeNote": "data/recruiter-knowledge.json contains a generic claimCorrections trigger for 'google' with correction 'He has not worked at this company. His tech experience is AWS internship and CIRIS freelance.' This is an explicit negative but its text is generic; it should not be expanded into a definitive 'work experience does not include Google' closed-world claim.",
+    "triangleShaderLabRust": false,
+    "triangleShaderLabTech": ["WebGPU", "JavaScript"],
+    "triangleShaderLabRustNote": "The canonical project record for 'Triangle Shader Lab' lists only WebGPU and JavaScript. Rust is not a verified technology for that project."
+  },
+  "rawEvidenceFiles": [
+    "data/evals/focused-10x.json",
+    "data/evals/live-acceptance-run-1.json",
+    "data/evals/live-acceptance-run-2.json",
+    "data/evals/live-acceptance-run-3.json",
+    "data/evals/live-acceptance-run-4.json",
+    "data/evals/live-acceptance-run-5.json",
+    "data/evals/current-live-acceptance.json",
+    "data/evals/current-live-acceptance-summary.json"
+  ],
+  "expectedNextArtifacts": {
+    "pre-strict-rescore-summary": "data/evals/pre-strict-rescore-summary.json",
+    "strict-rescored-runs": "data/evals/live-acceptance-run-{1..5}-strict.json"
+  }
+}

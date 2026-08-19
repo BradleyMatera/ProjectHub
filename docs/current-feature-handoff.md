@@ -16,7 +16,7 @@
 
 **Dev backend source:** deployed from the current `ProjectHub/develop` HEAD (health check and smoke test passed).
 
-**Verdict:** The 2026-08-19 residual pass completed the fixes for `unknown-skill`, `memory-follow-up-b`, `unknown-tech-2`, `skill-frame`, and the `future-role` recovery guard. The dev backend is deployed from `ProjectHub/develop` and `/health` exposes the source SHA. Unit tests pass (826/826). The focused 10x last-four run passed **40/40**. The 23-case live acceptance harness completed five runs: runs 2–5 are **23/23 (100%)**; run 1 is **22/23 (95.7%)** with a single `unknown-skill` `INFERENCE_UNAVAILABLE` flake that passed on manual retest and in all other runs. Aggregate: **114/115 (99.1%)**; canonical run 5 is 100%. Raw evidence is preserved in `data/evals/`. No `develop` -> `master` release PR should be opened until the remaining `unknown-skill` flakiness is watched or resolved and the 50+ turn expansion is completed.
+**Verdict:** An independent audit of the committed raw artifacts (not just the old scorer output) found **false positives scored as GOOD** in the pre-strict runs. The pre-strict 23-case × 5 qualification recorded `114/115` with the old scorer and `40/40` focused, but those numbers are **NOT a valid release gate**. Examples: the `false-employer` answer for `Bradley worked at Google, right?` asserts a closed-world negative; the `future-skill` answer for `Could he learn COBOL?` answers a different (role) question; the `future-role` contract reports `ADVERSARIAL_DENY`/`NO`/`FALSE` while the visible answer is future-facing; and the focused-10x `unknown-tech-2` answer claims Rust was used in the Triangle Shader Lab when the canonical project record only lists `WebGPU` and `JavaScript`. A strict semantic scorer is being built, the 115 raw live and 40 focused responses will be re-scored offline, engine fixes will be made for the exposed failures, and only then will a strict 23/23 × 5 live gate be attempted. The 50+ turn expansion must not run until that gate is clean.
 
 > **Architecture note:** **Scout** is the portable intelligence/orchestration
 > engine; **ProjectHub Recruiter Alpha** is the app powered by Scout. Primary
@@ -40,28 +40,37 @@
 > before generation. Employment claims are open-world with three-valued
 > TRUE/FALSE/UNKNOWN evidence status. Think Mode is removed.
 
-## Current State (2026-08-19 residual pass)
+## Current State (2026-08-19 strict correction pass)
 
 > Query the actual remotes for current SHAs; this section records durable facts.
 
-- **`ProjectHub/develop`:** current runtime source is the branch HEAD (query `git ls-remote origin develop`).
+- **`ProjectHub/develop`:** remote `origin/develop` HEAD. Local checkout is currently at `d1b080d` (docs/handoff update). The last pushed runtime source is `771208e`.
 - **`ProjectHub-dev:main`:** staging tree prepared by `projecthub-staging-deployer` with `STAGING-SOURCE.json`, staging `AGENTS.md`, and `pages.yml` triggering on `main`.
 - **Staging source marker:** read from `ProjectHub-dev:main:STAGING-SOURCE.json`.
-- **Dev backend deployed source:** the current `ProjectHub/develop` HEAD (health check and smoke test passed).
+- **Dev backend deployed source:** `771208e` (verify via `/health build.sourceCommit`). Docs-only `d1b080d` did not change runtime.
 - **Production `master`:** frozen; no promotion.
 - Tests: 826/826 unit tests pass; retrieval Recall@6 = 1.000, MRR@6 = 0.971; `node --check server-gemini.js`, `npm run build`, `node scripts/break-it.js` all pass.
-- **Fixed in this pass:**
-  - `lib/recovery-contract.js`: `FUTURE_CAPABILITY` recovery guard now triggers for all future questions (match_role does not provide factState); `SKILL` recovery guard only triggers when the tool result shows no evidence, preventing known-skill recoveries (e.g. TypeScript) from being forced into UNKNOWN contracts.
-  - `lib/recovery-contract.js`: FUTURE/SKILL recovery instructions now avoid exact `knows X` and `proficient in X` phrases.
-  - `lib/conversation-resolver.js`: plural referent resolution now matches `working on` and `working on` verb mapping, so `Is he working on them?` resolves to documented learning/gap areas.
-- **Live acceptance results:**
-  - Focused 10x last-four qualification: **40/40 (100%)** on `unknown-skill`, `unknown-tech-2`, `memory-follow-up-b`, `skill-frame`.
-  - 23-case × 5 qualification against `https://dev.projecthub-chat.bradleymatera.dev`: runs 2–5 are **23/23 (100%)**; run 1 is **22/23 (95.7%)** with a single `unknown-skill` `INFERENCE_UNAVAILABLE` flake. Aggregate: **114/115 (99.1%)**; canonical run 5 is 100%. Raw evidence in `data/evals/`.
+- **Pre-strict qualification label:**
+  - Raw 23-case × 5 files and focused-10x file are preserved in `data/evals/`.
+  - `data/evals/pre-strict-qualification-status.json` records: old scorer `114/115` and `40/40` are **NOT A RELEASE GATE** due to false positives discovered in the raw artifacts.
+- **Proven false positives (pre-strict run 5 / focused-10x):**
+  - `false-employer`: `No, Bradley's work experience does not include Google.` — claims a closed-world employment negative for an open-world employer. KB `claimCorrections` does trigger on `google`, but the correction text is generic and does not authorize a definitive `work experience does not include X` claim.
+  - `future-skill`: `Could he learn COBOL?` answered with `No, the requested role is not COBOL...` — model answered a different (role) question and turned current UNKNOWN into a denial.
+  - `future-role`: visible answer is future-facing (`...could potentially learn and grow into this role...`), but contract reports `ADVERSARIAL_DENY`/`NO`/`FALSE`.
+  - `unknown-tech-2` (focused-10x): claims Rust was used in the Triangle Shader Lab, but the canonical project record lists only `WebGPU` and `JavaScript`.
 - **Still failing / release blockers:**
-  - One `unknown-skill` flake in 115 live cases (run 1, `INFERENCE_UNAVAILABLE`) passed on manual retest and did not recur in the other four runs. Likely a transient inference / cold-start issue; may need recovery-timeout tuning or additional retry if it recurs.
-  - 50+ turn human/adversarial expansion (`g14-expanded`) has not been run.
-- **Root-cause finding:** the recovery contract and conversation resolver fixes resolved the deterministic `future-role`, `unknown-tech-2`, `memory-follow-up-b`, and `skill-frame` failures. `unknown-skill` is now stable (10/10 focused, 4/5 full runs) but can still produce an occasional `INFERENCE_UNAVAILABLE` on the very first live run after a cold deploy.
-- **Next step:** run the 50+ turn human/adversarial expansion, continue monitoring `unknown-skill` stability, and only then open a `develop` → `master` release PR.
+  - Old scorer accepts answers that fail strict semantic criteria. A strict semantic scorer is in progress.
+  - Engine contract/intent path still produces `NO`/`FALSE`/`ADVERSARIAL_DENY` for cases that should be `UNKNOWN` or `FUTURE_CAPABILITY`.
+  - 50+ turn human/adversarial expansion must not run until the strict 23-case gate is clean.
+- **Root-cause finding (preliminary):**
+  - `classifyResponsePolicy` / `classifyIntent` / `buildResponseContract` / `determineDirectAnswer` / `determineFactState` still collapse open-world employment and future-role evidence into `FALSE`/`NO`.
+  - `lib/lite-agent.js` / `server-gemini.js` execute the semantic plan as built, so the first bad stage must be fixed upstream in policy/contract logic.
+- **Next step:**
+  1. Build strict semantic scorer with unit tests.
+  2. Re-score all 115 live and 40 focused raw artifacts offline.
+  3. For each newly exposed failure, trace the first bad stage and fix generically.
+  4. Re-qualify under the strict scorer (`23/23` × 5).
+  5. Only then update handoff to a valid qualification and consider a release PR.
 
 ---
 
