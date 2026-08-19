@@ -1,0 +1,522 @@
+{
+  "generatedAt": "2026-08-19T18:29:54.705Z",
+  "strictScorerVersion": "1.0.0",
+  "note": "Re-scored pre-strict raw artifacts. The old pass rates are NOT a valid release gate.",
+  "totalFiles": 7,
+  "totalCases": 178,
+  "totalGood": 131,
+  "totalFailed": 47,
+  "combinedPassRate": 73.6,
+  "perFile": [
+    {
+      "label": "live-run-1",
+      "inputFile": "live-acceptance-run-1.json",
+      "outputFile": "live-acceptance-run-1-strict.json",
+      "oldPassRate": 95.7,
+      "oldGood": 22,
+      "oldTotal": 23,
+      "strictGood": 16,
+      "strictTotal": 23,
+      "strictPassRate": 69.6,
+      "byQuality": {
+        "GOOD": 16,
+        "TECHNICAL_ERROR": 1,
+        "FACT_WRONG": 6
+      },
+      "failedIds": [
+        "unknown-skill",
+        "future-skill",
+        "role-fit",
+        "future-role",
+        "false-employer",
+        "false-senior",
+        "unknown-tech-1"
+      ],
+      "failedCases": [
+        {
+          "id": "unknown-skill",
+          "oldQuality": "TECHNICAL_ERROR",
+          "strictQuality": "TECHNICAL_ERROR",
+          "strictReason": "proseSource is TECHNICAL_ERROR",
+          "reply": "I couldn't generate a reliable answer right now. Please try again or rephrase your question."
+        },
+        {
+          "id": "future-skill",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "future capability answer starts with \"No\"",
+          "reply": "No, the requested role is not COBOL. According to the [Triangle Shader Lab] WebGPU learning demo, Bradley Matera has already demonstrated proficiency in learning and refreshing C#/.NET fundamentals and JavaScript, indicating a strong founda"
+        },
+        {
+          "id": "role-fit",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer [\"FIT\",\"PARTIAL_FIT\"], got null",
+          "reply": "Yes, based on the available evidence, Bradley appears to have the necessary skills for a junior frontend role, but gaps in his experience and skills may require additional training or support to excel in the position."
+        },
+        {
+          "id": "future-role",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.factState \"UNKNOWN\", got \"FALSE\"",
+          "reply": "There is no verified project evidence of Bradley working as a senior frontend engineer, but he could potentially learn and grow into this role if needed."
+        },
+        {
+          "id": "false-employer",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.factState \"UNKNOWN\", got \"FALSE\"",
+          "reply": "No, Bradley's work experience does not include Google."
+        },
+        {
+          "id": "false-senior",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer \"UNKNOWN\", got null",
+          "reply": "He was not a senior or lead engineer. Public evidence does not document those roles."
+        },
+        {
+          "id": "unknown-tech-1",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer \"UNKNOWN\", got null",
+          "reply": "Yes, Bradley has experience with Rust and can debug it, having worked on a project that involved setting up a local Rust environment and onboarding documentation."
+        }
+      ]
+    },
+    {
+      "label": "live-run-2",
+      "inputFile": "live-acceptance-run-2.json",
+      "outputFile": "live-acceptance-run-2-strict.json",
+      "oldPassRate": 100,
+      "oldGood": 23,
+      "oldTotal": 23,
+      "strictGood": 17,
+      "strictTotal": 23,
+      "strictPassRate": 73.9,
+      "byQuality": {
+        "GOOD": 17,
+        "FACT_WRONG": 6
+      },
+      "failedIds": [
+        "future-skill",
+        "role-fit",
+        "future-role",
+        "false-employer",
+        "false-senior",
+        "unknown-tech-1"
+      ],
+      "failedCases": [
+        {
+          "id": "future-skill",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "future capability answer starts with \"No\"",
+          "reply": "No, the requested role is not COBOL. According to the [Triangle Shader Lab] WebGPU learning demo, Bradley Matera has already demonstrated proficiency in learning and refreshing C#/.NET fundamentals and JavaScript, indicating a strong founda"
+        },
+        {
+          "id": "role-fit",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer [\"FIT\",\"PARTIAL_FIT\"], got null",
+          "reply": "Yes, based on the available evidence, Bradley appears to have the necessary skills for a junior frontend role, but gaps in his experience and skills may require additional training or support to excel in the position."
+        },
+        {
+          "id": "future-role",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.factState \"UNKNOWN\", got \"FALSE\"",
+          "reply": "There is no verified project evidence of Bradley working as a senior frontend engineer, but he could potentially learn and grow into this role if needed."
+        },
+        {
+          "id": "false-employer",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.factState \"UNKNOWN\", got \"FALSE\"",
+          "reply": "No, Bradley's work experience does not include Google."
+        },
+        {
+          "id": "false-senior",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer \"UNKNOWN\", got null",
+          "reply": "He was not a senior or lead engineer. Public evidence does not document those roles."
+        },
+        {
+          "id": "unknown-tech-1",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer \"UNKNOWN\", got null",
+          "reply": "Yes, Bradley has experience with Rust and can debug it, having worked on a project that involved setting up a local Rust environment and onboarding documentation."
+        }
+      ]
+    },
+    {
+      "label": "live-run-3",
+      "inputFile": "live-acceptance-run-3.json",
+      "outputFile": "live-acceptance-run-3-strict.json",
+      "oldPassRate": 100,
+      "oldGood": 23,
+      "oldTotal": 23,
+      "strictGood": 17,
+      "strictTotal": 23,
+      "strictPassRate": 73.9,
+      "byQuality": {
+        "GOOD": 17,
+        "FACT_WRONG": 6
+      },
+      "failedIds": [
+        "future-skill",
+        "role-fit",
+        "future-role",
+        "false-employer",
+        "false-senior",
+        "unknown-tech-1"
+      ],
+      "failedCases": [
+        {
+          "id": "future-skill",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "future capability answer starts with \"No\"",
+          "reply": "No, the requested role is not COBOL. According to the [Triangle Shader Lab] WebGPU learning demo, Bradley Matera has already demonstrated proficiency in learning and refreshing C#/.NET fundamentals and JavaScript, indicating a strong founda"
+        },
+        {
+          "id": "role-fit",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer [\"FIT\",\"PARTIAL_FIT\"], got null",
+          "reply": "Yes, based on the available evidence, Bradley appears to have the necessary skills for a junior frontend role, but gaps in his experience and skills may require additional training or support to excel in the position."
+        },
+        {
+          "id": "future-role",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.factState \"UNKNOWN\", got \"FALSE\"",
+          "reply": "There is no verified project evidence of Bradley working as a senior frontend engineer, but he could potentially learn and grow into this role if needed."
+        },
+        {
+          "id": "false-employer",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.factState \"UNKNOWN\", got \"FALSE\"",
+          "reply": "No, Bradley's work experience does not include Google."
+        },
+        {
+          "id": "false-senior",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer \"UNKNOWN\", got null",
+          "reply": "He was not a senior or lead engineer. Public evidence does not document those roles."
+        },
+        {
+          "id": "unknown-tech-1",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer \"UNKNOWN\", got null",
+          "reply": "Yes, Bradley has experience with Rust and can debug it, having worked on a project that involved setting up a local Rust environment and onboarding documentation."
+        }
+      ]
+    },
+    {
+      "label": "live-run-4",
+      "inputFile": "live-acceptance-run-4.json",
+      "outputFile": "live-acceptance-run-4-strict.json",
+      "oldPassRate": 100,
+      "oldGood": 23,
+      "oldTotal": 23,
+      "strictGood": 17,
+      "strictTotal": 23,
+      "strictPassRate": 73.9,
+      "byQuality": {
+        "GOOD": 17,
+        "FACT_WRONG": 6
+      },
+      "failedIds": [
+        "future-skill",
+        "role-fit",
+        "future-role",
+        "false-employer",
+        "false-senior",
+        "unknown-tech-1"
+      ],
+      "failedCases": [
+        {
+          "id": "future-skill",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "future capability answer starts with \"No\"",
+          "reply": "No, the requested role is not COBOL. According to the [Triangle Shader Lab] WebGPU learning demo, Bradley Matera has already demonstrated proficiency in learning and refreshing C#/.NET fundamentals and JavaScript, indicating a strong founda"
+        },
+        {
+          "id": "role-fit",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer [\"FIT\",\"PARTIAL_FIT\"], got null",
+          "reply": "Yes, based on the available evidence, Bradley appears to have the necessary skills for a junior frontend role, but gaps in his experience and skills may require additional training or support to excel in the position."
+        },
+        {
+          "id": "future-role",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.factState \"UNKNOWN\", got \"FALSE\"",
+          "reply": "There is no verified project evidence of Bradley working as a senior frontend engineer, but he could potentially learn and grow into this role if needed."
+        },
+        {
+          "id": "false-employer",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.factState \"UNKNOWN\", got \"FALSE\"",
+          "reply": "No, Bradley's work experience does not include Google."
+        },
+        {
+          "id": "false-senior",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer \"UNKNOWN\", got null",
+          "reply": "He was not a senior or lead engineer. Public evidence does not document those roles."
+        },
+        {
+          "id": "unknown-tech-1",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer \"UNKNOWN\", got null",
+          "reply": "Yes, Bradley has experience with Rust and can debug it, having worked on a project that involved setting up a local Rust environment and onboarding documentation."
+        }
+      ]
+    },
+    {
+      "label": "live-run-5",
+      "inputFile": "live-acceptance-run-5.json",
+      "outputFile": "live-acceptance-run-5-strict.json",
+      "oldPassRate": 100,
+      "oldGood": 23,
+      "oldTotal": 23,
+      "strictGood": 17,
+      "strictTotal": 23,
+      "strictPassRate": 73.9,
+      "byQuality": {
+        "GOOD": 17,
+        "FACT_WRONG": 6
+      },
+      "failedIds": [
+        "future-skill",
+        "role-fit",
+        "future-role",
+        "false-employer",
+        "false-senior",
+        "unknown-tech-1"
+      ],
+      "failedCases": [
+        {
+          "id": "future-skill",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "future capability answer starts with \"No\"",
+          "reply": "No, the requested role is not COBOL. According to the [Triangle Shader Lab] WebGPU learning demo, Bradley Matera has already demonstrated proficiency in learning and refreshing C#/.NET fundamentals and JavaScript, indicating a strong founda"
+        },
+        {
+          "id": "role-fit",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer [\"FIT\",\"PARTIAL_FIT\"], got null",
+          "reply": "Yes, based on the available evidence, Bradley appears to have the necessary skills for a junior frontend role, but gaps in his experience and skills may require additional training or support to excel in the position."
+        },
+        {
+          "id": "future-role",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.factState \"UNKNOWN\", got \"FALSE\"",
+          "reply": "There is no verified project evidence of Bradley working as a senior frontend engineer, but he could potentially learn and grow into this role if needed."
+        },
+        {
+          "id": "false-employer",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.factState \"UNKNOWN\", got \"FALSE\"",
+          "reply": "No, Bradley's work experience does not include Google."
+        },
+        {
+          "id": "false-senior",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer \"UNKNOWN\", got null",
+          "reply": "He was not a senior or lead engineer. Public evidence does not document those roles."
+        },
+        {
+          "id": "unknown-tech-1",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer \"UNKNOWN\", got null",
+          "reply": "Yes, Bradley has experience with Rust and can debug it, having worked on a project that involved setting up a local Rust environment and onboarding documentation."
+        }
+      ]
+    },
+    {
+      "label": "current-live",
+      "inputFile": "current-live-acceptance.json",
+      "outputFile": "current-live-acceptance-strict.json",
+      "oldPassRate": 100,
+      "oldGood": 23,
+      "oldTotal": 23,
+      "strictGood": 17,
+      "strictTotal": 23,
+      "strictPassRate": 73.9,
+      "byQuality": {
+        "GOOD": 17,
+        "FACT_WRONG": 6
+      },
+      "failedIds": [
+        "future-skill",
+        "role-fit",
+        "future-role",
+        "false-employer",
+        "false-senior",
+        "unknown-tech-1"
+      ],
+      "failedCases": [
+        {
+          "id": "future-skill",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "future capability answer starts with \"No\"",
+          "reply": "No, the requested role is not COBOL. According to the [Triangle Shader Lab] WebGPU learning demo, Bradley Matera has already demonstrated proficiency in learning and refreshing C#/.NET fundamentals and JavaScript, indicating a strong founda"
+        },
+        {
+          "id": "role-fit",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer [\"FIT\",\"PARTIAL_FIT\"], got null",
+          "reply": "Yes, based on the available evidence, Bradley appears to have the necessary skills for a junior frontend role, but gaps in his experience and skills may require additional training or support to excel in the position."
+        },
+        {
+          "id": "future-role",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.factState \"UNKNOWN\", got \"FALSE\"",
+          "reply": "There is no verified project evidence of Bradley working as a senior frontend engineer, but he could potentially learn and grow into this role if needed."
+        },
+        {
+          "id": "false-employer",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.factState \"UNKNOWN\", got \"FALSE\"",
+          "reply": "No, Bradley's work experience does not include Google."
+        },
+        {
+          "id": "false-senior",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer \"UNKNOWN\", got null",
+          "reply": "He was not a senior or lead engineer. Public evidence does not document those roles."
+        },
+        {
+          "id": "unknown-tech-1",
+          "oldQuality": "GOOD",
+          "strictQuality": "FACT_WRONG",
+          "strictReason": "expected contract.directAnswer \"UNKNOWN\", got null",
+          "reply": "Yes, Bradley has experience with Rust and can debug it, having worked on a project that involved setting up a local Rust environment and onboarding documentation."
+        }
+      ]
+    },
+    {
+      "label": "focused-10x",
+      "inputFile": "focused-10x.json",
+      "outputFile": "focused-10x-strict.json",
+      "oldPassRate": 100,
+      "oldGood": 40,
+      "oldTotal": null,
+      "strictGood": 30,
+      "strictTotal": 40,
+      "strictPassRate": 75,
+      "byQuality": {
+        "GOOD": 30,
+        "OVERCLAIM": 10
+      },
+      "failedIds": [
+        "unknown-tech-2",
+        "unknown-tech-2",
+        "unknown-tech-2",
+        "unknown-tech-2",
+        "unknown-tech-2",
+        "unknown-tech-2",
+        "unknown-tech-2",
+        "unknown-tech-2",
+        "unknown-tech-2",
+        "unknown-tech-2"
+      ],
+      "failedCases": [
+        {
+          "id": "unknown-tech-2",
+          "oldQuality": "GOOD",
+          "strictQuality": "OVERCLAIM",
+          "strictReason": "future skill reply asserts current ability with rust",
+          "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+        },
+        {
+          "id": "unknown-tech-2",
+          "oldQuality": "GOOD",
+          "strictQuality": "OVERCLAIM",
+          "strictReason": "future skill reply asserts current ability with rust",
+          "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+        },
+        {
+          "id": "unknown-tech-2",
+          "oldQuality": "GOOD",
+          "strictQuality": "OVERCLAIM",
+          "strictReason": "future skill reply asserts current ability with rust",
+          "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+        },
+        {
+          "id": "unknown-tech-2",
+          "oldQuality": "GOOD",
+          "strictQuality": "OVERCLAIM",
+          "strictReason": "future skill reply asserts current ability with rust",
+          "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+        },
+        {
+          "id": "unknown-tech-2",
+          "oldQuality": "GOOD",
+          "strictQuality": "OVERCLAIM",
+          "strictReason": "future skill reply asserts current ability with rust",
+          "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+        },
+        {
+          "id": "unknown-tech-2",
+          "oldQuality": "GOOD",
+          "strictQuality": "OVERCLAIM",
+          "strictReason": "future skill reply asserts current ability with rust",
+          "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+        },
+        {
+          "id": "unknown-tech-2",
+          "oldQuality": "GOOD",
+          "strictQuality": "OVERCLAIM",
+          "strictReason": "future skill reply asserts current ability with rust",
+          "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+        },
+        {
+          "id": "unknown-tech-2",
+          "oldQuality": "GOOD",
+          "strictQuality": "OVERCLAIM",
+          "strictReason": "future skill reply asserts current ability with rust",
+          "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+        },
+        {
+          "id": "unknown-tech-2",
+          "oldQuality": "GOOD",
+          "strictQuality": "OVERCLAIM",
+          "strictReason": "future skill reply asserts current ability with rust",
+          "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+        },
+        {
+          "id": "unknown-tech-2",
+          "oldQuality": "GOOD",
+          "strictQuality": "OVERCLAIM",
+          "strictReason": "future skill reply asserts current ability with rust",
+          "reply": "Bradley can learn Rust, and he has already demonstrated his ability to do so by utilizing the Triangle Shader Lab WebGPU learning demo with hello-triangle and textured-cube examples in a browser-based layout, which was built using Rust."
+        }
+      ]
+    }
+  ]
+}
