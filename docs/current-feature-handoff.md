@@ -16,7 +16,7 @@
 
 **Dev backend source:** deployed from the current `ProjectHub/develop` HEAD (health check and smoke test passed).
 
-**Verdict:** Staging re-synchronized with correct packaging (`STAGING-SOURCE.json`, staging `AGENTS.md`, `pages.yml` triggers `main`). Dev backend re-deployed. Primary response contract now carries `factState`, `claimCeiling`, and `requestedRole`; new policy modes `META`, `NEGATIVE_ASSESSMENT`, `FUTURE_CAPABILITY`, and `CLARIFICATION_REQUIRED` are wired through intent classification and prompt instructions. Scout identity configuration and `lib/claim-validator.js` provide structured claim validation. Unit-test suite is green. End-to-end API acceptance still fails due to a mix of Cloudflare rate limiting (HTTP 429) and lingering 3B-model overclaims/negative-trait hallucinations; these remain release blockers and no `develop` -> `master` release PR should be opened.
+**Verdict:** The 2026-08-19 pass completed the single-source semantic plan refinement and verification. The dev backend is deployed from `ProjectHub/develop` and `/health` exposes the source SHA. Unit tests pass (812/812). The 23-case live acceptance harness is stable at **82.6% (19/23)** across five runs, up from 60.9% at the start of the pass. Four cases remain below the release gate with identified root causes. See `docs/semantic-foundation-final-report-2026-08-19.md` for full details. No `develop` -> `master` release PR should be opened until the remaining failures are resolved.
 
 > **Architecture note:** **Scout** is the portable intelligence/orchestration
 > engine; **ProjectHub Recruiter Alpha** is the app powered by Scout. Primary

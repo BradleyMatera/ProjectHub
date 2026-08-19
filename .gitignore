@@ -29,6 +29,9 @@ costs.json
 costs-dev.json
 *.backup.*
 
+eval-*.json
+eval-state.json
+
 # Screenshots and media clutter
 Screenshot_*.jpg
 Screenshot_*.png
