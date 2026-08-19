@@ -135,7 +135,7 @@ ok('No Microsoft/Google falsely listed as known companies');
 // 5. Runtime source check: the chat endpoint should not author replies itself
 const hasForbiddenProse =
   /res\.json\(\{[\s\S]{0,200}?reply\s*:/.test(server) &&
-  !/reply:\s*agentResult\.reply/.test(server);
+  !/reply:\s*(?:agentResult\.reply|INFERENCE_UNAVAILABLE_REPLY)/.test(server);
 // This is a weak heuristic; the real guard is the prose-regression test suite.
 if (hasForbiddenProse) fail('server-gemini.js appears to build a reply inline (heuristic)');
 else ok('server-gemini.js does not appear to author reply prose inline');

@@ -3,7 +3,7 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const { classifyResponsePolicy, parseClaim } = require('../lib/response-policy-classifier');
-const { buildResponseContract, classifySubIntent } = require('../lib/response-contract');
+const { buildResponseContract, classifySubIntent, determineEvidenceBoundary } = require('../lib/response-contract');
 const { classifyIntent } = require('../lib/completeness-check');
 const { buildConversationState, resolveReferent } = require('../lib/conversation-resolver');
 
@@ -88,6 +88,8 @@ describe('Last-four + residual semantics regression', () => {
     assert.equal(resolved.resolved, true);
     assert.ok(/\b(weaknesses|gaps|areas\s+to\s+improve)\b/.test(resolved.rewrittenQuery),
       `plural "them" should resolve to a discourse object, got: ${resolved.rewrittenQuery}`);
+    assert.ok(resolved.referentContext, 'referent should preserve specific claim context');
+    assert.ok(resolved.referentContext.includes('limited professional'), `expected claim context, got: ${resolved.referentContext}`);
   });
 
   it('public phone is CONTACT, not REFUSAL, when identity.phone is present', () => {
@@ -114,5 +116,44 @@ describe('Last-four + residual semantics regression', () => {
     const { detectAdversarialContract } = require('../lib/recovery-contract');
     const result = detectAdversarialContract('Could Bradley learn COBOL?', bradleyKnowledge, '');
     assert.equal(result, null, 'future-capability question must not produce an adversarial denial contract');
+  });
+
+  it('evidence-strength boundary depends on evidence, not career stage', () => {
+    const senior = { identity: { name: 'Senior Dev' }, summary: { whoIAm: 'Senior software engineer with 10 years of production experience.' }, projects: [] };
+    const mid = { identity: { name: 'Mid Dev' }, summary: { whoIAm: 'Mid-level full-stack developer.' }, projects: [] };
+    const entry = { identity: { name: 'Entry Dev' }, summary: { whoIAm: 'Entry-level software engineer focused on JavaScript.' }, projects: [] };
+    assert.ok(determineEvidenceBoundary('PROJECT', senior), 'PROJECT boundary must apply to senior tenant');
+    assert.ok(determineEvidenceBoundary('INTERNSHIP', mid), 'INTERNSHIP boundary must apply to mid tenant');
+    assert.ok(determineEvidenceBoundary('PROJECT', entry), 'PROJECT boundary must apply to entry tenant');
+    assert.equal(determineEvidenceBoundary('PROFESSIONAL', senior), null, 'PROFESSIONAL evidence has no boundary');
+    assert.equal(determineEvidenceBoundary('PROFESSIONAL', entry), null, 'PROFESSIONAL evidence has no boundary for entry tenant either');
+  });
+
+  it('plural referent "them" resolves to skill-set with specific skills', () => {
+    const history = [
+      { role: 'user', text: 'What are his strongest skills?' },
+      { role: 'assistant', text: 'His strongest skills are JavaScript, React, and Node.js.' },
+      { role: 'user', text: 'Which of them came from projects?' }
+    ];
+    const state = buildConversationState(history, bradleyKnowledge);
+    const resolved = resolveReferent('Which of them came from projects?', state, bradleyKnowledge);
+    assert.equal(resolved.resolved, true, 'should resolve plural referent');
+    assert.ok(/\bskills\b/.test(resolved.rewrittenQuery), `should resolve to skills, got: ${resolved.rewrittenQuery}`);
+    assert.ok(resolved.rewrittenQuery.includes('JavaScript'), 'should preserve which skills');
+    assert.ok(resolved.rewrittenQuery.includes('React'), 'should preserve which skills');
+  });
+
+  it('plural referent "them" resolves to project-set with named projects', () => {
+    const history = [
+      { role: 'user', text: 'Tell me about ProjectHub and CIRIS.' },
+      { role: 'assistant', text: 'ProjectHub is a vanilla JavaScript widget and CIRIS is an ethical AI project.' },
+      { role: 'user', text: 'Which of them used TypeScript?' }
+    ];
+    const state = buildConversationState(history, bradleyKnowledge);
+    const resolved = resolveReferent('Which of them used TypeScript?', state, bradleyKnowledge);
+    assert.equal(resolved.resolved, true, 'should resolve plural referent');
+    assert.ok(/\bprojects\b/.test(resolved.rewrittenQuery), `should resolve to project set, got: ${resolved.rewrittenQuery}`);
+    assert.ok(resolved.rewrittenQuery.includes('ProjectHub'), 'should preserve ProjectHub');
+    assert.ok(resolved.rewrittenQuery.includes('CIRIS'), 'should preserve CIRIS');
   });
 });
