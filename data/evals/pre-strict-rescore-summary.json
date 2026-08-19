@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T18:29:54.705Z",
+  "generatedAt": "2026-08-19T20:50:39.912Z",
   "strictScorerVersion": "1.0.0",
   "note": "Re-scored pre-strict raw artifacts. The old pass rates are NOT a valid release gate.",
   "totalFiles": 7,
