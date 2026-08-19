@@ -70,7 +70,7 @@ describe('Generic Policy Classifier — unrelated fixture', () => {
   it('detects unsupported technology claim generically', () => {
     const r = classifyResponsePolicy('Does she know Java?', [], fixture);
     assert.equal(r.mode, 'SKILL_EVIDENCE');
-    assert.equal(r.directAnswer, 'NO');
+    assert.equal(r.directAnswer, 'UNKNOWN', 'unknown skill must be UNKNOWN in open-world context, not NO');
     assert.equal(r.evidenceStatus, 'UNVERIFIED');
     assert.ok(r.boundary);
   });
