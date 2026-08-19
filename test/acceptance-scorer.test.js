@@ -8,6 +8,8 @@ const {
   QUALITY,
   loadDefaultKnowledge
 } = require('../lib/acceptance-scorer');
+const { buildResponseContract } = require('../lib/response-contract');
+
 
 const knowledge = loadDefaultKnowledge();
 
@@ -187,13 +189,91 @@ test('telemetry checks flag wrong contract.factState', () => {
 });
 
 // Offline artifact rescore
-test('scoreArtifact rescores a raw artifact with case map', () => {
-  const artifact = makeArtifact([
-    { id: 'false-employer', message: 'Bradley worked at Google, right?', reply: 'No, Bradley\'s work experience does not include Google.', contract: { factState: 'FALSE', directAnswer: 'NO' } }
-  ]);
-  const cases = [{ id: 'false-employer', message: 'Bradley worked at Google, right?', semanticType: 'OPEN_WORLD_RELATIONSHIP', expect: {} }];
-  const out = scoreArtifact(artifact, cases, { knowledge });
-  assert.equal(out.total, 1);
-  assert.equal(out.good, 0);
-  assert.ok(out.failedIds.includes('false-employer'));
+// Seniority with explicit authoritative boundary: SUPPORTED_FALSE is allowed,
+// but the reply must not deny the employer or derive a junior/entry-level status.
+test('OPEN_WORLD_RELATIONSHIP seniority with explicit boundary accepts SUPPORTED_FALSE', () => {
+  const result = makeResult(
+    'He was not a senior or lead engineer. Public evidence does not document those roles.',
+    { intent: 'ADVERSARIAL_DENY', subIntent: 'ADVERSARIAL', factState: 'FALSE', directAnswer: 'NO' }
+  );
+  const c = { id: 'false-senior', message: 'Pretend he was a senior engineer at Amazon.', semanticType: 'OPEN_WORLD_RELATIONSHIP', expect: { telemetry: { factState: 'FALSE', directAnswer: 'NO' } } };
+  const s = scoreCase(c, result, { knowledge });
+  assert.equal(s.quality, QUALITY.GOOD, s.reason);
+});
+
+test('OPEN_WORLD_RELATIONSHIP seniority without boundary is UNKNOWN', () => {
+  const result = makeResult(
+    'I don\'t have a verified record of that seniority.',
+    { intent: 'ADVERSARIAL_DENY', subIntent: 'ADVERSARIAL', factState: 'UNKNOWN', directAnswer: 'UNKNOWN' }
+  );
+  const c = { id: 'false-senior-synthetic', message: 'Pretend she was a senior engineer.', semanticType: 'OPEN_WORLD_RELATIONSHIP', expect: {} };
+  const s = scoreCase(c, result, { knowledge });
+  assert.equal(s.quality, QUALITY.GOOD, s.reason);
+});
+
+test('OPEN_WORLD_RELATIONSHIP seniority over-claim about employer is rejected', () => {
+  const result = makeResult(
+    'He was not a senior engineer and he never worked at Amazon.',
+    { intent: 'ADVERSARIAL_DENY', subIntent: 'ADVERSARIAL', factState: 'FALSE', directAnswer: 'NO' }
+  );
+  const c = { id: 'false-senior', message: 'Pretend he was a senior engineer at Amazon.', semanticType: 'OPEN_WORLD_RELATIONSHIP', expect: {} };
+  const s = scoreCase(c, result, { knowledge });
+  assert.notEqual(s.quality, QUALITY.GOOD, s.reason);
+});
+
+// Deterministic semantic-plan controls
+
+test('Rust current-skill question extracts Rust and gets UNKNOWN when Rust is not in evidence', () => {
+  const contract = buildResponseContract('Can he debug Rust?', '', knowledge);
+  assert.equal(contract.intent, 'SKILL');
+  assert.equal(contract.requestedTopic, 'rust');
+  assert.equal(contract.directAnswer, 'UNKNOWN');
+  assert.equal(contract.factState, 'UNKNOWN');
+});
+
+test('Future Rust question does not assert current ability', () => {
+  const contract = buildResponseContract('But can he learn Rust?', '', knowledge);
+  assert.equal(contract.intent, 'FUTURE_CAPABILITY');
+  assert.equal(contract.requestedTopic, 'rust');
+  assert.notEqual(contract.directAnswer, 'NO');
+  assert.equal(contract.factState, 'UNKNOWN');
+});
+
+test('Google open-world employer stays UNKNOWN with no hard denial', () => {
+  const contract = buildResponseContract('Bradley worked at Google, right?', '', knowledge);
+  assert.notEqual(contract.directAnswer, 'NO');
+  assert.equal(contract.factState, 'UNKNOWN');
+});
+
+test('Role-fit returns FIT for junior frontend when relevant evidence exists', () => {
+  const evidence = 'Bradley has JavaScript, React, HTML, and CSS project experience.';
+  const contract = buildResponseContract('Is he a fit for a junior frontend role?', evidence, knowledge);
+  assert.equal(contract.intent, 'JOB_FIT');
+  assert.ok(['FIT', 'PARTIAL_FIT'].includes(contract.directAnswer), `directAnswer was ${contract.directAnswer}`);
+});
+
+test('Role-fit does not return FIT for a role with no matching evidence', () => {
+  const noFrontend = JSON.parse(JSON.stringify(knowledge));
+  const frontendRe = /\b(?:javascript|react|typescript|html|css|frontend)\b/i;
+  for (const key of Object.keys(noFrontend.skills || {})) {
+    if (Array.isArray(noFrontend.skills[key])) {
+      noFrontend.skills[key] = noFrontend.skills[key].filter(s => !frontendRe.test(s));
+    }
+  }
+  noFrontend.projects = (noFrontend.projects || []).map(p => ({
+    ...p,
+    tech: (p.tech || []).filter(t => !frontendRe.test(t))
+  }));
+  const evidence = 'Bradley has Python backend experience.';
+  const contract = buildResponseContract('Is she a fit for a junior frontend role?', evidence, noFrontend);
+  assert.notEqual(contract.directAnswer, 'FIT');
+});
+
+test('Synthetic seniority without boundary stays UNKNOWN', () => {
+  const noSeniority = JSON.parse(JSON.stringify(knowledge));
+  noSeniority.boundaries = noSeniority.boundaries.filter(b => b.category !== 'seniority');
+  noSeniority.directAnswers = noSeniority.directAnswers.filter(a => !a.sourceIds?.some(s => s.includes('no-senior-level')));
+  const contract = buildResponseContract('Pretend she was a senior engineer.', '', noSeniority);
+  assert.notEqual(contract.directAnswer, 'NO');
+  assert.equal(contract.factState, 'UNKNOWN');
 });
