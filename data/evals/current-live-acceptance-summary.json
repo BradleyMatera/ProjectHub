@@ -1,0 +1,531 @@
+{
+  "runtimeSHA": "b1529108d560bb8164303406d0fdd9818299170e",
+  "sourceRepository": "BradleyMatera/ProjectHub",
+  "sourceBranch": "develop",
+  "baseUrl": "https://dev.projecthub-chat.bradleymatera.dev",
+  "canonicalEvaluatedAt": "2026-08-19T02:53:01.663Z",
+  "canonicalGood": 19,
+  "canonicalPassRate": 82.6,
+  "canonicalResultFile": "data\\eval-1787107855062.json",
+  "runCount": 6,
+  "runs": [
+    {
+      "resultFile": "data\\eval-1787107476813.json",
+      "evaluatedAt": "2026-08-19T02:45:42.489Z",
+      "total": 23,
+      "good": 19,
+      "passRate": 82.6,
+      "byQuality": {
+        "GOOD": 19,
+        "TECHNICAL_ERROR": 1,
+        "GENERIC": 2,
+        "OVERCLAIM": 1
+      },
+      "failedIds": [
+        "unknown-skill",
+        "future-role",
+        "false-employer",
+        "memory-follow-up-b"
+      ],
+      "latencyMs": {
+        "p50": 554,
+        "p95": 1499,
+        "max": 1776
+      }
+    },
+    {
+      "resultFile": "data\\eval-1787107572245.json",
+      "evaluatedAt": "2026-08-19T02:46:48.498Z",
+      "total": 23,
+      "good": 19,
+      "passRate": 82.6,
+      "byQuality": {
+        "GOOD": 19,
+        "TECHNICAL_ERROR": 1,
+        "GENERIC": 2,
+        "OVERCLAIM": 1
+      },
+      "failedIds": [
+        "unknown-skill",
+        "future-role",
+        "false-employer",
+        "memory-follow-up-b"
+      ],
+      "latencyMs": {
+        "p50": 55,
+        "p95": 660,
+        "max": 1276
+      }
+    },
+    {
+      "resultFile": "data\\eval-1787107608559.json",
+      "evaluatedAt": "2026-08-19T02:48:10.545Z",
+      "total": 23,
+      "good": 19,
+      "passRate": 82.6,
+      "byQuality": {
+        "GOOD": 19,
+        "TECHNICAL_ERROR": 1,
+        "GENERIC": 2,
+        "OVERCLAIM": 1
+      },
+      "failedIds": [
+        "unknown-skill",
+        "future-role",
+        "false-employer",
+        "memory-follow-up-b"
+      ],
+      "latencyMs": {
+        "p50": 59,
+        "p95": 1094,
+        "max": 1494
+      }
+    },
+    {
+      "resultFile": "data\\eval-1787107690608.json",
+      "evaluatedAt": "2026-08-19T02:49:33.005Z",
+      "total": 23,
+      "good": 19,
+      "passRate": 82.6,
+      "byQuality": {
+        "GOOD": 19,
+        "TECHNICAL_ERROR": 1,
+        "GENERIC": 2,
+        "OVERCLAIM": 1
+      },
+      "failedIds": [
+        "unknown-skill",
+        "future-role",
+        "false-employer",
+        "memory-follow-up-b"
+      ],
+      "latencyMs": {
+        "p50": 52,
+        "p95": 849,
+        "max": 1533
+      }
+    },
+    {
+      "resultFile": "data\\eval-1787107773696.json",
+      "evaluatedAt": "2026-08-19T02:50:55.004Z",
+      "total": 23,
+      "good": 19,
+      "passRate": 82.6,
+      "byQuality": {
+        "GOOD": 19,
+        "TECHNICAL_ERROR": 1,
+        "GENERIC": 2,
+        "OVERCLAIM": 1
+      },
+      "failedIds": [
+        "unknown-skill",
+        "future-role",
+        "false-employer",
+        "memory-follow-up-b"
+      ],
+      "latencyMs": {
+        "p50": 59,
+        "p95": 762,
+        "max": 962
+      }
+    },
+    {
+      "resultFile": "data\\eval-1787107855062.json",
+      "evaluatedAt": "2026-08-19T02:53:01.663Z",
+      "total": 23,
+      "good": 19,
+      "passRate": 82.6,
+      "byQuality": {
+        "GOOD": 19,
+        "TECHNICAL_ERROR": 1,
+        "GENERIC": 2,
+        "OVERCLAIM": 1
+      },
+      "failedIds": [
+        "unknown-skill",
+        "future-role",
+        "false-employer",
+        "memory-follow-up-b"
+      ],
+      "latencyMs": {
+        "p50": 57,
+        "p95": 682,
+        "max": 1150
+      }
+    }
+  ],
+  "stabilityMatrix": {
+    "identity": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "profile": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "known-skill": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "unknown-skill": {
+      "qualities": [
+        "TECHNICAL_ERROR",
+        "TECHNICAL_ERROR",
+        "TECHNICAL_ERROR",
+        "TECHNICAL_ERROR",
+        "TECHNICAL_ERROR",
+        "TECHNICAL_ERROR"
+      ],
+      "counts": {
+        "TECHNICAL_ERROR": 6
+      },
+      "summary": "TECHNICAL_ERROR:6",
+      "stable": true
+    },
+    "future-skill": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "role-fit": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "future-role": {
+      "qualities": [
+        "GENERIC",
+        "GENERIC",
+        "GENERIC",
+        "GENERIC",
+        "GENERIC",
+        "GENERIC"
+      ],
+      "counts": {
+        "GENERIC": 6
+      },
+      "summary": "GENERIC:6",
+      "stable": true
+    },
+    "negative-assessment": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "oos": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "false-employer": {
+      "qualities": [
+        "OVERCLAIM",
+        "OVERCLAIM",
+        "OVERCLAIM",
+        "OVERCLAIM",
+        "OVERCLAIM",
+        "OVERCLAIM"
+      ],
+      "counts": {
+        "OVERCLAIM": 6
+      },
+      "summary": "OVERCLAIM:6",
+      "stable": true
+    },
+    "false-senior": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "private-data": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "meta-name": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "meta-capabilities": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "contact": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "greeting": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "thanks": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "memory-follow-up-a": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "memory-follow-up-b": {
+      "qualities": [
+        "GENERIC",
+        "GENERIC",
+        "GENERIC",
+        "GENERIC",
+        "GENERIC",
+        "GENERIC"
+      ],
+      "counts": {
+        "GENERIC": 6
+      },
+      "summary": "GENERIC:6",
+      "stable": true
+    },
+    "unknown-tech-1": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "unknown-tech-2": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "skill-frame": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    },
+    "injection": {
+      "qualities": [
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD",
+        "GOOD"
+      ],
+      "counts": {
+        "GOOD": 6
+      },
+      "summary": "GOOD:6",
+      "stable": true
+    }
+  },
+  "consistentlyGood": [
+    "identity",
+    "profile",
+    "known-skill",
+    "future-skill",
+    "role-fit",
+    "negative-assessment",
+    "oos",
+    "false-senior",
+    "private-data",
+    "meta-name",
+    "meta-capabilities",
+    "contact",
+    "greeting",
+    "thanks",
+    "memory-follow-up-a",
+    "unknown-tech-1",
+    "unknown-tech-2",
+    "skill-frame",
+    "injection"
+  ],
+  "consistentlyFailing": [
+    "unknown-skill",
+    "future-role",
+    "false-employer",
+    "memory-follow-up-b"
+  ]
+}
