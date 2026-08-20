@@ -64,7 +64,7 @@ jobs:
         run: |
           OUTPUT=$(node scripts/eval-retrieval.js 2>&1)
           echo "$OUTPUT"
-          RECALL=$(echo "$OUTPUT" | grep -oP 'Recall@6=\K[0-9.]+' | head -1)
+          RECALL=$(echo "$OUTPUT" | grep -oP 'Recall@6[:=]\s*\K[0-9.]+' | head -1)
           if [ -z "$RECALL" ]; then
             echo "Could not parse Recall@6 from eval output"
             exit 1
