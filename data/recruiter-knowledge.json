@@ -10095,6 +10095,53 @@
         "faq.1",
         "interviewStories.7"
       ]
+    },
+    {
+      "id": "main-weakness",
+      "intents": [
+        "direct"
+      ],
+      "questionPatterns": [
+        "what is (?:your|bradley'?s|his) (?:main|primary|greatest|worst) weakness",
+        "\\b(?:his|bradley'?s) (?:main|primary|greatest|worst) weakness"
+      ],
+      "answer": "His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+      "sourceIds": [
+        "interviewStories.7",
+        "faq.1"
+      ]
+    },
+    {
+      "id": "bad-at",
+      "intents": [
+        "direct"
+      ],
+      "questionPatterns": [
+        "what is (?:bradley|he) bad at",
+        "what.*(?:bradley|he).*bad at",
+        "\\b(?:bradley|he) is bad at"
+      ],
+      "answer": "The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right data structure or algorithm for unfamiliar production problems, ERP concepts and business workflows, and software support and user support fundamentals.",
+      "sourceIds": [
+        "summary.honestGaps",
+        "skills.learningOrAdjacent"
+      ]
+    },
+    {
+      "id": "current-progress-gaps",
+      "intents": [
+        "direct"
+      ],
+      "questionPatterns": [
+        "is (?:he|bradley) (?:working|making progress|improving|addressing) on (?:those|these|his) gaps",
+        "does (?:he|bradley) (?:work on|improve|address) (?:those|these|his) gaps",
+        "is (?:he|bradley) (?:currently|actively) (?:working|improving|studying) on (?:those|these|his) gaps"
+      ],
+      "answer": "There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them.",
+      "sourceIds": [
+        "summary.honestGaps",
+        "interviewStories.6"
+      ]
     }
   ]
 }

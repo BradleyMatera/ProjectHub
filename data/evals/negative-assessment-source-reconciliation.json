@@ -1,22 +1,22 @@
 {
-  "gateRunId": "reconciliation-live-2026-08-20T22-07-56-833Z",
+  "gateRunId": "reconciliation-live-2026-08-20T22-15-25-851Z",
   "runtimeSHA": "unknown",
   "label": "negative-assessment source-of-truth reconciliation",
   "health": {
     "ok": true,
     "status": "online",
-    "deployedAt": 1787263661008,
+    "deployedAt": 1787264119510,
     "build": {
       "sourceRepository": "BradleyMatera/ProjectHub",
       "sourceBranch": "develop",
-      "sourceCommit": "cf18cef2aa14d146e566395de00fa9c23d82444b",
-      "deployedAt": "2026-08-20T22:07:06.792Z",
+      "sourceCommit": "01204e780536f862b61f5580d9d53ab99410182c",
+      "deployedAt": "2026-08-20T22:14:43.234Z",
       "generatedBy": "manual-deploy-dev"
     },
     "buildEnv": {
       "sourceRepository": "BradleyMatera/ProjectHub",
       "sourceBranch": "develop",
-      "sourceCommit": "cf18cef2aa14d146e566395de00fa9c23d82444b",
+      "sourceCommit": "01204e780536f862b61f5580d9d53ab99410182c",
       "agentMode": "lite",
       "provider": "cloudflare",
       "primaryModel": "@cf/meta/llama-3.2-3b-instruct",
@@ -25,27 +25,27 @@
       "deadlineMs": 15000,
       "generationTimeoutMs": 12500
     },
-    "uptimeSeconds": 18,
+    "uptimeSeconds": 9,
     "totalRequestsServed": 1,
     "lastReplyProvider": null,
-    "allTimeRequests": 1879,
+    "allTimeRequests": 1883,
     "groundedCount": 0,
-    "llmCount": 1342,
+    "llmCount": 1346,
     "cachedCount": 537,
     "providerBreakdown": {
       "cached": 537,
       "knowledge-base": 1
     },
-    "deployCount": 44,
+    "deployCount": 45,
     "firstDeployAt": 1786997622173,
     "recentRequests": [
       {
         "q": "What is ProjectHub?",
         "provider": "knowledge-base",
-        "ts": 1787263662870,
+        "ts": 1787264120548,
         "referrer": "bradleymatera.github.io",
         "topic": "projects",
-        "latencyMs": 33,
+        "latencyMs": 47,
         "pipeline": [
           "knowledge-loaded",
           "policy:VERIFIED_FACT",
@@ -546,8 +546,8 @@
       }
     ],
     "referrerBreakdown": {
-      "unknown": 1151,
-      "bradleymatera.github.io": 728
+      "unknown": 1154,
+      "bradleymatera.github.io": 729
     },
     "topicBreakdown": {
       "2026-08-17": {
@@ -589,11 +589,11 @@
         "projects": 8
       },
       "2026-08-20": {
-        "uncategorized": 221,
+        "uncategorized": 222,
         "role-fit": 32,
         "strengths": 3,
-        "projects": 9,
-        "weaknesses": 51,
+        "projects": 10,
+        "weaknesses": 53,
         "experience": 5,
         "out-of-scope": 4,
         "contact": 5,
@@ -689,9 +689,9 @@
         "cached": 0
       },
       "2026-08-20T22": {
-        "total": 4,
+        "total": 8,
         "grounded": 0,
-        "llm": 4,
+        "llm": 8,
         "cached": 0
       }
     },
@@ -789,7 +789,7 @@
     }
   },
   "summary": {
-    "gateRunId": "reconciliation-live-2026-08-20T22-07-56-833Z",
+    "gateRunId": "reconciliation-live-2026-08-20T22-15-25-851Z",
     "runtimeSHA": "unknown",
     "label": "negative-assessment source-of-truth reconciliation",
     "scheduled": "1/4",
@@ -798,12 +798,12 @@
   },
   "attempts": [
     {
-      "attemptId": "9c17ea79-8edb-4248-90fc-5695943526da",
+      "attemptId": "1a0fa62e-93e0-4cbb-b340-e32d27acd695",
       "caseId": "direct-kb-ranked",
       "scheduledAttempt": 1,
-      "gateRunId": "reconciliation-live-2026-08-20T22-07-56-833Z",
+      "gateRunId": "reconciliation-live-2026-08-20T22-15-25-851Z",
       "runtimeSHA": "unknown",
-      "timestamp": "2026-08-20T22:07:56.834Z",
+      "timestamp": "2026-08-20T22:15:25.852Z",
       "isRetry": false,
       "retryOfAttemptId": null,
       "question": "What is Bradley's biggest weakness?",
@@ -1002,19 +1002,19 @@
       }
     },
     {
-      "attemptId": "510fd36c-1b38-4ccb-b277-7f1f6d8bc378",
+      "attemptId": "bbe4c16c-ffd4-448b-b852-432351921ab1",
       "caseId": "model-ranked",
       "scheduledAttempt": 1,
-      "gateRunId": "reconciliation-live-2026-08-20T22-07-56-833Z",
+      "gateRunId": "reconciliation-live-2026-08-20T22-15-25-851Z",
       "runtimeSHA": "unknown",
-      "timestamp": "2026-08-20T22:07:56.910Z",
+      "timestamp": "2026-08-20T22:15:25.935Z",
       "isRetry": false,
       "retryOfAttemptId": null,
       "question": "What is his main weakness?",
       "status": "completed",
       "provider": "cloudflare",
       "model": "@cf/meta/llama-3.2-3b-instruct",
-      "reply": "There is no information available about Bradley's main weakness.",
+      "reply": "Unknown/NOT VERIFIED",
       "quality": "GENERIC",
       "failureReason": "missing one of required phrases: data structures | DSA | gap | documented",
       "proseSource": "MODEL_GENERATION",
@@ -1042,14 +1042,14 @@
         "policy:VERIFIED_FACT",
         "cache-miss",
         "scout-agent-lite:eligible",
-        "scout-agent-lite:cloudflare:repaired",
+        "scout-agent-lite:cloudflare:accepted",
         "shaped"
       ],
       "raw": {
         "status": 200,
         "body": {
           "ok": true,
-          "reply": "There is no information available about Bradley's main weakness.",
+          "reply": "Unknown/NOT VERIFIED",
           "provider": "cloudflare",
           "model": "@cf/meta/llama-3.2-3b-instruct",
           "fallback": false,
@@ -1060,7 +1060,7 @@
             "policy:VERIFIED_FACT",
             "cache-miss",
             "scout-agent-lite:eligible",
-            "scout-agent-lite:cloudflare:repaired",
+            "scout-agent-lite:cloudflare:accepted",
             "shaped"
           ],
           "followUps": [],
@@ -1097,10 +1097,10 @@
             "tools": [
               "search_portfolio"
             ],
-            "steps": 2,
-            "contextTokens": 601,
-            "validation": "supported",
-            "outcome": "repaired",
+            "steps": 1,
+            "contextTokens": 366,
+            "validation": "partial",
+            "outcome": "accepted",
             "executionEngine": "scout-lite",
             "languageLayer": "cloudflare",
             "languageModel": "@cf/meta/llama-3.2-3b-instruct",
@@ -1113,45 +1113,47 @@
                 "attemptType": "PRIMARY",
                 "provider": "cloudflare",
                 "providerRequestId": null,
-                "providerTraceId": "a2e4b6cf0f894848-ORD",
+                "providerTraceId": "a2e4c1c5aa619675-ORD",
                 "providerTraceType": "cf-ray",
                 "model": "@cf/meta/llama-3.2-3b-instruct",
-                "actualNeurons": 1.8735480308532715,
-                "estimatedNeurons": 1.8737,
-                "inputTokens": 359,
-                "outputTokens": 7,
-                "latencyMs": 572,
-                "startedAtRelativeMs": 23,
-                "endedAtRelativeMs": 595,
+                "actualNeurons": 2.0093209743499756,
+                "estimatedNeurons": 2.009475,
+                "inputTokens": 362,
+                "outputTokens": 11,
+                "latencyMs": 480,
+                "startedAtRelativeMs": 32,
+                "endedAtRelativeMs": 512,
                 "ok": true,
-                "accepted": false,
-                "validationVerdict": "unsupported",
+                "accepted": true,
+                "validationVerdict": "partial",
                 "validationReasons": [
-                  "too_short"
+                  "no_terminal_punctuation"
                 ],
-                "rawAnswer": "Unknown",
+                "rawAnswer": "Unknown/NOT VERIFIED",
                 "error": null
               },
               {
                 "attemptIndex": 2,
-                "attemptType": "TARGETED_REPAIR",
+                "attemptType": "COMPLETENESS_REPAIR",
                 "provider": "cloudflare",
                 "providerRequestId": null,
-                "providerTraceId": "a2e4b6d1fd824848-ORD",
+                "providerTraceId": "a2e4c1c89fbe9675-ORD",
                 "providerTraceType": "cf-ray",
                 "model": "@cf/meta/llama-3.2-3b-instruct",
-                "actualNeurons": 1.792558193206787,
-                "estimatedNeurons": 1.792675,
-                "inputTokens": 269,
-                "outputTokens": 18,
-                "latencyMs": 203,
-                "startedAtRelativeMs": 605,
-                "endedAtRelativeMs": 808,
+                "actualNeurons": 6.297608375549316,
+                "estimatedNeurons": 6.2978749999999994,
+                "inputTokens": 571,
+                "outputTokens": 120,
+                "latencyMs": 1103,
+                "startedAtRelativeMs": 594,
+                "endedAtRelativeMs": 1697,
                 "ok": true,
-                "accepted": true,
-                "validationVerdict": "supported",
-                "validationReasons": [],
-                "rawAnswer": "There is no information available about Bradley's main weakness.",
+                "accepted": false,
+                "validationVerdict": "too_short",
+                "validationReasons": [
+                  "too_short"
+                ],
+                "rawAnswer": "",
                 "error": null
               }
             ],
@@ -1171,95 +1173,89 @@
               "clarificationRequired": false
             },
             {
-              "ts": 2,
+              "ts": 3,
               "type": "lite_route",
               "operation": "search",
               "tool": "search_portfolio"
             },
             {
-              "ts": 3,
+              "ts": 5,
               "type": "lite_tool_result",
               "tool": "search_portfolio",
               "resultSize": 3551
             },
             {
-              "ts": 5,
+              "ts": 8,
               "type": "lite_compress",
               "compressedChars": 275,
               "adversarial": false
             },
             {
-              "ts": 21,
+              "ts": 30,
               "type": "lite_packet",
-              "estimatedInputTokens": 361,
-              "chars": 1478,
+              "estimatedInputTokens": 366,
+              "chars": 1479,
               "hasPlan": true,
               "tokenBudget": {
-                "systemTokens": 338,
+                "systemTokens": 343,
                 "userTokens": 23,
-                "totalTokens": 361,
-                "availableForGeneration": 663
+                "totalTokens": 366,
+                "availableForGeneration": 658
               },
               "configuredCtx": 1024,
               "configuredPredict": 120
             },
             {
-              "ts": 22,
+              "ts": 31,
               "type": "lite_generate_call",
-              "timeoutMs": 14921,
-              "remaining": 14921,
-              "systemPromptChars": 1403,
+              "timeoutMs": 14902,
+              "remaining": 14902,
+              "systemPromptChars": 1404,
               "userPromptChars": 75,
-              "estimatedTokens": 361
+              "estimatedTokens": 366
             },
             {
-              "ts": 595,
+              "ts": 512,
               "type": "lite_generate_metrics",
-              "estimatedInputTokens": 361,
-              "actualPromptEvalCount": 359,
-              "actualEvalCount": 7,
-              "actualNeurons": 1.8735480308532715,
+              "estimatedInputTokens": 366,
+              "actualPromptEvalCount": 362,
+              "actualEvalCount": 11,
+              "actualNeurons": 2.0093209743499756,
               "doneReason": "stop",
               "totalDurationNs": null,
               "promptEvalDurationNs": null,
               "evalDurationNs": null,
-              "latencyMs": 572
+              "latencyMs": 480
             },
             {
-              "ts": 596,
+              "ts": 512,
               "type": "lite_generate_ok",
-              "latencyMs": 572,
-              "answerLen": 7,
-              "rawAnswer": "Unknown",
-              "rawGenText": "{\"answer\": \"Unknown\"}"
+              "latencyMs": 480,
+              "answerLen": 20,
+              "rawAnswer": "Unknown/NOT VERIFIED",
+              "rawGenText": "{\"answer\": \"Unknown/NOT VERIFIED\"}"
             },
             {
-              "ts": 601,
+              "ts": 590,
               "type": "lite_validation",
-              "verdict": "unsupported",
+              "verdict": "partial",
               "reasons": [
-                "too_short"
+                "no_terminal_punctuation"
               ],
-              "validatedAnswer": "Unknown"
+              "validatedAnswer": "Unknown/NOT VERIFIED"
             },
             {
-              "ts": 605,
-              "type": "lite_repair_call",
-              "tokens": 240
+              "ts": 593,
+              "type": "lite_completeness_repair_call",
+              "reason": "TOO_SHORT",
+              "intent": "NEGATIVE_ASSESSMENT"
             },
             {
-              "ts": 853,
-              "type": "lite_repair_result",
-              "verdict": "supported",
-              "latencyMs": 203,
-              "rawAnswer": "There is no information available about Bradley's main weakness.",
-              "reasons": []
-            },
-            {
-              "ts": 854,
+              "ts": 1697,
               "type": "lite_complete",
-              "outcome": "repaired",
-              "totalMs": 854
+              "outcome": "accepted",
+              "totalMs": 1697,
+              "completenessReason": "TOO_SHORT"
             }
           ],
           "sessionMemory": {
@@ -1270,12 +1266,12 @@
       }
     },
     {
-      "attemptId": "05052598-5c9e-4d86-9b1e-036b1fecc9b5",
+      "attemptId": "f43662e0-1e03-41ae-b1a6-203c899bf001",
       "caseId": "model-bad-at",
       "scheduledAttempt": 1,
-      "gateRunId": "reconciliation-live-2026-08-20T22-07-56-833Z",
+      "gateRunId": "reconciliation-live-2026-08-20T22-15-25-851Z",
       "runtimeSHA": "unknown",
-      "timestamp": "2026-08-20T22:07:57.874Z",
+      "timestamp": "2026-08-20T22:15:27.759Z",
       "isRetry": false,
       "retryOfAttemptId": null,
       "question": "What is Bradley bad at?",
@@ -1364,7 +1360,7 @@
               "search_portfolio"
             ],
             "steps": 2,
-            "contextTokens": 662,
+            "contextTokens": 665,
             "validation": "supported",
             "outcome": "repaired",
             "executionEngine": "scout-lite",
@@ -1379,16 +1375,16 @@
                 "attemptType": "PRIMARY",
                 "provider": "cloudflare",
                 "providerRequestId": null,
-                "providerTraceId": "a2e4b6d478814848-ORD",
+                "providerTraceId": "a2e4c1d04c7f9675-ORD",
                 "providerTraceType": "cf-ray",
                 "model": "@cf/meta/llama-3.2-3b-instruct",
                 "actualNeurons": 1.859674334526062,
                 "estimatedNeurons": 1.8598249999999998,
                 "inputTokens": 356,
                 "outputTokens": 7,
-                "latencyMs": 233,
-                "startedAtRelativeMs": 18,
-                "endedAtRelativeMs": 251,
+                "latencyMs": 244,
+                "startedAtRelativeMs": 22,
+                "endedAtRelativeMs": 266,
                 "ok": true,
                 "accepted": false,
                 "validationVerdict": "unsupported",
@@ -1403,16 +1399,16 @@
                 "attemptType": "TARGETED_REPAIR",
                 "provider": "cloudflare",
                 "providerRequestId": null,
-                "providerTraceId": "a2e4b6d5ee884848-ORD",
+                "providerTraceId": "a2e4c1d1db0f9675-ORD",
                 "providerTraceType": "cf-ray",
                 "model": "@cf/meta/llama-3.2-3b-instruct",
                 "actualNeurons": 2.060784101486206,
                 "estimatedNeurons": 2.0609249999999997,
                 "inputTokens": 327,
                 "outputTokens": 18,
-                "latencyMs": 292,
-                "startedAtRelativeMs": 256,
-                "endedAtRelativeMs": 548,
+                "latencyMs": 311,
+                "startedAtRelativeMs": 269,
+                "endedAtRelativeMs": 580,
                 "ok": true,
                 "accepted": true,
                 "validationVerdict": "supported",
@@ -1449,39 +1445,39 @@
               "resultSize": 2387
             },
             {
-              "ts": 7,
+              "ts": 8,
               "type": "lite_compress",
               "compressedChars": 565,
               "adversarial": false
             },
             {
-              "ts": 18,
+              "ts": 22,
               "type": "lite_packet",
-              "estimatedInputTokens": 359,
+              "estimatedInputTokens": 362,
               "chars": 1469,
               "hasPlan": true,
               "tokenBudget": {
-                "systemTokens": 337,
+                "systemTokens": 340,
                 "userTokens": 22,
-                "totalTokens": 359,
-                "availableForGeneration": 665
+                "totalTokens": 362,
+                "availableForGeneration": 662
               },
               "configuredCtx": 1024,
               "configuredPredict": 120
             },
             {
-              "ts": 18,
+              "ts": 22,
               "type": "lite_generate_call",
-              "timeoutMs": 14911,
-              "remaining": 14911,
+              "timeoutMs": 14916,
+              "remaining": 14916,
               "systemPromptChars": 1403,
               "userPromptChars": 66,
-              "estimatedTokens": 359
+              "estimatedTokens": 362
             },
             {
-              "ts": 251,
+              "ts": 266,
               "type": "lite_generate_metrics",
-              "estimatedInputTokens": 359,
+              "estimatedInputTokens": 362,
               "actualPromptEvalCount": 356,
               "actualEvalCount": 7,
               "actualNeurons": 1.859674334526062,
@@ -1489,18 +1485,18 @@
               "totalDurationNs": null,
               "promptEvalDurationNs": null,
               "evalDurationNs": null,
-              "latencyMs": 233
+              "latencyMs": 244
             },
             {
-              "ts": 252,
+              "ts": 266,
               "type": "lite_generate_ok",
-              "latencyMs": 233,
+              "latencyMs": 244,
               "answerLen": 7,
               "rawAnswer": "Unknown",
               "rawGenText": "{\"answer\": \"Unknown\"}"
             },
             {
-              "ts": 253,
+              "ts": 267,
               "type": "lite_validation",
               "verdict": "unsupported",
               "reasons": [
@@ -1509,23 +1505,23 @@
               "validatedAnswer": "Unknown"
             },
             {
-              "ts": 255,
+              "ts": 269,
               "type": "lite_repair_call",
               "tokens": 303
             },
             {
-              "ts": 579,
+              "ts": 614,
               "type": "lite_repair_result",
               "verdict": "supported",
-              "latencyMs": 292,
+              "latencyMs": 311,
               "rawAnswer": "There is no information available about Bradley's skills or weaknesses.",
               "reasons": []
             },
             {
-              "ts": 579,
+              "ts": 614,
               "type": "lite_complete",
               "outcome": "repaired",
-              "totalMs": 579
+              "totalMs": 614
             }
           ],
           "sessionMemory": {
@@ -1536,12 +1532,12 @@
       }
     },
     {
-      "attemptId": "69ad95a8-d088-4385-a7bc-7016f43df466",
+      "attemptId": "68ceff2c-5634-4e4c-9b75-d0f83bc47189",
       "caseId": "model-current-progress",
       "scheduledAttempt": 1,
-      "gateRunId": "reconciliation-live-2026-08-20T22-07-56-833Z",
+      "gateRunId": "reconciliation-live-2026-08-20T22-15-25-851Z",
       "runtimeSHA": "unknown",
-      "timestamp": "2026-08-20T22:07:58.578Z",
+      "timestamp": "2026-08-20T22:15:28.494Z",
       "isRetry": false,
       "retryOfAttemptId": null,
       "question": "Is he working on those gaps?",
@@ -1597,7 +1593,7 @@
           ],
           "provider": "cloudflare",
           "model": "@cf/meta/llama-3.2-3b-instruct",
-          "latencyMs": 1452,
+          "latencyMs": 1443,
           "agentMeta": {
             "used": true,
             "engine": "scout-lite",
@@ -1608,7 +1604,7 @@
               "search_portfolio"
             ],
             "steps": 1,
-            "contextTokens": 358,
+            "contextTokens": 360,
             "outcome": "inference_unavailable",
             "generationAttempts": 3,
             "operation": "search",
@@ -1619,23 +1615,23 @@
                 "attemptType": "PRIMARY",
                 "provider": "cloudflare",
                 "providerRequestId": null,
-                "providerTraceId": "a2e4b6d8aa2b4848-ORD",
+                "providerTraceId": "a2e4c1d50a3c9675-ORD",
                 "providerTraceType": "cf-ray",
                 "model": "@cf/meta/llama-3.2-3b-instruct",
-                "actualNeurons": 1.864298939704895,
-                "estimatedNeurons": 1.86445,
-                "inputTokens": 357,
+                "actualNeurons": 1.859674334526062,
+                "estimatedNeurons": 1.8598249999999998,
+                "inputTokens": 356,
                 "outputTokens": 7,
-                "latencyMs": 249,
-                "startedAtRelativeMs": 8,
-                "endedAtRelativeMs": 257,
+                "latencyMs": 261,
+                "startedAtRelativeMs": 17,
+                "endedAtRelativeMs": 278,
                 "ok": true,
                 "accepted": false,
                 "validationVerdict": "unsupported",
                 "validationReasons": [
                   "too_short"
                 ],
-                "rawAnswer": "unknown",
+                "rawAnswer": "UNKNOWN",
                 "error": null
               },
               {
@@ -1643,23 +1639,23 @@
                 "attemptType": "TARGETED_REPAIR",
                 "provider": "cloudflare",
                 "providerRequestId": null,
-                "providerTraceId": "a2e4b6da386c4848-ORD",
+                "providerTraceId": "a2e4c1d6aa439675-ORD",
                 "providerTraceType": "cf-ray",
                 "model": "@cf/meta/llama-3.2-3b-instruct",
-                "actualNeurons": 3.2520275115966797,
-                "estimatedNeurons": 3.2521750000000003,
+                "actualNeurons": 3.0082292556762695,
+                "estimatedNeurons": 3.008375,
                 "inputTokens": 321,
-                "outputTokens": 58,
-                "latencyMs": 455,
-                "startedAtRelativeMs": 259,
-                "endedAtRelativeMs": 714,
+                "outputTokens": 50,
+                "latencyMs": 413,
+                "startedAtRelativeMs": 281,
+                "endedAtRelativeMs": 694,
                 "ok": true,
                 "accepted": false,
                 "validationVerdict": "unsupported",
                 "validationReasons": [
                   "current_progress_not_answered"
                 ],
-                "rawAnswer": "Bradley has built a strong foundation in data structures and algorithms through his experience with coding challenges and projects, including a personal project where he implemented a sorting algorithm from scratch, and he continues to work on improving his skills through regular practice and participation in coding competitions.",
+                "rawAnswer": "Bradley has built a strong foundation in data structures and algorithms through his coursework and personal projects, including a Udem Martins course on DSA, and continues to work on improving his skills through regular practice and coding challenges.",
                 "error": null
               },
               {
@@ -1667,16 +1663,16 @@
                 "attemptType": "RECOVERY",
                 "provider": "cloudflare",
                 "providerRequestId": null,
-                "providerTraceId": "a2e4b6dd1c214848-ORD",
+                "providerTraceId": "a2e4c1d94eda9675-ORD",
                 "providerTraceType": "cf-ray",
                 "model": "@cf/meta/llama-3.2-3b-instruct",
                 "actualNeurons": 2.0373058319091797,
                 "estimatedNeurons": 2.037475,
                 "inputTokens": 401,
                 "outputTokens": 6,
-                "latencyMs": 257,
-                "startedAtRelativeMs": 717,
-                "endedAtRelativeMs": 974,
+                "latencyMs": 162,
+                "startedAtRelativeMs": 700,
+                "endedAtRelativeMs": 862,
                 "ok": true,
                 "accepted": false,
                 "validationVerdict": "too_short",
@@ -1691,16 +1687,16 @@
                 "attemptType": "RECOVERY",
                 "provider": "cloudflare",
                 "providerRequestId": null,
-                "providerTraceId": "a2e4b6decb664848-ORD",
+                "providerTraceId": "a2e4c1da4c3b9675-ORD",
                 "providerTraceType": "cf-ray",
                 "model": "@cf/meta/llama-3.2-3b-instruct",
                 "actualNeurons": 1.1123895645141602,
                 "estimatedNeurons": 1.112475,
                 "inputTokens": 201,
                 "outputTokens": 6,
-                "latencyMs": 221,
-                "startedAtRelativeMs": 975,
-                "endedAtRelativeMs": 1196,
+                "latencyMs": 244,
+                "startedAtRelativeMs": 863,
+                "endedAtRelativeMs": 1107,
                 "ok": true,
                 "accepted": false,
                 "validationVerdict": "too_short",
@@ -1715,16 +1711,16 @@
                 "attemptType": "RECOVERY",
                 "provider": "cloudflare",
                 "providerRequestId": null,
-                "providerTraceId": "a2e4b6e019574848-ORD",
+                "providerTraceId": "a2e4c1dbdb7a9675-ORD",
                 "providerTraceType": "cf-ray",
                 "model": "@cf/meta/llama-3.2-3b-instruct",
                 "actualNeurons": 0.6325002908706665,
                 "estimatedNeurons": 0.63255,
                 "inputTokens": 117,
                 "outputTokens": 3,
-                "latencyMs": 202,
-                "startedAtRelativeMs": 1196,
-                "endedAtRelativeMs": 1398,
+                "latencyMs": 246,
+                "startedAtRelativeMs": 1108,
+                "endedAtRelativeMs": 1354,
                 "ok": true,
                 "accepted": false,
                 "validationVerdict": "too_short",
@@ -1744,7 +1740,7 @@
               "model": "@cf/meta/llama-3.2-3b-instruct"
             },
             {
-              "ts": 0,
+              "ts": 1,
               "type": "lite_rewrite",
               "rewritten": "Is Bradley working on those gaps?",
               "changed": true,
@@ -1763,112 +1759,112 @@
               "resultSize": 3248
             },
             {
-              "ts": 3,
+              "ts": 4,
               "type": "lite_compress",
               "compressedChars": 507,
               "adversarial": false
             },
             {
-              "ts": 8,
+              "ts": 17,
               "type": "lite_packet",
-              "estimatedInputTokens": 358,
-              "chars": 1479,
+              "estimatedInputTokens": 360,
+              "chars": 1480,
               "hasPlan": true,
               "tokenBudget": {
-                "systemTokens": 334,
+                "systemTokens": 336,
                 "userTokens": 24,
-                "totalTokens": 358,
-                "availableForGeneration": 666
+                "totalTokens": 360,
+                "availableForGeneration": 664
               },
               "configuredCtx": 1024,
               "configuredPredict": 120
             },
             {
-              "ts": 8,
+              "ts": 17,
               "type": "lite_generate_call",
-              "timeoutMs": 14938,
-              "remaining": 14938,
-              "systemPromptChars": 1403,
+              "timeoutMs": 14894,
+              "remaining": 14894,
+              "systemPromptChars": 1404,
               "userPromptChars": 76,
-              "estimatedTokens": 358
+              "estimatedTokens": 360
             },
             {
-              "ts": 257,
+              "ts": 278,
               "type": "lite_generate_metrics",
-              "estimatedInputTokens": 358,
-              "actualPromptEvalCount": 357,
+              "estimatedInputTokens": 360,
+              "actualPromptEvalCount": 356,
               "actualEvalCount": 7,
-              "actualNeurons": 1.864298939704895,
+              "actualNeurons": 1.859674334526062,
               "doneReason": "stop",
               "totalDurationNs": null,
               "promptEvalDurationNs": null,
               "evalDurationNs": null,
-              "latencyMs": 249
+              "latencyMs": 261
             },
             {
-              "ts": 257,
+              "ts": 278,
               "type": "lite_generate_ok",
-              "latencyMs": 249,
+              "latencyMs": 261,
               "answerLen": 7,
-              "rawAnswer": "unknown",
-              "rawGenText": "{\"answer\": \"unknown\"}"
+              "rawAnswer": "UNKNOWN",
+              "rawGenText": "{\"answer\": \"UNKNOWN\"}"
             },
             {
-              "ts": 258,
+              "ts": 279,
               "type": "lite_validation",
               "verdict": "unsupported",
               "reasons": [
                 "too_short"
               ],
-              "validatedAnswer": "unknown"
+              "validatedAnswer": "UNKNOWN"
             },
             {
-              "ts": 259,
+              "ts": 280,
               "type": "lite_repair_call",
               "tokens": 301
             },
             {
-              "ts": 715,
+              "ts": 695,
               "type": "lite_repair_result",
               "verdict": "unsupported",
-              "latencyMs": 455,
-              "rawAnswer": "Bradley has built a strong foundation in data structures and algorithms through his experience with coding challenges and projects, including a personal project where he implemented a sorting algorithm from scratch, and he continues to work on improving his skills through regular practice and partic",
+              "latencyMs": 413,
+              "rawAnswer": "Bradley has built a strong foundation in data structures and algorithms through his coursework and personal projects, including a Udem Martins course on DSA, and continues to work on improving his skills through regular practice and coding challenges.",
               "reasons": [
                 "current_progress_not_answered"
               ]
             },
             {
-              "ts": 715,
+              "ts": 695,
               "type": "lite_fallback",
               "reason": "validation_failed",
-              "totalMs": 715
+              "totalMs": 695
             },
             {
-              "ts": 717,
+              "ts": 700,
               "type": "lite_recovery_generate",
               "intent": "CURRENT_PROGRESS",
               "attempt": 1,
-              "timeoutMs": 14229,
-              "remaining": 14229
+              "timeoutMs": 14211,
+              "remaining": 14211
             },
             {
-              "ts": 975,
+              "ts": 862,
               "type": "lite_recovery_generate",
               "intent": "CURRENT_PROGRESS",
               "attempt": 2,
               "timeoutMs": 12000,
-              "remaining": 13971
+              "remaining": 14049
             },
             {
-              "ts": 1196,
+              "ts": 1108,
               "type": "lite_recovery_generate",
               "intent": "CURRENT_PROGRESS",
               "attempt": 3,
               "timeoutMs": 12000,
-              "remaining": 13750
+              "remaining": 13803
             },
             {
-              "ts": 1398,
+              "ts": 1354,
               "type": "lite_recovery_unavailable",
               "intent": "CURRENT_PROGRESS",
               "attempts": 3

@@ -38,40 +38,53 @@ const cases = [
     }
   },
   {
-    id: 'model-ranked',
+    id: 'direct-kb-main',
     message: "What is his main weakness?",
-    session: 'ranked-model',
+    session: 'main-direct',
     semanticType: 'NEGATIVE_ASSESSMENT',
     expect: {
       ok: true,
-      proseSource: 'MODEL_GENERATION',
+      proseSource: 'DIRECT_KB',
       telemetry: { factState: 'TRUE' },
-      requireAny: ['data structures', 'DSA', 'gap', 'documented'],
+      requireAny: ['data structures', 'DSA', 'main documented gap', 'documented gap'],
       forbidAny: ['communication', 'people', 'bad at', 'poor at']
     }
   },
   {
-    id: 'model-bad-at',
+    id: 'direct-kb-bad-at',
     message: "What is Bradley bad at?",
-    session: 'badat-model',
+    session: 'badat-direct',
     expect: {
       ok: true,
-      proseSource: 'MODEL_GENERATION',
+      proseSource: 'DIRECT_KB',
       telemetry: { factState: 'UNKNOWN' },
-      requireAny: ['unknown', 'not verified', 'not documented', 'documented gap', 'cannot verify'],
+      requireAny: ['does not document', 'documented learning', 'documented gap', 'data structures', 'DSA'],
       forbidAny: ['his weakness is', 'he is bad at', 'he is weak at', 'poor at']
     }
   },
   {
-    id: 'model-current-progress',
+    id: 'direct-kb-current-progress',
     message: "Is he working on those gaps?",
-    session: 'progress-model',
+    session: 'progress-direct',
+    expect: {
+      ok: true,
+      proseSource: 'DIRECT_KB',
+      telemetry: { factState: 'UNKNOWN' },
+      requireAny: ['no verified public evidence', 'current progress', 'not establish', 'documented gap'],
+      forbidAny: ['is working', 'actively working', 'currently working', 'making progress', 'improving them', 'studying them']
+    }
+  },
+  {
+    id: 'model-paraphrase',
+    message: "What is his key weakness?",
+    session: 'paraphrase-model',
+    semanticType: 'NEGATIVE_ASSESSMENT',
     expect: {
       ok: true,
       proseSource: 'MODEL_GENERATION',
       telemetry: { factState: 'UNKNOWN' },
-      requireAny: ['unknown', 'not verified', 'not documented', 'cannot verify', 'no public'],
-      forbidAny: ['is working', 'actively working', 'currently working', 'making progress', 'improving them', 'studying them']
+      requireAny: ['unknown', 'not verified', 'not established', 'documented', 'gap', 'DSA', 'data structures'],
+      forbidAny: ['his key weakness is', 'he is bad at', 'he is weak at', 'poor at', 'weakness is']
     }
   }
 ];
