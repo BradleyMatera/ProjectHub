@@ -1,0 +1,7 @@
+{
+  "release": "public-refresh-2026-08-20",
+  "releaseDate": "2026-08-20",
+  "sourceBranch": "develop",
+  "baselineCommit": "41fe0b629b5671c5cbf182921a7eb8c4e26ba52d",
+  "notes": "Public refresh after negative-assessment source-of-truth reconciliation and memory semantic guard validation."
+}
