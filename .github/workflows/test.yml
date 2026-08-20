@@ -35,8 +35,8 @@ jobs:
       - name: Verify ProjectHub.js is up to date
         run: |
           cp ProjectHub.js ProjectHub.js.committed
-          cat data.js utils.js logic.js ui.js > ProjectHub.js
-          diff -q ProjectHub.js.committed ProjectHub.js || (echo "ProjectHub.js is out of date. Run: cat data.js utils.js logic.js ui.js > ProjectHub.js" && exit 1)
+          { cat data.js; printf '\n'; cat utils.js; printf '\n'; cat logic.js; printf '\n'; cat ui.js; } > ProjectHub.js
+          diff -q ProjectHub.js.committed ProjectHub.js || (echo "ProjectHub.js is out of date. Rebuild with the canonical separator-aware bundle command from test.yml" && exit 1)
 
       - name: Check server syntax
         run: node --check server-gemini.js
