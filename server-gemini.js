@@ -197,19 +197,19 @@ const DEPLOYED_AT = Date.now();
 
 function configuredInferenceHealth() {
   const provider = process.env.SCOUT_INFERENCE_PROVIDER || 'auto';
-  const localModel = localModelRouter.defaultModel() || GEN_MODEL;
+  const localFallbackModel = localModelRouter.ollamaModel() || GEN_MODEL;
   const cloudflareModel = cloudflareProvider.configuredModel();
   const primaryModel = provider === 'cloudflare'
     ? cloudflareModel
     : provider === 'ollama'
-      ? localModel
-      : (process.env.CLOUDFLARE_MODEL || localModel || cloudflareModel);
+      ? localFallbackModel
+      : (process.env.CLOUDFLARE_MODEL || cloudflareModel || localFallbackModel);
 
   return {
     provider,
     primaryModel,
     cloudflareModel,
-    localFallbackModel: localModel,
+    localFallbackModel,
     requestDeadlineMs: parseInt(process.env.REQUEST_DEADLINE_MS || '15000', 10),
     generationTimeoutMs: parseInt(process.env.GEN_TIMEOUT_MS || '12500', 10)
   };

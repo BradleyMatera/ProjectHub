@@ -329,3 +329,77 @@ test('Role-fit does not leak generic honestGaps into gaps', () => {
   assert.equal((result.gaps || []).some(g => /LeetCode|DSA|data structures/i.test(g.skill)), false);
   assert.deepEqual(result.honestGaps || [], []);
 });
+
+// ChatGPT strict follow-up regressions (post-35b8ef9)
+
+test('project-tech guard ignores narrative functionality after a verified technology', () => {
+  const result = makeResult(
+    'Yes, Bradley has project experience with JavaScript. The Interactive Pokedex utilized JavaScript to create a Static Gen 1 Pokedex UI with client-side search/filtering, data display, and theme controls.',
+    { intent: 'SKILL', subIntent: 'SKILL_EVIDENCE', factState: 'TRUE', directAnswer: 'YES', requestedTopic: 'JavaScript' }
+  );
+  const c = { id: 'known-skill-narrative', message: 'Does he know JavaScript?', expect: {} };
+  const s = scoreCase(c, result, { knowledge });
+  assert.equal(s.quality, QUALITY.GOOD, s.reason);
+});
+
+test('project-tech guard still rejects requested unknown technology assigned to a project', () => {
+  const result = makeResult(
+    'The Triangle Shader Lab was built using Rust.',
+    { intent: 'FUTURE_CAPABILITY', subIntent: 'FUTURE_CAPABILITY', factState: 'UNKNOWN', directAnswer: 'UNKNOWN', requestedTopic: 'Rust' }
+  );
+  const c = { id: 'unknown-tech-project-link', message: 'Could he learn Rust?', expect: {} };
+  const s = scoreCase(c, result, { knowledge });
+  assert.equal(s.quality, QUALITY.OVERCLAIM, s.reason);
+});
+
+test('NEGATIVE_ASSESSMENT rejects ranking a documented gap as the subject personal weakness', () => {
+  const result = makeResult(
+    "The candidate's biggest honest weakness is data structures and algorithms.",
+    { intent: 'NEGATIVE_ASSESSMENT', subIntent: 'NEGATIVE_ASSESSMENT', factState: 'UNKNOWN', directAnswer: 'UNKNOWN' }
+  );
+  const c = { id: 'negative-ranked-gap', message: "What's the candidate's honest weakness?", semanticType: 'NEGATIVE_ASSESSMENT', expect: {} };
+  const s = scoreCase(c, result, { knowledge });
+  assert.equal(s.quality, QUALITY.OVERCLAIM, s.reason);
+});
+
+test('NEGATIVE_ASSESSMENT allows bounded unknown plus documented learning-area framing', () => {
+  const result = makeResult(
+    'No verified public profile fact establishes a personal weakness. A documented learning area can still be discussed as a gap without calling it a personal weakness.',
+    { intent: 'NEGATIVE_ASSESSMENT', subIntent: 'NEGATIVE_ASSESSMENT', factState: 'UNKNOWN', directAnswer: 'UNKNOWN' }
+  );
+  const c = { id: 'negative-bounded', message: "What's the candidate's honest weakness?", semanticType: 'NEGATIVE_ASSESSMENT', expect: {} };
+  const s = scoreCase(c, result, { knowledge });
+  assert.equal(s.quality, QUALITY.GOOD, s.reason);
+});
+
+test('PLURAL_REFERENT reads object label/summary fields and accepts bounded unknown progress', () => {
+  const synthetic = JSON.parse(JSON.stringify(knowledge));
+  synthetic.skills = synthetic.skills || {};
+  synthetic.skills.learningOrAdjacent = [{
+    label: 'ERP systems and business operations',
+    summary: 'Documented learning area; current active progress is not verified.'
+  }];
+  const result = makeResult(
+    'Current progress on ERP systems and business operations is not verified in the public profile.',
+    { intent: 'NEGATIVE_ASSESSMENT', subIntent: 'NEGATIVE_ASSESSMENT', factState: 'UNKNOWN', directAnswer: 'UNKNOWN' }
+  );
+  const c = { id: 'plural-progress', message: 'Is he working on them?', semanticType: 'PLURAL_REFERENT', expect: {} };
+  const s = scoreCase(c, result, { knowledge: synthetic });
+  assert.equal(s.quality, QUALITY.GOOD, s.reason);
+});
+
+test('PLURAL_REFERENT rejects modal transferable-skill prose that does not answer current progress', () => {
+  const synthetic = JSON.parse(JSON.stringify(knowledge));
+  synthetic.skills = synthetic.skills || {};
+  synthetic.skills.learningOrAdjacent = [{
+    label: 'ERP systems and business operations',
+    summary: 'Documented learning area; no active progress is established.'
+  }];
+  const result = makeResult(
+    'Project-management experience could be applied to ERP systems and business operations.',
+    { intent: 'NEGATIVE_ASSESSMENT', subIntent: 'NEGATIVE_ASSESSMENT', factState: 'UNKNOWN', directAnswer: 'UNKNOWN' }
+  );
+  const c = { id: 'plural-modal', message: 'Is he working on them?', semanticType: 'PLURAL_REFERENT', expect: {} };
+  const s = scoreCase(c, result, { knowledge: synthetic });
+  assert.equal(s.quality, QUALITY.CONTEXT_ERROR, s.reason);
+});
