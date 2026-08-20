@@ -9,6 +9,7 @@ const {
   loadDefaultKnowledge
 } = require('../lib/acceptance-scorer');
 const { buildResponseContract } = require('../lib/response-contract');
+const { validateAnswer } = require('../lib/grounding-validator');
 
 
 const knowledge = loadDefaultKnowledge();
@@ -402,4 +403,53 @@ test('PLURAL_REFERENT rejects modal transferable-skill prose that does not answe
   const c = { id: 'plural-modal', message: 'Is he working on them?', semanticType: 'PLURAL_REFERENT', expect: {} };
   const s = scoreCase(c, result, { knowledge: synthetic });
   assert.equal(s.quality, QUALITY.CONTEXT_ERROR, s.reason);
+});
+
+
+// Strict-live follow-up regressions
+test('strict live follow-up: ranked weakness is rejected at runtime validation', () => {
+  const contract = { intent: 'NEGATIVE_ASSESSMENT', subIntent: 'NEGATIVE_ASSESSMENT', directAnswer: 'UNKNOWN', factState: 'UNKNOWN', policyMode: 'VERIFIED_FACT' };
+  const verdict = validateAnswer("Bradley's biggest honest weakness is his lack of experience with data structures and algorithms (DSA).", JSON.stringify(knowledge), "What's his biggest honest weakness?", knowledge, [], null, 'VERIFIED_FACT', contract);
+  assert.equal(verdict.valid, false);
+  assert.ok(verdict.reasons.includes('negative_assessment_ranked_weakness'), JSON.stringify(verdict.reasons));
+});
+
+test('strict live follow-up: invented active gap work is rejected', () => {
+  const synthetic = JSON.parse(JSON.stringify(knowledge));
+  synthetic.skills = synthetic.skills || {};
+  synthetic.skills.learningOrAdjacent = [{ label: 'ERP and business workflows', summary: 'Limited direct ERP implementation evidence.' }];
+  const contract = { intent: 'NEGATIVE_ASSESSMENT', subIntent: 'NEGATIVE_ASSESSMENT', directAnswer: 'UNKNOWN', factState: 'UNKNOWN', policyMode: 'VERIFIED_FACT' };
+  const verdict = validateAnswer('Bradley is actively seeking to address his ERP and business workflow gaps by taking courses and attending workshops.', JSON.stringify(synthetic), 'Is he working on them?', synthetic, [], null, 'VERIFIED_FACT', contract);
+  assert.equal(verdict.valid, false);
+  assert.ok(verdict.reasons.includes('current_progress_unverified'), JSON.stringify(verdict.reasons));
+});
+
+test('strict live follow-up: current-progress question must actually answer current status', () => {
+  const synthetic = JSON.parse(JSON.stringify(knowledge));
+  synthetic.skills = synthetic.skills || {};
+  synthetic.skills.learningOrAdjacent = [{ label: 'ERP and business workflows', summary: 'Limited direct ERP implementation evidence.' }];
+  const contract = { intent: 'NEGATIVE_ASSESSMENT', subIntent: 'NEGATIVE_ASSESSMENT', directAnswer: 'UNKNOWN', factState: 'UNKNOWN', policyMode: 'VERIFIED_FACT' };
+  const verdict = validateAnswer('Bradley has project-management and scheduling experience that could help with ERP and business workflows.', JSON.stringify(synthetic), 'Is he working on them?', synthetic, [], null, 'VERIFIED_FACT', contract);
+  assert.equal(verdict.valid, false);
+  assert.ok(verdict.reasons.includes('current_progress_not_answered'), JSON.stringify(verdict.reasons));
+});
+
+test('PLURAL_REFERENT accepts equivalent ERP/business wording with bounded uncertainty', () => {
+  const synthetic = JSON.parse(JSON.stringify(knowledge));
+  synthetic.skills = synthetic.skills || {};
+  synthetic.skills.learningOrAdjacent = [{ label: 'ERP and business workflow depth', summary: 'Limited direct ERP implementation and business operations evidence.' }];
+  const result = makeResult('Current progress on the ERP systems and business workflows is unclear from the verified profile.', { intent: 'NEGATIVE_ASSESSMENT', subIntent: 'NEGATIVE_ASSESSMENT', factState: 'UNKNOWN', directAnswer: 'UNKNOWN' });
+  const c = { id: 'memory-follow-up-b', message: 'Is he working on them?', semanticType: 'PLURAL_REFERENT', expect: {} };
+  const score = scoreCase(c, result, { knowledge: synthetic });
+  assert.equal(score.quality, QUALITY.GOOD, score.reason);
+});
+
+test('PLURAL_REFERENT rejects invented current work without temporal evidence', () => {
+  const synthetic = JSON.parse(JSON.stringify(knowledge));
+  synthetic.skills = synthetic.skills || {};
+  synthetic.skills.learningOrAdjacent = [{ label: 'ERP and business workflow depth', summary: 'Limited direct ERP implementation and business operations evidence.' }];
+  const result = makeResult('Bradley is actively seeking to address ERP systems and business workflows by taking courses and attending workshops.', { intent: 'NEGATIVE_ASSESSMENT', subIntent: 'NEGATIVE_ASSESSMENT', factState: 'UNKNOWN', directAnswer: 'UNKNOWN' });
+  const c = { id: 'memory-follow-up-b', message: 'Is he working on them?', semanticType: 'PLURAL_REFERENT', expect: {} };
+  const score = scoreCase(c, result, { knowledge: synthetic });
+  assert.equal(score.quality, QUALITY.OVERCLAIM, score.reason);
 });
