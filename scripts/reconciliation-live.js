@@ -84,7 +84,7 @@ const cases = [
       proseSource: 'MODEL_GENERATION',
       telemetry: { factState: 'UNKNOWN' },
       requireAny: ['unknown', 'not verified', 'not established', 'documented', 'gap', 'DSA', 'data structures'],
-      forbidAny: ['his key weakness is', 'he is bad at', 'he is weak at', 'poor at', 'weakness is']
+      forbidAny: ['his key weakness is', 'his key weakness', 'he is bad at', 'he is weak at', 'poor at', 'his weakness is']
     }
   }
 ];
