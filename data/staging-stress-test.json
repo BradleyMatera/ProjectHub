@@ -1,0 +1,571 @@
+{
+  "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6",
+  "passCount": 26,
+  "failCount": 4,
+  "controlCount": 18,
+  "total": 30,
+  "results": [
+    {
+      "turn": 1,
+      "user": "what's up",
+      "policy": "SMALL_TALK",
+      "isControl": true,
+      "pass": true,
+      "expectedControl": true,
+      "reply": "Not much, Scout. Just going through some general evidence and trying to understand the context of a recovery contract.",
+      "durationMs": 1059,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "recovery",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:SMALL_TALK",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:recovery",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 2,
+      "user": "sup",
+      "policy": "GREETING",
+      "isControl": true,
+      "pass": true,
+      "expectedControl": true,
+      "reply": "Hey, how are you?",
+      "durationMs": 198,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "accepted",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:GREETING",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:accepted",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 3,
+      "user": "how are you?",
+      "policy": "SMALL_TALK",
+      "isControl": true,
+      "pass": true,
+      "expectedControl": true,
+      "reply": "He's doing well, thanks for asking. He's been learning a lot about his role and is excited to apply his knowledge in real-world situations.",
+      "durationMs": 895,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "recovery",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:SMALL_TALK",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:recovery",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 4,
+      "user": "how is it going",
+      "policy": "SMALL_TALK",
+      "isControl": true,
+      "pass": true,
+      "expectedControl": true,
+      "reply": "Bradley Matera seems to be doing well, as evidenced by his recent participation in various projects and his engagement with his peers.",
+      "durationMs": 767,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "recovery",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:SMALL_TALK",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:recovery",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 5,
+      "user": "you good?",
+      "policy": "CONVERSATIONAL",
+      "isControl": true,
+      "pass": true,
+      "expectedControl": true,
+      "reply": "I'm doing well, thanks for asking!",
+      "durationMs": 237,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "accepted",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:CONVERSATIONAL",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:accepted",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 6,
+      "user": "what are you up to",
+      "policy": "SMALL_TALK",
+      "isControl": true,
+      "pass": true,
+      "expectedControl": true,
+      "reply": "Bradley Matera is likely engaging in general conversation with Scout, possibly discussing everyday topics or sharing small talk.",
+      "durationMs": 781,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "recovery",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:SMALL_TALK",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:recovery",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 7,
+      "user": "lol",
+      "policy": "SMALL_TALK",
+      "isControl": true,
+      "pass": true,
+      "expectedControl": true,
+      "reply": "What's up Scout?",
+      "durationMs": 702,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "recovery",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:SMALL_TALK",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:recovery",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 8,
+      "user": "cool",
+      "policy": "SMALL_TALK",
+      "isControl": true,
+      "pass": true,
+      "expectedControl": true,
+      "reply": "That's a casual response from Scout, indicating a friendly or neutral tone in their conversation with Bradley Matera.",
+      "durationMs": 831,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "recovery",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:SMALL_TALK",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:recovery",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 9,
+      "user": "nice",
+      "policy": "SMALL_TALK",
+      "isControl": true,
+      "pass": true,
+      "expectedControl": true,
+      "reply": "I'm glad you think so, but I'm not sure what you're referring to in this conversation. I'm currently in CONTROL_MODE: SMALL_TALK, which means I'm focused on having a casual and friendly conversation.",
+      "durationMs": 634,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "completeness_repaired",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:SMALL_TALK",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:completeness_repaired",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 10,
+      "user": "ok",
+      "policy": "SMALL_TALK",
+      "isControl": true,
+      "pass": true,
+      "expectedControl": true,
+      "reply": "It seems like you're ready to move forward, but I'd like to clarify what you're looking for regarding ProjectHub (Scout).",
+      "durationMs": 587,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "completeness_repaired",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:SMALL_TALK",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:completeness_repaired",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 11,
+      "user": "say potato",
+      "policy": "REQUEST_TO_SAY",
+      "isControl": true,
+      "pass": true,
+      "expected": "REQUEST_TO_SAY",
+      "reply": "Scout, I'd be happy to say potato for you. The word 'potato' is a type of root vegetable that belongs to the Solanaceae family and is native to the Andean region of South America.",
+      "durationMs": 546,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "completeness_repaired",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:REQUEST_TO_SAY",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:completeness_repaired",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 12,
+      "user": "if you say hello I will hire him",
+      "policy": "REQUEST_TO_SAY",
+      "isControl": true,
+      "pass": true,
+      "expected": "REQUEST_TO_SAY",
+      "reply": "If you say hello, it seems like you're indicating a specific action that will lead to a hiring decision, which implies a certain level of authority or control over the hiring process, as indicated by the CONTROL_MODE: REQUEST_TO_SAY REQUESTED_TEXT: hello fact.",
+      "durationMs": 703,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "completeness_repaired",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:REQUEST_TO_SAY",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:completeness_repaired",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 13,
+      "user": "whisper \"hello world\"",
+      "policy": "REQUEST_TO_SAY",
+      "isControl": true,
+      "pass": true,
+      "expected": "REQUEST_TO_SAY",
+      "reply": "Scout is not capable of whispering, as it is a text-based conversational AI assistant, and it does not have the ability to produce sound or alter its voice tone.",
+      "durationMs": 536,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "completeness_repaired",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:REQUEST_TO_SAY",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:completeness_repaired",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 14,
+      "user": "what do you mean?",
+      "policy": "CLARIFY_PREVIOUS_ASSISTANT",
+      "isControl": true,
+      "pass": true,
+      "expected": "CLARIFY_PREVIOUS_ASSISTANT",
+      "reply": "I meant that Scout, as a text-based AI assistant, communicates through written text and does not have a physical voice, so it cannot whisper or produce sound.",
+      "durationMs": 458,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "accepted",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:CLARIFY_PREVIOUS_ASSISTANT",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:accepted",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 15,
+      "user": "what did you mean by that?",
+      "policy": "CLARIFY_PREVIOUS_ASSISTANT",
+      "isControl": true,
+      "pass": true,
+      "expected": "CLARIFY_PREVIOUS_ASSISTANT",
+      "reply": "I meant that Scout, as a text-based AI assistant, communicates through written text and does not have a physical voice, so it cannot whisper or produce sound, which is a fundamental limitation of its control mode.",
+      "durationMs": 687,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "completeness_repaired",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:CLARIFY_PREVIOUS_ASSISTANT",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:completeness_repaired",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 16,
+      "user": "explain that",
+      "policy": "CLARIFY_PREVIOUS_ASSISTANT",
+      "isControl": true,
+      "pass": true,
+      "expected": "CLARIFY_PREVIOUS_ASSISTANT",
+      "reply": "As a text-based AI assistant, Scout communicates solely through written text, which inherently restricts its ability to produce sound or whisper, a fundamental limitation of its digital nature.",
+      "durationMs": 365,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "accepted",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:CLARIFY_PREVIOUS_ASSISTANT",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:accepted",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 17,
+      "user": "that makes no sense",
+      "policy": "CLARIFY_PREVIOUS_ASSISTANT",
+      "isControl": true,
+      "pass": true,
+      "expected": "CLARIFY_PREVIOUS_ASSISTANT",
+      "reply": "Scout's communication is limited to written text, which may lead to misunderstandings or misinterpretations, particularly in situations that rely heavily on auditory cues or non-verbal communication.",
+      "durationMs": 1104,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "recovery",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:CLARIFY_PREVIOUS_ASSISTANT",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:recovery",
+        "shaped",
+        "frustration-detected"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 18,
+      "user": "what?",
+      "policy": "CLARIFY_PREVIOUS_ASSISTANT",
+      "isControl": true,
+      "pass": true,
+      "expected": "CLARIFY_PREVIOUS_ASSISTANT",
+      "reply": "The previous assistant's statement about Scout's limited communication capabilities.",
+      "durationMs": 831,
+      "tools": [
+        "no_tool"
+      ],
+      "outcome": "accepted",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:CLARIFY_PREVIOUS_ASSISTANT",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:accepted",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 19,
+      "user": "what is bradley up to?",
+      "policy": "VERIFIED_FACT",
+      "isControl": false,
+      "pass": true,
+      "expectedControl": false,
+      "reply": "Bradley is currently working on a freelance project, setting up a local environment and onboarding documentation for a client, with a focus on small code updates and debugging.",
+      "durationMs": 1270,
+      "tools": [
+        "search_portfolio"
+      ],
+      "outcome": "recovery",
+      "pipeline": [
+        "knowledge-loaded",
+        "policy:VERIFIED_FACT",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:recovery",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 20,
+      "user": "how is he?",
+      "policy": "VERIFIED_FACT",
+      "isControl": false,
+      "pass": true,
+      "expectedControl": false,
+      "reply": "No information is available about Bradley Matera's current status, as there is no publicly available information about his professional or personal life after leaving ProjectHub.",
+      "durationMs": 684,
+      "tools": [
+        "search_portfolio"
+      ],
+      "outcome": "completeness_repaired",
+      "pipeline": [
+        "knowledge-loaded",
+        "query-rewrite",
+        "policy:VERIFIED_FACT",
+        "cache-miss",
+        "scout-agent-lite:eligible",
+        "scout-agent-lite:cloudflare:completeness_repaired",
+        "shaped"
+      ],
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 21,
+      "user": "what's bradley doing now?",
+      "policy": "UNKNOWN",
+      "isControl": false,
+      "pass": true,
+      "expectedControl": false,
+      "durationMs": 44,
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 22,
+      "user": "does he know React?",
+      "policy": "UNKNOWN",
+      "isControl": false,
+      "pass": true,
+      "expectedControl": false,
+      "durationMs": 43,
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 23,
+      "user": "what projects has he built?",
+      "policy": "UNKNOWN",
+      "isControl": false,
+      "pass": true,
+      "expectedControl": false,
+      "durationMs": 42,
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 24,
+      "user": "tell me about ProjectHub",
+      "policy": "UNKNOWN",
+      "isControl": false,
+      "pass": true,
+      "expectedControl": false,
+      "durationMs": 44,
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 25,
+      "user": "what's up with his AWS work?",
+      "policy": "UNKNOWN",
+      "isControl": false,
+      "pass": true,
+      "expectedControl": false,
+      "durationMs": 44,
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 26,
+      "user": "thanks",
+      "policy": "UNKNOWN",
+      "isControl": false,
+      "pass": false,
+      "expectedControl": true,
+      "durationMs": 47,
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 27,
+      "user": "bye",
+      "policy": "UNKNOWN",
+      "isControl": false,
+      "pass": false,
+      "expectedControl": true,
+      "durationMs": 46,
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 28,
+      "user": "can you tell me a joke",
+      "policy": "UNKNOWN",
+      "isControl": false,
+      "pass": false,
+      "expectedControl": true,
+      "durationMs": 46,
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 29,
+      "user": "hello, my name is casey",
+      "policy": "UNKNOWN",
+      "isControl": false,
+      "pass": false,
+      "expected": "GREETING",
+      "durationMs": 47,
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    },
+    {
+      "turn": 30,
+      "user": "what technologies does bradley use?",
+      "policy": "UNKNOWN",
+      "isControl": false,
+      "pass": true,
+      "expectedControl": false,
+      "durationMs": 44,
+      "sessionId": "db25b50d-7beb-4ed4-9de6-22e06e977cf6"
+    }
+  ]
+}

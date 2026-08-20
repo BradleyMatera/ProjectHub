@@ -462,13 +462,14 @@ test('P6: "no proof" wrapper parses as NEGATIVE polarity', () => {
   assert.equal(claim.premisePolarity, 'NEGATIVE', 'Should have NEGATIVE polarity');
 });
 
-test('P6: NEGATIVE + UNSUPPORTED → AFFIRM_NEGATION', () => {
+test('P6: NEGATIVE + UNSUPPORTED → QUALIFY (open-world; do not affirm negation)', () => {
   const result = classifyResponsePolicy("She didn't go to Le Cordon Bleu, right?", [], testKnowledge);
   assert.equal(result.mode, 'VERIFIED_FACT', 'NEGATIVE+UNSUPPORTED should be VERIFIED_FACT');
   assert.equal(result.premisePolarity, 'NEGATIVE');
   assert.equal(result.evidenceStatus, 'UNSUPPORTED');
-  assert.equal(result.answerStance, 'AFFIRM_NEGATION');
-  assert.equal(result.isNegationConfirmation, true);
+  assert.equal(result.answerStance, 'QUALIFY', 'open-world: no verified evidence to affirm the negation');
+  assert.equal(result.directAnswer, 'UNKNOWN', 'unknown because the absence of evidence is not a denial');
+  assert.equal(result.isNegationConfirmation, false);
 });
 
 test('P6: NEGATIVE + SUPPORTED → DENY_NEGATION', () => {
@@ -479,11 +480,9 @@ test('P6: NEGATIVE + SUPPORTED → DENY_NEGATION', () => {
   assert.equal(result.answerStance, 'DENY_NEGATION');
 });
 
-test('P6: POSITIVE + UNSUPPORTED → DENY (FALSE_CLAIM_DENIAL)', () => {
+test('P6: POSITIVE + UNKNOWN OPEN-WORLD CLAIM → QUALIFY (not FALSE_CLAIM_DENIAL)', () => {
   const result = classifyResponsePolicy('She was a senior chef at Google, right?', [], testKnowledge);
-  assert.equal(result.mode, 'FALSE_CLAIM_DENIAL', 'POSITIVE+UNSUPPORTED should be FALSE_CLAIM_DENIAL');
-  assert.equal(result.premisePolarity, 'POSITIVE');
-  assert.equal(result.answerStance, 'DENY');
+  assert.notEqual(result.mode, 'FALSE_CLAIM_DENIAL', 'open-world unsupported claim must not be denied as false');
 });
 
 // ============ P7: OOS Semantic Policy Validator ============

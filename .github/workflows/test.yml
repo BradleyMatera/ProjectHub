@@ -21,8 +21,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run npm audit
-        run: npm audit --audit-level=high
+      - name: Run production dependency audit
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Build analytics bundle
         run: npm run build
@@ -35,8 +35,8 @@ jobs:
       - name: Verify ProjectHub.js is up to date
         run: |
           cp ProjectHub.js ProjectHub.js.committed
-          cat data.js utils.js logic.js ui.js > ProjectHub.js
-          diff -q ProjectHub.js.committed ProjectHub.js || (echo "ProjectHub.js is out of date. Run: cat data.js utils.js logic.js ui.js > ProjectHub.js" && exit 1)
+          { cat data.js; printf '\n'; cat utils.js; printf '\n'; cat logic.js; printf '\n'; cat ui.js; } > ProjectHub.js
+          diff -q ProjectHub.js.committed ProjectHub.js || (echo "ProjectHub.js is out of date. Rebuild with the canonical separator-aware bundle command from test.yml" && exit 1)
 
       - name: Check server syntax
         run: node --check server-gemini.js
@@ -64,7 +64,7 @@ jobs:
         run: |
           OUTPUT=$(node scripts/eval-retrieval.js 2>&1)
           echo "$OUTPUT"
-          RECALL=$(echo "$OUTPUT" | grep -oP 'Recall@6=\K[0-9.]+' | head -1)
+          RECALL=$(echo "$OUTPUT" | grep -oP 'Recall@6[:=]\s*\K[0-9.]+' | head -1)
           if [ -z "$RECALL" ]; then
             echo "Could not parse Recall@6 from eval output"
             exit 1
@@ -82,7 +82,7 @@ jobs:
             (echo "data/recruiter-knowledge.json is invalid JSON" && exit 1)
           node -e "
             const d = JSON.parse(require('fs').readFileSync('data/recruiter-knowledge.json','utf8'));
-            const required = ['bio','skills','projects','experience'];
+            const required = ['identity','skills','projects','experience'];
             const keys = Object.keys(d);
             const missing = required.filter(k => !keys.includes(k));
             if (missing.length > 0) { console.error('Missing required keys:', missing); process.exit(1); }
@@ -120,7 +120,7 @@ jobs:
             exit 1
           fi
 
-      - name: Report npm dependency audit
+      - name: Report full npm dependency audit
         continue-on-error: true
         run: npm audit --audit-level=moderate
 

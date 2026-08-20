@@ -1,0 +1,2070 @@
+{
+  "gateRunId": "reconciliation-live-2026-08-20T22-46-11-986Z",
+  "runtimeSHA": "unknown",
+  "label": "negative-assessment source-of-truth reconciliation",
+  "health": {
+    "ok": true,
+    "status": "online",
+    "deployedAt": 1787265773417,
+    "build": {
+      "sourceRepository": "BradleyMatera/ProjectHub",
+      "sourceBranch": "develop",
+      "sourceCommit": "9aa91687d2e4999560469f70322c3d4be81485c6",
+      "deployedAt": "2026-08-20T22:42:20.006Z",
+      "generatedBy": "manual-deploy-dev"
+    },
+    "buildEnv": {
+      "sourceRepository": "BradleyMatera/ProjectHub",
+      "sourceBranch": "develop",
+      "sourceCommit": "9aa91687d2e4999560469f70322c3d4be81485c6",
+      "agentMode": "lite",
+      "provider": "cloudflare",
+      "primaryModel": "@cf/meta/llama-3.2-3b-instruct",
+      "cloudflareModel": "@cf/meta/llama-3.2-3b-instruct",
+      "localFallbackModel": "qwen2.5:1.5b",
+      "deadlineMs": 15000,
+      "generationTimeoutMs": 12500
+    },
+    "uptimeSeconds": 198,
+    "totalRequestsServed": 11,
+    "lastReplyProvider": "cloudflare",
+    "allTimeRequests": 1921,
+    "groundedCount": 0,
+    "llmCount": 1383,
+    "cachedCount": 538,
+    "providerBreakdown": {
+      "cached": 538,
+      "knowledge-base": 9,
+      "cloudflare": 1
+    },
+    "deployCount": 50,
+    "firstDeployAt": 1786997622173,
+    "recentRequests": [
+      {
+        "q": "What is his key weakness?",
+        "provider": "cached",
+        "ts": 1787265888899,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 4,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "No personal weakness is verified or documented.",
+        "groundedReply": "No personal weakness is verified or documented."
+      },
+      {
+        "q": "Is he working on those gaps?",
+        "provider": "knowledge-base",
+        "ts": 1787265888848,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 6,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "direct-kb"
+        ],
+        "reply": "There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them.",
+        "groundedReply": "There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them."
+      },
+      {
+        "q": "What is Bradley bad at?",
+        "provider": "knowledge-base",
+        "ts": 1787265888792,
+        "referrer": "unknown",
+        "topic": "uncategorized",
+        "latencyMs": 7,
+        "pipeline": [
+          "knowledge-loaded",
+          "policy:VERIFIED_FACT",
+          "direct-kb"
+        ],
+        "reply": "The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right data structure or algorithm for unfamiliar production problems, ERP concepts and business workflows, and software support and user support fundame",
+        "groundedReply": "The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right data structure or algorithm for unfamiliar production problems, ERP concepts and business workflows, and software support and user support fundame"
+      },
+      {
+        "q": "What is his main weakness?",
+        "provider": "knowledge-base",
+        "ts": 1787265888734,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 6,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "direct-kb"
+        ],
+        "reply": "His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+        "groundedReply": "His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship."
+      },
+      {
+        "q": "What is Bradley's biggest weakness?",
+        "provider": "knowledge-base",
+        "ts": 1787265888675,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 15,
+        "pipeline": [
+          "knowledge-loaded",
+          "policy:VERIFIED_FACT",
+          "direct-kb"
+        ],
+        "reply": "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+        "groundedReply": "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship."
+      },
+      {
+        "q": "What is his key weakness?",
+        "provider": "cloudflare",
+        "ts": 1787265789024,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 1169,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-miss",
+          "scout-agent-lite:eligible",
+          "scout-agent-lite:cloudflare:recovery",
+          "shaped"
+        ],
+        "reply": "No personal weakness is verified or documented."
+      },
+      {
+        "q": "Is he working on those gaps?",
+        "provider": "knowledge-base",
+        "ts": 1787265787799,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 8,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "direct-kb"
+        ],
+        "reply": "There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them.",
+        "groundedReply": "There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them."
+      },
+      {
+        "q": "What is Bradley bad at?",
+        "provider": "knowledge-base",
+        "ts": 1787265787733,
+        "referrer": "unknown",
+        "topic": "uncategorized",
+        "latencyMs": 11,
+        "pipeline": [
+          "knowledge-loaded",
+          "policy:VERIFIED_FACT",
+          "direct-kb"
+        ],
+        "reply": "The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right data structure or algorithm for unfamiliar production problems, ERP concepts and business workflows, and software support and user support fundame",
+        "groundedReply": "The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right data structure or algorithm for unfamiliar production problems, ERP concepts and business workflows, and software support and user support fundame"
+      },
+      {
+        "q": "What is his main weakness?",
+        "provider": "knowledge-base",
+        "ts": 1787265787667,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 11,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "direct-kb"
+        ],
+        "reply": "His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+        "groundedReply": "His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship."
+      },
+      {
+        "q": "What is Bradley's biggest weakness?",
+        "provider": "knowledge-base",
+        "ts": 1787265787597,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 26,
+        "pipeline": [
+          "knowledge-loaded",
+          "policy:VERIFIED_FACT",
+          "direct-kb"
+        ],
+        "reply": "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+        "groundedReply": "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship."
+      },
+      {
+        "q": "What is ProjectHub?",
+        "provider": "knowledge-base",
+        "ts": 1787265774094,
+        "referrer": "bradleymatera.github.io",
+        "topic": "projects",
+        "latencyMs": 34,
+        "pipeline": [
+          "knowledge-loaded",
+          "policy:VERIFIED_FACT",
+          "direct-kb"
+        ],
+        "reply": "ProjectHub is an embeddable, AI-powered recruiter chat widget and portfolio site that showcases Bradley Matera's web development projects and CodePens. It is built with vanilla JavaScript and served from GitHub Pages, and its live analytics dashboard is built with Vite and Carbon. It is powered by Scout, a portable generative intelligence engine Bradley is building.",
+        "groundedReply": "ProjectHub is an embeddable, AI-powered recruiter chat widget and portfolio site that showcases Bradley Matera's web development projects and CodePens. It is built with vanilla JavaScript and served from GitHub Pages, and its live analytics dashboard is built with Vite and Carbon. It is powered by Scout, a portable generative intelligence engine Bradley is building."
+      },
+      {
+        "q": "What are his honest weaknesses?",
+        "provider": "cached",
+        "ts": 1787259210088,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 5,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "No personal weaknesses are verified or documented. Bradley is currently learning and refreshing C#/.NET fundamentals, ERP concepts and business workflows, as well as software support and user support fundamentals.",
+        "groundedReply": "No personal weaknesses are verified or documented. Bradley is currently learning and refreshing C#/.NET fundamentals, ERP concepts and business workflows, as well as software support and user support fundamentals."
+      },
+      {
+        "q": "What are his honest weaknesses?",
+        "provider": "cached",
+        "ts": 1787259151475,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 2,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "No personal weaknesses are verified or documented. Bradley is currently learning and refreshing C#/.NET fundamentals, ERP concepts and business workflows, as well as software support and user support fundamentals.",
+        "groundedReply": "No personal weaknesses are verified or documented. Bradley is currently learning and refreshing C#/.NET fundamentals, ERP concepts and business workflows, as well as software support and user support fundamentals."
+      },
+      {
+        "q": "What are his honest weaknesses?",
+        "provider": "cached",
+        "ts": 1787259145501,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 11,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "No personal weaknesses are verified or documented. Bradley is currently learning and refreshing C#/.NET fundamentals, ERP concepts and business workflows, as well as software support and user support fundamentals.",
+        "groundedReply": "No personal weaknesses are verified or documented. Bradley is currently learning and refreshing C#/.NET fundamentals, ERP concepts and business workflows, as well as software support and user support fundamentals."
+      },
+      {
+        "q": "What are his honest weaknesses?",
+        "provider": "cached",
+        "ts": 1787259135331,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 4,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "No personal weaknesses are verified or documented. Bradley is currently learning and refreshing C#/.NET fundamentals, ERP concepts and business workflows, as well as software support and user support fundamentals.",
+        "groundedReply": "No personal weaknesses are verified or documented. Bradley is currently learning and refreshing C#/.NET fundamentals, ERP concepts and business workflows, as well as software support and user support fundamentals."
+      },
+      {
+        "q": "What are his honest weaknesses?",
+        "provider": "cached",
+        "ts": 1787259125733,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 10,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "No personal weaknesses are verified or documented. Bradley is currently learning and refreshing C#/.NET fundamentals, ERP concepts and business workflows, as well as software support and user support fundamentals.",
+        "groundedReply": "No personal weaknesses are verified or documented. Bradley is currently learning and refreshing C#/.NET fundamentals, ERP concepts and business workflows, as well as software support and user support fundamentals."
+      },
+      {
+        "q": "What's his honest weakness?",
+        "provider": "cached",
+        "ts": 1787259111299,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 6,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "No personal weakness is verified or documented.",
+        "groundedReply": "No personal weakness is verified or documented."
+      },
+      {
+        "q": "What's his honest weakness?",
+        "provider": "cached",
+        "ts": 1787259107238,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 4,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "No personal weakness is verified or documented.",
+        "groundedReply": "No personal weakness is verified or documented."
+      },
+      {
+        "q": "What's his honest weakness?",
+        "provider": "cached",
+        "ts": 1787259103173,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 5,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "No personal weakness is verified or documented.",
+        "groundedReply": "No personal weakness is verified or documented."
+      },
+      {
+        "q": "What's his honest weakness?",
+        "provider": "cached",
+        "ts": 1787259099096,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 19,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "No personal weakness is verified or documented.",
+        "groundedReply": "No personal weakness is verified or documented."
+      },
+      {
+        "q": "What are his honest weaknesses?",
+        "provider": "cached",
+        "ts": 1787256704871,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 11,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "Bradley's honest weaknesses include a lack of direct experience with ERP systems and business workflows, which he is currently learning and refreshing through his studies and interests.",
+        "groundedReply": "Bradley's honest weaknesses include a lack of direct experience with ERP systems and business workflows, which he is currently learning and refreshing through his studies and interests."
+      },
+      {
+        "q": "What are his honest weaknesses?",
+        "provider": "cached",
+        "ts": 1787256696013,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 2,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "Bradley's honest weaknesses include a lack of direct experience with ERP systems and business workflows, which he is currently learning and refreshing through his studies and interests.",
+        "groundedReply": "Bradley's honest weaknesses include a lack of direct experience with ERP systems and business workflows, which he is currently learning and refreshing through his studies and interests."
+      },
+      {
+        "q": "What are his honest weaknesses?",
+        "provider": "cached",
+        "ts": 1787256685577,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 3,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "Bradley's honest weaknesses include a lack of direct experience with ERP systems and business workflows, which he is currently learning and refreshing through his studies and interests.",
+        "groundedReply": "Bradley's honest weaknesses include a lack of direct experience with ERP systems and business workflows, which he is currently learning and refreshing through his studies and interests."
+      },
+      {
+        "q": "What are his honest weaknesses?",
+        "provider": "cached",
+        "ts": 1787256676075,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 10,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "Bradley's honest weaknesses include a lack of direct experience with ERP systems and business workflows, which he is currently learning and refreshing through his studies and interests.",
+        "groundedReply": "Bradley's honest weaknesses include a lack of direct experience with ERP systems and business workflows, which he is currently learning and refreshing through his studies and interests."
+      },
+      {
+        "q": "But can he learn Rust?",
+        "provider": "cached",
+        "ts": 1787256661983,
+        "referrer": "unknown",
+        "topic": "uncategorized",
+        "latencyMs": 4,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "There is no verified project evidence of rust, but Bradley could potentially learn Rust if needed.",
+        "groundedReply": "There is no verified project evidence of rust, but Bradley could potentially learn Rust if needed."
+      },
+      {
+        "q": "But can he learn Rust?",
+        "provider": "cached",
+        "ts": 1787256657922,
+        "referrer": "unknown",
+        "topic": "uncategorized",
+        "latencyMs": 3,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "There is no verified project evidence of rust, but Bradley could potentially learn Rust if needed.",
+        "groundedReply": "There is no verified project evidence of rust, but Bradley could potentially learn Rust if needed."
+      },
+      {
+        "q": "But can he learn Rust?",
+        "provider": "cached",
+        "ts": 1787256653846,
+        "referrer": "unknown",
+        "topic": "uncategorized",
+        "latencyMs": 6,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "There is no verified project evidence of rust, but Bradley could potentially learn Rust if needed.",
+        "groundedReply": "There is no verified project evidence of rust, but Bradley could potentially learn Rust if needed."
+      },
+      {
+        "q": "But can he learn Rust?",
+        "provider": "cached",
+        "ts": 1787256649769,
+        "referrer": "unknown",
+        "topic": "uncategorized",
+        "latencyMs": 10,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "There is no verified project evidence of rust, but Bradley could potentially learn Rust if needed.",
+        "groundedReply": "There is no verified project evidence of rust, but Bradley could potentially learn Rust if needed."
+      },
+      {
+        "q": "Does he know JavaScript?",
+        "provider": "cached",
+        "ts": 1787256640309,
+        "referrer": "unknown",
+        "topic": "uncategorized",
+        "latencyMs": 4,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:SKILL_EVIDENCE",
+          "cache-hit"
+        ],
+        "reply": "Yes, Bradley is familiar with JavaScript and has used it for the Interactive Pokedex project.",
+        "groundedReply": "Yes, Bradley is familiar with JavaScript and has used it for the Interactive Pokedex project."
+      },
+      {
+        "q": "Does he know JavaScript?",
+        "provider": "cached",
+        "ts": 1787256636246,
+        "referrer": "unknown",
+        "topic": "uncategorized",
+        "latencyMs": 3,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:SKILL_EVIDENCE",
+          "cache-hit"
+        ],
+        "reply": "Yes, Bradley is familiar with JavaScript and has used it for the Interactive Pokedex project.",
+        "groundedReply": "Yes, Bradley is familiar with JavaScript and has used it for the Interactive Pokedex project."
+      },
+      {
+        "q": "Does he know JavaScript?",
+        "provider": "cached",
+        "ts": 1787256632184,
+        "referrer": "unknown",
+        "topic": "uncategorized",
+        "latencyMs": 2,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:SKILL_EVIDENCE",
+          "cache-hit"
+        ],
+        "reply": "Yes, Bradley is familiar with JavaScript and has used it for the Interactive Pokedex project.",
+        "groundedReply": "Yes, Bradley is familiar with JavaScript and has used it for the Interactive Pokedex project."
+      },
+      {
+        "q": "Does he know JavaScript?",
+        "provider": "cached",
+        "ts": 1787256628120,
+        "referrer": "unknown",
+        "topic": "uncategorized",
+        "latencyMs": 2,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:SKILL_EVIDENCE",
+          "cache-hit"
+        ],
+        "reply": "Yes, Bradley is familiar with JavaScript and has used it for the Interactive Pokedex project.",
+        "groundedReply": "Yes, Bradley is familiar with JavaScript and has used it for the Interactive Pokedex project."
+      },
+      {
+        "q": "What's his honest weakness?",
+        "provider": "cached",
+        "ts": 1787256618615,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 24,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "Bradley's biggest honest weakness is his lack of experience with data structures and algorithms (DSA), which he has acknowledged by taking courses such as those offered by Udemy.",
+        "groundedReply": "Bradley's biggest honest weakness is his lack of experience with data structures and algorithms (DSA), which he has acknowledged by taking courses such as those offered by Udemy."
+      },
+      {
+        "q": "What's his honest weakness?",
+        "provider": "cached",
+        "ts": 1787256614525,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 3,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "Bradley's biggest honest weakness is his lack of experience with data structures and algorithms (DSA), which he has acknowledged by taking courses such as those offered by Udemy.",
+        "groundedReply": "Bradley's biggest honest weakness is his lack of experience with data structures and algorithms (DSA), which he has acknowledged by taking courses such as those offered by Udemy."
+      },
+      {
+        "q": "What's his honest weakness?",
+        "provider": "cached",
+        "ts": 1787256610438,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 4,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "Bradley's biggest honest weakness is his lack of experience with data structures and algorithms (DSA), which he has acknowledged by taking courses such as those offered by Udemy.",
+        "groundedReply": "Bradley's biggest honest weakness is his lack of experience with data structures and algorithms (DSA), which he has acknowledged by taking courses such as those offered by Udemy."
+      },
+      {
+        "q": "What's his honest weakness?",
+        "provider": "cached",
+        "ts": 1787256606369,
+        "referrer": "unknown",
+        "topic": "weaknesses",
+        "latencyMs": 18,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "cache-hit"
+        ],
+        "reply": "Bradley's biggest honest weakness is his lack of experience with data structures and algorithms (DSA), which he has acknowledged by taking courses such as those offered by Udemy.",
+        "groundedReply": "Bradley's biggest honest weakness is his lack of experience with data structures and algorithms (DSA), which he has acknowledged by taking courses such as those offered by Udemy."
+      },
+      {
+        "q": "Could he become a senior frontend engineer?",
+        "provider": "cached",
+        "ts": 1787240048124,
+        "referrer": "unknown",
+        "topic": "uncategorized",
+        "latencyMs": 4,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "direct-kb",
+          "direct-kb-skipped",
+          "cache-hit"
+        ],
+        "reply": "There is no verified project evidence of Bradley's work with frontend, and he could learn it if needed.",
+        "groundedReply": "There is no verified project evidence of Bradley's work with frontend, and he could learn it if needed."
+      },
+      {
+        "q": "Could he become a senior frontend engineer?",
+        "provider": "cached",
+        "ts": 1787240044037,
+        "referrer": "unknown",
+        "topic": "uncategorized",
+        "latencyMs": 3,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "direct-kb",
+          "direct-kb-skipped",
+          "cache-hit"
+        ],
+        "reply": "There is no verified project evidence of Bradley's work with frontend, and he could learn it if needed.",
+        "groundedReply": "There is no verified project evidence of Bradley's work with frontend, and he could learn it if needed."
+      },
+      {
+        "q": "Could he become a senior frontend engineer?",
+        "provider": "cached",
+        "ts": 1787240039760,
+        "referrer": "unknown",
+        "topic": "uncategorized",
+        "latencyMs": 5,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "direct-kb",
+          "direct-kb-skipped",
+          "cache-hit"
+        ],
+        "reply": "There is no verified project evidence of Bradley's work with frontend, and he could learn it if needed.",
+        "groundedReply": "There is no verified project evidence of Bradley's work with frontend, and he could learn it if needed."
+      },
+      {
+        "q": "Could he become a senior frontend engineer?",
+        "provider": "cached",
+        "ts": 1787240035686,
+        "referrer": "unknown",
+        "topic": "uncategorized",
+        "latencyMs": 4,
+        "pipeline": [
+          "knowledge-loaded",
+          "query-rewrite",
+          "policy:VERIFIED_FACT",
+          "direct-kb",
+          "direct-kb-skipped",
+          "cache-hit"
+        ],
+        "reply": "There is no verified project evidence of Bradley's work with frontend, and he could learn it if needed.",
+        "groundedReply": "There is no verified project evidence of Bradley's work with frontend, and he could learn it if needed."
+      }
+    ],
+    "referrerBreakdown": {
+      "unknown": 1187,
+      "bradleymatera.github.io": 734
+    },
+    "topicBreakdown": {
+      "2026-08-17": {
+        "projects": 17,
+        "uncategorized": 128,
+        "education": 25,
+        "methodology": 1,
+        "skills": 15,
+        "experience": 4,
+        "summary": 9,
+        "contact": 5,
+        "out-of-scope": 4,
+        "role-fit": 9,
+        "strengths": 1
+      },
+      "2026-08-18": {
+        "uncategorized": 481,
+        "education": 8,
+        "skills": 16,
+        "projects": 55,
+        "role-fit": 30,
+        "contact": 15,
+        "interpersonal": 3,
+        "out-of-scope": 13,
+        "experience": 18,
+        "interview": 1,
+        "remote": 1,
+        "strengths": 3,
+        "summary": 13,
+        "weaknesses": 7
+      },
+      "2026-08-19": {
+        "experience": 26,
+        "uncategorized": 479,
+        "role-fit": 27,
+        "weaknesses": 63,
+        "out-of-scope": 27,
+        "contact": 26,
+        "projects": 8
+      },
+      "2026-08-20": {
+        "uncategorized": 229,
+        "role-fit": 32,
+        "strengths": 3,
+        "projects": 15,
+        "weaknesses": 79,
+        "experience": 5,
+        "out-of-scope": 4,
+        "contact": 5,
+        "skills": 6,
+        "summary": 1,
+        "interpersonal": 1,
+        "writing": 3
+      }
+    },
+    "hourlyRequests": {
+      "2026-08-19T02": {
+        "total": 265,
+        "grounded": 0,
+        "llm": 94,
+        "cached": 171
+      },
+      "2026-08-19T04": {
+        "total": 113,
+        "grounded": 0,
+        "llm": 36,
+        "cached": 77
+      },
+      "2026-08-19T05": {
+        "total": 156,
+        "grounded": 0,
+        "llm": 64,
+        "cached": 92
+      },
+      "2026-08-19T06": {
+        "total": 121,
+        "grounded": 0,
+        "llm": 36,
+        "cached": 85
+      },
+      "2026-08-19T21": {
+        "total": 1,
+        "grounded": 0,
+        "llm": 1,
+        "cached": 0
+      },
+      "2026-08-20T00": {
+        "total": 80,
+        "grounded": 0,
+        "llm": 80,
+        "cached": 0
+      },
+      "2026-08-20T01": {
+        "total": 1,
+        "grounded": 0,
+        "llm": 1,
+        "cached": 0
+      },
+      "2026-08-20T02": {
+        "total": 23,
+        "grounded": 0,
+        "llm": 23,
+        "cached": 0
+      },
+      "2026-08-20T03": {
+        "total": 62,
+        "grounded": 0,
+        "llm": 62,
+        "cached": 0
+      },
+      "2026-08-20T13": {
+        "total": 40,
+        "grounded": 0,
+        "llm": 40,
+        "cached": 0
+      },
+      "2026-08-20T15": {
+        "total": 85,
+        "grounded": 0,
+        "llm": 17,
+        "cached": 68
+      },
+      "2026-08-20T16": {
+        "total": 1,
+        "grounded": 0,
+        "llm": 1,
+        "cached": 0
+      },
+      "2026-08-20T20": {
+        "total": 44,
+        "grounded": 0,
+        "llm": 19,
+        "cached": 25
+      },
+      "2026-08-20T21": {
+        "total": 1,
+        "grounded": 0,
+        "llm": 1,
+        "cached": 0
+      },
+      "2026-08-20T22": {
+        "total": 46,
+        "grounded": 0,
+        "llm": 45,
+        "cached": 1
+      }
+    },
+    "lastPipeline": [
+      "knowledge-loaded",
+      "query-rewrite",
+      "policy:VERIFIED_FACT",
+      "cache-hit"
+    ],
+    "providerHealth": {},
+    "recentSessions": [
+      {
+        "id": "paraphrase-m…",
+        "turns": 1,
+        "topics": [
+          "weaknesses"
+        ],
+        "startedAt": 1787265789024,
+        "lastActiveAt": 1787265789024,
+        "durationSec": 0,
+        "referrer": "unknown",
+        "intent": "recruiter",
+        "providerMix": {
+          "cloudflare": 1
+        },
+        "lastQuestion": "What is his key weakness?",
+        "lastReply": "No personal weakness is verified or documented.",
+        "lastGroundedReply": ""
+      }
+    ],
+    "localOnly": false,
+    "models": [
+      {
+        "engine": "cloudflare",
+        "model": "@cf/meta/llama-3.2-3b-instruct",
+        "local": false
+      }
+    ],
+    "agent": {
+      "enabled": true,
+      "scoutEngineEnabled": true,
+      "agentMode": "lite",
+      "ollamaControllerEnabled": false,
+      "ollamaModel": "qwen2.5:1.5b",
+      "deterministicFallback": false,
+      "mode": "scout-lite-agent",
+      "pinnedModels": [
+        {
+          "name": "qwen2.5:0.5b",
+          "family": "qwen2.5",
+          "parameterSize": "0.5B",
+          "quantization": "q4_K_M (default Ollama tag)",
+          "fileSizeMb": 397,
+          "minRamMb": 768,
+          "license": "Apache 2.0 (Qwen2.5 weights). Self-hosted use permitted; no redistribution restrictions beyond notice.",
+          "contextWindow": 32768,
+          "notes": "Historical development model. Used during initial local-only development phase on GCP e2-micro. Superseded by qwen2.5:1.5b as the current development/evaluation model. Retained for reference."
+        },
+        {
+          "name": "qwen2.5:1.5b",
+          "family": "qwen2.5",
+          "parameterSize": "1.5B",
+          "quantization": "q4_K_M (default Ollama tag)",
+          "fileSizeMb": 940,
+          "minRamMb": 1400,
+          "license": "Apache 2.0 (Qwen2.5 weights). Self-hosted use permitted.",
+          "contextWindow": 32768,
+          "digest": "65ec06548149b04c096a",
+          "notes": "Current development/evaluation model. Stronger reasoning and conversation quality. 75% grounded (vs 61% for 0.5b), 86% multi-turn pass rate, 3/3 adversarial resistance. Target model for cloud-hosted production replacement. Requires >= 1.4GB RAM."
+        },
+        {
+          "name": "gemma3:1b",
+          "family": "gemma3",
+          "parameterSize": "1B",
+          "quantization": "q4_K_M (default Ollama tag)",
+          "fileSizeMb": 815,
+          "minRamMb": 1200,
+          "license": "Gemma Terms of Use (Google). Self-hosted use permitted; redistribution subject to Gemma terms.",
+          "contextWindow": 8192,
+          "notes": "Candidate. Good instruction following; narrower context window."
+        }
+      ]
+    },
+    "genModel": "qwen2.5:1.5b",
+    "genTimeoutMs": 12500,
+    "knowledgeSource": "bundled-local-json",
+    "memory": {
+      "recentTurns": 5,
+      "retainedSessions": 10,
+      "conversationTtlMinutes": 120,
+      "stanceTopics": 12,
+      "stanceTtlMinutes": 60,
+      "sessionStateStore": 10
+    },
+    "mode": "rag-generative-with-grounded-fallback",
+    "learning": {
+      "stashedCount": 0,
+      "learnedCount": 0,
+      "pendingLearned": 0,
+      "lastThinkAt": 0,
+      "thinkRunning": false,
+      "nextThinkIn": 0,
+      "stanceStoreSize": 0,
+      "retrievalMode": "bm25",
+      "learnedScores": [],
+      "avgLearnedScore": 0,
+      "avgGroundedScore": 0,
+      "learningPipeline": {
+        "stashed": 0,
+        "scored": 0,
+        "promoted": 0,
+        "retainedLocally": 0
+      },
+      "judgmentHistory": []
+    }
+  },
+  "summary": {
+    "gateRunId": "reconciliation-live-2026-08-20T22-46-11-986Z",
+    "runtimeSHA": "unknown",
+    "label": "negative-assessment source-of-truth reconciliation",
+    "scheduled": "5/5",
+    "retries": "0/0",
+    "actualAttempts": 5
+  },
+  "attempts": [
+    {
+      "attemptId": "886c9608-c2dc-49ba-9764-e801217ebabd",
+      "caseId": "direct-kb-ranked",
+      "scheduledAttempt": 1,
+      "gateRunId": "reconciliation-live-2026-08-20T22-46-11-986Z",
+      "runtimeSHA": "unknown",
+      "timestamp": "2026-08-20T22:46:11.987Z",
+      "isRetry": false,
+      "retryOfAttemptId": null,
+      "question": "What is Bradley's biggest weakness?",
+      "status": "completed",
+      "provider": "knowledge-base",
+      "model": "direct",
+      "reply": "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+      "quality": "GOOD",
+      "failureReason": null,
+      "proseSource": "DIRECT_KB",
+      "contract": {
+        "intent": "NEGATIVE_ASSESSMENT",
+        "subIntent": "NEGATIVE_ASSESSMENT",
+        "subject": "Bradley Matera",
+        "subjectNames": [
+          "Bradley Matera",
+          "Bradley",
+          "Matera"
+        ],
+        "activeEntities": [
+          "Bradley"
+        ],
+        "requestedTopic": null,
+        "requestedRole": null,
+        "directAnswer": "UNKNOWN",
+        "isNegationConfirmation": false,
+        "factState": "TRUE",
+        "claimCeiling": "has professional or production experience with",
+        "requiredFacts": [
+          {
+            "type": "direct_answer",
+            "value": "UNKNOWN"
+          },
+          {
+            "type": "supporting_evidence",
+            "value": "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+            "sourceEntity": null,
+            "evidenceStrength": "PROFESSIONAL"
+          },
+          {
+            "type": "evidence_strength",
+            "value": "PROFESSIONAL"
+          }
+        ],
+        "optionalFacts": [],
+        "rankedFacts": [
+          {
+            "text": "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+            "sourceEntity": null,
+            "evidenceStrength": "PROFESSIONAL",
+            "score": 6,
+            "index": 0
+          }
+        ],
+        "keyFacts": [
+          "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+          "Data structures and algorithms (DSA). I have taken Udemy courses and discussed the math with others, but I have no production mentorship in DSA and no formal CS degree.",
+          "Turning a brand-new problem into working code from a blank file without guidance. I can read, understand, debug, and modify code, but I usually need help to architect a solution from scratch.",
+          "Most LeetCode-style problems. I cannot reliably solve them on my own yet.",
+          "Choosing the right data structure or algorithm for an unfamiliar production problem. I understand some foundations but not how to apply them in production contexts.",
+          "Currently learning and refreshing C#/.NET fundamentals",
+          "ERP concepts and business workflows (interested, not experienced)",
+          "Software support and user support fundamentals"
+        ],
+        "evidenceStrength": "PROFESSIONAL",
+        "boundary": null,
+        "requiredEntities": [],
+        "mustMentionEntities": [],
+        "contextEntities": [
+          "Bradley"
+        ],
+        "evidenceEntities": [],
+        "forbiddenEntities": [],
+        "requiredRelationships": [],
+        "responseShape": {
+          "minSentences": 1,
+          "maxSentences": 2,
+          "requirements": [
+            "State that no public weakness is documented unless a specific gap is verified",
+            "Do not invent negative personal traits",
+            "Mention that public profile evidence is the only source used"
+          ]
+        },
+        "forbiddenClaims": [],
+        "policyMode": "NEGATIVE_ASSESSMENT",
+        "naturalInstructions": "FACT_STATE: Evidence supports the claim. Cite the specific source.\nCLAIM_CEILING: The strongest allowed claim is \"has professional or production experience with <topic>\". Do not exceed this ceiling.\nState clearly that the answer is unknown based on verified data. Do not invent a positive or negative claim.\nThe verified/public profile explicitly documents a specific gap or learning area as the answer to this question. State that documented gap or learning area from the included facts. Do not add other weaknesses or inflate it.\nInclude these specific details: His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is wil...\nState that no public weakness is documented unless a specific gap is verified\nDo not invent negative personal traits\nMention that public profile evidence is the only source used\nDo not give a generic answer. Use specific project names, technologies, and details from the facts."
+      },
+      "generationCalls": [
+        "knowledge-loaded",
+        "policy:VERIFIED_FACT",
+        "direct-kb"
+      ],
+      "raw": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "reply": "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+          "provider": "knowledge-base",
+          "model": "direct",
+          "fallback": false,
+          "grounded": true,
+          "pipeline": [
+            "knowledge-loaded",
+            "policy:VERIFIED_FACT",
+            "direct-kb"
+          ],
+          "followUps": [],
+          "proseSource": "DIRECT_KB",
+          "direct": true,
+          "sourceIds": [
+            "interviewStories.7",
+            "faq.1"
+          ],
+          "sessionMemory": {
+            "turns": 1,
+            "retained": true
+          },
+          "contract": {
+            "intent": "NEGATIVE_ASSESSMENT",
+            "subIntent": "NEGATIVE_ASSESSMENT",
+            "subject": "Bradley Matera",
+            "subjectNames": [
+              "Bradley Matera",
+              "Bradley",
+              "Matera"
+            ],
+            "activeEntities": [
+              "Bradley"
+            ],
+            "requestedTopic": null,
+            "requestedRole": null,
+            "directAnswer": "UNKNOWN",
+            "isNegationConfirmation": false,
+            "factState": "TRUE",
+            "claimCeiling": "has professional or production experience with",
+            "requiredFacts": [
+              {
+                "type": "direct_answer",
+                "value": "UNKNOWN"
+              },
+              {
+                "type": "supporting_evidence",
+                "value": "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+                "sourceEntity": null,
+                "evidenceStrength": "PROFESSIONAL"
+              },
+              {
+                "type": "evidence_strength",
+                "value": "PROFESSIONAL"
+              }
+            ],
+            "optionalFacts": [],
+            "rankedFacts": [
+              {
+                "text": "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+                "sourceEntity": null,
+                "evidenceStrength": "PROFESSIONAL",
+                "score": 6,
+                "index": 0
+              }
+            ],
+            "keyFacts": [
+              "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+              "Data structures and algorithms (DSA). I have taken Udemy courses and discussed the math with others, but I have no production mentorship in DSA and no formal CS degree.",
+              "Turning a brand-new problem into working code from a blank file without guidance. I can read, understand, debug, and modify code, but I usually need help to architect a solution from scratch.",
+              "Most LeetCode-style problems. I cannot reliably solve them on my own yet.",
+              "Choosing the right data structure or algorithm for an unfamiliar production problem. I understand some foundations but not how to apply them in production contexts.",
+              "Currently learning and refreshing C#/.NET fundamentals",
+              "ERP concepts and business workflows (interested, not experienced)",
+              "Software support and user support fundamentals"
+            ],
+            "evidenceStrength": "PROFESSIONAL",
+            "boundary": null,
+            "requiredEntities": [],
+            "mustMentionEntities": [],
+            "contextEntities": [
+              "Bradley"
+            ],
+            "evidenceEntities": [],
+            "forbiddenEntities": [],
+            "requiredRelationships": [],
+            "responseShape": {
+              "minSentences": 1,
+              "maxSentences": 2,
+              "requirements": [
+                "State that no public weakness is documented unless a specific gap is verified",
+                "Do not invent negative personal traits",
+                "Mention that public profile evidence is the only source used"
+              ]
+            },
+            "forbiddenClaims": [],
+            "policyMode": "NEGATIVE_ASSESSMENT",
+            "naturalInstructions": "FACT_STATE: Evidence supports the claim. Cite the specific source.\nCLAIM_CEILING: The strongest allowed claim is \"has professional or production experience with <topic>\". Do not exceed this ceiling.\nState clearly that the answer is unknown based on verified data. Do not invent a positive or negative claim.\nThe verified/public profile explicitly documents a specific gap or learning area as the answer to this question. State that documented gap or learning area from the included facts. Do not add other weaknesses or inflate it.\nInclude these specific details: His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is wil...\nState that no public weakness is documented unless a specific gap is verified\nDo not invent negative personal traits\nMention that public profile evidence is the only source used\nDo not give a generic answer. Use specific project names, technologies, and details from the facts."
+          }
+        }
+      }
+    },
+    {
+      "attemptId": "c2f3240e-bb9d-47d1-ae39-6a226b174583",
+      "caseId": "direct-kb-main",
+      "scheduledAttempt": 1,
+      "gateRunId": "reconciliation-live-2026-08-20T22-46-11-986Z",
+      "runtimeSHA": "unknown",
+      "timestamp": "2026-08-20T22:46:12.112Z",
+      "isRetry": false,
+      "retryOfAttemptId": null,
+      "question": "What is his main weakness?",
+      "status": "completed",
+      "provider": "knowledge-base",
+      "model": "direct",
+      "reply": "His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+      "quality": "GOOD",
+      "failureReason": null,
+      "proseSource": "DIRECT_KB",
+      "contract": {
+        "intent": "NEGATIVE_ASSESSMENT",
+        "subIntent": "NEGATIVE_ASSESSMENT",
+        "subject": "Bradley Matera",
+        "subjectNames": [
+          "Bradley Matera",
+          "Bradley",
+          "Matera"
+        ],
+        "activeEntities": [
+          "Bradley"
+        ],
+        "requestedTopic": null,
+        "requestedRole": null,
+        "directAnswer": "UNKNOWN",
+        "isNegationConfirmation": false,
+        "factState": "TRUE",
+        "claimCeiling": "has professional or production experience with",
+        "requiredFacts": [
+          {
+            "type": "direct_answer",
+            "value": "UNKNOWN"
+          },
+          {
+            "type": "supporting_evidence",
+            "value": "His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+            "sourceEntity": null,
+            "evidenceStrength": "PROFESSIONAL"
+          },
+          {
+            "type": "evidence_strength",
+            "value": "PROFESSIONAL"
+          }
+        ],
+        "optionalFacts": [],
+        "rankedFacts": [
+          {
+            "text": "His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+            "sourceEntity": null,
+            "evidenceStrength": "PROFESSIONAL",
+            "score": 6,
+            "index": 0
+          }
+        ],
+        "keyFacts": [
+          "His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+          "Data structures and algorithms (DSA). I have taken Udemy courses and discussed the math with others, but I have no production mentorship in DSA and no formal CS degree.",
+          "Turning a brand-new problem into working code from a blank file without guidance. I can read, understand, debug, and modify code, but I usually need help to architect a solution from scratch.",
+          "Most LeetCode-style problems. I cannot reliably solve them on my own yet.",
+          "Choosing the right data structure or algorithm for an unfamiliar production problem. I understand some foundations but not how to apply them in production contexts.",
+          "Currently learning and refreshing C#/.NET fundamentals",
+          "ERP concepts and business workflows (interested, not experienced)",
+          "Software support and user support fundamentals"
+        ],
+        "evidenceStrength": "PROFESSIONAL",
+        "boundary": null,
+        "requiredEntities": [],
+        "mustMentionEntities": [],
+        "contextEntities": [
+          "Bradley"
+        ],
+        "evidenceEntities": [],
+        "forbiddenEntities": [],
+        "requiredRelationships": [],
+        "responseShape": {
+          "minSentences": 1,
+          "maxSentences": 2,
+          "requirements": [
+            "State that no public weakness is documented unless a specific gap is verified",
+            "Do not invent negative personal traits",
+            "Mention that public profile evidence is the only source used"
+          ]
+        },
+        "forbiddenClaims": [],
+        "policyMode": "NEGATIVE_ASSESSMENT",
+        "naturalInstructions": "FACT_STATE: Evidence supports the claim. Cite the specific source.\nCLAIM_CEILING: The strongest allowed claim is \"has professional or production experience with <topic>\". Do not exceed this ceiling.\nState clearly that the answer is unknown based on verified data. Do not invent a positive or negative claim.\nThe verified/public profile explicitly documents a specific gap or learning area as the answer to this question. State that documented gap or learning area from the included facts. Do not add other weaknesses or inflate it.\nInclude these specific details: His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is wil...\nState that no public weakness is documented unless a specific gap is verified\nDo not invent negative personal traits\nMention that public profile evidence is the only source used\nDo not give a generic answer. Use specific project names, technologies, and details from the facts."
+      },
+      "generationCalls": [
+        "knowledge-loaded",
+        "query-rewrite",
+        "policy:VERIFIED_FACT",
+        "direct-kb"
+      ],
+      "raw": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "reply": "His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+          "provider": "knowledge-base",
+          "model": "direct",
+          "fallback": false,
+          "grounded": true,
+          "pipeline": [
+            "knowledge-loaded",
+            "query-rewrite",
+            "policy:VERIFIED_FACT",
+            "direct-kb"
+          ],
+          "followUps": [],
+          "proseSource": "DIRECT_KB",
+          "direct": true,
+          "sourceIds": [
+            "interviewStories.7",
+            "faq.1"
+          ],
+          "sessionMemory": {
+            "turns": 1,
+            "retained": true
+          },
+          "contract": {
+            "intent": "NEGATIVE_ASSESSMENT",
+            "subIntent": "NEGATIVE_ASSESSMENT",
+            "subject": "Bradley Matera",
+            "subjectNames": [
+              "Bradley Matera",
+              "Bradley",
+              "Matera"
+            ],
+            "activeEntities": [
+              "Bradley"
+            ],
+            "requestedTopic": null,
+            "requestedRole": null,
+            "directAnswer": "UNKNOWN",
+            "isNegationConfirmation": false,
+            "factState": "TRUE",
+            "claimCeiling": "has professional or production experience with",
+            "requiredFacts": [
+              {
+                "type": "direct_answer",
+                "value": "UNKNOWN"
+              },
+              {
+                "type": "supporting_evidence",
+                "value": "His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+                "sourceEntity": null,
+                "evidenceStrength": "PROFESSIONAL"
+              },
+              {
+                "type": "evidence_strength",
+                "value": "PROFESSIONAL"
+              }
+            ],
+            "optionalFacts": [],
+            "rankedFacts": [
+              {
+                "text": "His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+                "sourceEntity": null,
+                "evidenceStrength": "PROFESSIONAL",
+                "score": 6,
+                "index": 0
+              }
+            ],
+            "keyFacts": [
+              "His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+              "Data structures and algorithms (DSA). I have taken Udemy courses and discussed the math with others, but I have no production mentorship in DSA and no formal CS degree.",
+              "Turning a brand-new problem into working code from a blank file without guidance. I can read, understand, debug, and modify code, but I usually need help to architect a solution from scratch.",
+              "Most LeetCode-style problems. I cannot reliably solve them on my own yet.",
+              "Choosing the right data structure or algorithm for an unfamiliar production problem. I understand some foundations but not how to apply them in production contexts.",
+              "Currently learning and refreshing C#/.NET fundamentals",
+              "ERP concepts and business workflows (interested, not experienced)",
+              "Software support and user support fundamentals"
+            ],
+            "evidenceStrength": "PROFESSIONAL",
+            "boundary": null,
+            "requiredEntities": [],
+            "mustMentionEntities": [],
+            "contextEntities": [
+              "Bradley"
+            ],
+            "evidenceEntities": [],
+            "forbiddenEntities": [],
+            "requiredRelationships": [],
+            "responseShape": {
+              "minSentences": 1,
+              "maxSentences": 2,
+              "requirements": [
+                "State that no public weakness is documented unless a specific gap is verified",
+                "Do not invent negative personal traits",
+                "Mention that public profile evidence is the only source used"
+              ]
+            },
+            "forbiddenClaims": [],
+            "policyMode": "NEGATIVE_ASSESSMENT",
+            "naturalInstructions": "FACT_STATE: Evidence supports the claim. Cite the specific source.\nCLAIM_CEILING: The strongest allowed claim is \"has professional or production experience with <topic>\". Do not exceed this ceiling.\nState clearly that the answer is unknown based on verified data. Do not invent a positive or negative claim.\nThe verified/public profile explicitly documents a specific gap or learning area as the answer to this question. State that documented gap or learning area from the included facts. Do not add other weaknesses or inflate it.\nInclude these specific details: His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is wil...\nState that no public weakness is documented unless a specific gap is verified\nDo not invent negative personal traits\nMention that public profile evidence is the only source used\nDo not give a generic answer. Use specific project names, technologies, and details from the facts."
+          }
+        }
+      }
+    },
+    {
+      "attemptId": "258a9cba-853c-4f6c-b80d-69e017783265",
+      "caseId": "direct-kb-bad-at",
+      "scheduledAttempt": 1,
+      "gateRunId": "reconciliation-live-2026-08-20T22-46-11-986Z",
+      "runtimeSHA": "unknown",
+      "timestamp": "2026-08-20T22:46:12.199Z",
+      "isRetry": false,
+      "retryOfAttemptId": null,
+      "question": "What is Bradley bad at?",
+      "status": "completed",
+      "provider": "knowledge-base",
+      "model": "direct",
+      "reply": "The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right data structure or algorithm for unfamiliar production problems, ERP concepts and business workflows, and software support and user support fundamentals.",
+      "quality": "GOOD",
+      "failureReason": null,
+      "proseSource": "DIRECT_KB",
+      "contract": {
+        "intent": "GENERAL",
+        "subIntent": "NEGATIVE_ASSESSMENT",
+        "subject": "Bradley Matera",
+        "subjectNames": [
+          "Bradley Matera",
+          "Bradley",
+          "Matera"
+        ],
+        "activeEntities": [
+          "Bradley"
+        ],
+        "requestedTopic": null,
+        "requestedRole": null,
+        "directAnswer": null,
+        "isNegationConfirmation": false,
+        "factState": "UNKNOWN",
+        "claimCeiling": "has professional or production experience with",
+        "requiredFacts": [
+          {
+            "type": "supporting_evidence",
+            "value": "The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right data structure or algorithm for unfamiliar production problems, ERP concepts and business workflows, and software support and user support fundamentals.",
+            "sourceEntity": null,
+            "evidenceStrength": "PROFESSIONAL"
+          },
+          {
+            "type": "evidence_strength",
+            "value": "PROFESSIONAL"
+          }
+        ],
+        "optionalFacts": [],
+        "rankedFacts": [
+          {
+            "text": "The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right data structure or algorithm for unfamiliar production problems, ERP concepts and business workflows, and software support and user support fundamentals.",
+            "sourceEntity": null,
+            "evidenceStrength": "PROFESSIONAL",
+            "score": 2,
+            "index": 0
+          }
+        ],
+        "keyFacts": [
+          "The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right data structure or algorithm for unfamiliar production problems, ERP concepts and business workflows, and software support and user support fundamentals.",
+          "Data structures and algorithms (DSA). I have taken Udemy courses and discussed the math with others, but I have no production mentorship in DSA and no formal CS degree.",
+          "Turning a brand-new problem into working code from a blank file without guidance. I can read, understand, debug, and modify code, but I usually need help to architect a solution from scratch.",
+          "Most LeetCode-style problems. I cannot reliably solve them on my own yet.",
+          "Choosing the right data structure or algorithm for an unfamiliar production problem. I understand some foundations but not how to apply them in production contexts.",
+          "Currently learning and refreshing C#/.NET fundamentals",
+          "ERP concepts and business workflows (interested, not experienced)",
+          "Software support and user support fundamentals"
+        ],
+        "evidenceStrength": "PROFESSIONAL",
+        "boundary": null,
+        "requiredEntities": [],
+        "mustMentionEntities": [],
+        "contextEntities": [
+          "Bradley"
+        ],
+        "evidenceEntities": [],
+        "forbiddenEntities": [],
+        "requiredRelationships": [],
+        "responseShape": {
+          "minSentences": 1,
+          "maxSentences": 3,
+          "requirements": [
+            "Answer the question directly",
+            "Use specific evidence, not generic statements"
+          ]
+        },
+        "forbiddenClaims": [],
+        "policyMode": "NEGATIVE_ASSESSMENT",
+        "naturalInstructions": "FACT_STATE: No verified evidence. State uncertainty clearly and do not invent a positive answer.\nCLAIM_CEILING: The strongest allowed claim is \"has professional or production experience with <topic>\". Do not exceed this ceiling.\nKeep personal weaknesses separate from documented learning or gap areas. A documented gap is not automatically a personal weakness, and you must not rank it as the biggest, main, worst, or primary weakness unless the facts explicitly rank it.\nThe question asks what the subject is \"bad at\". Do not claim he is bad at any specific skill. State that the answer is unknown or not established, then name the documented learning/gap areas from the included facts as the only items that are documented.\nInclude these specific details: The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right dat...\nAnswer the question directly\nUse specific evidence, not generic statements\nDo not give a generic answer. Use specific project names, technologies, and details from the facts."
+      },
+      "generationCalls": [
+        "knowledge-loaded",
+        "policy:VERIFIED_FACT",
+        "direct-kb"
+      ],
+      "raw": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "reply": "The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right data structure or algorithm for unfamiliar production problems, ERP concepts and business workflows, and software support and user support fundamentals.",
+          "provider": "knowledge-base",
+          "model": "direct",
+          "fallback": false,
+          "grounded": true,
+          "pipeline": [
+            "knowledge-loaded",
+            "policy:VERIFIED_FACT",
+            "direct-kb"
+          ],
+          "followUps": [],
+          "proseSource": "DIRECT_KB",
+          "direct": true,
+          "sourceIds": [
+            "summary.honestGaps",
+            "skills.learningOrAdjacent"
+          ],
+          "sessionMemory": {
+            "turns": 1,
+            "retained": true
+          },
+          "contract": {
+            "intent": "GENERAL",
+            "subIntent": "NEGATIVE_ASSESSMENT",
+            "subject": "Bradley Matera",
+            "subjectNames": [
+              "Bradley Matera",
+              "Bradley",
+              "Matera"
+            ],
+            "activeEntities": [
+              "Bradley"
+            ],
+            "requestedTopic": null,
+            "requestedRole": null,
+            "directAnswer": null,
+            "isNegationConfirmation": false,
+            "factState": "UNKNOWN",
+            "claimCeiling": "has professional or production experience with",
+            "requiredFacts": [
+              {
+                "type": "supporting_evidence",
+                "value": "The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right data structure or algorithm for unfamiliar production problems, ERP concepts and business workflows, and software support and user support fundamentals.",
+                "sourceEntity": null,
+                "evidenceStrength": "PROFESSIONAL"
+              },
+              {
+                "type": "evidence_strength",
+                "value": "PROFESSIONAL"
+              }
+            ],
+            "optionalFacts": [],
+            "rankedFacts": [
+              {
+                "text": "The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right data structure or algorithm for unfamiliar production problems, ERP concepts and business workflows, and software support and user support fundamentals.",
+                "sourceEntity": null,
+                "evidenceStrength": "PROFESSIONAL",
+                "score": 2,
+                "index": 0
+              }
+            ],
+            "keyFacts": [
+              "The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right data structure or algorithm for unfamiliar production problems, ERP concepts and business workflows, and software support and user support fundamentals.",
+              "Data structures and algorithms (DSA). I have taken Udemy courses and discussed the math with others, but I have no production mentorship in DSA and no formal CS degree.",
+              "Turning a brand-new problem into working code from a blank file without guidance. I can read, understand, debug, and modify code, but I usually need help to architect a solution from scratch.",
+              "Most LeetCode-style problems. I cannot reliably solve them on my own yet.",
+              "Choosing the right data structure or algorithm for an unfamiliar production problem. I understand some foundations but not how to apply them in production contexts.",
+              "Currently learning and refreshing C#/.NET fundamentals",
+              "ERP concepts and business workflows (interested, not experienced)",
+              "Software support and user support fundamentals"
+            ],
+            "evidenceStrength": "PROFESSIONAL",
+            "boundary": null,
+            "requiredEntities": [],
+            "mustMentionEntities": [],
+            "contextEntities": [
+              "Bradley"
+            ],
+            "evidenceEntities": [],
+            "forbiddenEntities": [],
+            "requiredRelationships": [],
+            "responseShape": {
+              "minSentences": 1,
+              "maxSentences": 3,
+              "requirements": [
+                "Answer the question directly",
+                "Use specific evidence, not generic statements"
+              ]
+            },
+            "forbiddenClaims": [],
+            "policyMode": "NEGATIVE_ASSESSMENT",
+            "naturalInstructions": "FACT_STATE: No verified evidence. State uncertainty clearly and do not invent a positive answer.\nCLAIM_CEILING: The strongest allowed claim is \"has professional or production experience with <topic>\". Do not exceed this ceiling.\nKeep personal weaknesses separate from documented learning or gap areas. A documented gap is not automatically a personal weakness, and you must not rank it as the biggest, main, worst, or primary weakness unless the facts explicitly rank it.\nThe question asks what the subject is \"bad at\". Do not claim he is bad at any specific skill. State that the answer is unknown or not established, then name the documented learning/gap areas from the included facts as the only items that are documented.\nInclude these specific details: The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right dat...\nAnswer the question directly\nUse specific evidence, not generic statements\nDo not give a generic answer. Use specific project names, technologies, and details from the facts."
+          }
+        }
+      }
+    },
+    {
+      "attemptId": "9651f063-8ba1-48a0-9668-6c86efa22f3b",
+      "caseId": "direct-kb-current-progress",
+      "scheduledAttempt": 1,
+      "gateRunId": "reconciliation-live-2026-08-20T22-46-11-986Z",
+      "runtimeSHA": "unknown",
+      "timestamp": "2026-08-20T22:46:12.300Z",
+      "isRetry": false,
+      "retryOfAttemptId": null,
+      "question": "Is he working on those gaps?",
+      "status": "completed",
+      "provider": "knowledge-base",
+      "model": "direct",
+      "reply": "There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them.",
+      "quality": "GOOD",
+      "failureReason": null,
+      "proseSource": "DIRECT_KB",
+      "contract": {
+        "intent": "NEGATIVE_ASSESSMENT",
+        "subIntent": "NEGATIVE_ASSESSMENT",
+        "subject": "Bradley Matera",
+        "subjectNames": [
+          "Bradley Matera",
+          "Bradley",
+          "Matera"
+        ],
+        "activeEntities": [],
+        "requestedTopic": null,
+        "requestedRole": null,
+        "directAnswer": "UNKNOWN",
+        "isNegationConfirmation": false,
+        "factState": "UNKNOWN",
+        "claimCeiling": "no verified evidence for",
+        "requiredFacts": [
+          {
+            "type": "direct_answer",
+            "value": "UNKNOWN"
+          },
+          {
+            "type": "supporting_evidence",
+            "value": "There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them.",
+            "sourceEntity": null,
+            "evidenceStrength": null
+          }
+        ],
+        "optionalFacts": [],
+        "rankedFacts": [
+          {
+            "text": "There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them.",
+            "sourceEntity": null,
+            "evidenceStrength": null,
+            "score": 2,
+            "index": 0
+          }
+        ],
+        "keyFacts": [
+          "There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them.",
+          "Data structures and algorithms (DSA). I have taken Udemy courses and discussed the math with others, but I have no production mentorship in DSA and no formal CS degree.",
+          "Turning a brand-new problem into working code from a blank file without guidance. I can read, understand, debug, and modify code, but I usually need help to architect a solution from scratch.",
+          "Most LeetCode-style problems. I cannot reliably solve them on my own yet.",
+          "Choosing the right data structure or algorithm for an unfamiliar production problem. I understand some foundations but not how to apply them in production contexts.",
+          "Currently learning and refreshing C#/.NET fundamentals",
+          "ERP concepts and business workflows (interested, not experienced)",
+          "Software support and user support fundamentals"
+        ],
+        "evidenceStrength": null,
+        "boundary": null,
+        "requiredEntities": [],
+        "mustMentionEntities": [],
+        "contextEntities": [],
+        "evidenceEntities": [],
+        "forbiddenEntities": [],
+        "requiredRelationships": [],
+        "responseShape": {
+          "minSentences": 1,
+          "maxSentences": 2,
+          "requirements": [
+            "State that no public weakness is documented unless a specific gap is verified",
+            "Do not invent negative personal traits",
+            "Mention that public profile evidence is the only source used"
+          ]
+        },
+        "forbiddenClaims": [],
+        "policyMode": "NEGATIVE_ASSESSMENT",
+        "naturalInstructions": "FACT_STATE: No verified evidence. State uncertainty clearly and do not invent a positive answer.\nCLAIM_CEILING: The strongest allowed claim is \"no verified evidence for <topic>\". Do not exceed this ceiling.\nState clearly that the answer is unknown based on verified data. Do not invent a positive or negative claim.\nKeep personal weaknesses separate from documented learning or gap areas. A documented gap is not automatically a personal weakness, and you must not rank it as the biggest, main, worst, or primary weakness unless the facts explicitly rank it.\nThis asks about current progress on previously discussed areas. Keep the referent tied to the documented learning/gap items. Do not infer active work from transferable skills. State current progress only if the facts explicitly establish it; otherwise say current progress is unknown or not verified.\nInclude these specific details: There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them. Data structures and algorithms (DSA). I have taken Udemy courses and...\nState that no public weakness is documented unless a specific gap is verified\nDo not invent negative personal traits\nMention that public profile evidence is the only source used\nDo not give a generic answer. Use specific project names, technologies, and details from the facts."
+      },
+      "generationCalls": [
+        "knowledge-loaded",
+        "query-rewrite",
+        "policy:VERIFIED_FACT",
+        "direct-kb"
+      ],
+      "raw": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "reply": "There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them.",
+          "provider": "knowledge-base",
+          "model": "direct",
+          "fallback": false,
+          "grounded": true,
+          "pipeline": [
+            "knowledge-loaded",
+            "query-rewrite",
+            "policy:VERIFIED_FACT",
+            "direct-kb"
+          ],
+          "followUps": [],
+          "proseSource": "DIRECT_KB",
+          "direct": true,
+          "sourceIds": [
+            "summary.honestGaps",
+            "interviewStories.6"
+          ],
+          "sessionMemory": {
+            "turns": 1,
+            "retained": true
+          },
+          "contract": {
+            "intent": "NEGATIVE_ASSESSMENT",
+            "subIntent": "NEGATIVE_ASSESSMENT",
+            "subject": "Bradley Matera",
+            "subjectNames": [
+              "Bradley Matera",
+              "Bradley",
+              "Matera"
+            ],
+            "activeEntities": [],
+            "requestedTopic": null,
+            "requestedRole": null,
+            "directAnswer": "UNKNOWN",
+            "isNegationConfirmation": false,
+            "factState": "UNKNOWN",
+            "claimCeiling": "no verified evidence for",
+            "requiredFacts": [
+              {
+                "type": "direct_answer",
+                "value": "UNKNOWN"
+              },
+              {
+                "type": "supporting_evidence",
+                "value": "There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them.",
+                "sourceEntity": null,
+                "evidenceStrength": null
+              }
+            ],
+            "optionalFacts": [],
+            "rankedFacts": [
+              {
+                "text": "There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them.",
+                "sourceEntity": null,
+                "evidenceStrength": null,
+                "score": 2,
+                "index": 0
+              }
+            ],
+            "keyFacts": [
+              "There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them.",
+              "Data structures and algorithms (DSA). I have taken Udemy courses and discussed the math with others, but I have no production mentorship in DSA and no formal CS degree.",
+              "Turning a brand-new problem into working code from a blank file without guidance. I can read, understand, debug, and modify code, but I usually need help to architect a solution from scratch.",
+              "Most LeetCode-style problems. I cannot reliably solve them on my own yet.",
+              "Choosing the right data structure or algorithm for an unfamiliar production problem. I understand some foundations but not how to apply them in production contexts.",
+              "Currently learning and refreshing C#/.NET fundamentals",
+              "ERP concepts and business workflows (interested, not experienced)",
+              "Software support and user support fundamentals"
+            ],
+            "evidenceStrength": null,
+            "boundary": null,
+            "requiredEntities": [],
+            "mustMentionEntities": [],
+            "contextEntities": [],
+            "evidenceEntities": [],
+            "forbiddenEntities": [],
+            "requiredRelationships": [],
+            "responseShape": {
+              "minSentences": 1,
+              "maxSentences": 2,
+              "requirements": [
+                "State that no public weakness is documented unless a specific gap is verified",
+                "Do not invent negative personal traits",
+                "Mention that public profile evidence is the only source used"
+              ]
+            },
+            "forbiddenClaims": [],
+            "policyMode": "NEGATIVE_ASSESSMENT",
+            "naturalInstructions": "FACT_STATE: No verified evidence. State uncertainty clearly and do not invent a positive answer.\nCLAIM_CEILING: The strongest allowed claim is \"no verified evidence for <topic>\". Do not exceed this ceiling.\nState clearly that the answer is unknown based on verified data. Do not invent a positive or negative claim.\nKeep personal weaknesses separate from documented learning or gap areas. A documented gap is not automatically a personal weakness, and you must not rank it as the biggest, main, worst, or primary weakness unless the facts explicitly rank it.\nThis asks about current progress on previously discussed areas. Keep the referent tied to the documented learning/gap items. Do not infer active work from transferable skills. State current progress only if the facts explicitly establish it; otherwise say current progress is unknown or not verified.\nInclude these specific details: There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them. Data structures and algorithms (DSA). I have taken Udemy courses and...\nState that no public weakness is documented unless a specific gap is verified\nDo not invent negative personal traits\nMention that public profile evidence is the only source used\nDo not give a generic answer. Use specific project names, technologies, and details from the facts."
+          }
+        }
+      }
+    },
+    {
+      "attemptId": "45dbeb8e-4a39-4b80-8980-507ddf06415a",
+      "caseId": "model-paraphrase",
+      "scheduledAttempt": 1,
+      "gateRunId": "reconciliation-live-2026-08-20T22-46-11-986Z",
+      "runtimeSHA": "unknown",
+      "timestamp": "2026-08-20T22:46:12.392Z",
+      "isRetry": false,
+      "retryOfAttemptId": null,
+      "question": "What is his key weakness?",
+      "status": "completed",
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "reply": "No personal weakness is verified or documented.",
+      "quality": "GOOD",
+      "failureReason": null,
+      "proseSource": "MODEL_GENERATION",
+      "contract": {
+        "intent": "NEGATIVE_ASSESSMENT",
+        "subIntent": "NEGATIVE_ASSESSMENT",
+        "policyMode": "VERIFIED_FACT",
+        "directAnswer": "UNKNOWN",
+        "factState": "UNKNOWN",
+        "evidenceStrength": "PROJECT",
+        "claimCeiling": "has project experience with",
+        "requestedRole": null,
+        "requestedTopic": null,
+        "boundary": "project evidence only — do not describe it as professional production ownership",
+        "forbiddenClaims": [
+          "experienced engineer",
+          "professional engineer",
+          "production engineer",
+          "professional full-stack engineer"
+        ]
+      },
+      "generationCalls": [
+        "knowledge-loaded",
+        "query-rewrite",
+        "policy:VERIFIED_FACT",
+        "cache-hit"
+      ],
+      "raw": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "reply": "No personal weakness is verified or documented.",
+          "provider": "cloudflare",
+          "model": "@cf/meta/llama-3.2-3b-instruct",
+          "fallback": false,
+          "grounded": false,
+          "pipeline": [
+            "knowledge-loaded",
+            "query-rewrite",
+            "policy:VERIFIED_FACT",
+            "cache-hit"
+          ],
+          "followUps": [],
+          "proseSource": "MODEL_GENERATION",
+          "contract": {
+            "intent": "NEGATIVE_ASSESSMENT",
+            "subIntent": "NEGATIVE_ASSESSMENT",
+            "policyMode": "VERIFIED_FACT",
+            "directAnswer": "UNKNOWN",
+            "factState": "UNKNOWN",
+            "evidenceStrength": "PROJECT",
+            "claimCeiling": "has project experience with",
+            "requestedRole": null,
+            "requestedTopic": null,
+            "boundary": "project evidence only — do not describe it as professional production ownership",
+            "forbiddenClaims": [
+              "experienced engineer",
+              "professional engineer",
+              "production engineer",
+              "professional full-stack engineer"
+            ]
+          },
+          "local": {
+            "only": true,
+            "memoryTurns": 0,
+            "stanceTopics": 0,
+            "model": "@cf/meta/llama-3.2-3b-instruct"
+          },
+          "agent": {
+            "used": true,
+            "engine": "scout-lite",
+            "agentMode": "lite",
+            "inferenceProvider": "cloudflare",
+            "tools": [
+              "search_portfolio"
+            ],
+            "steps": 1,
+            "contextTokens": 360,
+            "validation": null,
+            "outcome": "recovery",
+            "executionEngine": "scout-lite",
+            "languageLayer": "cloudflare",
+            "languageModel": "@cf/meta/llama-3.2-3b-instruct",
+            "operation": "search",
+            "queryRewritten": "What is Bradley's key weakness?",
+            "rewrittenQuery": null,
+            "generationCalls": [
+              {
+                "attemptIndex": 1,
+                "attemptType": "PRIMARY",
+                "provider": "cloudflare",
+                "providerRequestId": null,
+                "providerTraceId": "a2e4ea474c6deaf4-ORD",
+                "providerTraceType": "cf-ray",
+                "model": "@cf/meta/llama-3.2-3b-instruct",
+                "actualNeurons": 1.864298939704895,
+                "estimatedNeurons": 1.86445,
+                "inputTokens": 357,
+                "outputTokens": 7,
+                "latencyMs": 476,
+                "startedAtRelativeMs": 23,
+                "endedAtRelativeMs": 499,
+                "ok": true,
+                "accepted": false,
+                "validationVerdict": "unsupported",
+                "validationReasons": [
+                  "too_short"
+                ],
+                "rawAnswer": "Unknown",
+                "error": null
+              },
+              {
+                "attemptIndex": 2,
+                "attemptType": "TARGETED_REPAIR",
+                "provider": "cloudflare",
+                "providerRequestId": null,
+                "providerTraceId": "a2e4ea49ae7ceaf4-ORD",
+                "providerTraceType": "cf-ray",
+                "model": "@cf/meta/llama-3.2-3b-instruct",
+                "actualNeurons": 2.461580753326416,
+                "estimatedNeurons": 2.4617250000000004,
+                "inputTokens": 328,
+                "outputTokens": 31,
+                "latencyMs": 242,
+                "startedAtRelativeMs": 509,
+                "endedAtRelativeMs": 751,
+                "ok": true,
+                "accepted": false,
+                "validationVerdict": "unsupported",
+                "validationReasons": [
+                  "negative_personal:Unsupported negative trait: a key weakness"
+                ],
+                "rawAnswer": "Bradley has experience with project management, but his lack of experience with large-scale, complex projects may be a key weakness.",
+                "error": null
+              },
+              {
+                "attemptIndex": 3,
+                "attemptType": "RECOVERY",
+                "provider": "cloudflare",
+                "providerRequestId": null,
+                "providerTraceId": "a2e4ea4bafcaeaf4-ORD",
+                "providerTraceType": "cf-ray",
+                "model": "@cf/meta/llama-3.2-3b-instruct",
+                "actualNeurons": 2.2302334308624268,
+                "estimatedNeurons": 2.2304,
+                "inputTokens": 390,
+                "outputTokens": 14,
+                "latencyMs": 278,
+                "startedAtRelativeMs": 822,
+                "endedAtRelativeMs": 1100,
+                "ok": true,
+                "accepted": true,
+                "validationVerdict": "valid",
+                "validationReasons": null,
+                "rawAnswer": "No personal weakness is verified or documented.",
+                "error": null
+              }
+            ],
+            "actualProviderCalls": 3
+          },
+          "agentEvents": [
+            {
+              "ts": 0,
+              "type": "lite_start",
+              "model": "@cf/meta/llama-3.2-3b-instruct"
+            },
+            {
+              "ts": 0,
+              "type": "lite_rewrite",
+              "rewritten": "What is Bradley's key weakness?",
+              "changed": true,
+              "clarificationRequired": false
+            },
+            {
+              "ts": 1,
+              "type": "lite_route",
+              "operation": "search",
+              "tool": "search_portfolio"
+            },
+            {
+              "ts": 3,
+              "type": "lite_tool_result",
+              "tool": "search_portfolio",
+              "resultSize": 2395
+            },
+            {
+              "ts": 5,
+              "type": "lite_compress",
+              "compressedChars": 565,
+              "adversarial": false
+            },
+            {
+              "ts": 21,
+              "type": "lite_packet",
+              "estimatedInputTokens": 360,
+              "chars": 1478,
+              "hasPlan": true,
+              "tokenBudget": {
+                "systemTokens": 337,
+                "userTokens": 23,
+                "totalTokens": 360,
+                "availableForGeneration": 664
+              },
+              "configuredCtx": 1024,
+              "configuredPredict": 120
+            },
+            {
+              "ts": 21,
+              "type": "lite_generate_call",
+              "timeoutMs": 14925,
+              "remaining": 14925,
+              "systemPromptChars": 1404,
+              "userPromptChars": 74,
+              "estimatedTokens": 360
+            },
+            {
+              "ts": 499,
+              "type": "lite_generate_metrics",
+              "estimatedInputTokens": 360,
+              "actualPromptEvalCount": 357,
+              "actualEvalCount": 7,
+              "actualNeurons": 1.864298939704895,
+              "doneReason": "stop",
+              "totalDurationNs": null,
+              "promptEvalDurationNs": null,
+              "evalDurationNs": null,
+              "latencyMs": 476
+            },
+            {
+              "ts": 500,
+              "type": "lite_generate_ok",
+              "latencyMs": 476,
+              "answerLen": 7,
+              "rawAnswer": "Unknown",
+              "rawGenText": "{\"answer\": \"Unknown\"}"
+            },
+            {
+              "ts": 506,
+              "type": "lite_validation",
+              "verdict": "unsupported",
+              "reasons": [
+                "too_short"
+              ],
+              "validatedAnswer": "Unknown"
+            },
+            {
+              "ts": 509,
+              "type": "lite_repair_call",
+              "tokens": 303
+            },
+            {
+              "ts": 814,
+              "type": "lite_repair_result",
+              "verdict": "unsupported",
+              "latencyMs": 242,
+              "rawAnswer": "Bradley has experience with project management, but his lack of experience with large-scale, complex projects may be a key weakness.",
+              "reasons": [
+                "negative_personal:Unsupported negative trait: a key weakness"
+              ]
+            },
+            {
+              "ts": 814,
+              "type": "lite_fallback",
+              "reason": "validation_failed",
+              "totalMs": 814
+            },
+            {
+              "ts": 822,
+              "type": "lite_recovery_generate",
+              "intent": "NO_EVIDENCE",
+              "attempt": 1,
+              "timeoutMs": 14124,
+              "remaining": 14124
+            },
+            {
+              "ts": 1113,
+              "type": "lite_recovery_ok",
+              "intent": "NO_EVIDENCE",
+              "attempt": 1,
+              "latencyMs": 278,
+              "answerLen": 47,
+              "lenient": false
+            }
+          ],
+          "sessionMemory": {
+            "turns": 1,
+            "retained": true
+          },
+          "cached": true
+        }
+      }
+    }
+  ],
+  "scheduled": {
+    "good": 5,
+    "total": 5
+  },
+  "retries": {
+    "good": 0,
+    "total": 0
+  }
+}

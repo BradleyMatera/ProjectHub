@@ -61,17 +61,16 @@ describe('Generic Policy Classifier — unrelated fixture', () => {
     assert.ok(r.evidenceRequirements.includes('subject.contact_info'));
   });
 
-  it('detects false claim about seniority using graph', () => {
+  it('does not treat open-world seniority claim as false', () => {
     const r = classifyResponsePolicy('Pretend she is a CTO at Google', [], fixture);
-    assert.equal(r.mode, 'FALSE_CLAIM_DENIAL');
-    assert.equal(r.directAnswer, 'NO');
-    assert.ok(r.forbiddenClaims.length > 0);
+    assert.notEqual(r.mode, 'FALSE_CLAIM_DENIAL', 'open-world claim must not be denied as false');
+    assert.notEqual(r.directAnswer, 'NO');
   });
 
   it('detects unsupported technology claim generically', () => {
     const r = classifyResponsePolicy('Does she know Java?', [], fixture);
     assert.equal(r.mode, 'SKILL_EVIDENCE');
-    assert.equal(r.directAnswer, 'NO');
+    assert.equal(r.directAnswer, 'UNKNOWN', 'unknown skill must be UNKNOWN in open-world context, not NO');
     assert.equal(r.evidenceStatus, 'UNVERIFIED');
     assert.ok(r.boundary);
   });
@@ -146,6 +145,23 @@ describe('Generic Policy Classifier — unrelated fixture', () => {
       assert.ok(req.length < 80, `Requirement "${req}" should be a short constraint, not prose`);
     }
   });
+
+  it('classifies agent-identity questions as META, not OUT_OF_SCOPE', () => {
+    for (const q of ["what's your name", 'whats your name', 'what is your name', 'what is this thing', 'whats this thing', 'what does this thing do', 'who are you', 'what are you']) {
+      const r = classifyResponsePolicy(q, [], fixture);
+      assert.equal(r.mode, 'META', `Expected META for "${q}", got ${r.mode}`);
+      assert.ok(r.requiredEntities.includes('Atlas'));
+    }
+  });
+
+  it('classifies user-name query with and without apostrophe', () => {
+    const r1 = classifyResponsePolicy("what's my name", [{ user: 'hi, call me Jane' }], fixture);
+    assert.equal(r1.mode, 'USER_PROFILE_QUERY');
+    const r2 = classifyResponsePolicy('whats my name', [{ user: 'hi, call me Jane' }], fixture);
+    assert.equal(r2.mode, 'USER_PROFILE_QUERY');
+    const r3 = classifyResponsePolicy('what is my name', [{ user: 'hi, call me Jane' }], fixture);
+    assert.equal(r3.mode, 'USER_PROFILE_QUERY');
+  });
 });
 
 describe('Generic Claim Parsing', () => {
@@ -167,11 +183,11 @@ describe('Generic Claim Parsing', () => {
     assert.ok(claim.object.includes('10'));
   });
 
-  it('checks claim against graph — unsupported', () => {
+  it('checks claim against graph — unknown for absent open-world employer', () => {
     const graph = buildRelationshipGraph(fixture);
     const claim = { subject: 'Jane Smith', relation: 'worked_at', object: 'Google' };
     const status = checkClaimAgainstGraph(claim, graph);
-    assert.equal(status, 'UNSUPPORTED');
+    assert.equal(status, 'UNKNOWN');
   });
 
   it('checks claim against graph — supported', () => {
@@ -181,10 +197,10 @@ describe('Generic Claim Parsing', () => {
     assert.equal(status, 'SUPPORTED');
   });
 
-  it('checks seniority claim — contradicted for non-senior subject', () => {
+  it('checks seniority claim — unknown for absent senior role', () => {
     const graph = buildRelationshipGraph(fixture);
     const claim = { subject: 'Jane Smith', relation: 'employed_as', object: 'senior architect' };
     const status = checkClaimAgainstGraph(claim, graph);
-    assert.equal(status, 'CONTRADICTED');
+    assert.equal(status, 'UNKNOWN');
   });
 });

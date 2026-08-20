@@ -14,7 +14,8 @@ ProjectHub is Bradley Matera's embeddable portfolio and recruiter assistant. The
 - Fuses multiple local BM25 views with RRF for context-dependent follow-ups while leaving stronger standalone rankings unchanged.
 - Retains five recent turns plus topic stances for coherent multi-turn conversation.
 - Uses deterministic read-only tools for evidence gathering (project comparison, role matching, profile lookup).
-- Uses Cloudflare Workers AI (`@cf/meta/llama-3.2-3b-instruct`) for production generative inference on the free tier.
+- Uses Cloudflare Workers AI (`@cf/meta/llama-3.2-3b-instruct`) as the production generative inference target on the free tier.
+- Falls back to a local `qwen2.5:1.5b` via Ollama when Cloudflare is unavailable or unconfigured.
 - Uses `qwen2.5:1.5b` via Ollama as the development/evaluation inference runtime (behind the same adapter boundary).
 - Validates all generated answers for factual accuracy, entity correctness, polarity, safety, source overlap, and overclaim detection.
 - All user-visible conversational replies are generative — deterministic code decides, routes, and builds contracts but never writes final prose.
@@ -34,7 +35,7 @@ ProjectHub Express API (cloud-hosted, Docker-containerized)
         +-- BM25 over bundled recruiter knowledge
         +-- five-turn memory and stance retention
         +-- deterministic read-only evidence tools
-        +-- generative inference (Cloudflare Workers AI in production, Ollama in dev/test)
+        +-- generative inference (Cloudflare Workers AI primary, Ollama dev/test and emergency fallback)
         +-- safety and grounded-output validators
         +-- generative recovery contracts (no deterministic final prose)
 ```
@@ -66,7 +67,7 @@ npm run build
 node --check server-gemini.js
 ```
 
-Run Ollama separately with the configured model, copy `.env.development.example` to `.env`, then:
+Copy `.env.development.example` to `.env` and set either Cloudflare credentials (production target) or Ollama URL (local fallback), then:
 
 ```bash
 node server-gemini.js
@@ -91,9 +92,10 @@ curl "http://127.0.0.1:3000/api/retrieve?q=what%20did%20he%20build"
 | `lib/query-understanding.js` | Normalization, typo correction, intent, and contextual rewrite |
 | `lib/bm25.js` | Offline lexical retrieval |
 | `lib/rrf.js` | Contextual reciprocal-rank fusion over local BM25 rankings |
+| `lib/local-model-router.js` | Inference router with Cloudflare primary / Ollama fallback / deadline awareness |
 | `lib/local-conversation.js` | Prompt memory and generated-answer validation |
 | `lib/agent-tools.js` | Read-only evidence tools |
-| `lib/agent-fallback.js` | Deterministic local agent planner |
+| `lib/agent-fallback.js` | Deprecated compatibility shim (no deterministic prose authors exported) |
 | `agent-preview/` | Private feature-preview frontend |
 | `analytics/` | Carbon analytics dashboard source |
 | `docs/local-ai-runtime.md` | Runtime design and verification |

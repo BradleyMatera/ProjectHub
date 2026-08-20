@@ -7,6 +7,7 @@ const { buildReasoningPacket, buildSynthesisPacket, buildRawPacket, estimateToke
 const { freshState, updateState, getState, clearState, detectTopic, detectProjects, resolveReferents } = require('../lib/session-state');
 const { parseDecision, clampArgs, clampObservation, allToolNames } = require('../lib/agent-engine');
 const router = require('../lib/local-model-router');
+const { buildRecoveryContract } = require('../lib/recovery-contract');
 const recruiterKnowledge = require('../data/recruiter-knowledge.json');
 
 // Grounding validator
@@ -1147,12 +1148,9 @@ test('regression: explain-like question does not skip content-overlap check', ()
 });
 
 // q33: "ProjectHub is an AI assistant script that answers questions about
-// various scripts on websites" — mischaracterization. This is a PRE-EXISTING
-// claim-extractor coverage gap (is_type claims are skipped, and the description
-// mischaracterization isn't captured by any pattern). Documenting as a known
-// gap — the is_type skip and description-accuracy check need to be addressed
-// in the conversational-parity phase.
-test('known-gap: ProjectHub mischaracterization as scripts-answerer (pre-existing)', () => {
+// various scripts on websites" — mischaracterization. The answer is now
+// rejected because it does not match the documented ProjectHub description.
+test('ProjectHub mischaracterization as scripts-answerer is rejected', () => {
   const source = 'ProjectHub is an embeddable AI recruiter assistant named Scout. It uses JavaScript, Node.js, and Express.';
   const result = validateAnswer(
     'ProjectHub is an AI assistant script that answers questions about various scripts on websites. It uses JavaScript, Node.js, and Express for its functionality.',
@@ -1160,10 +1158,7 @@ test('known-gap: ProjectHub mischaracterization as scripts-answerer (pre-existin
     'What about the other project?',
     testKnowledge
   );
-  // Currently passes — this is a known gap. is_type validation is skipped and
-  // the description mischaracterization isn't extracted as a claim.
-  // When fixed, this assertion should flip to false.
-  assert.equal(result.valid, true, `Known gap: mischaracterization currently passes. Reasons: ${result.reasons.join(', ')}`);
+  assert.equal(result.valid, false, `Mischaracterization should be rejected. Reasons: ${result.reasons.join(', ')}`);
 });
 
 // q28: "AWS internship capstone... and an AI assistant named Scout" — Scout is
@@ -2056,7 +2051,7 @@ test('contract: job-fit with required skills gets FIT or PARTIAL_FIT', () => {
   assert.ok(c.requiredEntities.includes('React'), 'should require React');
 });
 
-test('contract: job-fit with missing skills gets NOT_FIT', () => {
+test('contract: job-fit with missing skills gets UNKNOWN', () => {
   const c = buildResponseContract(
     'How does he fit a DevOps role requiring Kubernetes and CI/CD?',
     'Bradley has AWS experience. No Kubernetes evidence.',
@@ -2064,19 +2059,19 @@ test('contract: job-fit with missing skills gets NOT_FIT', () => {
     []
   );
   assert.equal(c.intent, 'JOB_FIT');
-  assert.equal(c.directAnswer, 'NOT_FIT');
+  assert.equal(c.directAnswer, 'UNKNOWN');
 });
 
-test('contract: entry-level boundary is present for job-fit', () => {
+test('contract: no entry-level boundary is inferred for job-fit', () => {
   const c = buildResponseContract(
     'How does he fit a junior frontend developer role requiring React and TypeScript?',
     'Bradley has React and TypeScript skills.',
     testKnowledge,
     []
   );
-  assert.ok(c.boundary, 'should have boundary for entry-level candidate');
-  // Boundary should not claim professional production ownership
-  assert.ok(!c.boundary.toLowerCase().includes('experienced engineer'), 'boundary should not inflate title');
+  // Career stage must not be inferred from a negative boundary.
+  assert.ok(!c.boundary || !c.boundary.toLowerCase().includes('entry-level'), 'should not infer entry-level boundary');
+  assert.ok(!c.boundary || !c.boundary.toLowerCase().includes('experienced engineer'), 'boundary should not inflate title');
 });
 
 test('contract: classifySubIntent distinguishes skill evidence from generic follow-up', () => {
@@ -2161,21 +2156,31 @@ test('regression: correct adversarial denial passes completeness (q61 fix)', () 
   assert.equal(result.complete, true, 'Short denial confirmation should be complete');
 });
 
-// 5. Invented employment fallback denies employment
-test('regression: invented employment fallback denies employment (q62 fix)', () => {
-  const { buildGroundedFallback } = require('../lib/lite-agent');
+// 5. Invented employment fallback produces denial or UNKNOWN contract
+// With an open-world employment KB the result must be UNKNOWN, not fabricated FALSE.
+test('regression: invented employment fallback does not fabricate employment (q62 fix)', () => {
   const toolResult = { results: [{ name: 'Project Alpha', description: 'A caching service.' }] };
-  const fallback = buildGroundedFallback(toolResult, { operation: 'search' }, 'Tell me about his time at Microsoft.', '', syntheticKnowledge);
-  assert.ok(/no (?:verified )?evidence/i.test(fallback), 'Fallback should deny employment at unknown company');
-  assert.ok(!/Project Alpha/.test(fallback), 'Fallback should not show unrelated project for invented employer');
+  const question = 'Tell me about his time at Microsoft.';
+  const contract = buildRecoveryContract(toolResult, { operation: 'search' }, question, '', syntheticKnowledge, question);
+  const contractStr = JSON.stringify(contract || {});
+  assert.ok(contract && contract.intent, 'Fallback should produce a contract');
+  assert.ok(
+    contract.directAnswer === 'NO' || contract.directAnswer === 'UNKNOWN',
+    'Fallback should deny (closed-world) or report unknown (open-world) invented employment'
+  );
+  assert.ok(!contractStr.includes('Project Alpha'), 'Fallback should not show unrelated project for invented employer');
 });
 
-// 6. Team-management unsupported fallback denies management
-test('regression: team-management unsupported fallback denies management (q58 fix)', () => {
-  const { buildGroundedFallback } = require('../lib/lite-agent');
+// 6. Team-management unsupported fallback does not fabricate denial
+test('regression: team-management unsupported fallback does not fabricate denial (q58 fix)', () => {
   const toolResult = { results: [{ role: 'Developer', company: 'Acme Corp', summary: 'Built things.' }] };
-  const fallback = buildGroundedFallback(toolResult, { operation: 'search' }, 'He managed a team of developers, right?', '', syntheticKnowledge);
-  assert.ok(/\bno\b|not\b/i.test(fallback), 'Fallback should deny team management');
+  const question = 'He managed a team of developers, right?';
+  const contract = buildRecoveryContract(toolResult, { operation: 'search' }, question, '', syntheticKnowledge, question);
+  const contractStr = JSON.stringify(contract || {});
+  // Without an explicit boundary in knowledge, Scout must NOT assert FALSE.
+  // It should use UNKNOWN language (directAnswer null or not NO) or not deny at all.
+  assert.ok(contract, 'Fallback should produce a contract');
+  assert.ok(!/\bdid not\b|\bnever\b|\bnot\b.*manag/i.test(contractStr), 'Fallback must not fabricate denial without boundary data');
 });
 
 // 7. Source first person converted to subject perspective

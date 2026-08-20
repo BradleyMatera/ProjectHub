@@ -167,8 +167,7 @@ async function fetchAllGitHubData(projects) {
     }
   })).catch(() => {});
   return projectData;
-}
-function buildServerHistory(context) {
+}function buildServerHistory(context) {
   return (Array.isArray(context) ? context : []).reduce((turns, turn) => {
     if (turn.role === 'user') {
       turns.push({ user: turn.content, assistant: '' });

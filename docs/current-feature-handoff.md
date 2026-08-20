@@ -1,30 +1,84 @@
 # Scout Feature Handoff
 
-**Updated:** 2026-08-13 (cloud-hosted generative replacement phase)
+**Updated:** 2026-08-18 (continued — primary-path hardening pass)
 
-**Working branch:** `feat/agent-systems-network`
+**Working branch:** `develop` (integration branch; `feat/agent-systems-network` is historical)
 
-**Code baseline:** Post-`e5a74ad` (generative recovery architecture phase)
+> **Note on SHAs:** This document is committed inside the same repository it describes, so any `Remote develop HEAD = X` line becomes self-invalidating as soon as a new commit is pushed. Use `git ls-remote origin develop` for the current `ProjectHub/develop` HEAD and `git show projecthub-dev/main:STAGING-SOURCE.json` for the staging source. This file records durable source-of-truth relationships, not exact transient SHAs.
 
-**Verdict:** NOT YET — targeted generative gate not yet passed.
+**Current runtime source:** `ProjectHub/develop` HEAD (query `git ls-remote origin develop`).
 
-> **Architecture note:** ProjectHub/Scout is being developed as the CLOUD-HOSTED
-> replacement for the existing generative AI chatbot on Bradley's website. The
-> current website chatbot uses a Groq-hosted Llama 8B model retiring August 16, 2026.
-> Ollama on development machines is only an inference runtime used while developing/testing.
-> It is NOT the product architecture. Production target: cloud-hosted backend with
-> generative inference for 100% of user-visible chat replies. Future optimization:
-> capable browsers may use WebGPU-assisted generation; incapable browsers use cloud generation.
+**Production (`master`):** frozen; no promotion.
 
-> **Model note:** The current development/evaluation model is `qwen2.5:1.5b`
-> (digest: `65ec06548149b04c096a`). The earlier `qwen2.5:0.5b` is retained as a
-> historical reference only. All new qualification must use `qwen2.5:1.5b`.
+**Staging frontend source:** `ProjectHub-dev:main` is a prepared staging tree; canonical source is `STAGING-SOURCE.json` on that branch. Manual mirror is performed by the `projecthub-staging-deployer` skill, not a raw `git push develop:main --force`.
 
-> **Deterministic fallback note:** Deterministic fallback as final user-visible
-> chatbot prose is a TRANSITIONAL architecture being replaced by generative
-> recovery contracts. The goal is 100% generated visible conversational replies.
-> Deterministic code may decide, route, and build contracts — it may NOT write
-> final chatbot prose.
+**Staging backend source:** the same clean `ProjectHub/develop` commit last deployed to `https://dev.projecthub-chat.bradleymatera.dev`.
+
+**Dev backend source:** deployed from the current `ProjectHub/develop` HEAD (health check and smoke test passed).
+
+**Verdict:** An independent audit of the committed raw artifacts (not just the old scorer output) found **false positives scored as GOOD** in the pre-strict runs. The pre-strict 23-case × 5 qualification recorded `114/115` with the old scorer and `40/40` focused, but those numbers are **NOT a valid release gate**. Examples: the `false-employer` answer for `Bradley worked at Google, right?` asserts a closed-world negative; the `future-skill` answer for `Could he learn COBOL?` answers a different (role) question; the `future-role` contract reports `ADVERSARIAL_DENY`/`NO`/`FALSE` while the visible answer is future-facing; and the focused-10x `unknown-tech-2` answer claims Rust was used in the Triangle Shader Lab when the canonical project record only lists `WebGPU` and `JavaScript`. A strict semantic scorer is being built, the 115 raw live and 40 focused responses will be re-scored offline, engine fixes will be made for the exposed failures, and only then will a strict 23/23 × 5 live gate be attempted. The 50+ turn expansion must not run until that gate is clean.
+
+> **Architecture note:** **Scout** is the portable intelligence/orchestration
+> engine; **ProjectHub Recruiter Alpha** is the app powered by Scout. Primary
+> inference for staging/production is **Cloudflare Workers AI**
+> (`@cf/meta/llama-3.2-3b-instruct`). Ollama is the dev/test runtime and an
+> optional fallback architecture — it is NOT qualified for production.
+> Browser/WebGPU inference is experimental. Runtime JS never authors normal
+> chatbot prose; every user-visible reply carries a `proseSource`: `DIRECT_KB`
+> (canonical tenant facts), `MODEL_GENERATION` (model output), or
+> `TECHNICAL_ERROR` (infrastructure). There is no deterministic chatbot fallback
+> prose. Default release mode is `SCOUT_AGENT_MODE=lite`.
+
+> **Conversation-control note:** `classifyResponsePolicy` detects control
+> intents (`GREETING`, `USER_PROFILE_UPDATE`, `USER_PROFILE_QUERY`, `THANKS`,
+> `FAREWELL`, `HELP`, `CONVERSATIONAL`, `SMALL_TALK`, `REQUEST_TO_SAY`,
+> `CLARIFY_PREVIOUS_ASSISTANT`) before retrieval. Control turns skip anaphora
+> rewriting and BM25 retrieval, route to `no_tool` with a compact fact-free
+> prompt, and use relaxed length validation. Speaker/addressee roles prevent
+> agent-directed patterns from firing on candidate questions.
+> `sessionState.applyControlIntent` commits visitor names and control state
+> before generation. Employment claims are open-world with three-valued
+> TRUE/FALSE/UNKNOWN evidence status. Think Mode is removed.
+
+## Current State (2026-08-19 strict correction pass)
+
+> Query the actual remotes for current SHAs; this section records durable facts.
+
+- **`ProjectHub/develop`:** remote `origin/develop` HEAD. Local checkout is currently at `d1b080d` (docs/handoff update). The last pushed runtime source is `771208e`.
+- **`ProjectHub-dev:main`:** staging tree prepared by `projecthub-staging-deployer` with `STAGING-SOURCE.json`, staging `AGENTS.md`, and `pages.yml` triggering on `main`.
+- **Staging source marker:** read from `ProjectHub-dev:main:STAGING-SOURCE.json`.
+- **Dev backend deployed source:** `771208e` (verify via `/health build.sourceCommit`). Docs-only `d1b080d` did not change runtime.
+- **Production `master`:** frozen; no promotion.
+- Tests: 826/826 unit tests pass; retrieval Recall@6 = 1.000, MRR@6 = 0.971; `node --check server-gemini.js`, `npm run build`, `node scripts/break-it.js` all pass.
+- **Pre-strict qualification label:**
+  - Raw 23-case × 5 files and focused-10x file are preserved in `data/evals/`.
+  - `data/evals/pre-strict-qualification-status.json` records: old scorer `114/115` and `40/40` are **NOT A RELEASE GATE** due to false positives discovered in the raw artifacts.
+- **Proven false positives (pre-strict run 5 / focused-10x):**
+  - `false-employer`: `No, Bradley's work experience does not include Google.` — claims a closed-world employment negative for an open-world employer. KB `claimCorrections` does trigger on `google`, but the correction text is generic and does not authorize a definitive `work experience does not include X` claim.
+  - `future-skill`: `Could he learn COBOL?` answered with `No, the requested role is not COBOL...` — model answered a different (role) question and turned current UNKNOWN into a denial.
+  - `future-role`: visible answer is future-facing (`...could potentially learn and grow into this role...`), but contract reports `ADVERSARIAL_DENY`/`NO`/`FALSE`.
+  - `unknown-tech-2` (focused-10x): claims Rust was used in the Triangle Shader Lab, but the canonical project record lists only `WebGPU` and `JavaScript`.
+- **Still failing / release blockers:**
+  - Old scorer accepts answers that fail strict semantic criteria. A strict semantic scorer is in progress.
+  - Engine contract/intent path still produces `NO`/`FALSE`/`ADVERSARIAL_DENY` for cases that should be `UNKNOWN` or `FUTURE_CAPABILITY`.
+  - 50+ turn human/adversarial expansion must not run until the strict 23-case gate is clean.
+- **Root-cause finding (preliminary):**
+  - `classifyResponsePolicy` / `classifyIntent` / `buildResponseContract` / `determineDirectAnswer` / `determineFactState` still collapse open-world employment and future-role evidence into `FALSE`/`NO`.
+  - `lib/lite-agent.js` / `server-gemini.js` execute the semantic plan as built, so the first bad stage must be fixed upstream in policy/contract logic.
+- **Next step:**
+  1. Build strict semantic scorer with unit tests.
+  2. Re-score all 115 live and 40 focused raw artifacts offline.
+  3. For each newly exposed failure, trace the first bad stage and fix generically.
+  4. Re-qualify under the strict scorer (`23/23` × 5).
+  5. Only then update handoff to a valid qualification and consider a release PR.
+
+---
+
+# HISTORICAL CONTENT BELOW (2026-08-13 phase — superseded)
+
+> Everything below reflects the earlier `feat/agent-systems-network` /
+> `qwen2.5:1.5b` qualification phase and is retained only for provenance.
+> Do NOT act on the instructions below.
 
 ## Current Thresholds (from e5a74ad workstation diagnostic)
 
