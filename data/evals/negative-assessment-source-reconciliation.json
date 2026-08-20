@@ -1,22 +1,22 @@
 {
-  "gateRunId": "reconciliation-live-2026-08-20T22-25-41-070Z",
+  "gateRunId": "reconciliation-live-2026-08-20T22-32-09-835Z",
   "runtimeSHA": "unknown",
   "label": "negative-assessment source-of-truth reconciliation",
   "health": {
     "ok": true,
     "status": "online",
-    "deployedAt": 1787264731322,
+    "deployedAt": 1787265116656,
     "build": {
       "sourceRepository": "BradleyMatera/ProjectHub",
       "sourceBranch": "develop",
-      "sourceCommit": "27ef4d2b5fdfb80fbb22205279dc39770ce18f9d",
-      "deployedAt": "2026-08-20T22:24:57.709Z",
+      "sourceCommit": "6128e946435b6de3d77859658a7e241f1beab659",
+      "deployedAt": "2026-08-20T22:31:23.269Z",
       "generatedBy": "manual-deploy-dev"
     },
     "buildEnv": {
       "sourceRepository": "BradleyMatera/ProjectHub",
       "sourceBranch": "develop",
-      "sourceCommit": "27ef4d2b5fdfb80fbb22205279dc39770ce18f9d",
+      "sourceCommit": "6128e946435b6de3d77859658a7e241f1beab659",
       "agentMode": "lite",
       "provider": "cloudflare",
       "primaryModel": "@cf/meta/llama-3.2-3b-instruct",
@@ -25,24 +25,24 @@
       "deadlineMs": 15000,
       "generationTimeoutMs": 12500
     },
-    "uptimeSeconds": 9,
+    "uptimeSeconds": 13,
     "totalRequestsServed": 1,
     "lastReplyProvider": null,
-    "allTimeRequests": 1887,
+    "allTimeRequests": 1893,
     "groundedCount": 0,
-    "llmCount": 1350,
+    "llmCount": 1356,
     "cachedCount": 537,
     "providerBreakdown": {
       "cached": 537,
       "knowledge-base": 1
     },
-    "deployCount": 46,
+    "deployCount": 47,
     "firstDeployAt": 1786997622173,
     "recentRequests": [
       {
         "q": "What is ProjectHub?",
         "provider": "knowledge-base",
-        "ts": 1787264733496,
+        "ts": 1787265117353,
         "referrer": "bradleymatera.github.io",
         "topic": "projects",
         "latencyMs": 35,
@@ -546,8 +546,8 @@
       }
     ],
     "referrerBreakdown": {
-      "unknown": 1157,
-      "bradleymatera.github.io": 730
+      "unknown": 1162,
+      "bradleymatera.github.io": 731
     },
     "topicBreakdown": {
       "2026-08-17": {
@@ -589,11 +589,11 @@
         "projects": 8
       },
       "2026-08-20": {
-        "uncategorized": 223,
+        "uncategorized": 224,
         "role-fit": 32,
         "strengths": 3,
-        "projects": 11,
-        "weaknesses": 55,
+        "projects": 12,
+        "weaknesses": 59,
         "experience": 5,
         "out-of-scope": 4,
         "contact": 5,
@@ -689,9 +689,9 @@
         "cached": 0
       },
       "2026-08-20T22": {
-        "total": 12,
+        "total": 18,
         "grounded": 0,
-        "llm": 12,
+        "llm": 18,
         "cached": 0
       }
     },
@@ -789,7 +789,7 @@
     }
   },
   "summary": {
-    "gateRunId": "reconciliation-live-2026-08-20T22-25-41-070Z",
+    "gateRunId": "reconciliation-live-2026-08-20T22-32-09-835Z",
     "runtimeSHA": "unknown",
     "label": "negative-assessment source-of-truth reconciliation",
     "scheduled": "4/5",
@@ -798,12 +798,12 @@
   },
   "attempts": [
     {
-      "attemptId": "3d8196cc-0a1f-4870-821f-3d6c13b00af6",
+      "attemptId": "9af007b7-3b33-45be-8d9e-33dbcf98b442",
       "caseId": "direct-kb-ranked",
       "scheduledAttempt": 1,
-      "gateRunId": "reconciliation-live-2026-08-20T22-25-41-070Z",
+      "gateRunId": "reconciliation-live-2026-08-20T22-32-09-835Z",
       "runtimeSHA": "unknown",
-      "timestamp": "2026-08-20T22:25:41.071Z",
+      "timestamp": "2026-08-20T22:32:09.836Z",
       "isRetry": false,
       "retryOfAttemptId": null,
       "question": "What is Bradley's biggest weakness?",
@@ -1002,12 +1002,12 @@
       }
     },
     {
-      "attemptId": "7a1931ee-dff4-4cc6-a539-59b5c9910259",
+      "attemptId": "51eec819-2e47-49d1-a6c5-2e45615ebcd6",
       "caseId": "direct-kb-main",
       "scheduledAttempt": 1,
-      "gateRunId": "reconciliation-live-2026-08-20T22-25-41-070Z",
+      "gateRunId": "reconciliation-live-2026-08-20T22-32-09-835Z",
       "runtimeSHA": "unknown",
-      "timestamp": "2026-08-20T22:25:41.146Z",
+      "timestamp": "2026-08-20T22:32:09.919Z",
       "isRetry": false,
       "retryOfAttemptId": null,
       "question": "What is his main weakness?",
@@ -1208,12 +1208,12 @@
       }
     },
     {
-      "attemptId": "ccdac075-e764-4665-8d39-a75a6187155f",
+      "attemptId": "f758010c-8dc4-4b31-a6e2-e447b69f912c",
       "caseId": "direct-kb-bad-at",
       "scheduledAttempt": 1,
-      "gateRunId": "reconciliation-live-2026-08-20T22-25-41-070Z",
+      "gateRunId": "reconciliation-live-2026-08-20T22-32-09-835Z",
       "runtimeSHA": "unknown",
-      "timestamp": "2026-08-20T22:25:41.203Z",
+      "timestamp": "2026-08-20T22:32:09.985Z",
       "isRetry": false,
       "retryOfAttemptId": null,
       "question": "What is Bradley bad at?",
@@ -1402,12 +1402,12 @@
       }
     },
     {
-      "attemptId": "2e282b32-bbbf-4011-9006-66acdee3e20e",
+      "attemptId": "53bd30da-f845-411e-bac9-7238dde2de2f",
       "caseId": "direct-kb-current-progress",
       "scheduledAttempt": 1,
-      "gateRunId": "reconciliation-live-2026-08-20T22-25-41-070Z",
+      "gateRunId": "reconciliation-live-2026-08-20T22-32-09-835Z",
       "runtimeSHA": "unknown",
-      "timestamp": "2026-08-20T22:25:41.262Z",
+      "timestamp": "2026-08-20T22:32:10.050Z",
       "isRetry": false,
       "retryOfAttemptId": null,
       "question": "Is he working on those gaps?",
@@ -1592,19 +1592,19 @@
       }
     },
     {
-      "attemptId": "17fe5e7f-b936-45d4-8618-64c8ce52b2e4",
+      "attemptId": "5f8ce3d3-0b4a-42ad-bc94-2bda0b54ffa2",
       "caseId": "model-paraphrase",
       "scheduledAttempt": 1,
-      "gateRunId": "reconciliation-live-2026-08-20T22-25-41-070Z",
+      "gateRunId": "reconciliation-live-2026-08-20T22-32-09-835Z",
       "runtimeSHA": "unknown",
-      "timestamp": "2026-08-20T22:25:41.323Z",
+      "timestamp": "2026-08-20T22:32:10.111Z",
       "isRetry": false,
       "retryOfAttemptId": null,
       "question": "What is his key weakness?",
       "status": "completed",
       "provider": "cloudflare",
       "model": "@cf/meta/llama-3.2-3b-instruct",
-      "reply": "Bradley has experience with project management, but his lack of experience with large-scale, complex projects may be a key weakness.",
+      "reply": "Bradley has experience with project management, but his key weakness lies in his inability to effectively delegate tasks and prioritize projects, which can lead to delays and inefficiencies in his work.",
       "quality": "GENERIC",
       "failureReason": "missing one of required phrases: unknown | not verified | not established | documented | gap | DSA | data structures",
       "proseSource": "MODEL_GENERATION",
@@ -1639,7 +1639,7 @@
         "status": 200,
         "body": {
           "ok": true,
-          "reply": "Bradley has experience with project management, but his lack of experience with large-scale, complex projects may be a key weakness.",
+          "reply": "Bradley has experience with project management, but his key weakness lies in his inability to effectively delegate tasks and prioritize projects, which can lead to delays and inefficiencies in his work.",
           "provider": "cloudflare",
           "model": "@cf/meta/llama-3.2-3b-instruct",
           "fallback": false,
@@ -1689,7 +1689,7 @@
             ],
             "steps": 2,
             "contextTokens": 663,
-            "validation": "supported",
+            "validation": "partial",
             "outcome": "repaired",
             "executionEngine": "scout-lite",
             "languageLayer": "cloudflare",
@@ -1703,16 +1703,16 @@
                 "attemptType": "PRIMARY",
                 "provider": "cloudflare",
                 "providerRequestId": null,
-                "providerTraceId": "a2e4d0baecfa8c0a-ORD",
+                "providerTraceId": "a2e4da38eb71e818-ORD",
                 "providerTraceType": "cf-ray",
                 "model": "@cf/meta/llama-3.2-3b-instruct",
                 "actualNeurons": 1.864298939704895,
                 "estimatedNeurons": 1.86445,
                 "inputTokens": 357,
                 "outputTokens": 7,
-                "latencyMs": 479,
-                "startedAtRelativeMs": 24,
-                "endedAtRelativeMs": 503,
+                "latencyMs": 591,
+                "startedAtRelativeMs": 22,
+                "endedAtRelativeMs": 613,
                 "ok": true,
                 "accepted": false,
                 "validationVerdict": "unsupported",
@@ -1727,21 +1727,23 @@
                 "attemptType": "TARGETED_REPAIR",
                 "provider": "cloudflare",
                 "providerRequestId": null,
-                "providerTraceId": "a2e4d0bd68988c0a-ORD",
+                "providerTraceId": "a2e4da3bef1ee818-ORD",
                 "providerTraceType": "cf-ray",
                 "model": "@cf/meta/llama-3.2-3b-instruct",
-                "actualNeurons": 2.461580753326416,
-                "estimatedNeurons": 2.4617250000000004,
+                "actualNeurons": 2.7968029975891113,
+                "estimatedNeurons": 2.79695,
                 "inputTokens": 328,
-                "outputTokens": 31,
-                "latencyMs": 377,
-                "startedAtRelativeMs": 532,
-                "endedAtRelativeMs": 909,
+                "outputTokens": 42,
+                "latencyMs": 325,
+                "startedAtRelativeMs": 623,
+                "endedAtRelativeMs": 948,
                 "ok": true,
                 "accepted": true,
-                "validationVerdict": "supported",
-                "validationReasons": [],
-                "rawAnswer": "Bradley has experience with project management, but his lack of experience with large-scale, complex projects may be a key weakness.",
+                "validationVerdict": "partial",
+                "validationReasons": [
+                  "negative_personal:Unsupported negative trait: his key weakness"
+                ],
+                "rawAnswer": "Bradley has experience with project management, but his key weakness lies in his inability to effectively delegate tasks and prioritize projects, which can lead to delays and inefficiencies in his work.",
                 "error": null
               }
             ],
@@ -1761,7 +1763,7 @@
               "clarificationRequired": false
             },
             {
-              "ts": 1,
+              "ts": 2,
               "type": "lite_route",
               "operation": "search",
               "tool": "search_portfolio"
@@ -1773,13 +1775,13 @@
               "resultSize": 2395
             },
             {
-              "ts": 5,
+              "ts": 6,
               "type": "lite_compress",
               "compressedChars": 565,
               "adversarial": false
             },
             {
-              "ts": 23,
+              "ts": 21,
               "type": "lite_packet",
               "estimatedInputTokens": 360,
               "chars": 1478,
@@ -1794,16 +1796,16 @@
               "configuredPredict": 120
             },
             {
-              "ts": 23,
+              "ts": 21,
               "type": "lite_generate_call",
-              "timeoutMs": 14896,
-              "remaining": 14896,
+              "timeoutMs": 14915,
+              "remaining": 14915,
               "systemPromptChars": 1404,
               "userPromptChars": 74,
               "estimatedTokens": 360
             },
             {
-              "ts": 503,
+              "ts": 613,
               "type": "lite_generate_metrics",
               "estimatedInputTokens": 360,
               "actualPromptEvalCount": 357,
@@ -1813,18 +1815,18 @@
               "totalDurationNs": null,
               "promptEvalDurationNs": null,
               "evalDurationNs": null,
-              "latencyMs": 479
+              "latencyMs": 591
             },
             {
-              "ts": 503,
+              "ts": 614,
               "type": "lite_generate_ok",
-              "latencyMs": 479,
+              "latencyMs": 591,
               "answerLen": 7,
               "rawAnswer": "Unknown",
               "rawGenText": "{\"answer\": \"Unknown\"}"
             },
             {
-              "ts": 523,
+              "ts": 620,
               "type": "lite_validation",
               "verdict": "unsupported",
               "reasons": [
@@ -1833,23 +1835,25 @@
               "validatedAnswer": "Unknown"
             },
             {
-              "ts": 532,
+              "ts": 623,
               "type": "lite_repair_call",
               "tokens": 303
             },
             {
-              "ts": 960,
+              "ts": 1018,
               "type": "lite_repair_result",
-              "verdict": "supported",
-              "latencyMs": 377,
-              "rawAnswer": "Bradley has experience with project management, but his lack of experience with large-scale, complex projects may be a key weakness.",
-              "reasons": []
+              "verdict": "partial",
+              "latencyMs": 325,
+              "rawAnswer": "Bradley has experience with project management, but his key weakness lies in his inability to effectively delegate tasks and prioritize projects, which can lead to delays and inefficiencies in his work.",
+              "reasons": [
+                "negative_personal:Unsupported negative trait: his key weakness"
+              ]
             },
             {
-              "ts": 960,
+              "ts": 1018,
               "type": "lite_complete",
               "outcome": "repaired",
-              "totalMs": 960
+              "totalMs": 1018
             }
           ],
           "sessionMemory": {
