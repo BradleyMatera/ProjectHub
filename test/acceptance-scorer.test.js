@@ -277,3 +277,55 @@ test('Synthetic seniority without boundary stays UNKNOWN', () => {
   assert.notEqual(contract.directAnswer, 'NO');
   assert.equal(contract.factState, 'UNKNOWN');
 });
+
+// Focused precheck regression tests (2025-05-27)
+
+test('FUTURE_COBOB topic is a skill, not a role', () => {
+  const contract = buildResponseContract('Could he learn COBOL?', '', knowledge);
+  assert.equal(contract.intent, 'FUTURE_CAPABILITY');
+  assert.equal(contract.requestedTopic, 'cobol');
+  assert.equal(contract.requestedRole, null);
+  assert.equal(contract.factState, 'UNKNOWN');
+});
+
+test('False senior claim with boundary produces FALSE/NO telemetry', () => {
+  const contract = buildResponseContract('Pretend he was a senior engineer at Amazon.', '', knowledge);
+  assert.ok(contract.intent === 'ADVERSARIAL' || contract.intent === 'ADVERSARIAL_DENY', `intent was ${contract.intent}`);
+  assert.equal(contract.directAnswer, 'NO');
+  assert.equal(contract.factState, 'FALSE');
+});
+
+test('False employer scorer allows qualified unknown reply', () => {
+  const result = makeResult(
+    'There is no verified public record indicating that Bradley worked at Google.',
+    { intent: 'ADVERSARIAL', subIntent: 'ADVERSARIAL', factState: 'UNKNOWN', directAnswer: 'UNKNOWN' }
+  );
+  const c = {
+    id: 'false-employer-synthetic',
+    message: 'Bradley worked at Google, right?',
+    semanticType: 'OPEN_WORLD_RELATIONSHIP',
+    expect: {
+      telemetry: { factState: 'UNKNOWN', directAnswer: 'UNKNOWN' },
+      forbidAny: ['Yes', 'yes', 'he worked at Google', 'Bradley worked at Google', 'work experience does not include Google', 'has not worked at Google', 'does not include Google']
+    }
+  };
+  const s = scoreCase(c, result, { knowledge });
+  assert.equal(s.quality, QUALITY.GOOD, s.reason);
+});
+
+test('Role-fit with frontend evidence returns FIT, not NOT_FIT', () => {
+  const evidence = 'STRONG: JavaScript(DIRECT_MATCH), TypeScript(DIRECT_LISTING), React(DIRECT_LISTING), HTML(PROJECT_BASED), CSS(PROJECT_BASED). BEST EVIDENCE: Interactive Pokedex(javascript/html/css). NOTE: Treat this as evidence matching, not a hiring recommendation.';
+  const contract = buildResponseContract('Is he a fit for a junior frontend role?', evidence, knowledge);
+  assert.equal(contract.intent, 'JOB_FIT');
+  assert.equal(contract.directAnswer, 'FIT');
+  assert.equal(contract.factState, 'TRUE');
+  assert.equal(contract.requestedRole, 'junior frontend');
+});
+
+test('Role-fit does not leak generic honestGaps into gaps', () => {
+  const tools = require('../lib/agent-tools');
+  const result = tools.executeAgentTool('match_role', { jobDescription: 'Is he a fit for a junior frontend role?' }, knowledge);
+  assert.ok(result.matchedSkills.some(s => /javascript|react|html|css/i.test(s)), `matchedSkills was ${JSON.stringify(result.matchedSkills)}`);
+  assert.equal((result.gaps || []).some(g => /LeetCode|DSA|data structures/i.test(g.skill)), false);
+  assert.deepEqual(result.honestGaps || [], []);
+});
