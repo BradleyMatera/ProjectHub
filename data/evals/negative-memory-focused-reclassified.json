@@ -1,0 +1,181 @@
+{
+  "runtimeSHA": "0e5a2f5a1b24fa0f53fe4d49596a59a08b3052f5",
+  "gateRunId": "negative-memory-focused-2026-08-20",
+  "label": "negative-assessment + memory-follow-up-b focused validation (reclassified)",
+  "summary": {
+    "negativeAssessment": {
+      "scheduled": "5/5 GOOD",
+      "retries": "0/0"
+    },
+    "memoryFollowUpB": {
+      "scheduled": "4/5 GOOD, 1/5 TECHNICAL_ERROR",
+      "retries": "1/1 GOOD"
+    },
+    "smokes": {
+      "knownSkill": "GOOD/1",
+      "unknownTech2": "GOOD/1"
+    },
+    "overallScheduled": "9/10 GOOD",
+    "overallDiagnosticSuccessful": "10 GOOD",
+    "totalActualAttempts": 11,
+    "note": "Retry diagnostics are not counted in the scheduled gate score. The original scheduled attempt 4 for memory-follow-up-b returned INFERENCE_UNAVAILABLE and is recorded as a TECHNICAL_ERROR."
+  },
+  "attempts": [
+    {
+      "attemptId": "neg-1",
+      "caseId": "negative-assessment",
+      "scheduledAttempt": 1,
+      "gateRunId": "negative-memory-focused-2026-08-20",
+      "runtimeSHA": "0e5a2f5a1b24fa0f53fe4d49596a59a08b3052f5",
+      "timestamp": "2026-08-20T18:10:00Z",
+      "isRetry": false,
+      "reply": "His biggest current gap is data structures and algorithms (DSA).",
+      "quality": "GOOD",
+      "proseSource": "MODEL_GENERATION",
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "attemptId": "neg-2",
+      "caseId": "negative-assessment",
+      "scheduledAttempt": 2,
+      "gateRunId": "negative-memory-focused-2026-08-20",
+      "runtimeSHA": "0e5a2f5a1b24fa0f53fe4d49596a59a08b3052f5",
+      "timestamp": "2026-08-20T18:10:05Z",
+      "isRetry": false,
+      "reply": "His biggest current gap is data structures and algorithms (DSA).",
+      "quality": "GOOD",
+      "proseSource": "MODEL_GENERATION",
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "attemptId": "neg-3",
+      "caseId": "negative-assessment",
+      "scheduledAttempt": 3,
+      "gateRunId": "negative-memory-focused-2026-08-20",
+      "runtimeSHA": "0e5a2f5a1b24fa0f53fe4d49596a59a08b3052f5",
+      "timestamp": "2026-08-20T18:10:10Z",
+      "isRetry": false,
+      "reply": "His biggest current gap is data structures and algorithms (DSA).",
+      "quality": "GOOD",
+      "proseSource": "MODEL_GENERATION",
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "attemptId": "neg-4",
+      "caseId": "negative-assessment",
+      "scheduledAttempt": 4,
+      "gateRunId": "negative-memory-focused-2026-08-20",
+      "runtimeSHA": "0e5a2f5a1b24fa0f53fe4d49596a59a08b3052f5",
+      "timestamp": "2026-08-20T18:10:15Z",
+      "isRetry": false,
+      "reply": "His biggest current gap is data structures and algorithms (DSA).",
+      "quality": "GOOD",
+      "proseSource": "MODEL_GENERATION",
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "attemptId": "neg-5",
+      "caseId": "negative-assessment",
+      "scheduledAttempt": 5,
+      "gateRunId": "negative-memory-focused-2026-08-20",
+      "runtimeSHA": "0e5a2f5a1b24fa0f53fe4d49596a59a08b3052f5",
+      "timestamp": "2026-08-20T18:10:20Z",
+      "isRetry": false,
+      "reply": "His biggest current gap is data structures and algorithms (DSA).",
+      "quality": "GOOD",
+      "proseSource": "MODEL_GENERATION",
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "attemptId": "mem-1",
+      "caseId": "memory-follow-up-b",
+      "scheduledAttempt": 1,
+      "gateRunId": "negative-memory-focused-2026-08-20",
+      "runtimeSHA": "0e5a2f5a1b24fa0f53fe4d49596a59a08b3052f5",
+      "timestamp": "2026-08-20T18:14:00Z",
+      "isRetry": false,
+      "reply": "No, Bradley's current progress in learning adjacent areas such as ERP concepts and business workflows is unknown and not verified.",
+      "quality": "GOOD",
+      "proseSource": "MODEL_GENERATION",
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "attemptId": "mem-2",
+      "caseId": "memory-follow-up-b",
+      "scheduledAttempt": 2,
+      "gateRunId": "negative-memory-focused-2026-08-20",
+      "runtimeSHA": "0e5a2f5a1b24fa0f53fe4d49596a59a08b3052f5",
+      "timestamp": "2026-08-20T18:14:05Z",
+      "isRetry": false,
+      "reply": "No, Bradley's current progress in learning adjacent areas such as ERP concepts and business workflows is unknown and not verified.",
+      "quality": "GOOD",
+      "proseSource": "MODEL_GENERATION",
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "attemptId": "mem-3",
+      "caseId": "memory-follow-up-b",
+      "scheduledAttempt": 3,
+      "gateRunId": "negative-memory-focused-2026-08-20",
+      "runtimeSHA": "0e5a2f5a1b24fa0f53fe4d49596a59a08b3052f5",
+      "timestamp": "2026-08-20T18:14:10Z",
+      "isRetry": false,
+      "reply": "No, Bradley's current progress in learning adjacent areas such as ERP concepts and business workflows is unknown and not verified.",
+      "quality": "GOOD",
+      "proseSource": "MODEL_GENERATION",
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "attemptId": "mem-4",
+      "caseId": "memory-follow-up-b",
+      "scheduledAttempt": 4,
+      "gateRunId": "negative-memory-focused-2026-08-20",
+      "runtimeSHA": "0e5a2f5a1b24fa0f53fe4d49596a59a08b3052f5",
+      "timestamp": "2026-08-20T18:14:15Z",
+      "isRetry": false,
+      "reply": null,
+      "quality": "ERROR",
+      "failureReason": "INFERENCE_UNAVAILABLE",
+      "proseSource": "TECHNICAL_ERROR",
+      "provider": "none",
+      "model": null
+    },
+    {
+      "attemptId": "mem-5",
+      "caseId": "memory-follow-up-b",
+      "scheduledAttempt": 5,
+      "gateRunId": "negative-memory-focused-2026-08-20",
+      "runtimeSHA": "0e5a2f5a1b24fa0f53fe4d49596a59a08b3052f5",
+      "timestamp": "2026-08-20T18:14:20Z",
+      "isRetry": false,
+      "reply": "No, Bradley's current progress in learning adjacent areas such as ERP concepts and business workflows is unknown and not verified.",
+      "quality": "GOOD",
+      "proseSource": "MODEL_GENERATION",
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    },
+    {
+      "attemptId": "mem-4-retry",
+      "caseId": "memory-follow-up-b",
+      "scheduledAttempt": 4,
+      "gateRunId": "negative-memory-focused-2026-08-20",
+      "runtimeSHA": "0e5a2f5a1b24fa0f53fe4d49596a59a08b3052f5",
+      "timestamp": "2026-08-20T18:18:00Z",
+      "isRetry": true,
+      "retryOfAttemptId": "mem-4",
+      "reply": "No, Bradley's current progress in learning adjacent areas such as ERP concepts and business workflows is unknown and not verified.",
+      "quality": "GOOD",
+      "proseSource": "MODEL_GENERATION",
+      "provider": "cloudflare",
+      "model": "@cf/meta/llama-3.2-3b-instruct"
+    }
+  ]
+}

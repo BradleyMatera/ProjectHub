@@ -10065,6 +10065,36 @@
       "sourceIds": [
         "experience"
       ]
+    },
+    {
+      "id": "biggest-weakness",
+      "intents": [
+        "direct"
+      ],
+      "questionPatterns": [
+        "what is (?:your|bradley'?s|his) biggest weakness",
+        "\\b(?:his|bradley'?s) biggest weakness"
+      ],
+      "answer": "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
+      "sourceIds": [
+        "interviewStories.7",
+        "faq.1"
+      ]
+    },
+    {
+      "id": "weaknesses",
+      "intents": [
+        "direct"
+      ],
+      "questionPatterns": [
+        "what are (?:bradley'?s|his) weaknesses",
+        "\\b(?:his|bradley'?s) weaknesses"
+      ],
+      "answer": "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He cannot reliably solve most LeetCode-style problems on his own yet, and he struggles to architect solutions from scratch for unfamiliar problems. He is aware of the gap, willing to put in the work to fix it, and learns well with mentorship.",
+      "sourceIds": [
+        "faq.1",
+        "interviewStories.7"
+      ]
     }
   ]
 }
