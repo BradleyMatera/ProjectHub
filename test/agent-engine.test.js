@@ -2051,7 +2051,7 @@ test('contract: job-fit with required skills gets FIT or PARTIAL_FIT', () => {
   assert.ok(c.requiredEntities.includes('React'), 'should require React');
 });
 
-test('contract: job-fit with missing skills gets NOT_FIT', () => {
+test('contract: job-fit with missing skills gets UNKNOWN', () => {
   const c = buildResponseContract(
     'How does he fit a DevOps role requiring Kubernetes and CI/CD?',
     'Bradley has AWS experience. No Kubernetes evidence.',
@@ -2059,7 +2059,7 @@ test('contract: job-fit with missing skills gets NOT_FIT', () => {
     []
   );
   assert.equal(c.intent, 'JOB_FIT');
-  assert.equal(c.directAnswer, 'NOT_FIT');
+  assert.equal(c.directAnswer, 'UNKNOWN');
 });
 
 test('contract: no entry-level boundary is inferred for job-fit', () => {

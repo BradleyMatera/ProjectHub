@@ -16,6 +16,7 @@ const { executeAgentTool, getAgentToolDefinitions, selectAgentToolNames } = requ
 const { buildLocalConversationMemory, extractCompleteSentences, validateLocalConversationReply } = require('./lib/local-conversation');
 const { findDirectAnswer } = require('./lib/knowledge-access');
 const localModelRouter = require('./lib/local-model-router');
+const cloudflareProvider = require('./lib/cloudflare-provider');
 const { runAgentLoop, probeAgent } = require('./lib/agent-engine');
 const { runLiteAgent, rewriteQuery } = require('./lib/lite-agent');
 const { buildReasoningPacket, buildSynthesisPacket, estimateTokens } = require('./lib/context-packet');
@@ -193,7 +194,29 @@ app.get('/health/ready', (req, res) => {
 });
 
 const DEPLOYED_AT = Date.now();
+
+function configuredInferenceHealth() {
+  const provider = process.env.SCOUT_INFERENCE_PROVIDER || 'auto';
+  const localModel = localModelRouter.defaultModel() || GEN_MODEL;
+  const cloudflareModel = cloudflareProvider.configuredModel();
+  const primaryModel = provider === 'cloudflare'
+    ? cloudflareModel
+    : provider === 'ollama'
+      ? localModel
+      : (process.env.CLOUDFLARE_MODEL || localModel || cloudflareModel);
+
+  return {
+    provider,
+    primaryModel,
+    cloudflareModel,
+    localFallbackModel: localModel,
+    requestDeadlineMs: parseInt(process.env.REQUEST_DEADLINE_MS || '15000', 10),
+    generationTimeoutMs: parseInt(process.env.GEN_TIMEOUT_MS || '12500', 10)
+  };
+}
+
 app.get('/health', async (req, res) => {
+  const inferenceHealth = configuredInferenceHealth();
   res.json({
     ok: true,
     status: 'online',
@@ -204,9 +227,12 @@ app.get('/health', async (req, res) => {
       sourceBranch: process.env.SCOUT_SOURCE_BRANCH || (buildInfo?.sourceBranch || 'develop'),
       sourceCommit: process.env.SCOUT_SOURCE_COMMIT || (buildInfo?.sourceCommit || 'unknown'),
       agentMode: SCOUT_AGENT_MODE,
-      provider: process.env.SCOUT_INFERENCE_PROVIDER || 'auto',
-      primaryModel: localModelRouter.defaultModel() || GEN_MODEL,
-      deadlineMs: parseInt(process.env.REQUEST_DEADLINE_MS || '15000', 10)
+      provider: inferenceHealth.provider,
+      primaryModel: inferenceHealth.primaryModel,
+      cloudflareModel: inferenceHealth.cloudflareModel,
+      localFallbackModel: inferenceHealth.localFallbackModel,
+      deadlineMs: inferenceHealth.requestDeadlineMs,
+      generationTimeoutMs: inferenceHealth.generationTimeoutMs
     },
     uptimeSeconds: Math.floor(process.uptime()),
     // This-restart stats
@@ -228,7 +254,7 @@ app.get('/health', async (req, res) => {
     providerHealth: persistentStats.providerHealth,
     recentSessions: getRecentSessions(),
     localOnly: false,
-    models: [{ engine: process.env.SCOUT_INFERENCE_PROVIDER || 'auto', model: localModelRouter.defaultModel() || GEN_MODEL, local: (process.env.SCOUT_INFERENCE_PROVIDER || 'ollama') === 'ollama' }],
+    models: [{ engine: inferenceHealth.provider, model: inferenceHealth.primaryModel, local: inferenceHealth.provider === 'ollama' }],
     agent: {
       enabled: AGENT_ENABLED,
       scoutEngineEnabled: SCOUT_AGENT_ENGINE_ENABLED,
