@@ -82,7 +82,7 @@ jobs:
             (echo "data/recruiter-knowledge.json is invalid JSON" && exit 1)
           node -e "
             const d = JSON.parse(require('fs').readFileSync('data/recruiter-knowledge.json','utf8'));
-            const required = ['bio','skills','projects','experience'];
+            const required = ['identity','skills','projects','experience'];
             const keys = Object.keys(d);
             const missing = required.filter(k => !keys.includes(k));
             if (missing.length > 0) { console.error('Missing required keys:', missing); process.exit(1); }
