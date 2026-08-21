@@ -1776,7 +1776,7 @@ app.post('/api/chat', async (req, res) => {
         if (!NO_RETRIEVAL_MODES.has(policy.mode)) {
           const understood = understandQuery(userMessage, history, ragChunks || buildRagChunks(knowledge));
           const bm25Results = bm25Index
-            ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 5)
+            ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 10)
             : [];
           evidence = bm25Results.map(r => ({
             kind: r.tag || r.chunk?.kind || 'evidence',
