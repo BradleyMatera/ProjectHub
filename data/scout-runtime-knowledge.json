@@ -15,12 +15,12 @@
     {
       "id": "scout-runtime-model",
       "tag": "scout-runtime",
-      "text": "Scout's current configured generative model is @cf/meta/llama-3.2-3b-instruct, hosted by Cloudflare Workers AI. This is the normal model for both dev and production unless an administrator explicitly reconfigures the inference provider."
+      "text": "Scout uses the model @cf/meta/llama-3.2-3b-instruct for normal generative inference, hosted by Cloudflare Workers AI. This is the model Scout uses in the current dev and production configuration unless an administrator explicitly reconfigures the inference provider."
     },
     {
       "id": "scout-runtime-capabilities",
       "tag": "scout-runtime",
-      "text": "Scout can answer questions about Bradley Matera's projects, skills, work experience, education, certifications, career goals, and public contact information. Scout can also explain its own runtime, including the current model, provider, free-tier usage, rate controls, and architecture."
+      "text": "Scout can help with questions about Bradley Matera's projects, skills, work experience, education, certifications, career goals, and public contact information. Scout can also explain its own runtime, including the current model, provider, free-tier usage, rate controls, and architecture."
     },
     {
       "id": "scout-runtime-free",
