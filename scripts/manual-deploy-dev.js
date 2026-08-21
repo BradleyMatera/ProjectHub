@@ -24,15 +24,16 @@ if (status) {
   console.error(status);
   process.exit(1);
 }
-const remoteDevelopSha = execSync('git rev-parse origin/develop', { encoding: 'utf8' }).trim();
-if (commitSha !== remoteDevelopSha) {
-  console.error(`ERROR: Local HEAD ${commitSha} does not match origin/develop ${remoteDevelopSha}. Push first.`);
+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim();
+const remoteBranchSha = execSync(`git rev-parse origin/${currentBranch}`, { encoding: 'utf8' }).trim();
+if (commitSha !== remoteBranchSha) {
+  console.error(`ERROR: Local HEAD ${commitSha} does not match origin/${currentBranch} ${remoteBranchSha}. Push first.`);
   process.exit(1);
 }
 
 const buildInfo = {
   sourceRepository: 'BradleyMatera/ProjectHub',
-  sourceBranch: 'develop',
+  sourceBranch: currentBranch,
   sourceCommit: commitSha,
   deployedAt: new Date().toISOString(),
   generatedBy: 'manual-deploy-dev'
