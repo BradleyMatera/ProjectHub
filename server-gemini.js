@@ -1999,6 +1999,7 @@ app.post('/api/chat', async (req, res) => {
         latencyMs: Date.now() - reqStart,
         agentMeta,
         agentEvents,
+        retrievalCandidates: agentResult?.retrievalCandidates || evidence.slice(0, 10) || [],
         failureStage: 'GENERATION',
         generationAttempts: agentResult?.generationAttempts ?? 0,
         contract: safeContractProjection(agentResult?.responseContract)
