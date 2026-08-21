@@ -33,6 +33,10 @@ eval-*.json
 eval-state.json
 data/trace-*.json
 
+# Playwright QA and test artifacts
+qa-results/
+test-results/
+
 # Screenshots and media clutter
 Screenshot_*.jpg
 Screenshot_*.png
