@@ -89,6 +89,7 @@ const SCOUT_AGENT_ENGINE_ENABLED = process.env.SCOUT_AGENT_ENGINE_ENABLED === 't
 // the 15s end-to-end deadline. FULL (agent-engine.js) remains available for development
 // but is not the production default.
 const SCOUT_AGENT_MODE = process.env.SCOUT_AGENT_MODE || (SCOUT_AGENT_ENGINE_ENABLED ? 'lite' : 'legacy');
+const DIRECT_KB_ENABLED = process.env.SCOUT_DIRECT_KB_ENABLED === 'true';
 const FEATURE_PREVIEW_ENABLED = process.env.FEATURE_PREVIEW_ENABLED === 'true';
 const KNOWLEDGE_FILE = path.join(__dirname, process.env.KNOWLEDGE_FILE || 'data/recruiter-knowledge.json');
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -1680,12 +1681,13 @@ app.post('/api/chat', async (req, res) => {
 
     const cacheKey = normalizeQuery(resolvedMessage, knowledge);
 
-    // Direct KB short-circuit: if the question matches a non-adversarial directAnswer
-    // record, return it immediately with provenance. The model is not invoked.
-    const directAnswer = SCOUT_AGENT_ENGINE_ENABLED ? findDirectAnswer(knowledge, resolvedMessage) : null;
+    // Direct KB short-circuit (opt-in): if the question matches a non-adversarial
+    // directAnswer record, return it immediately. RAG-first mode keeps this OFF so
+    // all substantive answers are generated from retrieved evidence.
+    const directAnswer = (DIRECT_KB_ENABLED && SCOUT_AGENT_ENGINE_ENABLED) ? findDirectAnswer(knowledge, resolvedMessage) : null;
     const directIntentAllowed = Array.isArray(directAnswer?.intents) && (directAnswer.intents.includes('direct') || directAnswer.intents.includes('adversarial_deny') || directAnswer.intents.includes('negation_confirm'));
     const policyBlocksDirect = policy.mode === 'REFUSAL' || policy.mode === 'OUT_OF_SCOPE';
-    if (directAnswer && directAnswer.answer && directIntentAllowed && !policyBlocksDirect) {
+    if (DIRECT_KB_ENABLED && directAnswer && directAnswer.answer && directIntentAllowed && !policyBlocksDirect) {
       pipeline.push('direct-kb');
       const directReply = directAnswer.answer;
       const directEvidence = (directAnswer?.answer || '');
