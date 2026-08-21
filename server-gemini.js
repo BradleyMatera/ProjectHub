@@ -1932,6 +1932,7 @@ app.post('/api/chat', async (req, res) => {
             latencyMs: Date.now() - reqStart,
             agentMeta,
             agentEvents,
+            retrievalCandidates: agentMeta?.retrievalCandidates || evidence.slice(0, 10) || [],
             failureStage: 'GENERATION',
             generationAttempts: agentResult.generationAttempts || 0,
             contract: safeContractProjection(agentResult.responseContract)
@@ -2250,24 +2251,31 @@ async function verifyModelDigest() {
   }
 }
 
-app.listen(PORT, HOST, () => {
-  const _provider = process.env.SCOUT_INFERENCE_PROVIDER || 'ollama';
-  console.log(`Recruiter chat API running on http://${HOST}:${PORT} with ${_provider} backend`);
-  // Pre-warm knowledge cache in background (non-blocking)
-  setTimeout(() => {
-    fetchKnowledge().then(() => console.log('Knowledge cache pre-warmed')).catch(e => console.log('Pre-warm failed:', e.message));
-  }, 100);
-  // Verify model digest and start loading the model into memory early
-  if (GEN_ENABLED) {
-    setTimeout(() => {
-      verifyModelDigest();
-      if (process.env.SCOUT_INFERENCE_PROVIDER === 'cloudflare') {
-        console.log('Cloudflare Workers AI provider active — skipping Ollama reachability check');
-      } else {
-        fetch(`${OLLAMA_URL}/api/tags`, { method: 'GET' })
-          .then(r => r.ok ? console.log('Ollama is reachable') : console.log('Ollama ping returned', r.status))
-          .catch(e => console.log('Ollama ping failed:', e.message));
-      }
-    }, 2000);
+(async function start() {
+  // Load knowledge and build the BM25 index before accepting traffic so the
+  // first request does not consume its generation deadline on index build.
+  try {
+    await fetchKnowledge();
+    console.log('Knowledge cache pre-warmed');
+  } catch (e) {
+    console.error('Pre-warm failed:', e.message);
   }
-});
+
+  app.listen(PORT, HOST, () => {
+    const _provider = process.env.SCOUT_INFERENCE_PROVIDER || 'ollama';
+    console.log(`Recruiter chat API running on http://${HOST}:${PORT} with ${_provider} backend`);
+    // Verify model digest and start loading the model into memory early
+    if (GEN_ENABLED) {
+      setTimeout(() => {
+        verifyModelDigest();
+        if (process.env.SCOUT_INFERENCE_PROVIDER === 'cloudflare') {
+          console.log('Cloudflare Workers AI provider active — skipping Ollama reachability check');
+        } else {
+          fetch(`${OLLAMA_URL}/api/tags`, { method: 'GET' })
+            .then(r => r.ok ? console.log('Ollama is reachable') : console.log('Ollama ping returned', r.status))
+            .catch(e => console.log('Ollama ping failed:', e.message));
+        }
+      }, 2000);
+    }
+  });
+})();
