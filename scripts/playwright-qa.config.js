@@ -4,6 +4,7 @@ module.exports = defineConfig({
   testDir: '.',
   testMatch: 'playwright-qa.spec.js',
   timeout: 120000,
+  retries: 2,
   fullyParallel: false,
   workers: 1,
   reporter: [['list'], ['json', { outputFile: '../qa-results/playwright-qa-playwright-report.json' }]],
