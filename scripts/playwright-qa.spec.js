@@ -64,8 +64,9 @@ async function sendMessage(page, text) {
   const input = page.locator('#chat-input');
   const sendBtn = page.locator('.send-button');
 
-  // Wait for any previous response to settle to respect UI throttle.
-  await sleep(2000);
+  // Wait for any previous response to settle and the input to be usable again.
+  await sleep(500);
+  await input.waitFor({ state: 'visible', enabled: true, timeout: 15000 });
 
   // Count bot rows before send.
   const beforeCount = await page.locator('#chat-output .message-row.bot-row').count();
