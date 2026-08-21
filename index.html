@@ -44,8 +44,7 @@
         if (heroKicker) heroKicker.textContent = "Scout Engineering Lab · Experimental";
         var heroText = document.querySelector(".hero-text");
         if (heroText) heroText.textContent =
-          "Active development on feat/architecture-refactor. Cloudflare Workers AI is the production inference target, Ollama is the dev/test and emergency fallback, " +
-          "and browser WebGPU is an experimental future option. All replies generative, all validated, all grounded.";
+          "Active development on the RAG-first restoration line. Cloudflare Workers AI is the current generative provider; local ProjectHub code owns conversation context, BM25/RRF retrieval, evidence selection, validation, telemetry, and persistence. RAG evidence is primary, and Ollama is only an optional fallback when explicitly configured.";
       }
     })();
   </script>
@@ -457,7 +456,7 @@
         <div class="eyebrow-row">
           <span class="pill pill-primary">ProjectHub</span>
           <span class="pill pill-live">Scout is online</span>
-          <span class="pill pill-free">100% free stack</span>
+          <span class="pill pill-free">free-tier constrained stack</span>
         </div>
 
         <h1 id="page-title">Scout — Intelligence Engine for ProjectHub Recruiter Alpha</h1>
@@ -501,13 +500,13 @@
           <div class="status-card">
             <span class="status-label">Inference</span>
             <strong>Cloudflare Workers AI</strong>
-            <p>Model: <code>@cf/meta/llama-3.2-3b-instruct</code> on Cloudflare free tier. Lite agent mode with up to 3 recovery attempts.</p>
+            <p>Model: <code>@cf/meta/llama-3.2-3b-instruct</code>. RAG evidence is primary; one factual repair is allowed if the first generated answer fails validation.</p>
           </div>
 
           <div class="status-card">
             <span class="status-label">Response contract</span>
             <strong>15-second deadline</strong>
-            <p>Every request has a hard 15,000 ms budget. If generation exceeds it, Scout falls back to a grounded constrained recovery.</p>
+            <p>Every request has a hard 15,000 ms budget. A factually invalid answer gets at most one generative repair; if that still fails, Scout fails closed instead of returning known-invalid prose.</p>
           </div>
 
           <div class="status-card">
@@ -571,46 +570,37 @@
 
       <section class="card-section">
         <h2>Scout pipeline</h2>
-
         <div class="flow-box">
-          <div class="flow-step">Visitor message</div>
-          <div class="flow-arrow">→</div>
-          <div class="flow-step">Query understanding</div>
-          <div class="flow-arrow">→</div>
-          <div class="flow-step">BM25 retrieval</div>
-          <div class="flow-arrow">→</div>
-          <div class="flow-step">Response contract</div>
-          <div class="flow-arrow">→</div>
-          <div class="flow-step">Cloudflare inference</div>
-          <div class="flow-arrow">→</div>
-          <div class="flow-step">Validation</div>
-          <div class="flow-arrow">→</div>
+          <div class="flow-step">Visitor message</div><div class="flow-arrow">→</div>
+          <div class="flow-step">Conversation-aware query</div><div class="flow-arrow">→</div>
+          <div class="flow-step">BM25 + RRF top candidates</div><div class="flow-arrow">→</div>
+          <div class="flow-step">Ranked evidence packet</div><div class="flow-arrow">→</div>
+          <div class="flow-step">Cloudflare generation</div><div class="flow-arrow">→</div>
+          <div class="flow-step">Factual validation</div><div class="flow-arrow">→</div>
           <div class="flow-step">Scout reply</div>
         </div>
-
-        <h3>How it works</h3>
+        <h3>How it works now</h3>
         <p>
-          Deterministic logic handles query understanding, intent classification, BM25 evidence retrieval, and response contract
-          construction. The contract specifies required entities, forbidden entities, evidence facts, and response shape.
-          Cloudflare Workers AI (<code>@cf/meta/llama-3.2-3b-instruct</code>) generates the conversational reply from the contract.
-          The grounding validator checks entity correctness, number accuracy, source overlap, polarity, overclaim detection, and safety.
-          If validation fails, Scout attempts generative recovery (up to 3 attempts with progressively lenient validation).
-          If all recovery fails, Scout delivers a constrained grounded fallback — never unvalidated prose.
+          ProjectHub first resolves the current conversation into a retrieval query and always runs local BM25/RRF search.
+          The highest-value evidence blocks become the model's primary context; structured tools may add evidence but do not replace RAG.
+          Cloudflare Workers AI generates the conversational answer from that scoped packet. Factual validation then checks unsupported
+          entities, relationships, project-to-technology attribution, employment, certifications, temporal claims, and overclaiming.
+          If the first generation is factually invalid, Scout gets one evidence-guided generative repair. If the repair is still invalid,
+          the request fails closed with a technical error instead of exposing known-invalid prose.
         </p>
       </section>
 
       <section class="card-section">
         <h2>Inference efficiency</h2>
         <p>
-          Scout is designed for free-tier sustainability. The inference layer minimizes unnecessary generation calls
-          and prompt size through several strategies:
+          Scout saves hosted-model work by shrinking the context before generation rather than trying to replace the model with hard-coded answers.
         </p>
         <ul class="feature-list">
-          <li><strong>Response cache:</strong> Identical recent questions return cached validated replies without a new inference call.</li>
-          <li><strong>Policy-aware contracts:</strong> GREETING mode uses relaxed validation; fact-heavy queries get stricter contracts with more evidence requirements.</li>
-          <li><strong>Lenient recovery:</strong> Later recovery attempts accept minor grounding imperfections to avoid wasting inference cycles on near-misses.</li>
-          <li><strong>Context budget:</strong> Prompts include only the 5 most recent turns plus per-topic stances — not the full conversation history.</li>
-          <li><strong>Adapter boundary:</strong> The inference layer (<code>lib/local-model-router.js</code>) abstracts the provider, enabling swaps between Cloudflare, Ollama, or future browser WebGPU without rewriting the harness.</li>
+          <li><strong>Local retrieval first:</strong> BM25/RRF searches the verified knowledge without a model call.</li>
+          <li><strong>Small evidence packet:</strong> only the highest-value evidence blocks are sent to Cloudflare instead of the entire knowledge base.</li>
+          <li><strong>One normal generation:</strong> most successful requests use one provider call; a second call is reserved for factual repair.</li>
+          <li><strong>Visible accounting:</strong> each reply exposes provider calls, input/output tokens, neurons, model latency, RAG selection, and repairs.</li>
+          <li><strong>Fail closed:</strong> validation cannot silently return a known-invalid answer just to save a provider call.</li>
         </ul>
       </section>
 
@@ -638,7 +628,7 @@
           </div>
           <div class="free-card">
             <strong>Cloudflare Workers AI</strong>
-            <p>Free-tier inference with <code>@cf/meta/llama-3.2-3b-instruct</code>. Neuron-based pricing with generous free allocation.</p>
+            <p>Generative inference with <code>@cf/meta/llama-3.2-3b-instruct</code>. The included allocation is 10,000 neurons per day, resetting at 00:00 UTC; the page now exposes live estimated usage.</p>
           </div>
           <div class="free-card">
             <strong>GCP e2-micro (free tier)</strong>
@@ -711,10 +701,7 @@
         <div class="dev-section">
           <h2>Development state</h2>
           <p>
-            Active branch: <code>feat/agent-systems-network</code>. The Scout alpha backend is deployed to production
-            on the GCP e2-micro VM with Cloudflare Workers AI. The dev backend runs on a separate free GCP e2-micro
-            at <code>dev.projecthub-chat.bradleymatera.dev</code>. This page loads dev widget assets and connects to
-            the dev backend.
+            Active branch: <code>feat/rag-primary-restoration</code>. The dev surface is validating the RAG-first pipeline, factual validator restoration, privacy controls, and live token/neuron/cost telemetry against the separate dev backend.
           </p>
           <h3>Latest commit</h3>
           <p>

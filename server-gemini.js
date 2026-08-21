@@ -255,7 +255,19 @@ app.get('/health', async (req, res) => {
     lastPipeline: persistentStats.lastPipeline || [],
     providerHealth: persistentStats.providerHealth,
     recentSessions: getRecentSessions(),
-    localOnly: false,
+    local: {
+      only: inferenceHealth.provider === 'ollama',
+      generation: inferenceHealth.provider,
+      deterministicWork: ['session-context', 'bm25-rrf', 'evidence-selection', 'factual-validation'],
+      embeddings: 'hash-vector-local',
+      persistence: true
+    },
+    execution: {
+      generationProvider: inferenceHealth.provider,
+      generationLocation: inferenceHealth.provider === 'cloudflare' ? 'cloud' : (inferenceHealth.provider === 'ollama' ? 'local' : 'external-or-none'),
+      ragRetrieval: 'local',
+      validation: 'local'
+    },
     models: [{ engine: inferenceHealth.provider, model: inferenceHealth.primaryModel, local: inferenceHealth.provider === 'ollama' }],
     agent: {
       enabled: AGENT_ENABLED,

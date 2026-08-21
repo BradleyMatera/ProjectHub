@@ -27,29 +27,27 @@ function replaceSection(text, heading, replacement) {
 
 function refreshServerTelemetry() {
   let text = fs.readFileSync(SERVER, 'utf8');
-  text = replaceExact(
-    text,
-`    local: {
-      only: true,
-      generation: activeProvider,
-      embeddings: 'hash-vector-local',
-      persistence: true
-    },`,
-`    local: {
-      only: activeProvider === 'ollama',
-      generation: activeProvider,
-      deterministicWork: ['session-context', 'bm25-rrf', 'evidence-selection', 'factual-validation'],
-      embeddings: 'hash-vector-local',
-      persistence: true
-    },
-    execution: {
-      generationProvider: activeProvider,
-      generationLocation: activeProvider === 'cloudflare' ? 'cloud' : (activeProvider === 'ollama' ? 'local' : 'external-or-none'),
-      ragRetrieval: 'local',
-      validation: 'local'
-    },`,
-    'server local/cloud execution telemetry'
-  );
+  const eol = text.includes('\r\n') ? '\r\n' : '\n';
+  const before = `    localOnly: false,${eol}`;
+  const after = `    local: {${eol}` +
+    `      only: inferenceHealth.provider === 'ollama',${eol}` +
+    `      generation: inferenceHealth.provider,${eol}` +
+    `      deterministicWork: ['session-context', 'bm25-rrf', 'evidence-selection', 'factual-validation'],${eol}` +
+    `      embeddings: 'hash-vector-local',${eol}` +
+    `      persistence: true${eol}` +
+    `    },${eol}` +
+    `    execution: {${eol}` +
+    `      generationProvider: inferenceHealth.provider,${eol}` +
+    `      generationLocation: inferenceHealth.provider === 'cloudflare' ? 'cloud' : (inferenceHealth.provider === 'ollama' ? 'local' : 'external-or-none'),${eol}` +
+    `      ragRetrieval: 'local',${eol}` +
+    `      validation: 'local'${eol}` +
+    `    },${eol}`;
+
+  const count = text.split(before).length - 1;
+  if (count !== 1) {
+    throw new Error(`server local/cloud execution telemetry: expected exactly 1 match, found ${count}`);
+  }
+  text = text.replace(before, after);
   fs.writeFileSync(SERVER, text, 'utf8');
 }
 
