@@ -1885,7 +1885,7 @@ app.post('/api/chat', async (req, res) => {
               generationCalls: agentResult.generationCalls || [],
               actualProviderCalls: agentResult.actualProviderCalls ?? null,
               retrievalCandidates: agentResult.retrievalCandidates || [],
-              selectedEvidence: agentResult.selectedEvidence || '',
+              selectedEvidence: agentResult.selectedEvidence || [],
               toolEnrichment: agentResult.toolEnrichment || '',
               rawPrimary: agentResult.rawPrimary || null,
               rawRepair: agentResult.rawRepair || null
@@ -1914,7 +1914,7 @@ app.post('/api/chat', async (req, res) => {
               generationCalls: agentResult.generationCalls || [],
               actualProviderCalls: agentResult.actualProviderCalls ?? null,
               retrievalCandidates: agentResult.retrievalCandidates || [],
-              selectedEvidence: agentResult.selectedEvidence || '',
+              selectedEvidence: agentResult.selectedEvidence || [],
               toolEnrichment: agentResult.toolEnrichment || '',
               rawPrimary: agentResult.rawPrimary || null,
               rawRepair: agentResult.rawRepair || null
@@ -1932,7 +1932,7 @@ app.post('/api/chat', async (req, res) => {
             latencyMs: Date.now() - reqStart,
             agentMeta,
             agentEvents,
-            retrievalCandidates: agentMeta?.retrievalCandidates || evidence.slice(0, 10) || [],
+            retrievalCandidates: agentMeta?.retrievalCandidates || evidence.slice(0, 10).map((e, i) => ({ kind: e.kind || 'evidence', tag: e.kind || 'evidence', name: e.name || '', id: `${e.kind || 'evidence'}-${i + 1}` })) || [],
             failureStage: 'GENERATION',
             generationAttempts: agentResult.generationAttempts || 0,
             contract: safeContractProjection(agentResult.responseContract)
@@ -1958,7 +1958,7 @@ app.post('/api/chat', async (req, res) => {
               generationCalls: agentResult.generationCalls || [],
               actualProviderCalls: agentResult.actualProviderCalls ?? null,
               retrievalCandidates: agentResult.retrievalCandidates || [],
-              selectedEvidence: agentResult.selectedEvidence || '',
+              selectedEvidence: agentResult.selectedEvidence || [],
               toolEnrichment: agentResult.toolEnrichment || '',
               rawPrimary: agentResult.rawPrimary || null,
               rawRepair: agentResult.rawRepair || null

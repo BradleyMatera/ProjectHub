@@ -13,6 +13,16 @@
       "text": "ProjectHub does not run the primary language model locally. Query/session handling, BM25/RRF retrieval, evidence selection, relationship checks, factual validation, telemetry, and persistence run in ProjectHub's own backend process. Normal generative inference on the current dev and production configuration is hosted by Cloudflare Workers AI using @cf/meta/llama-3.2-3b-instruct. Ollama is only an optional fallback when explicitly configured."
     },
     {
+      "id": "scout-runtime-model",
+      "tag": "scout-runtime",
+      "text": "Scout's current configured generative model is @cf/meta/llama-3.2-3b-instruct, hosted by Cloudflare Workers AI. This is the normal model for both dev and production unless an administrator explicitly reconfigures the inference provider."
+    },
+    {
+      "id": "scout-runtime-capabilities",
+      "tag": "scout-runtime",
+      "text": "Scout can answer questions about Bradley Matera's projects, skills, work experience, education, certifications, career goals, and public contact information. Scout can also explain its own runtime, including the current model, provider, free-tier usage, rate controls, and architecture."
+    },
+    {
       "id": "scout-runtime-free",
       "tag": "scout-cost",
       "text": "This chat is free because Scout keeps its normal generative inference inside Cloudflare Workers AI's included free allocation, the public widget is served from GitHub Pages, and the chat backend runs on a free-tier GCP VM. The model still consumes measurable tokens and neurons, so 'free' means the usage is within the included allocation and free-tier limits, not that the AI has no cost. Scout should not claim that the AI is free because it is a machine-learning model, that conversations are anonymous, or that no personal data is collected."
