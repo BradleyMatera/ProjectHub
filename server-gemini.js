@@ -523,9 +523,25 @@ async function fetchKnowledge() {
   }
   try {
     const json = JSON.parse(fs.readFileSync(KNOWLEDGE_FILE, 'utf8'));
-    knowledgeCache = json;
-    knowledgeCacheAt = now;
-    knowledgeReady = true;
+
+    // Rebuild the BM25 index FIRST so no concurrent call can return a
+    // knowledgeCache while ragChunks/bm25Index are still null. Then publish
+    // the cache and clear stale response entries.
+    // Rebuild BM25 index and RAG chunks when knowledge refreshes
+    try {
+      ragChunks = buildRagChunks(json);
+      bm25Index = new BM25Index(ragChunks);
+      console.log(`[retrieval] BM25 index built: ${ragChunks.length} chunks`);
+    } catch (e) {
+      console.error('[retrieval] Index build failed:', e.message);
+    }
+    if (ragChunks && bm25Index) {
+      knowledgeCache = json;
+      knowledgeCacheAt = now;
+      knowledgeReady = true;
+      responseCache.clear();
+    }
+
     // Configure claim-extractor with knowledge-derived entity names
     try {
       const claimExtractor = require('./lib/claim-extractor');
@@ -606,16 +622,6 @@ async function fetchKnowledge() {
     } catch (e) {
       console.error('[claim-extractor] Configuration failed:', e.message);
     }
-    // Rebuild BM25 index and RAG chunks when knowledge refreshes
-    try {
-      ragChunks = buildRagChunks(json);
-      bm25Index = new BM25Index(ragChunks);
-      console.log(`[retrieval] BM25 index built: ${ragChunks.length} chunks`);
-    } catch (e) {
-      console.error('[retrieval] Index build failed:', e.message);
-    }
-    // Warm response cache for common questions in the background.
-    setTimeout(() => warmResponseCache(json), 10);
     return json;
   } catch (err) {
     console.error('Failed to fetch knowledge:', err.message);
