@@ -31,6 +31,7 @@ costs-dev.json
 
 eval-*.json
 eval-state.json
+data/trace-*.json
 
 # Screenshots and media clutter
 Screenshot_*.jpg

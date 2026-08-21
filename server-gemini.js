@@ -19,6 +19,7 @@ const localModelRouter = require('./lib/local-model-router');
 const cloudflareProvider = require('./lib/cloudflare-provider');
 const { runAgentLoop, probeAgent } = require('./lib/agent-engine');
 const { runLiteAgent, rewriteQuery } = require('./lib/lite-agent');
+const { runRagPrimaryAgent } = require('./lib/rag-agent');
 const { buildReasoningPacket, buildSynthesisPacket, estimateTokens } = require('./lib/context-packet');
 const { validateAnswer, validateToolDecision, attemptJsonRepair } = require('./lib/grounding-validator');
 const { buildFalseClaimsRegex, shouldAbortGeneration, validateFallbackReply } = require('./lib/response-validator');
@@ -1799,7 +1800,7 @@ app.post('/api/chat', async (req, res) => {
         };
         delete policyContract.contract; // flatten — no nested contract object
         agentResult = SCOUT_AGENT_MODE === 'lite'
-          ? await runLiteAgent({
+          ? await runRagPrimaryAgent({
               question: userMessage,
               conversationState: convState,
               evidence,
