@@ -201,7 +201,7 @@ function buildScoutTelemetryHtml(data, costs) {
     <div style="margin-top:6px"><strong>This browser session:</strong> ${formatScoutNumber(session.questions, 0)} questions · ${formatScoutNumber(session.providerCalls, 0)} provider calls · ${formatScoutNumber(session.inputTokens, 0)} input + ${formatScoutNumber(session.outputTokens, 0)} output tokens · ${formatScoutNumber(sessionNeurons, 3)} neurons · ${formatScoutNumber(session.repairs, 0)} repairs · ${formatScoutNumber(session.inferenceLatencyMs, 0)} ms model time</div>
     ${dailyHtml}
     <div><strong>App rate controls:</strong> server defaults to 20 chat requests/minute/IP unless configured otherwise. That is ProjectHub protection, separate from Cloudflare's daily AI allocation.</div>
-    <div><strong>Spend:</strong> ${costs?.shadowCost?.actualUsd != null ? `$${escapeScoutHtml(costs.shadowCost.actualUsd)} ledger-reported actual today/month context; ` : ''}Cloudflare's public Workers AI rate is $0.011 per 1,000 neurons beyond the included allocation on paid usage. The dashboard labels estimated values separately from actual billing.</div>
+    <div><strong>Spend:</strong> this dashboard shows the request's Cloudflare metered-value equivalent and free-allocation consumption. It does not infer an actual credit-card charge from token/neuron telemetry. Billing-plan charges, if any, must come from provider billing data rather than this estimate.</div>
   </details>
 </div>`;
 }
