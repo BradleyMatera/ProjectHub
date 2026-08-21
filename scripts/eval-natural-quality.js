@@ -65,7 +65,7 @@ async function main() {
     const res = await post(q.text, sessionId);
     const latency = Date.now() - started;
     const body = res.body || {};
-    const meta = body.agentMeta || {};
+    const meta = body.agent || body.agentMeta || {};
     const calls = meta.generationCalls || [];
     const primaryCall = calls.find(c => c.attemptType === 'PRIMARY') || null;
     const repairCall = calls.find(c => c.attemptType === 'FACTUAL_REPAIR') || null;
