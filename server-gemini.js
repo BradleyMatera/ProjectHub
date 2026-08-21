@@ -1772,23 +1772,21 @@ app.post('/api/chat', async (req, res) => {
       pipeline.push(`scout-agent-${SCOUT_AGENT_MODE}:eligible`);
       try {
         // Retrieve evidence via BM25 for the agent context packet.
-        // Pure conversational control modes do not need candidate facts.
-        if (!NO_RETRIEVAL_MODES.has(policy.mode)) {
-          const understood = understandQuery(userMessage, history, ragChunks || buildRagChunks(knowledge));
-          const bm25Results = bm25Index
-            ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 10)
-            : [];
-          evidence = bm25Results.map(r => ({
-            kind: r.tag || r.chunk?.kind || 'evidence',
-            name: r.chunk?.title || r.chunk?.name || '',
-            description: r.text || r.chunk?.text || r.chunk?.description || '',
-            tech: r.chunk?.tech || [],
-            skills: r.chunk?.skills || [],
-            category: r.chunk?.category || null,
-            url: r.chunk?.url || null,
-            evidenceScore: r.rrfScore || r.score
-          })).filter(e => e.description);
-        }
+        // Retrieval is always performed; the agent decides whether to use it.
+        const understood = understandQuery(resolvedMessage, history, ragChunks || buildRagChunks(knowledge));
+        const bm25Results = bm25Index
+          ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 10)
+          : [];
+        evidence = bm25Results.map(r => ({
+          kind: r.tag || r.chunk?.kind || 'evidence',
+          name: r.chunk?.title || r.chunk?.name || '',
+          description: r.text || r.chunk?.text || r.chunk?.description || '',
+          tech: r.chunk?.tech || [],
+          skills: r.chunk?.skills || [],
+          category: r.chunk?.category || null,
+          url: r.chunk?.url || null,
+          evidenceScore: r.rrfScore || r.score
+        })).filter(e => e.description);
 
         // Get server-owned structured conversation state (now includes any just-
         // committed conversational-control intent, e.g. userName).
@@ -1803,7 +1801,7 @@ app.post('/api/chat', async (req, res) => {
         delete policyContract.contract; // flatten — no nested contract object
         agentResult = SCOUT_AGENT_MODE === 'lite'
           ? await runRagPrimaryAgent({
-              question: userMessage,
+              question: resolvedMessage,
               conversationState: convState,
               evidence,
               knowledge,
@@ -1825,14 +1823,23 @@ app.post('/api/chat', async (req, res) => {
         // Derive actual inference provider from router (not hardcoded)
         inferenceProvider = localModelRouter.inferenceProvider || 'ollama';
 
-        // Meter each generative call with correct provider
-        for (const evt of (agentResult.events || [])) {
-          if (evt.type === 'reasoning_call' || evt.type === 'synthesis_call' || evt.type === 'lite_generate_call' || evt.type === 'lite_repair_call') {
-            meterEvent({ source: inferenceProvider, kind: 'llm', meta: { model: agentResult.model, agentEngine: true, mode: SCOUT_AGENT_MODE, step: evt.step } });
-          }
-          if (evt.type === 'tool_result' || evt.type === 'lite_tool_result') {
-            meterEvent({ source: 'agent-engine', kind: 'tool', meta: { tool: evt.tool, agentEngine: true, mode: SCOUT_AGENT_MODE } });
-          }
+        // Meter each actual provider call from the agent's canonical accounting.
+        for (const call of (agentResult.generationCalls || [])) {
+          meterEvent({
+            source: call.provider || inferenceProvider,
+            kind: 'llm',
+            tokensIn: call.inputTokens || 0,
+            tokensOut: call.outputTokens || 0,
+            meta: {
+              attemptIndex: call.attemptIndex,
+              attemptType: call.attemptType,
+              model: call.model,
+              ok: call.ok,
+              accepted: call.accepted,
+              actualNeurons: call.actualNeurons ?? null,
+              estimatedNeurons: call.estimatedNeurons ?? null
+            }
+          });
         }
 
         if (!agentResult.fallback && agentResult.reply) {
@@ -1858,7 +1865,12 @@ app.post('/api/chat', async (req, res) => {
               queryRewritten: agentResult.rewritten,
               rewrittenQuery: agentResult.rewrittenQuery,
               generationCalls: agentResult.generationCalls || [],
-              actualProviderCalls: agentResult.actualProviderCalls ?? null
+              actualProviderCalls: agentResult.actualProviderCalls ?? null,
+              retrievalCandidates: agentResult.retrievalCandidates || [],
+              selectedEvidence: agentResult.selectedEvidence || '',
+              toolEnrichment: agentResult.toolEnrichment || '',
+              rawPrimary: agentResult.rawPrimary || null,
+              rawRepair: agentResult.rawRepair || null
             } : {})
           };
           agentEvents = agentResult.events;
@@ -1882,7 +1894,12 @@ app.post('/api/chat', async (req, res) => {
               operation: agentResult.operation,
               queryRewritten: agentResult.rewritten,
               generationCalls: agentResult.generationCalls || [],
-              actualProviderCalls: agentResult.actualProviderCalls ?? null
+              actualProviderCalls: agentResult.actualProviderCalls ?? null,
+              retrievalCandidates: agentResult.retrievalCandidates || [],
+              selectedEvidence: agentResult.selectedEvidence || '',
+              toolEnrichment: agentResult.toolEnrichment || '',
+              rawPrimary: agentResult.rawPrimary || null,
+              rawRepair: agentResult.rawRepair || null
             } : {})
           };
           if (res.headersSent) return;
@@ -1920,7 +1937,12 @@ app.post('/api/chat', async (req, res) => {
               operation: agentResult.operation,
               queryRewritten: agentResult.rewritten,
               generationCalls: agentResult.generationCalls || [],
-              actualProviderCalls: agentResult.actualProviderCalls ?? null
+              actualProviderCalls: agentResult.actualProviderCalls ?? null,
+              retrievalCandidates: agentResult.retrievalCandidates || [],
+              selectedEvidence: agentResult.selectedEvidence || '',
+              toolEnrichment: agentResult.toolEnrichment || '',
+              rawPrimary: agentResult.rawPrimary || null,
+              rawRepair: agentResult.rawRepair || null
             } : {})
           };
         }
