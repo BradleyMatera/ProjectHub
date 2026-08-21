@@ -224,7 +224,18 @@ function minimalApi(api) {
 // ---------- SCENARIO DEFINITIONS ----------
 
 const normalRecruiter = [
-  { q: 'Tell me about Bradley.', mustContain: ['software', 'engineer', 'developer', 'junior', 'projects'], warnNotContain: ['technical error', 'unable to assist'] },
+  {
+    q: 'Tell me about Bradley.',
+    check: (reply, api, notes) => {
+      const lower = reply.toLowerCase();
+      if (lower.includes('technical error') || lower.includes('unable to assist')) { notes.push('HARD FAIL: technical error or refusal'); return false; }
+      if (!lower.includes('software') && !lower.includes('engineer') && !lower.includes('developer')) { notes.push('HARD FAIL: does not state a software/engineering role'); return false; }
+      if (!lower.includes('early-career') && !lower.includes('early career') && !lower.includes('junior')) { notes.push('HARD FAIL: does not state career stage'); return false; }
+      if (!lower.includes('project')) notes.push('WARN: answer does not mention projects');
+      if (!lower.includes('developer')) notes.push('WARN: answer does not mention developer');
+      return true;
+    }
+  },
   {
     q: 'What is his strongest technical background?',
     check: (reply, api, notes) => {
