@@ -10,12 +10,12 @@
     {
       "id": "scout-runtime-local-vs-cloud",
       "tag": "scout-runtime",
-      "text": "ProjectHub does not run the primary language model locally. Query/session handling, BM25/RRF retrieval, evidence selection, relationship checks, factual validation, telemetry, and persistence run in ProjectHub's own backend process. Normal generative inference on the current dev and production configuration is hosted by Cloudflare Workers AI using @cf/meta/llama-3.2-3b-instruct. Ollama is only an optional fallback when explicitly configured."
+      "text": "ProjectHub does not run the primary language model locally. Query/session handling, BM25/RRF retrieval, evidence selection, relationship checks, factual validation, telemetry, and persistence run in ProjectHub's own backend process. Normal generative inference on the current dev and production configuration is hosted by Cloudflare Workers AI using @cf/meta/llama-3.1-8b-instruct-fast. Ollama is only an optional fallback when explicitly configured."
     },
     {
       "id": "scout-runtime-model",
       "tag": "scout-runtime",
-      "text": "Scout uses the model @cf/meta/llama-3.2-3b-instruct for normal generative inference, hosted by Cloudflare Workers AI. This is the model Scout uses in the current dev and production configuration unless an administrator explicitly reconfigures the inference provider."
+      "text": "Scout uses the model @cf/meta/llama-3.1-8b-instruct-fast for normal generative inference, hosted by Cloudflare Workers AI. This is the model Scout uses in the current dev and production configuration unless an administrator explicitly reconfigures the inference provider."
     },
     {
       "id": "scout-runtime-capabilities",
@@ -35,7 +35,7 @@
     {
       "id": "scout-runtime-neurons",
       "tag": "scout-cost",
-      "text": "For @cf/meta/llama-3.2-3b-instruct, ProjectHub uses Cloudflare's published neuron rates of 4,625 neurons per million input tokens and 30,475 neurons per million output tokens to estimate usage when the provider does not return an actual neuron count. Cloudflare's public Workers AI paid-usage reference is $0.011 per 1,000 neurons beyond the included allocation on Workers Paid. A metered-value estimate is not the same as an actual billed charge."
+      "text": "For @cf/meta/llama-3.1-8b-instruct-fast, ProjectHub uses Cloudflare's published neuron rates of 4,119 neurons per million input tokens and 34,868 neurons per million output tokens to estimate usage when the provider does not return an actual neuron count. Cloudflare's public Workers AI paid-usage reference is $0.011 per 1,000 neurons beyond the included allocation on Workers Paid. A metered-value estimate is not the same as an actual billed charge."
     },
     {
       "id": "scout-runtime-rate-controls",

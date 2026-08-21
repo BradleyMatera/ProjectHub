@@ -51,7 +51,7 @@ Then create the wrapper commit and force-push **that staging tree** to `BradleyM
 
 - **Scout** is the portable intelligence/orchestration engine.
 - **ProjectHub Recruiter Alpha** is the app powered by Scout.
-- Primary inference for staging is **Cloudflare Workers AI** (`@cf/meta/llama-3.2-3b-instruct`).
+- Primary inference for staging is **Cloudflare Workers AI** (`@cf/meta/llama-3.1-8b-instruct-fast`).
 - Ollama is for dev/test only; it is **not** qualified for production.
 - Runtime JS never authors normal chatbot prose.
 - Every user-visible reply carries a `proseSource` of `DIRECT_KB`, `MODEL_GENERATION`, or `TECHNICAL_ERROR`.

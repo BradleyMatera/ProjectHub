@@ -23,16 +23,16 @@ test('public phone scrub preserves only the approved public number', () => {
   );
 });
 
-test('Cloudflare neuron estimate uses the configured Llama 3.2 3B rates', () => {
-  assert.equal(estimateCloudflareNeurons(1_000_000, 0), 4625);
-  assert.equal(estimateCloudflareNeurons(0, 1_000_000), 30475);
-  assert.equal(estimateCloudflareNeurons(1_000_000, 1_000_000), 35100);
+test('Cloudflare neuron estimate uses the configured Llama 3.1 8B Instruct Fast rates', () => {
+  assert.equal(estimateCloudflareNeurons(1_000_000, 0), 4119);
+  assert.equal(estimateCloudflareNeurons(0, 1_000_000), 34868);
+  assert.equal(estimateCloudflareNeurons(1_000_000, 1_000_000), 38987);
 });
 
 test('generation-call summary reports real call count and token/neuron totals', () => {
   const summary = summarizeGenerationCalls({
     provider: 'cloudflare',
-    model: '@cf/meta/llama-3.2-3b-instruct',
+    model: '@cf/meta/llama-3.1-8b-instruct-fast',
     agent: {
       actualProviderCalls: 2,
       generationCalls: [
@@ -66,5 +66,5 @@ test('generation-call summary reports real call count and token/neuron totals', 
   assert.equal(summary.latencyMs, 950);
   assert.equal(summary.repairs, 1);
   assert.equal(summary.provider, 'cloudflare');
-  assert.equal(summary.model, '@cf/meta/llama-3.2-3b-instruct');
+  assert.equal(summary.model, '@cf/meta/llama-3.1-8b-instruct-fast');
 });

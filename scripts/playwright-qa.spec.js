@@ -408,7 +408,7 @@ const selfKnowledge = [
   { q: 'What are you?', mustContain: ['scout', 'assistant', 'ai', 'recruiter'], warnNotContain: ['technical error'] },
   { q: 'What is Scout?', mustContain: ['scout', 'projecthub', 'assistant', 'chatbot', 'widget'], warnNotContain: ['technical error'] },
   { q: 'What can you help me with?', mustContain: ['bradley', 'projects', 'skills', 'contact', 'runtime', 'model'], warnNotContain: ['technical error'] },
-  { q: 'What model do you use?', mustContain: ['@cf/meta/llama-3.2-3b-instruct', 'cloudflare'], warnNotContain: ['unknown', 'unable'] },
+  { q: 'What model do you use?', mustContain: ['@cf/meta/llama-3.1-8b-instruct-fast', 'cloudflare'], warnNotContain: ['unknown', 'unable'] },
   { q: 'Who provides the model?', mustContain: ['cloudflare', 'workers ai'], warnNotContain: ['unknown'] },
   {
     q: 'Is the model running on Bradley\'s server?',

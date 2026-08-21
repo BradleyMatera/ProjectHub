@@ -29,9 +29,9 @@ describe('Release Config Validation', () => {
     assert.equal(config.provider, 'cloudflare');
   });
 
-  it('RC5: model is @cf/meta/llama-3.2-3b-instruct', () => {
+  it('RC5: model is @cf/meta/llama-3.1-8b-instruct-fast', () => {
     config = config || JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    assert.equal(config.model, '@cf/meta/llama-3.2-3b-instruct');
+    assert.equal(config.model, '@cf/meta/llama-3.1-8b-instruct-fast');
   });
 
   it('RC6: spendingPolicy is FREE_ONLY', () => {
@@ -66,9 +66,9 @@ describe('Release Config Validation', () => {
     assert.ok(config.deprecatedModels.includes('qwen2.5:0.5b'));
   });
 
-  it('RC12: productionEligibleModels only contains cloudflare 3b', () => {
+  it('RC12: productionEligibleModels only contains cloudflare 8b-fast', () => {
     config = config || JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    assert.deepEqual(config.productionEligibleModels, ['@cf/meta/llama-3.2-3b-instruct']);
+    assert.deepEqual(config.productionEligibleModels, ['@cf/meta/llama-3.1-8b-instruct-fast']);
   });
 
   it('RC13: no secrets in config', () => {

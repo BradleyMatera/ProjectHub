@@ -56,16 +56,16 @@ function refreshIndexCopy() {
 
   text = text.replace('100% free stack', 'free-tier constrained stack');
   text = text.replace(
-    'Model: <code>@cf/meta/llama-3.2-3b-instruct</code> on Cloudflare free tier. Lite agent mode with up to 3 recovery attempts.',
-    'Model: <code>@cf/meta/llama-3.2-3b-instruct</code>. RAG evidence is primary; one factual repair is allowed if the first generated answer fails validation.'
+    'Model: <code>@cf/meta/llama-3.1-8b-instruct-fast</code> on Cloudflare free tier. Lite agent mode with up to 3 recovery attempts.',
+    'Model: <code>@cf/meta/llama-3.1-8b-instruct-fast</code>. RAG evidence is primary; one factual repair is allowed if the first generated answer fails validation.'
   );
   text = text.replace(
     'Every request has a hard 15,000 ms budget. If generation exceeds it, Scout falls back to a grounded constrained recovery.',
     'Every request has a hard 15,000 ms budget. A factually invalid answer gets at most one generative repair; if that still fails, Scout fails closed instead of returning known-invalid prose.'
   );
   text = text.replace(
-    'Free-tier inference with <code>@cf/meta/llama-3.2-3b-instruct</code>. Neuron-based pricing with generous free allocation.',
-    'Generative inference with <code>@cf/meta/llama-3.2-3b-instruct</code>. The included allocation is 10,000 neurons per day, resetting at 00:00 UTC; the page now exposes live estimated usage.'
+    'Free-tier inference with <code>@cf/meta/llama-3.1-8b-instruct-fast</code>. Neuron-based pricing with generous free allocation.',
+    'Generative inference with <code>@cf/meta/llama-3.1-8b-instruct-fast</code>. The included allocation is 10,000 neurons per day, resetting at 00:00 UTC; the page now exposes live estimated usage.'
   );
 
   text = replaceSection(text, 'Scout pipeline', `

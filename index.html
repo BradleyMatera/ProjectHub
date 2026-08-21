@@ -500,7 +500,7 @@
           <div class="status-card">
             <span class="status-label">Inference</span>
             <strong>Cloudflare Workers AI</strong>
-            <p>Model: <code>@cf/meta/llama-3.2-3b-instruct</code>. RAG evidence is primary; one factual repair is allowed if the first generated answer fails validation.</p>
+            <p>Model: <code>@cf/meta/llama-3.1-8b-instruct-fast</code>. RAG evidence is primary; one factual repair is allowed if the first generated answer fails validation.</p>
           </div>
 
           <div class="status-card">
@@ -628,7 +628,7 @@
           </div>
           <div class="free-card">
             <strong>Cloudflare Workers AI</strong>
-            <p>Generative inference with <code>@cf/meta/llama-3.2-3b-instruct</code>. The included allocation is 10,000 neurons per day, resetting at 00:00 UTC; the page now exposes live estimated usage.</p>
+            <p>Generative inference with <code>@cf/meta/llama-3.1-8b-instruct-fast</code>. The included allocation is 10,000 neurons per day, resetting at 00:00 UTC; the page now exposes live estimated usage.</p>
           </div>
           <div class="free-card">
             <strong>GCP e2-micro (free tier)</strong>
@@ -765,7 +765,7 @@
               <tr><td><strong>Backend URL</strong></td><td><code>projecthub-chat.bradleymatera.dev</code></td><td><code>dev.projecthub-chat.bradleymatera.dev</code></td></tr>
               <tr><td><strong>Widget asset</strong></td><td><code>bradleymatera.github.io/ProjectHub/ProjectHub.js</code></td><td><code>./ProjectHub.js</code> (local dev asset)</td></tr>
               <tr><td><strong>Inference provider</strong></td><td>Cloudflare Workers AI</td><td>Ollama (<code>qwen2.5:1.5b</code>)</td></tr>
-              <tr><td><strong>Model</strong></td><td><code>@cf/meta/llama-3.2-3b-instruct</code></td><td><code>qwen2.5:1.5b</code></td></tr>
+              <tr><td><strong>Model</strong></td><td><code>@cf/meta/llama-3.1-8b-instruct-fast</code></td><td><code>qwen2.5:1.5b</code></td></tr>
               <tr><td><strong>Agent mode</strong></td><td>Lite agent (production-safe)</td><td>Full agent (experimental tools enabled)</td></tr>
               <tr><td><strong>Validation</strong></td><td>Strict + lenient recovery</td><td>Strict + lenient recovery (same)</td></tr>
               <tr><td><strong>Session state</strong></td><td>Server-owned, in-memory</td><td>Server-owned, in-memory (same)</td></tr>
@@ -1070,7 +1070,7 @@
         <div class="dev-section">
           <h2>Known limitations</h2>
           <ul class="feature-list">
-            <li><strong>Small model constraints:</strong> <code>@cf/meta/llama-3.2-3b-instruct</code> (prod) and <code>qwen2.5:1.5b</code> (dev) are small models. They can hallucinate, miss nuances, or produce awkward phrasing. Validation and recovery compensate but cannot eliminate all errors.</li>
+            <li><strong>Hosted model constraints:</strong> <code>@cf/meta/llama-3.1-8b-instruct-fast</code> (prod) and <code>qwen2.5:1.5b</code> (dev) are general-purpose instruction-tuned models. They can hallucinate, miss nuances, or produce awkward phrasing. Validation and recovery compensate but cannot eliminate all errors.</li>
             <li><strong>No persistent storage:</strong> Session state is in-memory on the GCP VM. A VM restart loses all sessions. No external database.</li>
             <li><strong>Free-tier rate limits:</strong> Cloudflare Workers AI free tier has neuron allocation limits. High traffic could exhaust the monthly allocation.</li>
             <li><strong>Single VM:</strong> One GCP e2-micro instance. No horizontal scaling, no load balancer, no redundancy.</li>

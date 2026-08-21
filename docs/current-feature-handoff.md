@@ -21,7 +21,7 @@
 > **Architecture note:** **Scout** is the portable intelligence/orchestration
 > engine; **ProjectHub Recruiter Alpha** is the app powered by Scout. Primary
 > inference for staging/production is **Cloudflare Workers AI**
-> (`@cf/meta/llama-3.2-3b-instruct`). Ollama is the dev/test runtime and an
+> (`@cf/meta/llama-3.1-8b-instruct-fast`). Ollama is the dev/test runtime and an
 > optional fallback architecture — it is NOT qualified for production.
 > Browser/WebGPU inference is experimental. Runtime JS never authors normal
 > chatbot prose; every user-visible reply carries a `proseSource`: `DIRECT_KB`

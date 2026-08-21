@@ -11,7 +11,7 @@ function fakeRunner(attempt) {
   return {
     reply: `reply-${attempt.attemptId}`,
     provider: 'cloudflare',
-    model: '@cf/meta/llama-3.2-3b-instruct',
+    model: '@cf/meta/llama-3.1-8b-instruct-fast',
     quality
   };
 }

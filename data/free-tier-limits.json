@@ -5,24 +5,24 @@
   "egressOverheadFactor": 1.08,
   "sources": {
     "cloudflare": {
-      "label": "Cloudflare Workers AI — Llama 3.2 3B Instruct",
+      "label": "Cloudflare Workers AI — Llama 3.1 8B Instruct Fast",
       "kind": "llm",
-      "model": "@cf/meta/llama-3.2-3b-instruct",
+      "model": "@cf/meta/llama-3.1-8b-instruct-fast",
       "freeLimits": {
         "neuronsPerDay": 10000,
         "reset": "00:00 UTC"
       },
       "neuronRatesPerMillionTokens": {
-        "input": 4625,
-        "output": 30475
+        "input": 4119,
+        "output": 34868
       },
       "shadowRates": {
-        "inputPerMillionTokensMicroUsd": 51000,
-        "outputPerMillionTokensMicroUsd": 335000
+        "inputPerMillionTokensMicroUsd": 45300,
+        "outputPerMillionTokensMicroUsd": 383500
       },
       "paidUsageReference": "$0.011 per 1,000 neurons beyond the included daily allocation on Workers Paid",
       "citation": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
-      "modelCitation": "https://developers.cloudflare.com/workers-ai/models/llama-3.2-3b-instruct/",
+      "modelCitation": "https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct-fast/",
       "lastVerified": "2026-08-21"
     },
     "ollama": {

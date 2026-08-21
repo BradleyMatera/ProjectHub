@@ -2189,7 +2189,7 @@ if (COST_TRACKER && costLedger) {
 async function verifyModelDigest() {
   // When using Cloudflare Workers AI, there is no local Ollama model to verify.
   if (process.env.SCOUT_INFERENCE_PROVIDER === 'cloudflare') {
-    const cfModel = process.env.CLOUDFLARE_MODEL || '@cf/meta/llama-3.2-3b-instruct';
+    const cfModel = process.env.CLOUDFLARE_MODEL || cloudflareProvider.configuredModel();
     console.log(`[startup] Cloudflare Workers AI provider active, model: ${cfModel} (no local digest verification needed)`);
     modelVerified = true;
     return;

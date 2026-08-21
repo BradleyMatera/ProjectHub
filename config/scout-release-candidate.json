@@ -4,7 +4,7 @@
   "agentMode": "lite-agent",
   "maximumDeadlineMs": 15000,
   "provider": "cloudflare",
-  "model": "@cf/meta/llama-3.2-3b-instruct",
+  "model": "@cf/meta/llama-3.1-8b-instruct-fast",
   "spendingPolicy": "FREE_ONLY",
   "freeDailyNeuronLimit": 10000,
   "contextLimits": {
@@ -37,6 +37,6 @@
     "groq/llama-3.1-8b-instant"
   ],
   "productionEligibleModels": [
-    "@cf/meta/llama-3.2-3b-instruct"
+    "@cf/meta/llama-3.1-8b-instruct-fast"
   ]
 }

@@ -61,10 +61,9 @@ const BASE_URL = process.env.PROJECTHUB_API_URL || 'http://127.0.0.1:3000';
 const SCOUT_DEADLINE_CAP_MS = 15000;
 const REQUEST_DEADLINE_MS = Math.min(parseInt(process.env.REQUEST_DEADLINE_MS || '15000', 10), SCOUT_DEADLINE_CAP_MS);
 
-// For the clean diagnostic baseline, run ONLY the 3b model.
-// Other models will be benchmarked after the measurement system is validated.
+// Run the qualified 8B Fast model for the diagnostic baseline.
 const MODELS = [
-  '@cf/meta/llama-3.2-3b-instruct',
+  '@cf/meta/llama-3.1-8b-instruct-fast',
 ];
 
 async function ask(caseDef, sessionId) {

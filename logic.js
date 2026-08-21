@@ -12,8 +12,8 @@ function buildServerHistory(context) {
 const SCOUT_PUBLIC_PHONE = '(608) 313-5373';
 const SCOUT_PUBLIC_PHONE_DIGITS = '6083135373';
 const CLOUDFLARE_FREE_NEURONS_PER_DAY = 10000;
-const CLOUDFLARE_INPUT_NEURONS_PER_MILLION = 4625;
-const CLOUDFLARE_OUTPUT_NEURONS_PER_MILLION = 30475;
+const CLOUDFLARE_INPUT_NEURONS_PER_MILLION = 4119;
+const CLOUDFLARE_OUTPUT_NEURONS_PER_MILLION = 34868;
 const CLOUDFLARE_USD_PER_1000_NEURONS = 0.011;
 
 function escapeScoutHtml(value) {
@@ -213,7 +213,7 @@ async function refreshScoutRuntimeDashboard() {
     <h2>Live Scout runtime & usage</h2>
     <p>This is the operational proof behind the free-tier claim. Local ProjectHub code performs conversation handling, BM25/RRF retrieval, evidence selection and factual validation; Cloudflare Workers AI performs normal generative inference.</p>
     <div class="scout-runtime-grid">
-      <div class="scout-runtime-metric"><span>Generation</span><strong>Cloudflare Workers AI</strong><p>@cf/meta/llama-3.2-3b-instruct</p></div>
+      <div class="scout-runtime-metric"><span>Generation</span><strong>Cloudflare Workers AI</strong><p>@cf/meta/llama-3.1-8b-instruct-fast</p></div>
       <div class="scout-runtime-metric"><span>Daily AI budget</span><strong>${escapeScoutHtml(dayUsage)} neurons</strong><p>${escapeScoutHtml(dayPercent)} · resets 00:00 UTC</p></div>
       <div class="scout-runtime-metric"><span>Model calls today</span><strong>${escapeScoutHtml(callsToday)}</strong><p>Backend ledger, when available</p></div>
       <div class="scout-runtime-metric"><span>App request control</span><strong>20 / minute / IP</strong><p>Server default unless overridden</p></div>
