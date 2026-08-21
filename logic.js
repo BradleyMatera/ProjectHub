@@ -118,6 +118,14 @@ function getCostsApiUrl(chatApiUrl) {
   return null;
 }
 
+function resolveScoutChatApiUrl() {
+  if (typeof window === 'undefined') return '';
+  return window.__PROJECTHUB_CHAT_API__
+    || (/^(^|\.)bradleymatera\.dev$/.test(window.location.hostname)
+      ? '/.netlify/functions/recruiter-chat'
+      : 'https://projecthub-chat.bradleymatera.dev/api/chat');
+}
+
 async function fetchScoutCosts(chatApiUrl) {
   const costsUrl = getCostsApiUrl(chatApiUrl);
   if (!costsUrl) return null;
@@ -144,6 +152,88 @@ function cloudflareDayFromCosts(costs) {
     pct: Math.min(100, (neurons / CLOUDFLARE_FREE_NEURONS_PER_DAY) * 100),
     remaining: Math.max(0, CLOUDFLARE_FREE_NEURONS_PER_DAY - neurons)
   };
+}
+
+function isProjectHubGithubPage() {
+  if (typeof window === 'undefined' || !window.location) return false;
+  return /(?:^|\.)github\.io$/i.test(window.location.hostname)
+    && /\/ProjectHub(?:-dev)?(?:\/|$)/i.test(window.location.pathname);
+}
+
+function ensureScoutRuntimeDashboardStyles() {
+  if (document.getElementById('scout-runtime-dashboard-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'scout-runtime-dashboard-styles';
+  style.textContent = `
+    .scout-runtime-dashboard { margin-top: 1.5rem; padding: 1.25rem; border: 1px solid #525252; background: #161616; color: #f4f4f4; }
+    .scout-runtime-dashboard h2 { margin: 0 0 .4rem; font-size: 1.2rem; font-weight: 500; }
+    .scout-runtime-dashboard p { margin: .35rem 0; color: #c6c6c6; font-size: .86rem; line-height: 1.5; }
+    .scout-runtime-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .65rem; margin-top: .9rem; }
+    .scout-runtime-metric { border: 1px solid #393939; padding: .75rem; min-height: 86px; background: #262626; }
+    .scout-runtime-metric span { display:block; color:#a8a8a8; font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; }
+    .scout-runtime-metric strong { display:block; margin-top:.25rem; font-size:1rem; overflow-wrap:anywhere; }
+    .scout-runtime-detail { margin-top:.8rem; padding-top:.7rem; border-top:1px solid #393939; font-size:.78rem; color:#c6c6c6; }
+    @media (max-width:860px){.scout-runtime-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+    @media (max-width:540px){.scout-runtime-grid{grid-template-columns:1fr;}}
+  `;
+  document.head.appendChild(style);
+}
+
+function getOrCreateScoutRuntimeDashboard() {
+  if (!isProjectHubGithubPage()) return null;
+  let panel = document.getElementById('scout-runtime-dashboard');
+  if (panel) return panel;
+  const host = document.querySelector('main.card') || document.querySelector('.card') || document.body;
+  if (!host) return null;
+  ensureScoutRuntimeDashboardStyles();
+  panel = document.createElement('section');
+  panel.id = 'scout-runtime-dashboard';
+  panel.className = 'scout-runtime-dashboard';
+  panel.setAttribute('aria-label', 'Scout runtime and usage dashboard');
+  const firstSection = host.querySelector('.card-section');
+  if (firstSection) host.insertBefore(panel, firstSection);
+  else host.appendChild(panel);
+  return panel;
+}
+
+async function refreshScoutRuntimeDashboard() {
+  if (!isProjectHubGithubPage()) return;
+  const panel = getOrCreateScoutRuntimeDashboard();
+  if (!panel) return;
+  const chatApiUrl = resolveScoutChatApiUrl();
+  const costs = await fetchScoutCosts(chatApiUrl);
+  const day = cloudflareDayFromCosts(costs);
+  const session = typeof window !== 'undefined' && window.__PROJECTHUB_USAGE__ ? window.__PROJECTHUB_USAGE__ : null;
+  const sessionNeurons = session ? (session.actualNeurons || session.estimatedNeurons || 0) : 0;
+  const dayUsage = day ? `${formatScoutNumber(day.neurons, 2)} / 10,000` : 'waiting for /api/costs';
+  const dayPercent = day ? `${formatScoutNumber(day.pct, 2)}% used` : 'daily total unavailable';
+  const callsToday = day ? formatScoutNumber(day.calls, 0) : '—';
+  const sessionTokens = session ? `${formatScoutNumber(session.inputTokens, 0)} in / ${formatScoutNumber(session.outputTokens, 0)} out` : '0 in / 0 out';
+  panel.innerHTML = `
+    <h2>Live Scout runtime & usage</h2>
+    <p>This is the operational proof behind the free-tier claim. Local ProjectHub code performs conversation handling, BM25/RRF retrieval, evidence selection and factual validation; Cloudflare Workers AI performs normal generative inference.</p>
+    <div class="scout-runtime-grid">
+      <div class="scout-runtime-metric"><span>Generation</span><strong>Cloudflare Workers AI</strong><p>@cf/meta/llama-3.2-3b-instruct</p></div>
+      <div class="scout-runtime-metric"><span>Daily AI budget</span><strong>${escapeScoutHtml(dayUsage)} neurons</strong><p>${escapeScoutHtml(dayPercent)} · resets 00:00 UTC</p></div>
+      <div class="scout-runtime-metric"><span>Model calls today</span><strong>${escapeScoutHtml(callsToday)}</strong><p>Backend ledger, when available</p></div>
+      <div class="scout-runtime-metric"><span>App request control</span><strong>20 / minute / IP</strong><p>Server default unless overridden</p></div>
+      <div class="scout-runtime-metric"><span>This browser session</span><strong>${escapeScoutHtml(sessionTokens)}</strong><p>${formatScoutNumber(session?.providerCalls || 0, 0)} model calls</p></div>
+      <div class="scout-runtime-metric"><span>Session neurons</span><strong>${formatScoutNumber(sessionNeurons, 3)}</strong><p>${formatScoutNumber(session?.repairs || 0, 0)} factual repair calls</p></div>
+      <div class="scout-runtime-metric"><span>Local RAG work</span><strong>BM25 + RRF</strong><p>Query/context → retrieval → evidence → validation</p></div>
+      <div class="scout-runtime-metric"><span>Paid-rate reference</span><strong>$0.011 / 1k neurons</strong><p>Only a pricing reference; this panel does not infer billing charges</p></div>
+    </div>
+    <div class="scout-runtime-detail"><strong>How to read it:</strong> each Scout reply also shows its own provider calls, input/output tokens, neurons, model latency, RAG candidate/evidence counts, answer source and repair attempts. Free allocation is shared Cloudflare account usage, not a separate allowance for each visitor.</div>
+  `;
+}
+
+function mountScoutRuntimeDashboard() {
+  if (typeof window === 'undefined' || typeof document === 'undefined' || !isProjectHubGithubPage()) return;
+  const start = () => {
+    getOrCreateScoutRuntimeDashboard();
+    refreshScoutRuntimeDashboard();
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+  else start();
 }
 
 function buildScoutTelemetryHtml(data, costs) {
@@ -206,6 +296,8 @@ function buildScoutTelemetryHtml(data, costs) {
 </div>`;
 }
 
+mountScoutRuntimeDashboard();
+
 // Function to handle user queries
 // The client is a thin pass-through: all routing, grounded answers, and LLM
 // generation happen on the server. This keeps answers consistent, contextual,
@@ -213,10 +305,7 @@ function buildScoutTelemetryHtml(data, costs) {
 async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchAllGitHubData, chatSession = {}) {
   let newTopic = lastQueryTopic;
 
-  const CHAT_API_URL = window.__PROJECTHUB_CHAT_API__
-    || (/^(^|\.)bradleymatera\.dev$/.test(window.location.hostname)
-      ? "/.netlify/functions/recruiter-chat"
-      : "https://projecthub-chat.bradleymatera.dev/api/chat");
+  const CHAT_API_URL = resolveScoutChatApiUrl();
   const AI_TIMEOUT_MS = 18000;
   const AI_RETRIES = 1;
 
@@ -253,6 +342,7 @@ async function handleQuery(userQuery, projects, codePens, lastQueryTopic, fetchA
             const costs = await fetchScoutCosts(CHAT_API_URL);
             const safeReply = scrubPublicPhoneNumbers(data.reply);
             const telemetry = buildScoutTelemetryHtml(data, costs);
+            refreshScoutRuntimeDashboard();
             return {
               reply: `${flavor}${safeReply}${followUps}${telemetry}`,
               error: null,
