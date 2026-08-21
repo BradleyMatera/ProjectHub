@@ -22,7 +22,7 @@ require('../lib/local-model-router').generate = async function(model, messages, 
   return { ok: true, text: JSON.stringify({ answer: '[STUB]' }), usage: { provider: 'stub' }, latencyMs: 0, startedAt: Date.now(), endedAt: Date.now() };
 };
 
-const question = 'Tell me about Bradley.';
+const question = process.argv[2] || 'Tell me about Bradley.';
 const understood = understandQuery(question, [], chunks);
 const evidence = searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 8).map(r => ({
   kind: r.tag, name: r.title || r.name || '', description: r.text, evidenceScore: r.rrfScore
