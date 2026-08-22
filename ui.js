@@ -1229,13 +1229,18 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       lastQueryTopic = newTopic;
       const finalReply = reply;
 
+      // Re-enable the composer while the bot types so the user can start
+      // their next question; isRequestInFlight still prevents double submits.
+      chatInput.value = "";
+      resizeInput();
+      chatInput.disabled = false;
+      chatInput.focus();
+
       await showBotReply(statusRow, linkifyHtml(finalReply), typingStart);
       rememberTurn("user", userQuery);
       rememberTurn("assistant", finalReply);
       lastBotReplyText = normalizeForCompare(reply);
       turnCount += 1;
-      chatInput.value = "";
-      resizeInput();
     } catch (error) {
       console.error("ProjectHub chat error:", error);
       if (statusRow) await showBotReply(statusRow, "I can still help from Bradley’s verified profile details. Try asking about projects, AWS experience, CIRIS, target roles, skills, or contact links.", typingStart);
