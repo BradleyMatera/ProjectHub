@@ -284,6 +284,7 @@ function recordScoutUsage(data, requestMetrics) {
 function getCostsApiUrl(chatApiUrl) {
   const url = String(chatApiUrl || '');
   if (/\/api\/chat(?:\?.*)?$/i.test(url)) return url.replace(/\/api\/chat(?:\?.*)?$/i, '/api/costs');
+  if (/\.netlify\/functions\/recruiter-chat(?:\?.*)?$/i.test(url)) return url.replace(/\.netlify\/functions\/recruiter-chat(?:\?.*)?$/i, '.netlify/functions/costs');
   return null;
 }
 
@@ -436,10 +437,11 @@ function buildScoutTelemetryHtml(data, costs) {
     : `<div><strong>Daily Workers AI:</strong> live /api/costs total unavailable on this frontend route. Cloudflare free allocation: ${formatScoutNumber(CLOUDFLARE_FREE_NEURONS_PER_DAY, 0)} neurons/day, reset 00:00 UTC.</div>`;
 
   const callsHtml = request.callsDetail.length
-    ? `<div style="margin-top:6px"><strong>Provider calls:</strong>${request.callsDetail.map(call => {
+    ? `<div style="margin-top:6px"><strong>Provider calls:</strong>${request.callsDetail.map((call, i) => {
         const callNeurons = finiteNumber(call.actualNeurons) || finiteNumber(call.estimatedNeurons)
           || estimateCloudflareNeurons(call.inputTokens, call.outputTokens);
-        return `<div style="margin-left:10px">#${escapeScoutHtml(call.attemptIndex || '?')} ${escapeScoutHtml(call.attemptType || 'PRIMARY')}: ${formatScoutNumber(call.inputTokens, 0)} in / ${formatScoutNumber(call.outputTokens, 0)} out · ${formatScoutNumber(callNeurons, 3)} neurons · ${formatScoutNumber(call.latencyMs, 0)} ms · ${call.accepted ? 'accepted' : 'not accepted'}</div>`;
+        const number = call.attemptIndex != null ? call.attemptIndex + 1 : i + 1;
+        return `<div style="margin-left:10px">#${escapeScoutHtml(number)} ${escapeScoutHtml(call.attemptType || 'PRIMARY')}: ${formatScoutNumber(call.inputTokens, 0)} in / ${formatScoutNumber(call.outputTokens, 0)} out · ${formatScoutNumber(callNeurons, 3)} neurons · ${formatScoutNumber(call.latencyMs, 0)} ms · ${call.accepted ? 'accepted' : 'not accepted'}</div>`;
       }).join('')}</div>`
     : '<div style="margin-top:6px"><strong>Provider calls:</strong> none</div>';
 
