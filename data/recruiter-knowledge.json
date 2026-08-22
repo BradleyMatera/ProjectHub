@@ -181,6 +181,7 @@
       "SQL"
     ],
     "cloudAndInfrastructure": [
+      "AWS",
       "AWS Lambda",
       "Amazon DynamoDB",
       "Amazon S3",
