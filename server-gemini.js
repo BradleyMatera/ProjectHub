@@ -1163,11 +1163,18 @@ const CONVERSATION_TTL_MS = 2 * 60 * 60 * 1000;
 const CONVERSATION_MAX_SESSIONS = 250;
 const CONVERSATION_MAX_TURNS = 5;
 
+const CONTROL_TURN_RE = /^(visitor name captured|user profile updated|control|system|memory|note):?/i;
+
 function sanitizeConversationTurns(history) {
   return (Array.isArray(history) ? history : []).slice(-CONVERSATION_MAX_TURNS).map(turn => ({
-    user: String(turn?.user || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 360),
-    assistant: String(turn?.assistant || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 480)
-  })).filter(turn => turn.user || turn.assistant);
+    user: String(turn?.user || (turn?.role === 'user' ? turn?.content : '')).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 360),
+    assistant: String(turn?.assistant || (turn?.role === 'assistant' ? turn?.content : '')).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 480)
+  })).filter(turn => {
+    if (!turn.user && !turn.assistant) return false;
+    if (turn.assistant && CONTROL_TURN_RE.test(turn.assistant)) return false;
+    if (turn.assistant && turn.assistant.length < 8) return false;
+    return true;
+  });
 }
 
 function getConversationHistory(sessionId, incomingHistory) {

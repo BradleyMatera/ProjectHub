@@ -1206,10 +1206,10 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       const possibleName = extractVisitorName(userQuery);
       if (possibleName) {
         saveVisitorName(possibleName);
-        const greetingHtml = `Nice to meet you, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask me about his projects, AWS background, role fit, honest gaps, or contact details.`;
-        await typeNewBotMessage(greetingHtml);
+        const greetingText = `Nice to meet you, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask me about his projects, AWS background, role fit, honest gaps, or contact details.`;
+        await typeNewBotMessage(greetingText);
         rememberTurn("user", userQuery);
-        rememberTurn("assistant", `Visitor name captured as ${visitorName}`);
+        rememberTurn("assistant", greetingText);
         turnCount += 1;
         chatInput.value = "";
         resizeInput();
