@@ -9789,12 +9789,6 @@
       "category": "education"
     },
     {
-      "id": "big-tech-companies",
-      "triggerPattern": "\\b(google|microsoft|apple|meta|facebook|netflix|tesla|openai|anthropic)\\b",
-      "correction": "He has not worked at this company. His tech experience is AWS internship and CIRIS freelance.",
-      "category": "employment"
-    },
-    {
       "id": "kubernetes-cert",
       "triggerPattern": "\\b(kubernetes|cka|ckad)\\b",
       "correction": "He does not have a Kubernetes certification. His certs are AWS SAA and AWS AI Practitioner.",
