@@ -36,6 +36,7 @@ data/trace-*.json
 # Playwright QA and test artifacts
 qa-results/
 test-results/
+ProjectHub-dev/
 
 # Screenshots and media clutter
 Screenshot_*.jpg
