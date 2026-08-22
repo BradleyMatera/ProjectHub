@@ -57,8 +57,14 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   })();
 
   function chatApiUrl() {
-    return window.__PROJECTHUB_CHAT_API__
-      || (/(^|\.)bradleymatera\.dev$/.test(window.location.hostname) ? "/.netlify/functions/recruiter-chat" : "https://projecthub-chat.bradleymatera.dev/api/chat");
+    if (window.__PROJECTHUB_CHAT_API__) return window.__PROJECTHUB_CHAT_API__;
+    if (window.location.pathname?.startsWith('/ProjectHub-dev/')) {
+      return 'https://dev.projecthub-chat.bradleymatera.dev/api/chat';
+    }
+    if (/(^|\.)bradleymatera\.dev$/.test(window.location.hostname)) {
+      return '/.netlify/functions/recruiter-chat';
+    }
+    return 'https://projecthub-chat.bradleymatera.dev/api/chat';
   }
 
   function escapeHtml(value) {

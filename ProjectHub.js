@@ -1,4 +1,4 @@
-const projects = [
+﻿const projects = [
   {
     name: "AWS Serverless Metadata Extraction Workflow",
     desc: "AWS internship capstone that extracts metadata with Lambda, DynamoDB, S3, and an accessible frontend on AWS Amplify.",
@@ -104,10 +104,10 @@ const codePens = [
 // Dropdown suggestions
 const suggestions = [
   "Summarize Bradley as a junior software engineer",
-  "What’s Bradley’s GitHub?",
-  "What’s Bradley’s LinkedIn?",
+  "Whatâ€™s Bradleyâ€™s GitHub?",
+  "Whatâ€™s Bradleyâ€™s LinkedIn?",
   "What roles is Bradley targeting?",
-  "What is Bradley’s strongest technical background?",
+  "What is Bradleyâ€™s strongest technical background?",
   "Does Bradley have AWS experience?",
   "Tell me about the AWS serverless workflow",
   "Tell me about CIRIS Ethical AI",
@@ -167,7 +167,8 @@ async function fetchAllGitHubData(projects) {
     }
   })).catch(() => {});
   return projectData;
-}function buildServerHistory(context) {
+}
+function buildServerHistory(context) {
   return (Array.isArray(context) ? context : []).reduce((turns, turn) => {
     if (turn.role === 'user') {
       turns.push({ user: turn.content, assistant: '' });
@@ -290,10 +291,14 @@ function getCostsApiUrl(chatApiUrl) {
 
 function resolveScoutChatApiUrl() {
   if (typeof window === 'undefined') return '';
-  return window.__PROJECTHUB_CHAT_API__
-    || (/^(^|\.)bradleymatera\.dev$/.test(window.location.hostname)
-      ? '/.netlify/functions/recruiter-chat'
-      : 'https://projecthub-chat.bradleymatera.dev/api/chat');
+  if (window.__PROJECTHUB_CHAT_API__) return window.__PROJECTHUB_CHAT_API__;
+  if (window.location.pathname?.startsWith('/ProjectHub-dev/')) {
+    return 'https://dev.projecthub-chat.bradleymatera.dev/api/chat';
+  }
+  if (/(^|\.)bradleymatera\.dev$/.test(window.location.hostname)) {
+    return '/.netlify/functions/recruiter-chat';
+  }
+  return 'https://projecthub-chat.bradleymatera.dev/api/chat';
 }
 
 async function fetchScoutCosts(chatApiUrl) {
@@ -377,19 +382,19 @@ async function refreshScoutRuntimeDashboard() {
   const sessionNeurons = session ? (session.actualNeurons || session.estimatedNeurons || 0) : 0;
   const dayUsage = day ? `${formatScoutNumber(day.neurons, 2)} / 10,000` : 'waiting for /api/costs';
   const dayPercent = day ? `${formatScoutNumber(day.pct, 2)}% used` : 'daily total unavailable';
-  const callsToday = day ? formatScoutNumber(day.calls, 0) : '—';
+  const callsToday = day ? formatScoutNumber(day.calls, 0) : 'â€”';
   const sessionTokens = session ? `${formatScoutNumber(session.inputTokens, 0)} in / ${formatScoutNumber(session.outputTokens, 0)} out` : '0 in / 0 out';
   panel.innerHTML = `
     <h2>Live Scout runtime & usage</h2>
     <p>This is the operational proof behind the free-tier claim. Local ProjectHub code performs conversation handling, BM25/RRF retrieval, evidence selection and factual validation; Cloudflare Workers AI performs normal generative inference.</p>
     <div class="scout-runtime-grid">
       <div class="scout-runtime-metric"><span>Generation</span><strong>Cloudflare Workers AI</strong><p>@cf/meta/llama-3.1-8b-instruct-fast</p></div>
-      <div class="scout-runtime-metric"><span>Daily AI budget</span><strong>${escapeScoutHtml(dayUsage)} neurons</strong><p>${escapeScoutHtml(dayPercent)} · resets 00:00 UTC</p></div>
+      <div class="scout-runtime-metric"><span>Daily AI budget</span><strong>${escapeScoutHtml(dayUsage)} neurons</strong><p>${escapeScoutHtml(dayPercent)} Â· resets 00:00 UTC</p></div>
       <div class="scout-runtime-metric"><span>Model calls today</span><strong>${escapeScoutHtml(callsToday)}</strong><p>Backend ledger, when available</p></div>
       <div class="scout-runtime-metric"><span>App request control</span><strong>20 / minute / IP</strong><p>Server default unless overridden</p></div>
       <div class="scout-runtime-metric"><span>This browser session</span><strong>${escapeScoutHtml(sessionTokens)}</strong><p>${formatScoutNumber(session?.providerCalls || 0, 0)} model calls</p></div>
       <div class="scout-runtime-metric"><span>Session neurons</span><strong>${formatScoutNumber(sessionNeurons, 3)}</strong><p>${formatScoutNumber(session?.repairs || 0, 0)} factual repair calls</p></div>
-      <div class="scout-runtime-metric"><span>Local RAG work</span><strong>BM25 + RRF</strong><p>Query/context → retrieval → evidence → validation</p></div>
+      <div class="scout-runtime-metric"><span>Local RAG work</span><strong>BM25 + RRF</strong><p>Query/context â†’ retrieval â†’ evidence â†’ validation</p></div>
       <div class="scout-runtime-metric"><span>Paid-rate reference</span><strong>$0.011 / 1k neurons</strong><p>Only a pricing reference; this panel does not infer billing charges</p></div>
     </div>
     <div class="scout-runtime-detail"><strong>How to read it:</strong> each Scout reply also shows its own provider calls, input/output tokens, neurons, model latency, RAG candidate/evidence counts, answer source and repair attempts. Free allocation is shared Cloudflare account usage, not a separate allowance for each visitor.</div>
@@ -420,12 +425,12 @@ function buildScoutTelemetryHtml(data, costs) {
   const neuronsForValue = request.actualNeurons || request.estimatedNeurons;
   const meteredValue = estimatedCloudflareMeteredUsd(neuronsForValue);
   const sessionNeurons = session.actualNeurons || session.estimatedNeurons;
-  const localWork = 'query/session context → BM25 + RRF retrieval → evidence selection → factual validation';
+  const localWork = 'query/session context â†’ BM25 + RRF retrieval â†’ evidence selection â†’ factual validation';
   const cloudWork = request.calls > 0
     ? `${request.calls} Cloudflare Workers AI inference call${request.calls === 1 ? '' : 's'}`
     : 'no model inference call';
   const answerPath = source === 'MODEL_GENERATION'
-    ? 'RAG evidence → Cloudflare model → factual validator'
+    ? 'RAG evidence â†’ Cloudflare model â†’ factual validator'
     : source === 'DIRECT_KB'
       ? 'verified knowledge answer; no generative model call'
       : source === 'TECHNICAL_ERROR'
@@ -441,15 +446,15 @@ function buildScoutTelemetryHtml(data, costs) {
         const callNeurons = finiteNumber(call.actualNeurons) || finiteNumber(call.estimatedNeurons)
           || estimateCloudflareNeurons(call.inputTokens, call.outputTokens);
         const number = call.attemptIndex != null ? call.attemptIndex + 1 : i + 1;
-        return `<div style="margin-left:10px">#${escapeScoutHtml(number)} ${escapeScoutHtml(call.attemptType || 'PRIMARY')}: ${formatScoutNumber(call.inputTokens, 0)} in / ${formatScoutNumber(call.outputTokens, 0)} out · ${formatScoutNumber(callNeurons, 3)} neurons · ${formatScoutNumber(call.latencyMs, 0)} ms · ${call.accepted ? 'accepted' : 'not accepted'}</div>`;
+        return `<div style="margin-left:10px">#${escapeScoutHtml(number)} ${escapeScoutHtml(call.attemptType || 'PRIMARY')}: ${formatScoutNumber(call.inputTokens, 0)} in / ${formatScoutNumber(call.outputTokens, 0)} out Â· ${formatScoutNumber(callNeurons, 3)} neurons Â· ${formatScoutNumber(call.latencyMs, 0)} ms Â· ${call.accepted ? 'accepted' : 'not accepted'}</div>`;
       }).join('')}</div>`
     : '<div style="margin-top:6px"><strong>Provider calls:</strong> none</div>';
 
   return `
 <div class="scout-telemetry" style="margin-top:10px;padding:9px 10px;border:1px solid rgba(127,127,127,.28);border-radius:7px;font-size:11px;line-height:1.45;opacity:.92;background:rgba(127,127,127,.07)">
-  <div style="font-weight:700;margin-bottom:4px">⚙ Scout usage · ${escapeScoutHtml(source)}</div>
-  <div><strong>This reply:</strong> ${escapeScoutHtml(request.provider)} · ${escapeScoutHtml(request.model)} · ${formatScoutNumber(request.calls, 0)} call${request.calls === 1 ? '' : 's'} · ${formatScoutNumber(request.inputTokens, 0)} input + ${formatScoutNumber(request.outputTokens, 0)} output tokens · ${formatScoutNumber(neuronsForValue, 3)} neurons · ${formatScoutNumber(request.latencyMs, 0)} ms model time</div>
-  <div><strong>RAG:</strong> ${formatScoutNumber(retrievalCandidates.length, 0)} candidates → ${formatScoutNumber(selectedEvidence.length, 0)} evidence blocks sent to generation · tool enrichment ${data?.agent?.toolEnrichment ? 'used' : 'not used'}</div>
+  <div style="font-weight:700;margin-bottom:4px">âš™ Scout usage Â· ${escapeScoutHtml(source)}</div>
+  <div><strong>This reply:</strong> ${escapeScoutHtml(request.provider)} Â· ${escapeScoutHtml(request.model)} Â· ${formatScoutNumber(request.calls, 0)} call${request.calls === 1 ? '' : 's'} Â· ${formatScoutNumber(request.inputTokens, 0)} input + ${formatScoutNumber(request.outputTokens, 0)} output tokens Â· ${formatScoutNumber(neuronsForValue, 3)} neurons Â· ${formatScoutNumber(request.latencyMs, 0)} ms model time</div>
+  <div><strong>RAG:</strong> ${formatScoutNumber(retrievalCandidates.length, 0)} candidates â†’ ${formatScoutNumber(selectedEvidence.length, 0)} evidence blocks sent to generation Â· tool enrichment ${data?.agent?.toolEnrichment ? 'used' : 'not used'}</div>
   <details style="margin-top:5px">
     <summary style="cursor:pointer;font-weight:600">How this answer was made + full usage details</summary>
     <div style="margin-top:6px"><strong>Answer path:</strong> ${escapeScoutHtml(answerPath)}</div>
@@ -459,7 +464,7 @@ function buildScoutTelemetryHtml(data, costs) {
     <div><strong>Approx. metered value of this model usage:</strong> $${meteredValue.toFixed(6)}. This is a usage-equivalent value, not a claim that this request was billed.</div>
     ${callsHtml}
     <div style="margin-top:6px"><strong>Selected evidence IDs:</strong> ${selectedNames.length ? selectedNames.map(escapeScoutHtml).join(', ') : 'none exposed by backend'}</div>
-    <div style="margin-top:6px"><strong>This browser session:</strong> ${formatScoutNumber(session.questions, 0)} questions · ${formatScoutNumber(session.providerCalls, 0)} provider calls · ${formatScoutNumber(session.inputTokens, 0)} input + ${formatScoutNumber(session.outputTokens, 0)} output tokens · ${formatScoutNumber(sessionNeurons, 3)} neurons · ${formatScoutNumber(session.repairs, 0)} repairs · ${formatScoutNumber(session.inferenceLatencyMs, 0)} ms model time</div>
+    <div style="margin-top:6px"><strong>This browser session:</strong> ${formatScoutNumber(session.questions, 0)} questions Â· ${formatScoutNumber(session.providerCalls, 0)} provider calls Â· ${formatScoutNumber(session.inputTokens, 0)} input + ${formatScoutNumber(session.outputTokens, 0)} output tokens Â· ${formatScoutNumber(sessionNeurons, 3)} neurons Â· ${formatScoutNumber(session.repairs, 0)} repairs Â· ${formatScoutNumber(session.inferenceLatencyMs, 0)} ms model time</div>
     ${dailyHtml}
     <div><strong>App rate controls:</strong> server defaults to 20 chat requests/minute/IP unless configured otherwise. That is ProjectHub protection, separate from Cloudflare's daily AI allocation.</div>
     <div><strong>Spend:</strong> this dashboard shows the request's Cloudflare metered-value equivalent and free-allocation consumption. It does not infer an actual credit-card charge from token/neuron telemetry. Billing-plan charges, if any, must come from provider billing data rather than this estimate.</div>
@@ -619,8 +624,14 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   })();
 
   function chatApiUrl() {
-    return window.__PROJECTHUB_CHAT_API__
-      || (/(^|\.)bradleymatera\.dev$/.test(window.location.hostname) ? "/.netlify/functions/recruiter-chat" : "https://projecthub-chat.bradleymatera.dev/api/chat");
+    if (window.__PROJECTHUB_CHAT_API__) return window.__PROJECTHUB_CHAT_API__;
+    if (window.location.pathname?.startsWith('/ProjectHub-dev/')) {
+      return 'https://dev.projecthub-chat.bradleymatera.dev/api/chat';
+    }
+    if (/(^|\.)bradleymatera\.dev$/.test(window.location.hostname)) {
+      return '/.netlify/functions/recruiter-chat';
+    }
+    return 'https://projecthub-chat.bradleymatera.dev/api/chat';
   }
 
   function escapeHtml(value) {
@@ -1387,16 +1398,16 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
         <span class="projecthub-status-dot" aria-hidden="true"></span>
       </div>
       <div class="projecthub-title-block">
-        <div class="projecthub-kicker">Bradley Matera · Recruiter assistant${devLabel}</div>
+        <div class="projecthub-kicker">Bradley Matera Â· Recruiter assistant${devLabel}</div>
         <div class="projecthub-title">Scout${devLabel}</div>
         <div class="projecthub-subtitle-row">
           <span class="projecthub-subtitle">Ask me about Bradley's projects, skills, fit, or contact info${devLabel}</span>
-          <span class="projecthub-free-badge" title="Scout runs on free-tier infrastructure — GitHub Pages and Cloudflare Workers AI.">100% free</span>
+          <span class="projecthub-free-badge" title="Scout runs on free-tier infrastructure â€” GitHub Pages and Cloudflare Workers AI.">100% free</span>
         </div>
       </div>
       <div class="projecthub-actions">
-        <button class="projecthub-icon-button projecthub-settings-button" type="button" aria-label="Open chat settings" title="Chat settings">⚙</button>
-        <button class="projecthub-icon-button projecthub-minimize-button" type="button" aria-label="Minimize chat" title="Minimize chat">−</button>
+        <button class="projecthub-icon-button projecthub-settings-button" type="button" aria-label="Open chat settings" title="Chat settings">âš™</button>
+        <button class="projecthub-icon-button projecthub-minimize-button" type="button" aria-label="Minimize chat" title="Minimize chat">âˆ’</button>
       </div>
     </header>
     <div class="projecthub-settings-panel" role="dialog" aria-label="ProjectHub chat settings">
@@ -1405,7 +1416,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
           <div class="settings-title">Chat Settings${devLabel}</div>
           <div class="settings-subtitle">Input behavior and session controls.${devLabel}</div>
         </div>
-        <button class="projecthub-icon-button projecthub-settings-close" type="button" aria-label="Close settings" title="Close settings">×</button>
+        <button class="projecthub-icon-button projecthub-settings-close" type="button" aria-label="Close settings" title="Close settings">Ã—</button>
       </div>
       <div class="settings-grid">
         <label class="setting-row"><span><strong>Enter to send</strong><span>Shift+Enter still adds a new line.</span></span><input class="setting-toggle" type="checkbox" data-setting="enterToSend"></label>
@@ -1575,11 +1586,11 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   function appendTypingStatus() {
     const row = appendMessage("bot", botLabel, `<span class="typing-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span><span class="thinking-tip"></span>`, { statusId: "thinking-status" });
     const tips = [
-      "Reading Bradley's project data…",
-      "Checking his AWS background…",
-      "Writing an honest answer…",
-      "Double-checking the facts…",
-      "Asking the local model to phrase it clearly…"
+      "Reading Bradley's project dataâ€¦",
+      "Checking his AWS backgroundâ€¦",
+      "Writing an honest answerâ€¦",
+      "Double-checking the factsâ€¦",
+      "Asking the local model to phrase it clearlyâ€¦"
     ];
     let tipIndex = 0;
     const tipEl = row.querySelector(".thinking-tip");
@@ -1643,7 +1654,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
   minimizeBtn.addEventListener("click", () => {
     const isMinimized = chatDiv.classList.toggle("projecthub-minimized");
-    minimizeBtn.innerHTML = isMinimized ? "+" : "−";
+    minimizeBtn.innerHTML = isMinimized ? "+" : "âˆ’";
     minimizeBtn.setAttribute("aria-label", isMinimized ? "Open chat" : "Minimize chat");
     minimizeBtn.title = isMinimized ? "Open chat" : "Minimize chat";
   });
@@ -1762,7 +1773,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       const possibleName = extractVisitorName(userQuery);
       if (possibleName) {
         saveVisitorName(possibleName);
-        const greetingHtml = `Nice to meet you, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask me about his projects, AWS background, role fit, honest gaps, or contact details.`;
+        const greetingHtml = `Nice to meet you, ${escapeHtml(visitorName)}. Iâ€™m Scout, Bradleyâ€™s assistant. Ask me about his projects, AWS background, role fit, honest gaps, or contact details.`;
         await typeNewBotMessage(greetingHtml);
         rememberTurn("user", userQuery);
         rememberTurn("assistant", `Visitor name captured as ${visitorName}`);
@@ -1805,7 +1816,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       turnCount += 1;
     } catch (error) {
       console.error("ProjectHub chat error:", error);
-      if (statusRow) await showBotReply(statusRow, "I can still help from Bradley’s verified profile details. Try asking about projects, AWS experience, CIRIS, target roles, skills, or contact links.", typingStart);
+      if (statusRow) await showBotReply(statusRow, "I can still help from Bradleyâ€™s verified profile details. Try asking about projects, AWS experience, CIRIS, target roles, skills, or contact links.", typingStart);
     } finally {
       setBusy(false);
       chatInput.placeholder = "Ask Scout about Bradley's work, projects, skills, or roles...";
@@ -1830,11 +1841,11 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     chatDiv.classList.toggle("projecthub-compact", e.matches || Boolean(chatSettings.compactMode));
   });
   renderSuggestions();
-  const freeNote = `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(57,217,138,0.12);border:1px solid rgba(57,217,138,0.28);color:#b8f5d3;font-size:12px;">🟢 Scout runs on free-tier infrastructure — GitHub Pages and Cloudflare Workers AI.</span>`;
-  const devNote = isDevHost ? `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(255,193,7,0.12);border:1px solid rgba(255,193,7,0.35);color:#ffd54f;font-size:12px;">⚠️ You are on the dev/staging environment.</span>` : "";
+  const freeNote = `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(57,217,138,0.12);border:1px solid rgba(57,217,138,0.28);color:#b8f5d3;font-size:12px;">ðŸŸ¢ Scout runs on free-tier infrastructure â€” GitHub Pages and Cloudflare Workers AI.</span>`;
+  const devNote = isDevHost ? `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(255,193,7,0.12);border:1px solid rgba(255,193,7,0.35);color:#ffd54f;font-size:12px;">âš ï¸ You are on the dev/staging environment.</span>` : "";
   const welcomeHtml = visitorName
-    ? `Welcome back, ${escapeHtml(visitorName)}. I’m Scout${devLabel}, Bradley’s assistant. Ask about his projects, AWS experience, CIRIS work, target roles, risks, or contact details and I’ll keep the thread coherent.${freeNote}${devNote}`
-    : `Hi, I’m Scout${devLabel}, Bradley’s recruiter assistant. What should I call you for this session? A first name is enough, and then I’ll keep the conversation personal and coherent.${freeNote}${devNote}`;
+    ? `Welcome back, ${escapeHtml(visitorName)}. Iâ€™m Scout${devLabel}, Bradleyâ€™s assistant. Ask about his projects, AWS experience, CIRIS work, target roles, risks, or contact details and Iâ€™ll keep the thread coherent.${freeNote}${devNote}`
+    : `Hi, Iâ€™m Scout${devLabel}, Bradleyâ€™s recruiter assistant. What should I call you for this session? A first name is enough, and then Iâ€™ll keep the conversation personal and coherent.${freeNote}${devNote}`;
   typeNewBotMessage(welcomeHtml);
 
   console.log("ProjectHub loaded!");
