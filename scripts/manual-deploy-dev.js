@@ -24,15 +24,16 @@ if (status) {
   console.error(status);
   process.exit(1);
 }
-const remoteDevelopSha = execSync('git rev-parse origin/develop', { encoding: 'utf8' }).trim();
-if (commitSha !== remoteDevelopSha) {
-  console.error(`ERROR: Local HEAD ${commitSha} does not match origin/develop ${remoteDevelopSha}. Push first.`);
+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim();
+const remoteBranchSha = execSync(`git rev-parse origin/${currentBranch}`, { encoding: 'utf8' }).trim();
+if (commitSha !== remoteBranchSha) {
+  console.error(`ERROR: Local HEAD ${commitSha} does not match origin/${currentBranch} ${remoteBranchSha}. Push first.`);
   process.exit(1);
 }
 
 const buildInfo = {
   sourceRepository: 'BradleyMatera/ProjectHub',
-  sourceBranch: 'develop',
+  sourceBranch: currentBranch,
   sourceCommit: commitSha,
   deployedAt: new Date().toISOString(),
   generatedBy: 'manual-deploy-dev'
@@ -64,6 +65,7 @@ gcloud(['compute', 'scp', 'server-gemini.js', `${VM_NAME}:/tmp/${tag}-server.js`
 gcloud(['compute', 'scp', libTar, `${VM_NAME}:/tmp/${tag}-lib.tar.gz`]);
 gcloud(['compute', 'scp', 'data/free-tier-limits.json', `${VM_NAME}:/tmp/${tag}-free-tier.json`]);
 gcloud(['compute', 'scp', 'data/recruiter-knowledge.json', `${VM_NAME}:/tmp/${tag}-knowledge.json`]);
+gcloud(['compute', 'scp', 'data/scout-runtime-knowledge.json', `${VM_NAME}:/tmp/${tag}-runtime-knowledge.json`]);
 gcloud(['compute', 'scp', buildInfoPath, `${VM_NAME}:/tmp/${tag}-deploy-source.json`]);
 
 console.log('Building remote swap script...');
@@ -82,11 +84,15 @@ fi
 if [ -f "${REMOTE_DIR}/data/recruiter-knowledge.json" ]; then
   sudo cp "${REMOTE_DIR}/data/recruiter-knowledge.json" "${REMOTE_DIR}/data/recruiter-knowledge.json.bak.$(date +%s)"
 fi
+if [ -f "${REMOTE_DIR}/data/scout-runtime-knowledge.json" ]; then
+  sudo cp "${REMOTE_DIR}/data/scout-runtime-knowledge.json" "${REMOTE_DIR}/data/scout-runtime-knowledge.json.bak.$(date +%s)"
+fi
 sudo mv "/tmp/${tag}-server.js" "${REMOTE_DIR}/server.js"
 sudo tar -xzf "/tmp/${tag}-lib.tar.gz" -C "${REMOTE_DIR}"
 sudo rm -rf "${REMOTE_DIR}/lib.bak."*
 sudo mv "/tmp/${tag}-free-tier.json" "${REMOTE_DIR}/data/free-tier-limits.json"
 sudo mv "/tmp/${tag}-knowledge.json" "${REMOTE_DIR}/data/recruiter-knowledge.json"
+sudo mv "/tmp/${tag}-runtime-knowledge.json" "${REMOTE_DIR}/data/scout-runtime-knowledge.json"
 sudo mv "/tmp/${tag}-deploy-source.json" "${REMOTE_DIR}/data/deploy-source.json"
 if command -v systemctl >/dev/null 2>&1; then
   sudo systemctl restart ${SERVICE_NAME}

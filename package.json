@@ -1,7 +1,7 @@
 {
   "name": "projecthub",
   "version": "1.0.0",
-  "description": "Free embeddable AI recruiter assistant using local Ollama, conversational memory, and grounded RAG",
+  "description": "Free-tier RAG-first recruiter assistant using local BM25/RRF retrieval, grounded validation, session memory, and Cloudflare Workers AI generation",
   "main": "ProjectHub.js",
   "scripts": {
     "dev": "vite",

@@ -14,7 +14,7 @@ ProjectHub is Bradley Matera's embeddable portfolio and recruiter assistant. The
 - Fuses multiple local BM25 views with RRF for context-dependent follow-ups while leaving stronger standalone rankings unchanged.
 - Retains five recent turns plus topic stances for coherent multi-turn conversation.
 - Uses deterministic read-only tools for evidence gathering (project comparison, role matching, profile lookup).
-- Uses Cloudflare Workers AI (`@cf/meta/llama-3.2-3b-instruct`) as the production generative inference target on the free tier.
+- Uses Cloudflare Workers AI (`@cf/meta/llama-3.1-8b-instruct-fast`) as the production generative inference target on the free tier.
 - Falls back to a local `qwen2.5:1.5b` via Ollama when Cloudflare is unavailable or unconfigured.
 - Uses `qwen2.5:1.5b` via Ollama as the development/evaluation inference runtime (behind the same adapter boundary).
 - Validates all generated answers for factual accuracy, entity correctness, polarity, safety, source overlap, and overclaim detection.

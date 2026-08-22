@@ -1,0 +1,56 @@
+{
+  "version": "1.0.0",
+  "lastVerified": "2026-08-21",
+  "facts": [
+    {
+      "id": "scout-runtime-architecture",
+      "tag": "scout-runtime",
+      "text": "Scout is a RAG-first recruiter assistant. For substantive questions, ProjectHub rewrites the conversation-aware query, runs local BM25/RRF retrieval over verified knowledge, selects a small set of relevant evidence, sends that grounded evidence to the configured generative model, and then runs factual validation before returning the answer. Structured tools may enrich the evidence but do not replace RAG as the primary answer context."
+    },
+    {
+      "id": "scout-runtime-local-vs-cloud",
+      "tag": "scout-runtime",
+      "text": "ProjectHub does not run the primary language model locally. Query/session handling, BM25/RRF retrieval, evidence selection, relationship checks, factual validation, telemetry, and persistence run in ProjectHub's own backend process. Normal generative inference on the current dev and production configuration is hosted by Cloudflare Workers AI using @cf/meta/llama-3.1-8b-instruct-fast. Ollama is only an optional fallback when explicitly configured."
+    },
+    {
+      "id": "scout-runtime-model",
+      "tag": "scout-runtime",
+      "text": "Scout uses the model @cf/meta/llama-3.1-8b-instruct-fast for normal generative inference, hosted by Cloudflare Workers AI. This is the model Scout uses in the current dev and production configuration unless an administrator explicitly reconfigures the inference provider."
+    },
+    {
+      "id": "scout-runtime-capabilities",
+      "tag": "scout-runtime",
+      "text": "Scout can help with questions about Bradley Matera's projects, skills, work experience, education, certifications, career goals, and public contact information. Scout can also explain its own runtime, including the current model, provider, free-tier usage, rate controls, and architecture."
+    },
+    {
+      "id": "scout-runtime-free",
+      "tag": "scout-cost",
+      "text": "This chat is free because Scout keeps its normal generative inference inside Cloudflare Workers AI's included free allocation, the public widget is served from GitHub Pages, and the chat backend runs on a free-tier GCP VM. The model still consumes measurable tokens and neurons, so 'free' means the usage is within the included allocation and free-tier limits, not that the AI has no cost. Scout should not claim that the AI is free because it is a machine-learning model, that conversations are anonymous, or that no personal data is collected."
+    },
+    {
+      "id": "scout-runtime-cloudflare-cap",
+      "tag": "scout-cost",
+      "text": "The daily cap and the cooldown are different controls. The daily cap is Cloudflare Workers AI's 10,000 neurons per day on the free allocation, resetting at 00:00 UTC. This is an account-level, shared allocation, not a separate 10,000-neuron allowance for each visitor. If the free allocation is exhausted, Cloudflare can reject inference with a rate/allocation error; ProjectHub does not intentionally switch to a paid-only model as an automatic fallback."
+    },
+    {
+      "id": "scout-runtime-neurons",
+      "tag": "scout-cost",
+      "text": "For @cf/meta/llama-3.1-8b-instruct-fast, ProjectHub uses Cloudflare's published neuron rates of 4,119 neurons per million input tokens and 34,868 neurons per million output tokens to estimate usage when the provider does not return an actual neuron count. Cloudflare's public Workers AI paid-usage reference is $0.011 per 1,000 neurons beyond the included allocation on Workers Paid. A metered-value estimate is not the same as an actual billed charge."
+    },
+    {
+      "id": "scout-runtime-rate-controls",
+      "tag": "scout-runtime",
+      "text": "ProjectHub's application-level request protection is separate from Cloudflare's daily AI allocation. The server currently defaults to 20 chat requests per minute per IP address unless configuration overrides it. This is a rolling request-rate control, not a video-game cooldown. There is no documented per-user daily chat cap in Scout's current runtime facts; the important daily model budget is the shared Workers AI neuron allocation."
+    },
+    {
+      "id": "scout-runtime-telemetry",
+      "tag": "scout-runtime",
+      "text": "Scout telemetry can report the prose source, provider, model, provider-call count, input and output tokens, actual or estimated neurons, model latency, repair attempts, retrieval candidate count, selected evidence count, browser-session totals, and backend daily usage when available. MODEL_GENERATION means a model authored the visible answer from retrieved evidence; DIRECT_KB means verified knowledge supplied the answer without a generative model call; TECHNICAL_ERROR means generation or factual validation failed closed."
+    },
+    {
+      "id": "scout-runtime-hosting",
+      "tag": "scout-runtime",
+      "text": "The public ProjectHub widget is served from GitHub Pages. ProjectHub's chat backend runs separately and calls Cloudflare Workers AI for normal generative inference. The architecture is designed to keep model context small by retrieving only relevant evidence instead of sending the entire knowledge base for every question."
+    }
+  ]
+}

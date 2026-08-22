@@ -19,6 +19,7 @@ const localModelRouter = require('./lib/local-model-router');
 const cloudflareProvider = require('./lib/cloudflare-provider');
 const { runAgentLoop, probeAgent } = require('./lib/agent-engine');
 const { runLiteAgent, rewriteQuery } = require('./lib/lite-agent');
+const { runRagPrimaryAgent } = require('./lib/rag-agent');
 const { buildReasoningPacket, buildSynthesisPacket, estimateTokens } = require('./lib/context-packet');
 const { validateAnswer, validateToolDecision, attemptJsonRepair } = require('./lib/grounding-validator');
 const { buildFalseClaimsRegex, shouldAbortGeneration, validateFallbackReply } = require('./lib/response-validator');
@@ -88,6 +89,7 @@ const SCOUT_AGENT_ENGINE_ENABLED = process.env.SCOUT_AGENT_ENGINE_ENABLED === 't
 // the 15s end-to-end deadline. FULL (agent-engine.js) remains available for development
 // but is not the production default.
 const SCOUT_AGENT_MODE = process.env.SCOUT_AGENT_MODE || (SCOUT_AGENT_ENGINE_ENABLED ? 'lite' : 'legacy');
+const DIRECT_KB_ENABLED = process.env.SCOUT_DIRECT_KB_ENABLED === 'true';
 const FEATURE_PREVIEW_ENABLED = process.env.FEATURE_PREVIEW_ENABLED === 'true';
 const KNOWLEDGE_FILE = path.join(__dirname, process.env.KNOWLEDGE_FILE || 'data/recruiter-knowledge.json');
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -253,7 +255,19 @@ app.get('/health', async (req, res) => {
     lastPipeline: persistentStats.lastPipeline || [],
     providerHealth: persistentStats.providerHealth,
     recentSessions: getRecentSessions(),
-    localOnly: false,
+    local: {
+      only: inferenceHealth.provider === 'ollama',
+      generation: inferenceHealth.provider,
+      deterministicWork: ['session-context', 'bm25-rrf', 'evidence-selection', 'factual-validation'],
+      embeddings: 'hash-vector-local',
+      persistence: true
+    },
+    execution: {
+      generationProvider: inferenceHealth.provider,
+      generationLocation: inferenceHealth.provider === 'cloudflare' ? 'cloud' : (inferenceHealth.provider === 'ollama' ? 'local' : 'external-or-none'),
+      ragRetrieval: 'local',
+      validation: 'local'
+    },
     models: [{ engine: inferenceHealth.provider, model: inferenceHealth.primaryModel, local: inferenceHealth.provider === 'ollama' }],
     agent: {
       enabled: AGENT_ENABLED,
@@ -509,9 +523,25 @@ async function fetchKnowledge() {
   }
   try {
     const json = JSON.parse(fs.readFileSync(KNOWLEDGE_FILE, 'utf8'));
-    knowledgeCache = json;
-    knowledgeCacheAt = now;
-    knowledgeReady = true;
+
+    // Rebuild the BM25 index FIRST so no concurrent call can return a
+    // knowledgeCache while ragChunks/bm25Index are still null. Then publish
+    // the cache and clear stale response entries.
+    // Rebuild BM25 index and RAG chunks when knowledge refreshes
+    try {
+      ragChunks = buildRagChunks(json);
+      bm25Index = new BM25Index(ragChunks);
+      console.log(`[retrieval] BM25 index built: ${ragChunks.length} chunks`);
+    } catch (e) {
+      console.error('[retrieval] Index build failed:', e.message);
+    }
+    if (ragChunks && bm25Index) {
+      knowledgeCache = json;
+      knowledgeCacheAt = now;
+      knowledgeReady = true;
+      responseCache.clear();
+    }
+
     // Configure claim-extractor with knowledge-derived entity names
     try {
       const claimExtractor = require('./lib/claim-extractor');
@@ -592,16 +622,6 @@ async function fetchKnowledge() {
     } catch (e) {
       console.error('[claim-extractor] Configuration failed:', e.message);
     }
-    // Rebuild BM25 index and RAG chunks when knowledge refreshes
-    try {
-      ragChunks = buildRagChunks(json);
-      bm25Index = new BM25Index(ragChunks);
-      console.log(`[retrieval] BM25 index built: ${ragChunks.length} chunks`);
-    } catch (e) {
-      console.error('[retrieval] Index build failed:', e.message);
-    }
-    // Warm response cache for common questions in the background.
-    setTimeout(() => warmResponseCache(json), 10);
     return json;
   } catch (err) {
     console.error('Failed to fetch knowledge:', err.message);
@@ -1679,12 +1699,13 @@ app.post('/api/chat', async (req, res) => {
 
     const cacheKey = normalizeQuery(resolvedMessage, knowledge);
 
-    // Direct KB short-circuit: if the question matches a non-adversarial directAnswer
-    // record, return it immediately with provenance. The model is not invoked.
-    const directAnswer = SCOUT_AGENT_ENGINE_ENABLED ? findDirectAnswer(knowledge, resolvedMessage) : null;
+    // Direct KB short-circuit (opt-in): if the question matches a non-adversarial
+    // directAnswer record, return it immediately. RAG-first mode keeps this OFF so
+    // all substantive answers are generated from retrieved evidence.
+    const directAnswer = (DIRECT_KB_ENABLED && SCOUT_AGENT_ENGINE_ENABLED) ? findDirectAnswer(knowledge, resolvedMessage) : null;
     const directIntentAllowed = Array.isArray(directAnswer?.intents) && (directAnswer.intents.includes('direct') || directAnswer.intents.includes('adversarial_deny') || directAnswer.intents.includes('negation_confirm'));
     const policyBlocksDirect = policy.mode === 'REFUSAL' || policy.mode === 'OUT_OF_SCOPE';
-    if (directAnswer && directAnswer.answer && directIntentAllowed && !policyBlocksDirect) {
+    if (DIRECT_KB_ENABLED && directAnswer && directAnswer.answer && directIntentAllowed && !policyBlocksDirect) {
       pipeline.push('direct-kb');
       const directReply = directAnswer.answer;
       const directEvidence = (directAnswer?.answer || '');
@@ -1769,23 +1790,21 @@ app.post('/api/chat', async (req, res) => {
       pipeline.push(`scout-agent-${SCOUT_AGENT_MODE}:eligible`);
       try {
         // Retrieve evidence via BM25 for the agent context packet.
-        // Pure conversational control modes do not need candidate facts.
-        if (!NO_RETRIEVAL_MODES.has(policy.mode)) {
-          const understood = understandQuery(userMessage, history, ragChunks || buildRagChunks(knowledge));
-          const bm25Results = bm25Index
-            ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 5)
-            : [];
-          evidence = bm25Results.map(r => ({
-            kind: r.tag || r.chunk?.kind || 'evidence',
-            name: r.chunk?.title || r.chunk?.name || '',
-            description: r.text || r.chunk?.text || r.chunk?.description || '',
-            tech: r.chunk?.tech || [],
-            skills: r.chunk?.skills || [],
-            category: r.chunk?.category || null,
-            url: r.chunk?.url || null,
-            evidenceScore: r.rrfScore || r.score
-          })).filter(e => e.description);
-        }
+        // Retrieval is always performed; the agent decides whether to use it.
+        const understood = understandQuery(resolvedMessage, history, ragChunks || buildRagChunks(knowledge));
+        const bm25Results = bm25Index
+          ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 10)
+          : [];
+        evidence = bm25Results.map(r => ({
+          kind: r.tag || r.chunk?.kind || 'evidence',
+          name: r.chunk?.title || r.chunk?.name || '',
+          description: r.text || r.chunk?.text || r.chunk?.description || '',
+          tech: r.chunk?.tech || [],
+          skills: r.chunk?.skills || [],
+          category: r.chunk?.category || null,
+          url: r.chunk?.url || null,
+          evidenceScore: r.rrfScore || r.score
+        })).filter(e => e.description);
 
         // Get server-owned structured conversation state (now includes any just-
         // committed conversational-control intent, e.g. userName).
@@ -1799,8 +1818,8 @@ app.post('/api/chat', async (req, res) => {
         };
         delete policyContract.contract; // flatten — no nested contract object
         agentResult = SCOUT_AGENT_MODE === 'lite'
-          ? await runLiteAgent({
-              question: userMessage,
+          ? await runRagPrimaryAgent({
+              question: resolvedMessage,
               conversationState: convState,
               evidence,
               knowledge,
@@ -1822,14 +1841,23 @@ app.post('/api/chat', async (req, res) => {
         // Derive actual inference provider from router (not hardcoded)
         inferenceProvider = localModelRouter.inferenceProvider || 'ollama';
 
-        // Meter each generative call with correct provider
-        for (const evt of (agentResult.events || [])) {
-          if (evt.type === 'reasoning_call' || evt.type === 'synthesis_call' || evt.type === 'lite_generate_call' || evt.type === 'lite_repair_call') {
-            meterEvent({ source: inferenceProvider, kind: 'llm', meta: { model: agentResult.model, agentEngine: true, mode: SCOUT_AGENT_MODE, step: evt.step } });
-          }
-          if (evt.type === 'tool_result' || evt.type === 'lite_tool_result') {
-            meterEvent({ source: 'agent-engine', kind: 'tool', meta: { tool: evt.tool, agentEngine: true, mode: SCOUT_AGENT_MODE } });
-          }
+        // Meter each actual provider call from the agent's canonical accounting.
+        for (const call of (agentResult.generationCalls || [])) {
+          meterEvent({
+            source: call.provider || inferenceProvider,
+            kind: 'llm',
+            tokensIn: call.inputTokens || 0,
+            tokensOut: call.outputTokens || 0,
+            meta: {
+              attemptIndex: call.attemptIndex,
+              attemptType: call.attemptType,
+              model: call.model,
+              ok: call.ok,
+              accepted: call.accepted,
+              actualNeurons: call.actualNeurons ?? null,
+              estimatedNeurons: call.estimatedNeurons ?? null
+            }
+          });
         }
 
         if (!agentResult.fallback && agentResult.reply) {
@@ -1855,7 +1883,12 @@ app.post('/api/chat', async (req, res) => {
               queryRewritten: agentResult.rewritten,
               rewrittenQuery: agentResult.rewrittenQuery,
               generationCalls: agentResult.generationCalls || [],
-              actualProviderCalls: agentResult.actualProviderCalls ?? null
+              actualProviderCalls: agentResult.actualProviderCalls ?? null,
+              retrievalCandidates: agentResult.retrievalCandidates || [],
+              selectedEvidence: agentResult.selectedEvidence || [],
+              toolEnrichment: agentResult.toolEnrichment || '',
+              rawPrimary: agentResult.rawPrimary || null,
+              rawRepair: agentResult.rawRepair || null
             } : {})
           };
           agentEvents = agentResult.events;
@@ -1879,7 +1912,12 @@ app.post('/api/chat', async (req, res) => {
               operation: agentResult.operation,
               queryRewritten: agentResult.rewritten,
               generationCalls: agentResult.generationCalls || [],
-              actualProviderCalls: agentResult.actualProviderCalls ?? null
+              actualProviderCalls: agentResult.actualProviderCalls ?? null,
+              retrievalCandidates: agentResult.retrievalCandidates || [],
+              selectedEvidence: agentResult.selectedEvidence || [],
+              toolEnrichment: agentResult.toolEnrichment || '',
+              rawPrimary: agentResult.rawPrimary || null,
+              rawRepair: agentResult.rawRepair || null
             } : {})
           };
           if (res.headersSent) return;
@@ -1894,6 +1932,7 @@ app.post('/api/chat', async (req, res) => {
             latencyMs: Date.now() - reqStart,
             agentMeta,
             agentEvents,
+            retrievalCandidates: agentMeta?.retrievalCandidates || evidence.slice(0, 10).map((e, i) => ({ kind: e.kind || 'evidence', tag: e.kind || 'evidence', name: e.name || '', id: `${e.kind || 'evidence'}-${i + 1}` })) || [],
             failureStage: 'GENERATION',
             generationAttempts: agentResult.generationAttempts || 0,
             contract: safeContractProjection(agentResult.responseContract)
@@ -1917,7 +1956,12 @@ app.post('/api/chat', async (req, res) => {
               operation: agentResult.operation,
               queryRewritten: agentResult.rewritten,
               generationCalls: agentResult.generationCalls || [],
-              actualProviderCalls: agentResult.actualProviderCalls ?? null
+              actualProviderCalls: agentResult.actualProviderCalls ?? null,
+              retrievalCandidates: agentResult.retrievalCandidates || [],
+              selectedEvidence: agentResult.selectedEvidence || [],
+              toolEnrichment: agentResult.toolEnrichment || '',
+              rawPrimary: agentResult.rawPrimary || null,
+              rawRepair: agentResult.rawRepair || null
             } : {})
           };
         }
@@ -1956,6 +2000,7 @@ app.post('/api/chat', async (req, res) => {
         latencyMs: Date.now() - reqStart,
         agentMeta,
         agentEvents,
+        retrievalCandidates: agentResult?.retrievalCandidates || evidence.slice(0, 10) || [],
         failureStage: 'GENERATION',
         generationAttempts: agentResult?.generationAttempts ?? 0,
         contract: safeContractProjection(agentResult?.responseContract)
@@ -2144,7 +2189,7 @@ if (COST_TRACKER && costLedger) {
 async function verifyModelDigest() {
   // When using Cloudflare Workers AI, there is no local Ollama model to verify.
   if (process.env.SCOUT_INFERENCE_PROVIDER === 'cloudflare') {
-    const cfModel = process.env.CLOUDFLARE_MODEL || '@cf/meta/llama-3.2-3b-instruct';
+    const cfModel = process.env.CLOUDFLARE_MODEL || cloudflareProvider.configuredModel();
     console.log(`[startup] Cloudflare Workers AI provider active, model: ${cfModel} (no local digest verification needed)`);
     modelVerified = true;
     return;
@@ -2206,24 +2251,31 @@ async function verifyModelDigest() {
   }
 }
 
-app.listen(PORT, HOST, () => {
-  const _provider = process.env.SCOUT_INFERENCE_PROVIDER || 'ollama';
-  console.log(`Recruiter chat API running on http://${HOST}:${PORT} with ${_provider} backend`);
-  // Pre-warm knowledge cache in background (non-blocking)
-  setTimeout(() => {
-    fetchKnowledge().then(() => console.log('Knowledge cache pre-warmed')).catch(e => console.log('Pre-warm failed:', e.message));
-  }, 100);
-  // Verify model digest and start loading the model into memory early
-  if (GEN_ENABLED) {
-    setTimeout(() => {
-      verifyModelDigest();
-      if (process.env.SCOUT_INFERENCE_PROVIDER === 'cloudflare') {
-        console.log('Cloudflare Workers AI provider active — skipping Ollama reachability check');
-      } else {
-        fetch(`${OLLAMA_URL}/api/tags`, { method: 'GET' })
-          .then(r => r.ok ? console.log('Ollama is reachable') : console.log('Ollama ping returned', r.status))
-          .catch(e => console.log('Ollama ping failed:', e.message));
-      }
-    }, 2000);
+(async function start() {
+  // Load knowledge and build the BM25 index before accepting traffic so the
+  // first request does not consume its generation deadline on index build.
+  try {
+    await fetchKnowledge();
+    console.log('Knowledge cache pre-warmed');
+  } catch (e) {
+    console.error('Pre-warm failed:', e.message);
   }
-});
+
+  app.listen(PORT, HOST, () => {
+    const _provider = process.env.SCOUT_INFERENCE_PROVIDER || 'ollama';
+    console.log(`Recruiter chat API running on http://${HOST}:${PORT} with ${_provider} backend`);
+    // Verify model digest and start loading the model into memory early
+    if (GEN_ENABLED) {
+      setTimeout(() => {
+        verifyModelDigest();
+        if (process.env.SCOUT_INFERENCE_PROVIDER === 'cloudflare') {
+          console.log('Cloudflare Workers AI provider active — skipping Ollama reachability check');
+        } else {
+          fetch(`${OLLAMA_URL}/api/tags`, { method: 'GET' })
+            .then(r => r.ok ? console.log('Ollama is reachable') : console.log('Ollama ping returned', r.status))
+            .catch(e => console.log('Ollama ping failed:', e.message));
+        }
+      }, 2000);
+    }
+  });
+})();

@@ -38,7 +38,7 @@ The dev VM service `recruiter-chat-api-dev` runs from `/opt/recruiter-chat-api-d
 
 - `SCOUT_AGENT_ENGINE_ENABLED=true`
 - `SCOUT_INFERENCE_PROVIDER=cloudflare`
-- `CLOUDFLARE_MODEL=@cf/meta/llama-3.2-3b-instruct`
+- `CLOUDFLARE_MODEL=@cf/meta/llama-3.1-8b-instruct-fast`
 - `REQUEST_DEADLINE_MS=15000`
 - `SCOUT_OLLAMA_PRODUCTION_FALLBACK_ENABLED=false`
 - `SCOUT_AGENT_MODE` not explicitly set; server defaults to **`lite`** when the engine is enabled

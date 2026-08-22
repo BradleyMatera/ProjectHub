@@ -23,7 +23,7 @@ const env = {
   SCOUT_INFERENCE_PROVIDER: 'cloudflare',
   CLOUDFLARE_ACCOUNT_ID: ACCOUNT_ID,
   CLOUDFLARE_API_TOKEN: cfToken,
-  CLOUDFLARE_MODEL: '@cf/meta/llama-3.2-3b-instruct',
+  CLOUDFLARE_MODEL: '@cf/meta/llama-3.1-8b-instruct-fast',
   REQUEST_DEADLINE_MS: '15000',
   PORT: '18999',
   NODE_ENV: 'production',
