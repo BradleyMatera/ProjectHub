@@ -23,13 +23,13 @@ function extractPhones(text) {
 async function waitForStableText(page, locator, stableMs = 1200, timeout = 12000) {
   const start = Date.now();
   let last = '';
-  let lastChange = 0;
+  let lastChange = start;
   while (Date.now() - start < timeout) {
     const current = await locator.innerText().catch(() => '');
     if (current !== last) {
       last = current;
       lastChange = Date.now();
-    } else if (Date.now() - lastChange > stableMs) {
+    } else if (current !== '' && Date.now() - lastChange > stableMs) {
       return current;
     }
     await sleep(200);
