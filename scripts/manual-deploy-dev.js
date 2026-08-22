@@ -95,7 +95,9 @@ sudo mv "/tmp/${tag}-knowledge.json" "${REMOTE_DIR}/data/recruiter-knowledge.jso
 sudo mv "/tmp/${tag}-runtime-knowledge.json" "${REMOTE_DIR}/data/scout-runtime-knowledge.json"
 sudo mv "/tmp/${tag}-deploy-source.json" "${REMOTE_DIR}/data/deploy-source.json"
 if command -v systemctl >/dev/null 2>&1; then
-  sudo systemctl restart ${SERVICE_NAME}
+  sudo systemctl stop ${SERVICE_NAME} || true
+  sleep 2
+  sudo systemctl start ${SERVICE_NAME}
   echo 'Service restarted via systemd'
 elif command -v pm2 >/dev/null 2>&1; then
   pm2 restart ${SERVICE_NAME}
