@@ -119,6 +119,7 @@ const suggestions = [
   "List all CodePens",
   "How can I contact Bradley?"
 ];
+
 // In-memory cache for GitHub metadata so we never block on repeated or slow API calls
 const __githubCache = {};
 
@@ -167,7 +168,8 @@ async function fetchAllGitHubData(projects) {
     }
   })).catch(() => {});
   return projectData;
-}function buildServerHistory(context) {
+}
+function buildServerHistory(context) {
   return (Array.isArray(context) ? context : []).reduce((turns, turn) => {
     if (turn.role === 'user') {
       turns.push({ user: turn.content, assistant: '' });
@@ -564,6 +566,7 @@ if (typeof module !== 'undefined' && module.exports) {
     summarizeGenerationCalls
   };
 }
+
 function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData) {
   const isDevHost = typeof window !== "undefined" && /projecthub-dev/i.test(window.location.hostname + window.location.pathname);
   const devLabel = isDevHost ? " (dev)" : "";
