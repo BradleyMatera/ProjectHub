@@ -169,10 +169,12 @@ function check(name, checks = {}) {
 }
 
 async function runScenario(page, scenarioName, intro, turns) {
+  // Point the dev mirror's chat client at the target Scout backend before the
+  // widget script reads its default.
+  await page.addInitScript(apiUrl => { window.__PROJECTHUB_CHAT_API__ = apiUrl; }, CHAT_API_URL);
   await page.goto('/ProjectHub-dev/');
   await page.locator('#bradley-chat').waitFor({ state: 'visible', timeout: 15000 });
   await sleep(1000);
-  // Point the dev mirror's chat client at the local Scout backend.
   await page.evaluate(apiUrl => { window.__PROJECTHUB_CHAT_API__ = apiUrl; }, CHAT_API_URL);
 
   const transcript = [];
