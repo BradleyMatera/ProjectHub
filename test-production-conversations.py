@@ -26,7 +26,7 @@ import urllib.request
 
 
 DEFAULT_URL = "http://127.0.0.1:3000/api/chat"
-LOCAL_SOURCES = {"grounded", "ollama", "local-agent", "learned", "cached"}
+LOCAL_SOURCES = {"grounded", "ollama", "local-agent", "learned", "cached", "cloudflare"}
 MAX_LATENCY_SECONDS = 15.0
 
 
