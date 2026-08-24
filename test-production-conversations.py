@@ -296,7 +296,7 @@ def expectations_for(message):
     add_rule(rules, r"ci/cd|docker", ("ci/cd", "docker", "github actions", "pipeline"))
     add_rule(rules, r"good at computers|know how to use a computer", ("computer", "javascript", "react", "terminal", "git"))
     add_rule(rules, r"outside of tech", ("army", "military", "combat", "medic", "68w", "construction", "case manager", "animal care"))
-    add_rule(rules, r"people skills|costumer serivice|coworkers", ("customer", "people", "communication", "team", "case manager"))
+    add_rule(rules, r"people skills|costumer serivice|coworkers", ("customer", "costumer", "people", "communication", "team", "case manager"))
     add_rule(rules, r"where is he located", ("davis", "illinois"))
     add_rule(rules, r"availability for a remote role", ("remote", "availability", "confirm", "contact"))
 
