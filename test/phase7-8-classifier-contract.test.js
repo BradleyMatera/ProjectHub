@@ -4,12 +4,10 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { classifyResponsePolicy } = require('../lib/response-policy-classifier');
 const { buildResponseContract } = require('../lib/response-contract');
+const { buildRagChunks } = require('../lib/rag-chunks');
 
 const bradleyKB = require('../data/recruiter-knowledge.json');
-const evidence = `Bradley Matera is a Software Developer based in Eau Claire, WI.
-He completed an AWS Cloud Support Engineer internship at Amazon Web Services (AWS), practicing customer support, cloud troubleshooting, and monitoring in guided training labs.
-He holds a Bachelor of Science in Web Development (B.S.) from Full Sail University.
-He has project experience with ProjectHub and CIRIS Ethical AI.`;
+const evidence = buildRagChunks(bradleyKB).map(c => c.text).join('\n');
 
 // --- Classifier regression ---
 
@@ -57,15 +55,15 @@ test('future learning for non-professional activity is OUT_OF_SCOPE', () => {
   assert.equal(p.mode, 'OUT_OF_SCOPE');
 });
 
-test('"does Brad use Math.js?" is SKILL_EVIDENCE', () => {
-  const p = classifyResponsePolicy('Does Brad use Math.js?', [], bradleyKB);
+test('specific skill with subject pronoun is SKILL_EVIDENCE', () => {
+  const p = classifyResponsePolicy('Does he use Math.js?', [], bradleyKB);
   assert.equal(p.mode, 'SKILL_EVIDENCE');
 });
 
 test('specific skill proficiency is SKILL_EVIDENCE; generic "computers" is not', () => {
   const react = classifyResponsePolicy('Is he good at React?', [], bradleyKB);
   assert.equal(react.mode, 'SKILL_EVIDENCE');
-  const computers = classifyResponsePolicy('Is brad good at computers?', [], bradleyKB);
+  const computers = classifyResponsePolicy('Is he good at computers?', [], bradleyKB);
   assert.notEqual(computers.mode, 'SKILL_EVIDENCE');
 });
 

@@ -18,6 +18,7 @@ Usage:
 
 import argparse
 import json
+import os
 import re
 import time
 import uuid
@@ -195,11 +196,12 @@ PRODUCTION_CONVERSATIONS = [
 ]
 
 
-def send_message(url, message, session_id, history):
+def send_message(url, message, session_id, history, diagnose=False):
     payload = json.dumps({
         "message": message,
         "sessionId": session_id,
         "history": history[-5:],
+        "gateDebug": diagnose,
     }).encode("utf-8")
     request = urllib.request.Request(
         url,
@@ -357,11 +359,36 @@ def check_reply(message, reply, response, prior_reply, latency):
     return issues
 
 
-def run(url, selected, verbose, delay):
+def classify_failure(issues, response, latency):
+    error = response.get("error")
+    agent = response.get("agent") or {}
+    contract = response.get("contract") or {}
+    if error == "INFERENCE_UNAVAILABLE":
+        if "deadline" in str(response.get("provider")).lower() or "deadline" in " ".join(response.get("pipeline", [])).lower():
+            return "DEADLINE"
+        if agent.get("validation") and agent.get("validation") != "fallback":
+            return "VALIDATION"
+        if agent.get("outcome") == "inference_unavailable" or response.get("provider") == "ollama" or response.get("provider") == "cloudflare":
+            return "PROVIDER"
+        return "GENERATION"
+    for issue in issues:
+        if "near-duplicate" in issue:
+            return "NEAR_DUPLICATE"
+        if "too short" in issue or "robotic" in issue or "generic candidate pitch" in issue or "not capitalized" in issue:
+            return "GENERATION"
+        if "missing" in issue:
+            return "HARNESS" if (contract.get("directAnswer") == "UNKNOWN" and not agent.get("used")) else "GENERATION"
+        if "non-local" in issue or "request failed" in issue:
+            return "PROVIDER"
+    return "OTHER"
+
+
+def run(url, selected, verbose, delay, diagnose=False):
     failures = []
     total_turns = 0
     session_passes = 0
     results = []
+    diagnostics = []
 
     for name, turns in selected:
         session_id = f"prod-regression-{uuid.uuid4()}"
@@ -376,7 +403,7 @@ def run(url, selected, verbose, delay):
                 time.sleep(delay)
             started = time.time()
             try:
-                response = send_message(url, message, session_id, history)
+                response = send_message(url, message, session_id, history, diagnose=diagnose)
                 latency = time.time() - started
                 reply = str(response.get("reply") or "")
                 issues = check_reply(message, reply, response, previous_reply, latency)
@@ -396,14 +423,48 @@ def run(url, selected, verbose, delay):
                 "source": response.get("provider"),
                 "issues": issues,
             })
+            failure_class = classify_failure(issues, response, latency) if issues else ""
             if issues:
                 failures.append(f"{name} turn {index} {message!r}: {'; '.join(issues)}")
-            if verbose or issues:
+            if verbose or issues or diagnose:
                 status = "PASS" if passed else "FAIL"
                 print(f"  {status} {index:02d} {latency:.2f}s {message}")
                 if issues:
                     print(f"       {'; '.join(issues)}")
                     print(f"       Scout: {reply[:260]}")
+                if diagnose:
+                    agent = response.get("agent") or {}
+                    contract = response.get("contract") or {}
+                    print(f"       policy: {contract.get('policyMode') or response.get('pipeline', [''])[0] if response.get('pipeline') else ''}")
+                    print(f"       contract: {contract.get('intent')}/{contract.get('subIntent')} directAnswer={contract.get('directAnswer')} factState={contract.get('factState')}")
+                    print(f"       provider: {response.get('provider')} model: {response.get('model')}")
+                    print(f"       pipeline: {' -> '.join(response.get('pipeline', [])[-4:])}")
+                    print(f"       providerCalls: {agent.get('actualProviderCalls')} outcome: {agent.get('outcome')} validation: {agent.get('validation')}")
+                    raw_primary = (agent.get('rawPrimary') or '')[:120]
+                    raw_repair = (agent.get('rawRepair') or '')[:120]
+                    if raw_primary:
+                        print(f"       rawPrimary: {raw_primary}")
+                    if raw_repair:
+                        print(f"       rawRepair: {raw_repair}")
+                    print(f"       failureClass: {failure_class}")
+            diagnostics.append({
+                "conversation": name,
+                "turn": index,
+                "question": message,
+                "passed": passed,
+                "issues": issues,
+                "failureClass": failure_class,
+                "latencySeconds": round(latency, 3),
+                "provider": response.get("provider"),
+                "model": response.get("model"),
+                "proseSource": response.get("proseSource"),
+                "error": response.get("error"),
+                "pipeline": response.get("pipeline", []),
+                "contract": response.get("contract") or {},
+                "agent": response.get("agent") or {},
+                "reply": reply,
+                "previousReply": previous_reply,
+            })
             history.append({"user": message, "assistant": reply})
             history = history[-5:]
             previous_reply = reply
@@ -426,6 +487,9 @@ def run(url, selected, verbose, delay):
     }
     with open("/tmp/scout-production-conversation-results.json", "w", encoding="utf-8") as handle:
         json.dump(summary, handle, indent=2)
+    if diagnose:
+        with open("/tmp/scout-gate-diagnostics.json", "w", encoding="utf-8") as handle:
+            json.dump(diagnostics, handle, indent=2)
     print("\n" + "=" * 64)
     print(f"Conversations: {session_passes}/{len(selected)} passed")
     print(f"Turns: {total_turns - len(failures)}/{total_turns} passed")
@@ -439,13 +503,15 @@ def main():
     parser.add_argument("--only", help="Run conversation names containing this text")
     parser.add_argument("--delay", type=float, default=0.0, help="Seconds between requests")
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument("--diagnose", action="store_true", help="SCOUT_GATE_DEBUG: capture per-turn policy, contract, agent, and pipeline metadata")
     args = parser.parse_args()
     selected = PRODUCTION_CONVERSATIONS
     if args.only:
         selected = [item for item in selected if args.only.lower() in item[0].lower()]
     if not selected:
         parser.error("--only did not match any conversation")
-    raise SystemExit(run(args.url, selected, args.verbose, max(0.0, args.delay)))
+    diagnose = args.diagnose or os.environ.get("SCOUT_GATE_DEBUG", "").lower() in ("1", "true", "yes")
+    raise SystemExit(run(args.url, selected, args.verbose, max(0.0, args.delay), diagnose=diagnose))
 
 
 if __name__ == "__main__":
