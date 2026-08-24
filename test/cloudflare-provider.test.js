@@ -358,3 +358,141 @@ test('generate respects abortSignal', async () => {
 test('FREE_DAILY_NEURON_LIMIT is 10000', () => {
   assert.equal(cfProvider.FREE_DAILY_NEURON_LIMIT, 10000);
 });
+
+// === Exact-model pricing regression tests ===
+// The -fast model's rates are NOT published on the Cloudflare pricing page.
+// The 4119/34868 values belong to -fp8-fast and must not leak into -fast.
+
+test('exact known model pricing: llama-3.1-8b-instruct-fp8-fast', () => {
+  const pricing = cfProvider.neuronPricing('@cf/meta/llama-3.1-8b-instruct-fp8-fast');
+  assert.ok(pricing);
+  assert.equal(pricing.input, 4119);
+  assert.equal(pricing.output, 34868);
+});
+
+test('exact known model pricing: llama-3.1-8b-instruct-fp8', () => {
+  const pricing = cfProvider.neuronPricing('@cf/meta/llama-3.1-8b-instruct-fp8');
+  assert.ok(pricing);
+  assert.equal(pricing.input, 13778);
+  assert.equal(pricing.output, 26128);
+});
+
+test('fast model has no published exact pricing', () => {
+  assert.equal(cfProvider.neuronPricing('@cf/meta/llama-3.1-8b-instruct-fast'), null);
+});
+
+test('fast model does not inherit fp8-fast pricing', () => {
+  assert.notEqual(cfProvider.neuronPricing('@cf/meta/llama-3.1-8b-instruct-fast')?.input, 4119);
+  assert.notEqual(cfProvider.neuronPricing('@cf/meta/llama-3.1-8b-instruct-fast')?.output, 34868);
+});
+
+test('fp8 does not inherit fp8-fast pricing', () => {
+  const pricing = cfProvider.neuronPricing('@cf/meta/llama-3.1-8b-instruct-fp8');
+  assert.notEqual(pricing?.input, 4119);
+  assert.notEqual(pricing?.output, 34868);
+});
+
+test('estimateNeurons returns null for the -fast model', () => {
+  assert.equal(cfProvider.estimateNeurons('@cf/meta/llama-3.1-8b-instruct-fast', 500, 100), null);
+});
+
+test('estimateDailyCapacity returns null for the -fast model', () => {
+  assert.equal(cfProvider.estimateDailyCapacity('@cf/meta/llama-3.1-8b-instruct-fast', 500, 100), null);
+});
+
+test('estimateNeurons uses fp8-fast rates for that exact model', () => {
+  const neurons = cfProvider.estimateNeurons('@cf/meta/llama-3.1-8b-instruct-fp8-fast', 500, 100);
+  assert.ok(neurons);
+  // (500/1e6)*4119 + (100/1e6)*34868 = 2.0595 + 3.4868 = 5.5463
+  assert.ok(Math.abs(neurons - 5.5463) < 1e-9);
+});
+
+test('generate preserves actual neurons from usage.neurons when present', async () => {
+  const origAccount = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const origToken = process.env.CLOUDFLARE_API_TOKEN;
+  process.env.CLOUDFLARE_ACCOUNT_ID = 'test-account';
+  process.env.CLOUDFLARE_API_TOKEN = 'test-token';
+
+  const origFetch = global.fetch;
+  global.fetch = async () => ({
+    ok: true,
+    status: 200,
+    text: async () => JSON.stringify({
+      success: true,
+      errors: [],
+      result: {
+        response: 'ok',
+        usage: { prompt_tokens: 10, completion_tokens: 2, neurons: 1.25 },
+      },
+    }),
+    json: async () => ({
+      success: true,
+      errors: [],
+      result: {
+        response: 'ok',
+        usage: { prompt_tokens: 10, completion_tokens: 2, neurons: 1.25 },
+      },
+    }),
+  });
+
+  try {
+    delete require.cache[require.resolve('../lib/cloudflare-provider')];
+    const cf = require('../lib/cloudflare-provider');
+    const result = await cf.generate('@cf/meta/llama-3.1-8b-instruct-fp8-fast', [
+      { role: 'user', content: 'hi' }
+    ], {});
+    assert.equal(result.ok, true);
+    assert.equal(result.usage.actualNeurons, 1.25);
+    assert.ok(result.usage.estimatedNeurons > 0);
+  } finally {
+    global.fetch = origFetch;
+    process.env.CLOUDFLARE_ACCOUNT_ID = origAccount;
+    process.env.CLOUDFLARE_API_TOKEN = origToken;
+    delete require.cache[require.resolve('../lib/cloudflare-provider')];
+  }
+});
+
+test('generate keeps estimatedNeurons null for -fast when no usage.neurons is returned', async () => {
+  const origAccount = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const origToken = process.env.CLOUDFLARE_API_TOKEN;
+  process.env.CLOUDFLARE_ACCOUNT_ID = 'test-account';
+  process.env.CLOUDFLARE_API_TOKEN = 'test-token';
+
+  const origFetch = global.fetch;
+  global.fetch = async () => ({
+    ok: true,
+    status: 200,
+    text: async () => JSON.stringify({
+      success: true,
+      errors: [],
+      result: {
+        response: 'ok',
+        usage: { prompt_tokens: 10, completion_tokens: 2 },
+      },
+    }),
+    json: async () => ({
+      success: true,
+      errors: [],
+      result: {
+        response: 'ok',
+        usage: { prompt_tokens: 10, completion_tokens: 2 },
+      },
+    }),
+  });
+
+  try {
+    delete require.cache[require.resolve('../lib/cloudflare-provider')];
+    const cf = require('../lib/cloudflare-provider');
+    const result = await cf.generate('@cf/meta/llama-3.1-8b-instruct-fast', [
+      { role: 'user', content: 'hi' }
+    ], {});
+    assert.equal(result.ok, true);
+    assert.equal(result.usage.actualNeurons, null);
+    assert.equal(result.usage.estimatedNeurons, null);
+  } finally {
+    global.fetch = origFetch;
+    process.env.CLOUDFLARE_ACCOUNT_ID = origAccount;
+    process.env.CLOUDFLARE_API_TOKEN = origToken;
+    delete require.cache[require.resolve('../lib/cloudflare-provider')];
+  }
+});

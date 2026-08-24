@@ -12,18 +12,11 @@
         "neuronsPerDay": 10000,
         "reset": "00:00 UTC"
       },
-      "neuronRatesPerMillionTokens": {
-        "input": 4119,
-        "output": 34868
-      },
-      "shadowRates": {
-        "inputPerMillionTokensMicroUsd": 45300,
-        "outputPerMillionTokensMicroUsd": 383500
-      },
       "paidUsageReference": "$0.011 per 1,000 neurons beyond the included daily allocation on Workers Paid",
       "citation": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
       "modelCitation": "https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct-fast/",
-      "lastVerified": "2026-08-21"
+      "lastVerified": "2026-08-23",
+      "notes": "Exact neuron rates for @cf/meta/llama-3.1-8b-instruct-fast are not published on the current Cloudflare pricing page. The 4119/34868 values that were previously here belong to @cf/meta/llama-3.1-8b-instruct-fp8-fast and were removed to avoid false accounting."
     },
     "ollama": {
       "label": "Optional local Ollama fallback",

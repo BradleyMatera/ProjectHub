@@ -23,10 +23,13 @@ test('public phone scrub preserves only the approved public number', () => {
   );
 });
 
-test('Cloudflare neuron estimate uses the configured Llama 3.1 8B Instruct Fast rates', () => {
-  assert.equal(estimateCloudflareNeurons(1_000_000, 0), 4119);
-  assert.equal(estimateCloudflareNeurons(0, 1_000_000), 34868);
-  assert.equal(estimateCloudflareNeurons(1_000_000, 1_000_000), 38987);
+test('Cloudflare neuron estimate uses exact-model pricing; -fast has no published rate', () => {
+  assert.equal(estimateCloudflareNeurons('@cf/meta/llama-3.1-8b-instruct-fp8-fast', 1_000_000, 0), 4119);
+  assert.equal(estimateCloudflareNeurons('@cf/meta/llama-3.1-8b-instruct-fp8-fast', 0, 1_000_000), 34868);
+  assert.equal(estimateCloudflareNeurons('@cf/meta/llama-3.1-8b-instruct-fp8-fast', 1_000_000, 1_000_000), 38987);
+  assert.equal(estimateCloudflareNeurons('@cf/meta/llama-3.1-8b-instruct-fast', 1_000_000, 0), null);
+  assert.equal(estimateCloudflareNeurons('@cf/meta/llama-3.1-8b-instruct-fast', 0, 1_000_000), null);
+  assert.equal(estimateCloudflareNeurons('@cf/meta/llama-3.1-8b-instruct-fast', 1_000_000, 1_000_000), null);
 });
 
 test('generation-call summary reports real call count and token/neuron totals', () => {
