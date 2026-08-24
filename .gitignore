@@ -43,3 +43,6 @@ Screenshot_*.jpg
 Screenshot_*.png
 *.jpg
 *.jpeg
+
+__pycache__/
+
