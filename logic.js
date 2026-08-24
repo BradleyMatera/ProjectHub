@@ -51,6 +51,20 @@ function formatScoutNumber(value, maximumFractionDigits = 1) {
   return finiteNumber(value).toLocaleString(undefined, { maximumFractionDigits });
 }
 
+function toKnownNumber(value) {
+  if (value == null || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function addNullableKnown(accum, value) {
+  const n = toKnownNumber(value);
+  if (n == null) return null;
+  const a = toKnownNumber(accum);
+  if (a == null) return n;
+  return a + n;
+}
+
 function cloudflareNeuronPricing(model) {
   return CLOUDFLARE_MODEL_NEURON_PRICING[model] || null;
 }
@@ -74,8 +88,9 @@ function getScoutUsageState() {
       providerCalls: 0,
       inputTokens: 0,
       outputTokens: 0,
-      actualNeurons: 0,
-      estimatedNeurons: 0,
+      actualNeurons: null,
+      estimatedNeurons: null,
+      neurons: null,
       inferenceLatencyMs: 0,
       repairs: 0,
       generatedAnswers: 0,
@@ -88,19 +103,52 @@ function getScoutUsageState() {
 
 function summarizeGenerationCalls(data) {
   const calls = Array.isArray(data?.agent?.generationCalls) ? data.agent.generationCalls : [];
-  const totals = calls.reduce((acc, call) => {
-    acc.inputTokens += finiteNumber(call.inputTokens);
-    acc.outputTokens += finiteNumber(call.outputTokens);
-    acc.actualNeurons += finiteNumber(call.actualNeurons);
-    acc.estimatedNeurons += finiteNumber(call.estimatedNeurons);
-    acc.latencyMs += finiteNumber(call.latencyMs);
-    if (String(call.attemptType || '').toUpperCase() === 'FACTUAL_REPAIR') acc.repairs += 1;
-    return acc;
-  }, { inputTokens: 0, outputTokens: 0, actualNeurons: 0, estimatedNeurons: 0, latencyMs: 0, repairs: 0 });
-
   const model = data?.model || calls[0]?.model || null;
-  if (!totals.estimatedNeurons && (totals.inputTokens || totals.outputTokens)) {
-    totals.estimatedNeurons = estimateCloudflareNeurons(model, totals.inputTokens, totals.outputTokens);
+
+  const totals = {
+    inputTokens: 0,
+    outputTokens: 0,
+    actualNeurons: null,
+    estimatedNeurons: null,
+    neurons: null,
+    latencyMs: 0,
+    repairs: 0
+  };
+
+  let actualKnown = 0;
+  let estimatedKnown = 0;
+  let neuronKnown = 0;
+  let actualSum = 0;
+  let estimatedSum = 0;
+  let neuronSum = 0;
+
+  for (const call of calls) {
+    totals.inputTokens += finiteNumber(call.inputTokens);
+    totals.outputTokens += finiteNumber(call.outputTokens);
+    totals.latencyMs += finiteNumber(call.latencyMs);
+    if (String(call.attemptType || '').toUpperCase() === 'FACTUAL_REPAIR') totals.repairs += 1;
+
+    const a = toKnownNumber(call.actualNeurons);
+    const e = toKnownNumber(call.estimatedNeurons);
+    const perCall = a ?? e ?? estimateCloudflareNeurons(call.model || model, call.inputTokens, call.outputTokens);
+
+    if (perCall != null) {
+      neuronSum += perCall;
+      neuronKnown += 1;
+    }
+
+    if (a != null) { actualSum += a; actualKnown += 1; }
+    if (e != null) { estimatedSum += e; estimatedKnown += 1; }
+  }
+
+  if (actualKnown > 0 && actualKnown === calls.length) totals.actualNeurons = actualSum;
+  if (estimatedKnown > 0 && estimatedKnown === calls.length) totals.estimatedNeurons = estimatedSum;
+  if (neuronKnown > 0 && neuronKnown === calls.length) totals.neurons = neuronSum;
+
+  // If individual call values were inconclusive but the exact model has published
+  // pricing, fall back to an aggregate estimate from total tokens.
+  if (totals.neurons == null && calls.length > 0 && (totals.inputTokens || totals.outputTokens)) {
+    totals.neurons = estimateCloudflareNeurons(model, totals.inputTokens, totals.outputTokens);
   }
 
   totals.calls = calls.length || finiteNumber(data?.agent?.actualProviderCalls);
@@ -116,8 +164,9 @@ function recordScoutUsage(data, requestMetrics) {
   session.providerCalls += requestMetrics.calls;
   session.inputTokens += requestMetrics.inputTokens;
   session.outputTokens += requestMetrics.outputTokens;
-  session.actualNeurons += requestMetrics.actualNeurons;
-  session.estimatedNeurons += requestMetrics.estimatedNeurons;
+  session.actualNeurons = addNullableKnown(session.actualNeurons, requestMetrics.actualNeurons);
+  session.estimatedNeurons = addNullableKnown(session.estimatedNeurons, requestMetrics.estimatedNeurons);
+  session.neurons = addNullableKnown(session.neurons, requestMetrics.neurons);
   session.inferenceLatencyMs += requestMetrics.latencyMs;
   session.repairs += requestMetrics.repairs;
   session.model = data?.model || requestMetrics.model || session.model || null;
@@ -227,7 +276,7 @@ async function refreshScoutRuntimeDashboard() {
   const costs = await fetchScoutCosts(chatApiUrl);
   const session = typeof window !== 'undefined' && window.__PROJECTHUB_USAGE__ ? window.__PROJECTHUB_USAGE__ : null;
   const day = cloudflareDayFromCosts(costs, session?.model);
-  const sessionNeurons = session ? (session.actualNeurons ?? session.estimatedNeurons) : null;
+  const sessionNeurons = session ? session.neurons : null;
   const dayUsage = day ? (day.neurons == null ? 'unknown' : `${formatScoutNumber(day.neurons, 2)} / 10,000`) : 'waiting for /api/costs';
   const dayPercent = day ? (day.pct == null ? 'unverified' : `${formatScoutNumber(day.pct, 2)}% used`) : 'daily total unavailable';
   const callsToday = day ? formatScoutNumber(day.calls, 0) : '—';
@@ -270,9 +319,9 @@ function buildScoutTelemetryHtml(data, costs) {
     return item?.id || item?.chunkId || item?.tag || item?.name || item?.title || 'evidence';
   }).filter(Boolean);
   const day = cloudflareDayFromCosts(costs, session?.model || request.model);
-  const neuronsForValue = request.actualNeurons ?? request.estimatedNeurons;
+  const neuronsForValue = request.neurons;
   const meteredValue = estimatedCloudflareMeteredUsd(neuronsForValue);
-  const sessionNeurons = session.actualNeurons ?? session.estimatedNeurons;
+  const sessionNeurons = session.neurons;
   const localWork = 'query/session context → BM25 + RRF retrieval → evidence selection → factual validation';
   const cloudWork = request.calls > 0
     ? `${request.calls} Cloudflare Workers AI inference call${request.calls === 1 ? '' : 's'}`
@@ -291,8 +340,8 @@ function buildScoutTelemetryHtml(data, costs) {
 
   const callsHtml = request.callsDetail.length
     ? `<div style="margin-top:6px"><strong>Provider calls:</strong>${request.callsDetail.map((call, i) => {
-        const callNeurons = finiteNumber(call.actualNeurons) || finiteNumber(call.estimatedNeurons)
-          || estimateCloudflareNeurons(call.model || request.model, call.inputTokens, call.outputTokens);
+        const callNeurons = call.actualNeurons ?? call.estimatedNeurons
+          ?? estimateCloudflareNeurons(call.model || request.model, call.inputTokens, call.outputTokens);
         const number = call.attemptIndex != null ? call.attemptIndex + 1 : i + 1;
         const neuronText = callNeurons == null ? 'unknown' : formatScoutNumber(callNeurons, 3);
         return `<div style="margin-left:10px">#${escapeScoutHtml(number)} ${escapeScoutHtml(call.attemptType || 'PRIMARY')}: ${formatScoutNumber(call.inputTokens, 0)} in / ${formatScoutNumber(call.outputTokens, 0)} out · ${neuronText} neurons · ${formatScoutNumber(call.latencyMs, 0)} ms · ${call.accepted ? 'accepted' : 'not accepted'}</div>`;
@@ -411,6 +460,8 @@ if (typeof module !== 'undefined' && module.exports) {
     buildServerHistory,
     scrubPublicPhoneNumbers,
     estimateCloudflareNeurons,
-    summarizeGenerationCalls
+    summarizeGenerationCalls,
+    recordScoutUsage,
+    getScoutUsageState
   };
 }
