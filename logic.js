@@ -91,6 +91,7 @@ function getScoutUsageState() {
       actualNeurons: null,
       estimatedNeurons: null,
       neurons: null,
+      neuronsComplete: true,
       inferenceLatencyMs: 0,
       repairs: 0,
       generatedAnswers: 0,
@@ -166,7 +167,17 @@ function recordScoutUsage(data, requestMetrics) {
   session.outputTokens += requestMetrics.outputTokens;
   session.actualNeurons = addNullableKnown(session.actualNeurons, requestMetrics.actualNeurons);
   session.estimatedNeurons = addNullableKnown(session.estimatedNeurons, requestMetrics.estimatedNeurons);
-  session.neurons = addNullableKnown(session.neurons, requestMetrics.neurons);
+
+  // Sticky session-neuron completeness: one unknown billable call makes the
+  // complete session total unknown for the rest of the session.
+  if (requestMetrics.calls > 0) {
+    if (requestMetrics.neurons == null) {
+      session.neuronsComplete = false;
+      session.neurons = null;
+    } else if (session.neuronsComplete) {
+      session.neurons = addNullableKnown(session.neurons, requestMetrics.neurons);
+    }
+  }
   session.inferenceLatencyMs += requestMetrics.latencyMs;
   session.repairs += requestMetrics.repairs;
   session.model = data?.model || requestMetrics.model || session.model || null;
@@ -276,7 +287,7 @@ async function refreshScoutRuntimeDashboard() {
   const costs = await fetchScoutCosts(chatApiUrl);
   const session = typeof window !== 'undefined' && window.__PROJECTHUB_USAGE__ ? window.__PROJECTHUB_USAGE__ : null;
   const day = cloudflareDayFromCosts(costs, session?.model);
-  const sessionNeurons = session ? session.neurons : null;
+  const sessionNeurons = session && session.neuronsComplete ? session.neurons : null;
   const dayUsage = day ? (day.neurons == null ? 'unknown' : `${formatScoutNumber(day.neurons, 2)} / 10,000`) : 'waiting for /api/costs';
   const dayPercent = day ? (day.pct == null ? 'unverified' : `${formatScoutNumber(day.pct, 2)}% used`) : 'daily total unavailable';
   const callsToday = day ? formatScoutNumber(day.calls, 0) : '—';
@@ -321,7 +332,7 @@ function buildScoutTelemetryHtml(data, costs) {
   const day = cloudflareDayFromCosts(costs, session?.model || request.model);
   const neuronsForValue = request.neurons;
   const meteredValue = estimatedCloudflareMeteredUsd(neuronsForValue);
-  const sessionNeurons = session.neurons;
+  const sessionNeurons = session && session.neuronsComplete ? session.neurons : null;
   const localWork = 'query/session context → BM25 + RRF retrieval → evidence selection → factual validation';
   const cloudWork = request.calls > 0
     ? `${request.calls} Cloudflare Workers AI inference call${request.calls === 1 ? '' : 's'}`

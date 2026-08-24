@@ -131,9 +131,108 @@ test('session state stays unknown after an unknown-neuron request', () => {
   });
   const session = recordScoutUsage({ model: '@cf/meta/llama-3.1-8b-instruct-fast' }, request);
 
-  assert.strictEqual(session.actualNeurons, null);
-  assert.strictEqual(session.estimatedNeurons, null);
   assert.strictEqual(session.neurons, null);
+  assert.strictEqual(session.neuronsComplete, false);
+});
+
+test('A: unknown then known keeps session total unknown', () => {
+  window.__PROJECTHUB_USAGE__ = undefined;
+  const unknown = summarizeGenerationCalls({
+    provider: 'cloudflare',
+    model: '@cf/meta/llama-3.1-8b-instruct-fast',
+    agent: { generationCalls: [{ inputTokens: 100, outputTokens: 50 }] }
+  });
+  const known = summarizeGenerationCalls({
+    provider: 'cloudflare',
+    model: '@cf/meta/llama-3.1-8b-instruct-fast',
+    agent: { generationCalls: [{ inputTokens: 100, outputTokens: 50, actualNeurons: 4 }] }
+  });
+
+  recordScoutUsage({ model: '@cf/meta/llama-3.1-8b-instruct-fast' }, unknown);
+  const session = recordScoutUsage({ model: '@cf/meta/llama-3.1-8b-instruct-fast' }, known);
+
+  assert.strictEqual(session.neurons, null);
+  assert.strictEqual(session.neuronsComplete, false);
+  assert.strictEqual(session.providerCalls, 2);
+});
+
+test('B: known then unknown then known keeps session total unknown', () => {
+  window.__PROJECTHUB_USAGE__ = undefined;
+  const known4 = summarizeGenerationCalls({
+    provider: 'cloudflare',
+    model: '@cf/meta/llama-3.1-8b-instruct-fast',
+    agent: { generationCalls: [{ inputTokens: 100, outputTokens: 50, actualNeurons: 4 }] }
+  });
+  const unknown = summarizeGenerationCalls({
+    provider: 'cloudflare',
+    model: '@cf/meta/llama-3.1-8b-instruct-fast',
+    agent: { generationCalls: [{ inputTokens: 100, outputTokens: 50 }] }
+  });
+  const known5 = summarizeGenerationCalls({
+    provider: 'cloudflare',
+    model: '@cf/meta/llama-3.1-8b-instruct-fast',
+    agent: { generationCalls: [{ inputTokens: 100, outputTokens: 50, actualNeurons: 5 }] }
+  });
+
+  recordScoutUsage({ model: '@cf/meta/llama-3.1-8b-instruct-fast' }, known4);
+  recordScoutUsage({ model: '@cf/meta/llama-3.1-8b-instruct-fast' }, unknown);
+  const session = recordScoutUsage({ model: '@cf/meta/llama-3.1-8b-instruct-fast' }, known5);
+
+  assert.strictEqual(session.neurons, null);
+  assert.strictEqual(session.neuronsComplete, false);
+  assert.strictEqual(session.providerCalls, 3);
+});
+
+test('C: all known requests sum correctly', () => {
+  window.__PROJECTHUB_USAGE__ = undefined;
+  const known4 = summarizeGenerationCalls({
+    provider: 'cloudflare',
+    model: '@cf/meta/llama-3.1-8b-instruct-fast',
+    agent: { generationCalls: [{ inputTokens: 100, outputTokens: 50, actualNeurons: 4 }] }
+  });
+  const known5 = summarizeGenerationCalls({
+    provider: 'cloudflare',
+    model: '@cf/meta/llama-3.1-8b-instruct-fast',
+    agent: { generationCalls: [{ inputTokens: 100, outputTokens: 50, actualNeurons: 5 }] }
+  });
+
+  recordScoutUsage({ model: '@cf/meta/llama-3.1-8b-instruct-fast' }, known4);
+  const session = recordScoutUsage({ model: '@cf/meta/llama-3.1-8b-instruct-fast' }, known5);
+
+  assert.strictEqual(session.neurons, 9);
+  assert.strictEqual(session.neuronsComplete, true);
+  assert.strictEqual(session.providerCalls, 2);
+});
+
+test('D: three estimated-from-exact-model requests sum correctly', () => {
+  window.__PROJECTHUB_USAGE__ = undefined;
+  const model = '@cf/meta/llama-3.1-8b-instruct-fp8-fast';
+  const make = () => summarizeGenerationCalls({
+    provider: 'cloudflare',
+    model,
+    agent: { generationCalls: [{ inputTokens: 1_000_000, outputTokens: 0, estimatedNeurons: 4119 }] }
+  });
+
+  recordScoutUsage({ model }, make());
+  recordScoutUsage({ model }, make());
+  const session = recordScoutUsage({ model }, make());
+
+  assert.strictEqual(session.neurons, 4119 * 3);
+  assert.strictEqual(session.neuronsComplete, true);
+  assert.strictEqual(session.providerCalls, 3);
+});
+
+test('E: no provider/model call is not confused with verified zero', () => {
+  window.__PROJECTHUB_USAGE__ = undefined;
+  const directKb = summarizeGenerationCalls({
+    agent: { generationCalls: [] }
+  });
+  const session = recordScoutUsage({ proseSource: 'DIRECT_KB' }, directKb);
+
+  assert.strictEqual(session.providerCalls, 0);
+  assert.strictEqual(session.neurons, null);
+  assert.strictEqual(session.neuronsComplete, true);
+  assert.notStrictEqual(session.neurons, 0);
 });
 
 test('generation-call summary reports real call count and token/neuron totals', () => {
