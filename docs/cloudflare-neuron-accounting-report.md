@@ -19,10 +19,10 @@ After the exact-model pricing fix, two smaller accounting bugs were found:
 
 ## Git state
 
-- **DEVELOP BEFORE:** `57927afef24dbe6a3564f0f1db5686da432c6a66`
-- **DEVELOP AFTER:** `26b6fa0` (this commit)
+- **DEVELOP BEFORE:** `9822e5dec23724d15801e7866762edf570a0f80b`
+- **DEVELOP AFTER:** this commit
 - **MASTER SHA:** `4a1eee70821ed83f50be1fe2ff6286abfaa4a15c`
-- **PROJECTHUB-DEV SHA:** `ef125fe217b3338795d027e4fd468451c646e157`
+- **PROJECTHUB-DEV SHA:** pending sync-staging workflow
 - **PRODUCTION CHANGED:** NO
 
 ## Official Cloudflare evidence
