@@ -869,11 +869,9 @@ function renderCostSection(section, costs, label, apiBase) {
     return;
   }
   section.hidden = false;
-  const freeBadge = costs.free === true
+  const freeBadge = costs.free
     ? '<span class="ph-status ph-status--ok">100% FREE — all usage inside free tiers</span>'
-    : costs.free === false
-      ? '<span class="ph-status ph-status--error">FREE-TIER LIMIT EXCEEDED</span>'
-      : '<span class="ph-status ph-status--cooldown">FREE-TIER STATUS UNKNOWN — some limits cannot be verified</span>';
+    : '<span class="ph-status ph-status--error">FREE-TIER LIMIT EXCEEDED</span>';
 
   const hero = `
     <div class="ph-learning-grid">
@@ -895,15 +893,13 @@ function renderCostSection(section, costs, label, apiBase) {
     </div>`;
 
   const gauges = (costs.headroom || []).map(h => {
-    const isUnknown = h.complete === false;
-    const pct = isUnknown ? 0 : Math.min(100, h.pct);
-    const barClass = isUnknown ? 'ph-bar-fill--warn' : h.pct >= 80 ? 'ph-bar-fill--error' : h.pct >= 50 ? 'ph-bar-fill--warn' : '';
-    const usedStr = isUnknown ? 'unknown' : (h.metric.includes('Bytes') ? costFmtBytes(h.used) : formatNumber(h.used));
+    const pct = Math.min(100, h.pct);
+    const barClass = h.pct >= 80 ? 'ph-bar-fill--error' : h.pct >= 50 ? 'ph-bar-fill--warn' : '';
+    const usedStr = h.metric.includes('Bytes') ? costFmtBytes(h.used) : formatNumber(h.used);
     const limitStr = h.metric.includes('Bytes') ? costFmtBytes(h.limit) : formatNumber(h.limit);
-    const pctText = isUnknown ? 'unverified' : `${h.pct}%`;
     return `<div class="ph-bar-row">
       <div class="ph-bar-label" title="${h.source} ${h.metric}">${h.source} · ${h.metric}${h.estimated ? ' (est)' : ''}</div>
-      <div class="ph-bar-count">${usedStr} / ${limitStr} (${pctText})</div>
+      <div class="ph-bar-count">${usedStr} / ${limitStr} (${h.pct}%)</div>
       <div class="ph-bar-track"><div class="ph-bar-fill ${barClass}" style="width:${pct}%"></div></div>
     </div>`;
   }).join('');
