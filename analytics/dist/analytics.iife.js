@@ -288,7 +288,7 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
     </div>
   `}function wk(e,t,n,r){if(!t){e.hidden=!1,e.innerHTML=`
       <h3 class="ph-analytics__section-title">Cost &amp; free-tier tracker — ${n}</h3>
-      <p class="ph-muted">Tracker offline or unreachable at <code>${r}/api/costs</code>. If the backend is up, ensure COST_TRACKER=true in its .env.</p>`;return}e.hidden=!1;let i=t.free?`<span class="ph-status ph-status--ok">100% FREE — all usage inside free tiers</span>`:`<span class="ph-status ph-status--error">FREE-TIER LIMIT EXCEEDED</span>`,a=`
+      <p class="ph-muted">Tracker offline or unreachable at <code>${r}/api/costs</code>. If the backend is up, ensure COST_TRACKER=true in its .env.</p>`;return}e.hidden=!1;let i=t.free===!0?`<span class="ph-status ph-status--ok">100% FREE — all usage inside free tiers</span>`:t.free===!1?`<span class="ph-status ph-status--error">FREE-TIER LIMIT EXCEEDED</span>`:`<span class="ph-status ph-status--cooldown">FREE-TIER STATUS UNKNOWN — some limits cannot be verified</span>`,a=`
     <div class="ph-learning-grid">
       <div class="ph-learning-tile">
         <div class="ph-analytics__tile-label">Actual cost this month</div>
@@ -305,10 +305,10 @@ var ProjectHubAnalytics=(function(e){Object.defineProperty(e,Symbol.toStringTag,
         <div class="ph-analytics__tile-value">$${((t.shadowCost?.dayMicroUsd||0)/1e6).toFixed(6)}</div>
         <div class="ph-muted">Registry v${t.registryVersion} · verified ${t.registryLastVerified}</div>
       </div>
-    </div>`,o=(t.headroom||[]).map(e=>{let t=Math.min(100,e.pct),n=e.pct>=80?`ph-bar-fill--error`:e.pct>=50?`ph-bar-fill--warn`:``,r=e.metric.includes(`Bytes`)?Sk(e.used):$(e.used),i=e.metric.includes(`Bytes`)?Sk(e.limit):$(e.limit);return`<div class="ph-bar-row">
+    </div>`,o=(t.headroom||[]).map(e=>{let t=e.complete===!1,n=t?0:Math.min(100,e.pct),r=t?`ph-bar-fill--warn`:e.pct>=80?`ph-bar-fill--error`:e.pct>=50?`ph-bar-fill--warn`:``,i=t?`unknown`:e.metric.includes(`Bytes`)?Sk(e.used):$(e.used),a=e.metric.includes(`Bytes`)?Sk(e.limit):$(e.limit),o=t?`unverified`:`${e.pct}%`;return`<div class="ph-bar-row">
       <div class="ph-bar-label" title="${e.source} ${e.metric}">${e.source} · ${e.metric}${e.estimated?` (est)`:``}</div>
-      <div class="ph-bar-count">${r} / ${i} (${e.pct}%)</div>
-      <div class="ph-bar-track"><div class="ph-bar-fill ${n}" style="width:${t}%"></div></div>
+      <div class="ph-bar-count">${i} / ${a} (${o})</div>
+      <div class="ph-bar-track"><div class="ph-bar-fill ${r}" style="width:${n}%"></div></div>
     </div>`}).join(``),s=(t.insights||[]).map(e=>`<li class="${e.severity===2?`ph-text-error`:e.severity===1?`ph-text-warn`:`ph-text-success`}">${e.text}</li>`).join(``),c=Object.entries(t.bySourceMonth||{}).map(([e,t])=>`
     <tr>
       <td><strong>${e}</strong></td>

@@ -297,7 +297,7 @@ async function refreshScoutRuntimeDashboard() {
       <div class="scout-runtime-metric"><span>App request control</span><strong>20 / minute / IP</strong><p>Server default unless overridden</p></div>
       <div class="scout-runtime-metric"><span>This browser session</span><strong>${escapeScoutHtml(sessionTokens)}</strong><p>${formatScoutNumber(session?.providerCalls || 0, 0)} model calls</p></div>
       <div class="scout-runtime-metric"><span>Session neurons</span><strong>${sessionNeurons == null ? 'unknown' : formatScoutNumber(sessionNeurons, 3)}</strong><p>${formatScoutNumber(session?.repairs || 0, 0)} factual repair calls</p></div>
-      <div class="scout-runtime-metric"><span>Local RAG work</span><strong>BM25 + RRF</strong><p>Query/session context → BM25 + RRF retrieval → evidence selection → factual validation</p></div>
+      <div class="scout-runtime-metric"><span>Local RAG work</span><strong>BM25 + RRF</strong><p>Query/context → retrieval → evidence → validation</p></div>
       <div class="scout-runtime-metric"><span>Paid-rate reference</span><strong>$0.011 / 1k neurons</strong><p>Only a pricing reference; this panel does not infer billing charges</p></div>
     </div>
     <div class="scout-runtime-detail"><strong>How to read it:</strong> each Scout reply also shows its own provider calls, input/output tokens, neurons, model latency, RAG candidate/evidence counts, answer source and repair attempts. Free allocation is shared Cloudflare account usage, not a separate allowance for each visitor.</div>

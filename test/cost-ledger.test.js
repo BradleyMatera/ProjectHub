@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { CostLedger, priceEventMicroUsd, loadRegistry } = require('../lib/cost-ledger');
+const { buildInsights } = require('../lib/cost-insights');
 
 const registry = loadRegistry();
 const makeLedger = now => new CostLedger({
@@ -118,4 +119,70 @@ test('loading persisted state drops sources not present in the local registry', 
   assert.equal(ledger.state.allTime.legacyHostedModel, undefined);
   assert.deepEqual(ledger.state.recentEvents.map(event => event.source), ['ollama']);
   fs.rmSync(directory, { recursive: true, force: true });
+});
+
+// ---- Free-tier completeness regression tests ----
+
+test('A: Cloudflare usage with unverified neuron pricing makes free-tier status unknown', () => {
+  const ledger = makeLedger();
+  ledger.record({ source: 'cloudflare', kind: 'llm', tokensIn: 1000, tokensOut: 200 });
+  const snapshot = ledger.snapshot();
+  assert.strictEqual(snapshot.free, null);
+  assert.strictEqual(snapshot.freeStatusComplete, false);
+  assert.strictEqual(snapshot.shadowCost.actualUsd, null);
+  const cf = snapshot.headroom.find(h => h.source === 'cloudflare' && h.metric === 'neuronsPerDay');
+  assert.ok(cf, 'expected Cloudflare neuronsPerDay headroom');
+  assert.strictEqual(cf.used, null);
+  assert.strictEqual(cf.limit, 10000);
+  assert.strictEqual(cf.pct, null);
+  assert.strictEqual(cf.complete, false);
+});
+
+test('B: known measurable limits within bounds keep free status verified and true', () => {
+  const ledger = makeLedger();
+  ledger.record({ source: 'ollama', tokensIn: 120, tokensOut: 40 });
+  const snapshot = ledger.snapshot();
+  assert.strictEqual(snapshot.free, true);
+  assert.strictEqual(snapshot.freeStatusComplete, true);
+  assert.strictEqual(snapshot.shadowCost.actualUsd, '0.000000');
+});
+
+test('C: exceeded known limit keeps free status false', () => {
+  const ledger = makeLedger();
+  ledger.record({ source: 'gcp-egress', kind: 'egress', bytes: 1073741825 });
+  const snapshot = ledger.snapshot();
+  assert.strictEqual(snapshot.free, false);
+  assert.strictEqual(snapshot.freeStatusComplete, true);
+  assert.strictEqual(snapshot.shadowCost.actualUsd, null);
+});
+
+test('D: mixed known-within-limits and unmeasurable Cloudflare leaves free status unknown', () => {
+  const ledger = makeLedger();
+  // 989,000,000 bytes * 1.08 overhead rounds to 99% and stays under the 1 GiB free limit
+  ledger.record({ source: 'gcp-egress', kind: 'egress', bytes: 989000000 });
+  ledger.record({ source: 'cloudflare', kind: 'llm', tokensIn: 1000 });
+  const snapshot = ledger.snapshot();
+  assert.strictEqual(snapshot.free, null);
+  assert.strictEqual(snapshot.freeStatusComplete, false);
+  assert.strictEqual(snapshot.shadowCost.monthComplete, false);
+  assert.ok(snapshot.headroom.some(h => h.source === 'cloudflare' && h.metric === 'neuronsPerDay' && h.complete === false));
+  assert.strictEqual(snapshot.shadowCost.actualUsd, null);
+});
+
+test('E: cost-insights does not claim "All usage inside free tiers" when completeness is unknown', () => {
+  const ledger = makeLedger();
+  ledger.record({ source: 'cloudflare', kind: 'llm', tokensIn: 1000 });
+  const insights = buildInsights(ledger.snapshot());
+  const status = insights.find(i => i.tag === 'free-status');
+  assert.ok(status, 'expected a free-status insight');
+  assert.ok(!status.text.includes('All usage inside free tiers'), 'should not claim all usage inside free tiers');
+  assert.ok(status.text.includes('unverified'), 'should mention unverified status');
+});
+
+test('F: actualUsd is unknown when free-tier status is unknown', () => {
+  const ledger = makeLedger();
+  ledger.record({ source: 'cloudflare', kind: 'llm', tokensIn: 1000 });
+  const snapshot = ledger.snapshot();
+  assert.strictEqual(snapshot.free, null);
+  assert.strictEqual(snapshot.shadowCost.actualUsd, null);
 });
