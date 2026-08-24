@@ -361,7 +361,7 @@ def check_reply(message, reply, response, prior_reply, latency):
 
 def classify_failure(issues, response, latency):
     error = response.get("error")
-    agent = response.get("agent") or {}
+    agent = response.get("agent") or response.get("agentMeta") or {}
     contract = response.get("contract") or {}
     if error == "INFERENCE_UNAVAILABLE":
         if "deadline" in str(response.get("provider")).lower() or "deadline" in " ".join(response.get("pipeline", [])).lower():
@@ -433,7 +433,7 @@ def run(url, selected, verbose, delay, diagnose=False):
                     print(f"       {'; '.join(issues)}")
                     print(f"       Scout: {reply[:260]}")
                 if diagnose:
-                    agent = response.get("agent") or {}
+                    agent = response.get("agent") or response.get("agentMeta") or {}
                     contract = response.get("contract") or {}
                     print(f"       policy: {contract.get('policyMode') or response.get('pipeline', [''])[0] if response.get('pipeline') else ''}")
                     print(f"       contract: {contract.get('intent')}/{contract.get('subIntent')} directAnswer={contract.get('directAnswer')} factState={contract.get('factState')}")
@@ -462,6 +462,8 @@ def run(url, selected, verbose, delay, diagnose=False):
                 "pipeline": response.get("pipeline", []),
                 "contract": response.get("contract") or {},
                 "agent": response.get("agent") or {},
+                "agentMeta": response.get("agentMeta") or {},
+                "serverDiagnostics": response.get("diagnostics") or {},
                 "reply": reply,
                 "previousReply": previous_reply,
             })
