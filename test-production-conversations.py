@@ -311,6 +311,14 @@ def word_overlap(left, right):
     return len(a & b) / max(1, len(a))
 
 
+def evidence_term_regex(term):
+    """Match a required evidence term at a word boundary and allow common
+    related forms (plurals, gerunds, past tense, and compounds) so 'blog'
+    matches 'blogs' and 'debug' matches 'debugging', while still preventing
+    unrelated substrings like 'any' inside 'many'."""
+    return re.compile(r"\b" + re.escape(term.lower()) + r"[a-z0-9+#./-]*\b", re.I)
+
+
 def check_reply(message, reply, response, prior_reply, latency):
     issues = []
     text = re.sub(r"<[^>]+>", " ", reply or "").strip()
@@ -331,10 +339,10 @@ def check_reply(message, reply, response, prior_reply, latency):
     if latency > MAX_LATENCY_SECONDS:
         issues.append(f"latency {latency:.2f}s exceeds {MAX_LATENCY_SECONDS:.0f}s")
     for group in rules["any_groups"]:
-        if not any(re.search(r"\b" + re.escape(term.lower()) + r"\b", lower) for term in group):
+        if not any(evidence_term_regex(term).search(lower) for term in group):
             issues.append(f"missing evidence from {group}")
     for term in rules["all_terms"]:
-        if not re.search(r"\b" + re.escape(term.lower()) + r"\b", lower):
+        if not evidence_term_regex(term).search(lower):
             issues.append(f"missing {term!r}")
     for term in rules["forbidden"]:
         if re.search(r"\b" + re.escape(term.lower()) + r"\b", lower):
