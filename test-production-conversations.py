@@ -246,17 +246,17 @@ def expectations_for(message):
     add_rule(rules, r"which of those.*strongest fit", ("frontend", "support", "junior"), ("fit",))
     add_rule(rules, r"projecthub", ("projecthub",), forbidden=("couldn't find", "isn't mentioned", "cannot confirm"))
     add_rule(rules, r"aws exper", ("aws", "lambda", "intern", "capstone", "training"))
-    add_rule(rules, r"concerns should|shouldn't i hire", ("gap", "junior", "algorithm", "mentor", "production"))
+    add_rule(rules, r"concerns should|shouldn't i hire", ("gap", "junior", "algorithm", "mentor", "mentorship", "production"))
     add_rule(rules, r"chat free|daily caps|cooldowns", ("free", "cloudflare", "workers", "allocation", "rate", "limit", "github pages", "backend"), forbidden=("groq", "gemini", "github models"))
     add_rule(rules, r"example of his jobs", ("aws", "ciris", "case manager", "army", "kitten rescue"))
-    add_rule(rules, r"how fast does he learn|mentorship help|learn on the job", ("learn", "mentor", "junior", "documentation"))
+    add_rule(rules, r"how fast does he learn|mentorship help|learn on the job", ("learn", "mentor", "mentorship", "junior", "documentation"))
     add_rule(rules, r"can he code", ("javascript", "js", "react", "project", "code", "coding"), forbidden=("can't code", "cannot code"))
     add_rule(rules, r"^what languages", ("javascript", "typescript", "html", "css", "sql"))
     add_rule(rules, r"actual weaknesses|leetcode", ("algorithm", "algorithms", "data structure", "data structures", "dsa", "leetcode", "mentor", "mentorship", "junior"))
     add_rule(rules, r"resume link", ("resume", "portfolio", "contact", "http"))
     add_rule(rules, r"kitten rescue", ("kitten", "animal", "volunteer"))
     add_rule(rules, r"paid role", ("paid", "part-time", "volunteer"))
-    add_rule(rules, r"day to day", ("animal", "care", "medical", "responsibil", "clients", "case", "veterans", "mental"))
+    add_rule(rules, r"day to day", ("animal", "care", "medical", "responsibility", "responsibilities", "responsible", "clients", "case", "veterans", "mental"))
     add_rule(rules, r"relate to tech", ("pressure", "communication", "reliable", "transfer", "debug"))
     add_rule(rules, r"quantum computing", ("quantum", "qubit"), max_words=100)
     add_rule(rules, r"not the aswer|what do you mean|^what\?$", ("sorry", "mean", "clarify", "you said", "more directly"), max_words=65)
@@ -273,7 +273,7 @@ def expectations_for(message):
     add_rule(rules, r"army service", ("army", "68w", "combat medic", "afghanistan"))
     add_rule(rules, r"awards did he get", ("badge", "medal", "commendation", "ribbon", "no information", "not documented", "no awards"))
     add_rule(rules, r"lead anyone in the army", ("lead", "leadership", "junior enlisted", "private first class"))
-    add_rule(rules, r"well in a team", ("team", "army", "ciris", "case manager", "collabor"))
+    add_rule(rules, r"well in a team", ("team", "army", "ciris", "case manager", "collaborate", "collaboration", "collaborative", "collaborator"))
     add_rule(rules, r"kill anyone|possibly killed", ("don't know", "not known", "not verified", "can't confirm", "isn't documented"), forbidden=("likely killed", "probably killed"), max_words=75)
     add_rule(rules, r"mission did he support", ("afghanistan", "68w", "combat medic", "fort bragg", "2/508", "mission", "don't know", "not known", "not verified", "can't confirm", "isn't documented"), forbidden=("likely killed", "probably killed"), max_words=75)
     add_rule(rules, r"ate a camel|updating his (site|website)", ("you told me", "could be", "may know", "for this chat", "not verified"), max_words=70)
@@ -311,12 +311,94 @@ def word_overlap(left, right):
     return len(a & b) / max(1, len(a))
 
 
+def _split_term(term):
+    term = term.lower().strip()
+    if ' ' in term:
+        i = term.rfind(' ')
+        return term[:i + 1], term[i + 1:]
+    return '', term
+
+
+def _is_inflectable(word):
+    """Only inflect normal words; do not invent plurals for acronyms like 's3' or 'ci/cd'."""
+    return re.fullmatch(r'[a-z-]+', word) is not None
+
+
+def _plural_forms(word):
+    forms = set()
+    if word.endswith('y') and len(word) > 1 and word[-2] not in 'aeiou':
+        forms.add(word[:-1] + 'ies')
+    elif word.endswith('is') and len(word) > 2:
+        forms.add(word[:-2] + 'es')
+    elif word.endswith(('s', 'x', 'z', 'ch', 'sh', 'o')):
+        forms.add(word + 'es')
+    else:
+        forms.add(word + 's')
+    # Singular if the base was already plural (e.g. 'github actions' -> 'github action')
+    if word.endswith('ies') and len(word) > 3:
+        forms.add(word[:-3] + 'y')
+    elif word.endswith('es') and len(word) > 2 and not word.endswith(('ss', 'us', 'is')):
+        stem = word[:-2]
+        if len(stem) > 2:
+            forms.add(stem)
+    elif word.endswith('s') and not word.endswith(('ss', 'us')):
+        stem = word[:-1]
+        if len(stem) > 2:
+            forms.add(stem)
+    return forms
+
+
+def _verb_forms(word):
+    forms = set()
+    if word.endswith('e'):
+        base = word[:-1]
+        forms.add(base + 'ing')
+        forms.add(base + 'ed')
+    else:
+        forms.add(word + 'ing')
+        forms.add(word + 'ed')
+        # CVC doubling for monosyllabic / stressed-final verbs (debug -> debugging)
+        if len(word) >= 3:
+            c1, v, c2 = word[-3], word[-2], word[-1]
+            if (c1 not in 'aeiouy' and v in 'aeiou' and c2 not in 'aeiou' and c2 not in 'wxy'):
+                forms.add(word + c2 + 'ing')
+                forms.add(word + c2 + 'ed')
+    return forms
+
+
+def _term_variants(term):
+    """Return legitimate inflected forms for an evidence term (plural, gerund, past).
+    Does NOT treat arbitrary prefix words as equivalent."""
+    term = term.lower().strip()
+    if not term:
+        return {term}
+    variants = {term}
+    prefix, last = _split_term(term)
+    if _is_inflectable(last):
+        for plural in _plural_forms(last):
+            variants.add(prefix + plural)
+        for verb in _verb_forms(last):
+            variants.add(prefix + verb)
+    return variants
+
+
+# Small compile cache because rules are checked against every reply.
+_TERM_REGEX_CACHE = {}
+
+
 def evidence_term_regex(term):
-    """Match a required evidence term at a word boundary and allow common
-    related forms (plurals, gerunds, past tense, and compounds) so 'blog'
-    matches 'blogs' and 'debug' matches 'debugging', while still preventing
-    unrelated substrings like 'any' inside 'many'."""
-    return re.compile(r"\b" + re.escape(term.lower()) + r"[a-z0-9+#./-]*\b", re.I)
+    """Match a required evidence term at a word boundary and its explicit
+    inflected forms (plural, gerund, past) so 'blog' matches 'blogs' and
+    'debug' matches 'debugging', without treating unrelated words like
+    'json' as a form of 'js'."""
+    if term in _TERM_REGEX_CACHE:
+        return _TERM_REGEX_CACHE[term]
+    variants = _term_variants(term)
+    escaped = [re.escape(v) for v in sorted(variants, key=len, reverse=True)]
+    pattern = r"\b(?:" + "|".join(escaped) + r")\b"
+    regex = re.compile(pattern, re.I)
+    _TERM_REGEX_CACHE[term] = regex
+    return regex
 
 
 def check_reply(message, reply, response, prior_reply, latency):
