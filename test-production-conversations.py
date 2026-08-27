@@ -250,9 +250,9 @@ def expectations_for(message):
     add_rule(rules, r"chat free|daily caps|cooldowns", ("free", "cloudflare", "workers", "allocation", "rate", "limit", "github pages", "backend"), forbidden=("groq", "gemini", "github models"))
     add_rule(rules, r"example of his jobs", ("aws", "ciris", "case manager", "army", "kitten rescue"))
     add_rule(rules, r"how fast does he learn|mentorship help|learn on the job", ("learn", "mentor", "junior", "documentation"))
-    add_rule(rules, r"can he code", ("javascript", "react", "project", "code"), forbidden=("can't code", "cannot code"))
+    add_rule(rules, r"can he code", ("javascript", "js", "react", "project", "code", "coding"), forbidden=("can't code", "cannot code"))
     add_rule(rules, r"^what languages", ("javascript", "typescript", "html", "css", "sql"))
-    add_rule(rules, r"actual weaknesses|leetcode", ("algorithm", "data structure", "leetcode", "mentor", "junior"))
+    add_rule(rules, r"actual weaknesses|leetcode", ("algorithm", "algorithms", "data structure", "data structures", "dsa", "leetcode", "mentor", "mentorship", "junior"))
     add_rule(rules, r"resume link", ("resume", "portfolio", "contact", "http"))
     add_rule(rules, r"kitten rescue", ("kitten", "animal", "volunteer"))
     add_rule(rules, r"paid role", ("paid", "part-time", "volunteer"))
@@ -317,10 +317,12 @@ def check_reply(message, reply, response, prior_reply, latency):
     lower = text.lower()
     rules = expectations_for(message)
 
+    # Request-to-say controls ("say cobol") intentionally produce a single word.
+    is_request_to_say = re.search(r"\bsay\s+\w+", message, re.I)
     if len(text) < 8 and not (
         re.search(r"2\s*plus\s*2|2\+2|what\s+is\s+2\+2", message, re.I)
         and ("4" in text or text.lower() in {"four"})
-    ):
+    ) and not (is_request_to_say and len(text) >= 1):
         issues.append("reply is too short")
     if len(text.split()) > rules["max_words"]:
         issues.append(f"reply exceeds {rules['max_words']} words")
@@ -329,13 +331,13 @@ def check_reply(message, reply, response, prior_reply, latency):
     if latency > MAX_LATENCY_SECONDS:
         issues.append(f"latency {latency:.2f}s exceeds {MAX_LATENCY_SECONDS:.0f}s")
     for group in rules["any_groups"]:
-        if not any(term.lower() in lower for term in group):
+        if not any(re.search(r"\b" + re.escape(term.lower()) + r"\b", lower) for term in group):
             issues.append(f"missing evidence from {group}")
     for term in rules["all_terms"]:
-        if term.lower() not in lower:
+        if not re.search(r"\b" + re.escape(term.lower()) + r"\b", lower):
             issues.append(f"missing {term!r}")
     for term in rules["forbidden"]:
-        if term.lower() in lower:
+        if re.search(r"\b" + re.escape(term.lower()) + r"\b", lower):
             issues.append(f"contains forbidden {term!r}")
 
     boilerplate = (

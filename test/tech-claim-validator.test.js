@@ -317,6 +317,17 @@ test('deduplicates repeated technology mentions', () => {
   assert.equal(result.unsupportedTechs.length, 0);
 });
 
+test('generic service category followed by examples extracts the examples', () => {
+  const answer = 'Maria has used AWS services such as Lambda and S3.';
+  const evidence = 'Maria built Nebula Engine with AWS Lambda and S3 storage.';
+  const result = validateTechClaims(answer, evidence);
+  assert.equal(result.valid, true);
+  assert.equal(result.unsupportedTechs.length, 0);
+  assert.ok(result.details.some(d => d.technology === 'Lambda' && d.verdict === 'supported'));
+  assert.ok(result.details.some(d => d.technology === 'S3' && d.verdict === 'supported'));
+  assert.ok(!result.details.some(d => d.technology && d.technology.toLowerCase().startsWith('aws services')));
+});
+
 test('negation in one clause does not mask affirmative claim in another', () => {
   const answer = 'Maria does not use Kubernetes, but she uses Docker.';
   const evidence = 'Maria built Nebula Engine with Docker.';
