@@ -911,14 +911,14 @@ function buildPrompt(knowledge, question, history, provider) {
 // ============ RAG GENERATIVE LAYER ============
 // Retrieval over the full knowledge JSON + constrained generation on the local
 // warm local model, hard-capped at GEN_TIMEOUT_MS so answers stay
-// inside the 15-second budget. Grounded answer is the guaranteed fallback.
+// inside the configured budget. Grounded answer is the guaranteed fallback.
 const GEN_MODEL = process.env.GEN_MODEL || 'qwen2.5:1.5b';
-const GEN_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.GEN_TIMEOUT_MS || '12500', 10), 12500));
+const GEN_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.GEN_TIMEOUT_MS || '12500', 10), 60000));
 const GEN_ENABLED = process.env.GEN_ENABLED !== 'false';
 // Reserve enough time for retrieval, validation, response shaping, and tunnel
-// overhead while keeping the visitor-visible request below 15 seconds.
-const CHAT_GENERATION_BUDGET_MS = Math.min(GEN_TIMEOUT_MS, 10000);
-const CHAT_RESPONSE_BUDGET_MS = Math.min(CHAT_GENERATION_BUDGET_MS + 1000, 11000);
+// overhead while keeping the visitor-visible request below the configured deadline.
+const CHAT_GENERATION_BUDGET_MS = Math.min(GEN_TIMEOUT_MS, 60000);
+const CHAT_RESPONSE_BUDGET_MS = Math.min(CHAT_GENERATION_BUDGET_MS + 1000, 61000);
 
 async function resolveWithin(promise, budgetMs) {
   let timer;
@@ -1163,11 +1163,18 @@ const CONVERSATION_TTL_MS = 2 * 60 * 60 * 1000;
 const CONVERSATION_MAX_SESSIONS = 250;
 const CONVERSATION_MAX_TURNS = 5;
 
+const CONTROL_TURN_RE = /^(visitor name captured|user profile updated|control|system|memory|note):?/i;
+
 function sanitizeConversationTurns(history) {
   return (Array.isArray(history) ? history : []).slice(-CONVERSATION_MAX_TURNS).map(turn => ({
-    user: String(turn?.user || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 360),
-    assistant: String(turn?.assistant || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 480)
-  })).filter(turn => turn.user || turn.assistant);
+    user: String(turn?.user || (turn?.role === 'user' ? turn?.content : '')).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 360),
+    assistant: String(turn?.assistant || (turn?.role === 'assistant' ? turn?.content : '')).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 480)
+  })).filter(turn => {
+    if (!turn.user && !turn.assistant) return false;
+    if (turn.assistant && CONTROL_TURN_RE.test(turn.assistant)) return false;
+    if (turn.assistant && turn.assistant.length < 8) return false;
+    return true;
+  });
 }
 
 function getConversationHistory(sessionId, incomingHistory) {
@@ -1616,6 +1623,7 @@ app.post('/api/chat', async (req, res) => {
   const reqStart = Date.now();
   const referrer = extractReferrer(req);
   const pipeline = [];
+  let agentResult = null;
 
   // 15-second absolute request deadline with propagated cancellation.
   // The AbortController is request-scoped and passed through runLiteAgent
@@ -1776,7 +1784,6 @@ app.post('/api/chat', async (req, res) => {
     // 2. ALL queries go through generative inference. Deterministic code
     //    classifies, retrieves, and builds contracts but does NOT write prose.
     let generated = false;
-    let agentResult = null;
     let agentMeta = null;
     let agentEvents = null;
     let evidence = [];

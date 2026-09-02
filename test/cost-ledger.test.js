@@ -21,8 +21,40 @@ test('egress pricing includes the safety overhead factor', () => {
   assert.strictEqual(micro, Math.ceil(1.08 * 120000));
 });
 
-test('unknown sources cost zero', () => {
-  assert.strictEqual(priceEventMicroUsd('unknown', { tokensIn: 1000 }, registry), 0);
+test('unknown sources are unpriced', () => {
+  assert.strictEqual(priceEventMicroUsd('unknown', { tokensIn: 1000 }, registry), null);
+});
+
+test('known priced source produces a numeric shadow cost', () => {
+  const micro = priceEventMicroUsd('gcp-egress', { bytes: 1073741824 }, registry);
+  assert.strictEqual(micro, Math.ceil(1.08 * 120000));
+});
+
+test('known zero-cost source is legitimately 0 when explicitly configured', () => {
+  assert.strictEqual(priceEventMicroUsd('ollama', { tokensIn: 1000, tokensOut: 500 }, registry), 0);
+  assert.strictEqual(priceEventMicroUsd('agent-local-tools', { tokensIn: 1000 }, registry), 0);
+});
+
+test('unpriced source is marked unknown instead of $0', () => {
+  const ledger = makeLedger();
+  ledger.record({ source: 'cloudflare', kind: 'llm', tokensIn: 1000, tokensOut: 200 });
+  const snapshot = ledger.snapshot();
+  assert.strictEqual(snapshot.shadowCost.monthComplete, false);
+  assert.deepStrictEqual(snapshot.shadowCost.unpricedSources, ['cloudflare']);
+  assert.strictEqual(snapshot.bySourceMonth.cloudflare.unpriced, true);
+  assert.deepStrictEqual(snapshot.bySourceMonth.cloudflare.unpricedSources, ['cloudflare']);
+  // Shadow value is unknown, not $0; the numeric bucket stays 0 for known costs.
+  assert.strictEqual(snapshot.bySourceMonth.cloudflare.shadowMicroUsd, 0);
+});
+
+test('mixed known and unpriced sources preserve known subtotal and mark total incomplete', () => {
+  const ledger = makeLedger();
+  ledger.record({ source: 'gcp-egress', kind: 'egress', bytes: 1073741824 });
+  ledger.record({ source: 'cloudflare', kind: 'llm', tokensIn: 1000, tokensOut: 200 });
+  const snapshot = ledger.snapshot();
+  assert.strictEqual(snapshot.shadowCost.monthMicroUsd, Math.ceil(1.08 * 120000));
+  assert.strictEqual(snapshot.shadowCost.monthComplete, false);
+  assert.deepStrictEqual(snapshot.shadowCost.unpricedSources, ['cloudflare']);
 });
 
 test('records aggregate local inference across windows', () => {

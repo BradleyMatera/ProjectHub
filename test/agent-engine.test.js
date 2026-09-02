@@ -2026,7 +2026,7 @@ test('contract: comparison decision identifies a selected project', () => {
   assert.ok(c.directAnswer, 'should have a direct answer for comparison decision');
 });
 
-test('contract: recruiter recommendation gets YES polarity', () => {
+test('contract: recruiter recommendation does not force YES from evidence length', () => {
   const c = buildResponseContract(
     'Is he someone worth interviewing?',
     'Bradley has AWS internship, CIRIS freelance work, React and Node.js projects.',
@@ -2034,8 +2034,9 @@ test('contract: recruiter recommendation gets YES polarity', () => {
     []
   );
   assert.equal(c.intent, 'RECRUITER');
-  assert.equal(c.directAnswer, 'YES');
-  assert.ok(c.boundary, 'should have entry-level boundary');
+  assert.equal(c.directAnswer, null);
+  assert.equal(c.subIntent, 'RECRUITER_RECOMMENDATION');
+  assert.ok(c.boundary, 'should have an evidence-level boundary');
 });
 
 test('contract: job-fit with required skills gets FIT or PARTIAL_FIT', () => {

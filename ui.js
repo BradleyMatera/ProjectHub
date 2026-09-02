@@ -57,8 +57,14 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   })();
 
   function chatApiUrl() {
-    return window.__PROJECTHUB_CHAT_API__
-      || (/(^|\.)bradleymatera\.dev$/.test(window.location.hostname) ? "/.netlify/functions/recruiter-chat" : "https://projecthub-chat.bradleymatera.dev/api/chat");
+    if (window.__PROJECTHUB_CHAT_API__) return window.__PROJECTHUB_CHAT_API__;
+    if (window.location.pathname?.startsWith('/ProjectHub-dev/')) {
+      return 'https://dev.projecthub-chat.bradleymatera.dev/api/chat';
+    }
+    if (/(^|\.)bradleymatera\.dev$/.test(window.location.hostname)) {
+      return '/.netlify/functions/recruiter-chat';
+    }
+    return 'https://projecthub-chat.bradleymatera.dev/api/chat';
   }
 
   function escapeHtml(value) {
@@ -1200,10 +1206,10 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       const possibleName = extractVisitorName(userQuery);
       if (possibleName) {
         saveVisitorName(possibleName);
-        const greetingHtml = `Nice to meet you, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask me about his projects, AWS background, role fit, honest gaps, or contact details.`;
-        await typeNewBotMessage(greetingHtml);
+        const greetingText = `Nice to meet you, ${escapeHtml(visitorName)}. I’m Scout, Bradley’s assistant. Ask me about his projects, AWS background, role fit, honest gaps, or contact details.`;
+        await typeNewBotMessage(greetingText);
         rememberTurn("user", userQuery);
-        rememberTurn("assistant", `Visitor name captured as ${visitorName}`);
+        rememberTurn("assistant", greetingText);
         turnCount += 1;
         chatInput.value = "";
         resizeInput();
