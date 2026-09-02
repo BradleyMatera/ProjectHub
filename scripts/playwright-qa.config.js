@@ -9,7 +9,7 @@ module.exports = defineConfig({
   workers: 1,
   reporter: [['list'], ['json', { outputFile: '../qa-results/playwright-qa-playwright-report.json' }]],
   use: {
-    baseURL: 'https://bradleymatera.github.io',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'https://bradleymatera.github.io',
     ...devices['Desktop Chrome'],
     headless: true,
     viewport: { width: 1280, height: 900 },

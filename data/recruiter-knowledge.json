@@ -181,6 +181,7 @@
       "SQL"
     ],
     "cloudAndInfrastructure": [
+      "AWS",
       "AWS Lambda",
       "Amazon DynamoDB",
       "Amazon S3",
@@ -440,7 +441,10 @@
       "aliases": [
         "Pokedex",
         "pokedex"
-      ]
+      ],
+      "repo": "https://github.com/BradleyMatera/Interactive-Pokedex",
+      "platform": "GitHub Pages",
+      "deploymentUrl": "https://bradleymatera.github.io/Interactive-Pokedex/"
     },
     {
       "name": "CheeseMath",
@@ -450,7 +454,10 @@
         "JavaScript",
         "Jest"
       ],
-      "category": "Frontend / testing demo"
+      "category": "Frontend / testing demo",
+      "repo": "https://github.com/BradleyMatera/CheeseMath-Jest-Tests",
+      "platform": "GitHub Pages",
+      "deploymentUrl": "https://bradleymatera.github.io/CheeseMath-Jest-Tests/"
     },
     {
       "name": "Secrets & Environment Variables Demo",
@@ -461,7 +468,10 @@
         "HTML",
         "CSS"
       ],
-      "category": "Frontend / security education"
+      "category": "Frontend / security education",
+      "repo": "https://github.com/BradleyMatera/EthicsFrontEndDemo",
+      "platform": "GitHub Pages",
+      "deploymentUrl": "https://bradleymatera.github.io/EthicsFrontEndDemo/"
     },
     {
       "name": "Animal Sounds",
@@ -472,7 +482,10 @@
         "HTML",
         "CSS"
       ],
-      "category": "Frontend demo"
+      "category": "Frontend demo",
+      "repo": "https://github.com/BradleyMatera/AnimalSounds",
+      "platform": "GitHub Pages",
+      "deploymentUrl": "https://bradleymatera.github.io/AnimalSounds/"
     },
     {
       "name": "Triangle Shader Lab",
@@ -483,7 +496,10 @@
         "JavaScript",
         "HTML"
       ],
-      "category": "Frontend / graphics demo"
+      "category": "Frontend / graphics demo",
+      "repo": "https://github.com/BradleyMatera/TriangleDemo",
+      "platform": "GitHub Pages",
+      "deploymentUrl": "https://bradleymatera.github.io/TriangleDemo/"
     },
     {
       "name": "AWS Serverless Metadata Extraction Workflow",
@@ -505,7 +521,8 @@
         "AWS internship capstone",
         "capstone",
         "internship capstone"
-      ]
+      ],
+      "deploymentUrl": null
     },
     {
       "name": "AWS Infrastructure Cost-Analysis Model",
@@ -516,7 +533,8 @@
         "Data analysis",
         "Modeling"
       ],
-      "category": "Cloud / internship project"
+      "category": "Cloud / internship project",
+      "deploymentUrl": null
     },
     {
       "name": "CIRIS Ethical AI",
@@ -532,7 +550,8 @@
       "aliases": [
         "CIRIS",
         "ciris"
-      ]
+      ],
+      "deploymentUrl": null
     },
     {
       "name": "ProjectHub (Scout)",
@@ -562,7 +581,10 @@
         "Scout",
         "projecthub",
         "scout"
-      ]
+      ],
+      "repo": "https://github.com/BradleyMatera/ProjectHub",
+      "platform": "GitHub Pages",
+      "deploymentUrl": "https://bradleymatera.github.io/ProjectHub/"
     },
     {
       "name": "Fallen Knight: Requiem of Honor",
@@ -573,7 +595,8 @@
       "aliases": [
         "Fallen Knight",
         "Requiem of Honor"
-      ]
+      ],
+      "deploymentUrl": "https://itch.io/jam/kajam/rate/3114394"
     },
     {
       "name": "Voice Ops Platform",
@@ -592,7 +615,10 @@
         "Operations"
       ],
       "category": "Full-stack platform",
-      "type": "platform"
+      "type": "platform",
+      "repo": "https://github.com/BradleyMatera/voice-ops-platform",
+      "platform": "GitHub",
+      "deploymentUrl": "https://github.com/BradleyMatera/voice-ops-platform"
     }
   ],
   "codePens": [
@@ -749,6 +775,34 @@
     {
       "question": "How much does ProjectHub cost to run?",
       "answer": "The goal is zero ongoing cost. GitHub Pages hosts the frontend, an Always Free eligible GCP e2-micro VM runs Node and local Ollama inference, and Caddy with Let's Encrypt handles HTTPS. There is no hosted AI API, paid database, or serverless function dependency."
+    },
+    {
+      "question": "Can I hire Bradley to set up my website?",
+      "answer": "Yes. Bradley's public professional site lists website design, website repair, small-business website builds, local SEO, Google Business Profile work, hosting, maintenance, and consultations. Contact him through https://bradleymatera.dev/ or bradmatera@gmail.com to discuss scope."
+    },
+    {
+      "question": "Does Bradley freelance?",
+      "answer": "Yes. He accepts freelance and small-business web work. Specific availability and scope require direct contact."
+    },
+    {
+      "question": "Does Bradley do SEO?",
+      "answer": "He lists local SEO and Google Business Profile work among his services. The exact scope depends on the project."
+    },
+    {
+      "question": "Can Bradley repair a website?",
+      "answer": "Yes, website repair is listed as one of his services on https://bradleymatera.dev/."
+    },
+    {
+      "question": "What are the URLs for Bradley's projects?",
+      "answer": "ProjectHub live https://bradleymatera.github.io/ProjectHub/ repo https://github.com/BradleyMatera/ProjectHub. Interactive Pokedex live https://bradleymatera.github.io/Interactive-Pokedex/ repo https://github.com/BradleyMatera/Interactive-Pokedex. CheeseMath live https://bradleymatera.github.io/CheeseMath-Jest-Tests/ repo https://github.com/BradleyMatera/CheeseMath-Jest-Tests. Voice Ops Platform repo https://github.com/BradleyMatera/voice-ops-platform. Other demos are on his portfolio or CodePen."
+    },
+    {
+      "question": "What is Bradley's work ethic?",
+      "answer": "I can't directly measure Bradley's work ethic, but the documented record shows concrete signals: he completed an AWS internship, contributed code and documentation to CIRIS Ethical AI, served as a U.S. Army combat medic with an honorable discharge, and stayed organized across case management and volunteer roles. That is evidence of responsibility and persistence, not a personal testimonial."
+    },
+    {
+      "question": "Why is Bradley a good junior candidate?",
+      "answer": "He is a strong junior candidate because he learns quickly, documents what he learns, debugs carefully, and can work through unclear problems. He has a B.S. in Web Development, AWS support training and certifications, project experience with JavaScript, React, Node.js, and Docker, and transferable skills from the U.S. Army, case management, and volunteer work. His honest gaps include data structures and algorithms and architecting from a blank file, but he improves well with mentorship."
     }
   ],
   "sitesAndProperties": {
@@ -9736,12 +9790,6 @@
       "category": "education"
     },
     {
-      "id": "big-tech-companies",
-      "triggerPattern": "\\b(google|microsoft|apple|meta|facebook|netflix|tesla|openai|anthropic)\\b",
-      "correction": "He has not worked at this company. His tech experience is AWS internship and CIRIS freelance.",
-      "category": "employment"
-    },
-    {
       "id": "kubernetes-cert",
       "triggerPattern": "\\b(kubernetes|cka|ckad)\\b",
       "correction": "He does not have a Kubernetes certification. His certs are AWS SAA and AWS AI Practitioner.",
@@ -9768,380 +9816,70 @@
   ],
   "directAnswers": [
     {
-      "id": "masters-degree",
-      "intents": [
-        "adversarial_deny"
-      ],
-      "questionPatterns": [
-        "master'?s",
-        "phd",
-        "doctorate",
-        "postdoc"
-      ],
-      "answer": "He does not have a master's degree or PhD. His education is a Bachelor of Science in Web Development from Full Sail University.",
-      "sourceIds": [
-        "education"
-      ]
+      "id": "why-good-junior-candidate",
+      "answer": "Bradley is a strong junior candidate because he learns quickly, documents what he learns, debugs carefully, and communicates well under pressure. He has a B.S. in Web Development, AWS support training and certifications, project experience with JavaScript, React, Node.js, and Docker, and transferable skills from the U.S. Army, case management, and volunteer work. His honest gaps include data structures and algorithms and architecting from a blank file, but he improves well with mentorship."
     },
     {
-      "id": "production-incident",
-      "intents": [
-        "adversarial_deny"
-      ],
-      "questionPatterns": [
-        "production.*incident"
-      ],
-      "answer": "He did not handle production AWS incidents. Public evidence does not document production incident response.",
-      "sourceIds": [
-        "experience",
-        "boundaries.no-production-aws"
-      ]
+      "id": "what-can-scout-tell-me",
+      "answer": "Scout can answer questions about Bradley's projects, skills, professional experience, AWS background, education, certifications, career goals, and public contact information. Scout can also explain its own runtime, model, provider, and usage. It does not answer general knowledge questions outside that scope."
     },
     {
-      "id": "senior-engineer",
-      "intents": [
-        "adversarial_deny"
-      ],
-      "questionPatterns": [
-        "senior.*engineer",
-        "lead.*engineer",
-        "principal.*engineer",
-        "senior.*developer",
-        "lead.*developer",
-        "senior.*architect"
-      ],
-      "answer": "He was not a senior or lead engineer. Public evidence does not document those roles.",
-      "sourceIds": [
-        "boundaries.no-senior-level"
-      ]
+      "id": "work-ethic-interpretation",
+      "answer": "I can't directly measure Bradley's work ethic, but the documented record shows reliable signals: he completed an AWS internship, contributed code and documentation to CIRIS Ethical AI, served as a U.S. Army combat medic with an honorable discharge, and stayed organized across case management and volunteer roles. That is evidence of responsibility and persistence, not a personal testimonial."
     },
     {
-      "id": "team-management",
-      "intents": [
-        "adversarial_deny"
-      ],
-      "questionPatterns": [
-        "manag\\w+\\s+(?:a\\s+)?team"
-      ],
-      "answer": "He did not manage a team. Public evidence does not document team management.",
-      "sourceIds": [
-        "boundaries.no-team-management"
-      ]
+      "id": "project-links",
+      "answer": "ProjectHub is live at https://bradleymatera.github.io/ProjectHub/ and its source is at https://github.com/BradleyMatera/ProjectHub. The Interactive Pokedex is live at https://bradleymatera.github.io/Interactive-Pokedex/ and its source is at https://github.com/BradleyMatera/Interactive-Pokedex. CheeseMath is live at https://bradleymatera.github.io/CheeseMath-Jest-Tests/ and its source is at https://github.com/BradleyMatera/CheeseMath-Jest-Tests."
     },
     {
-      "id": "contact-info",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "how can i contact",
-        "contact bradley",
-        "contact info",
-        "\\bemail\\b",
-        "phone number"
-      ],
-      "answer": "You can contact Bradley through the contact form at bradleymatera.dev, by email at bradmatera@gmail.com, by phone at [phone withheld], or on LinkedIn at linkedin.com/in/bradmatera.",
-      "sourceIds": [
-        "identity.contact"
-      ]
-    },
-    {
-      "id": "gpa-public",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "gpa",
-        "grade point average",
-        "what was.*gpa"
-      ],
-      "answer": "Bradley's GPA was 3.64.",
-      "sourceIds": [
-        "education"
-      ]
-    },
-    {
-      "id": "helm-role",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "what role.*(?:accept|helm)",
-        "which role.*(?:accept|helm)",
-        "role.*\\bhelm\\b"
-      ],
-      "answer": "Bradley accepted an ERP Support Specialist role at Helm Group.",
-      "sourceIds": [
-        "identity.careerStatus"
-      ]
-    },
-    {
-      "id": "react-skill",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "does .* know react",
-        "do .* know react",
-        "is .* proficient in react",
-        "\\breact\\b.*\\b(know|use|have)\\b",
-        "\\b(know|use|have)\\b.*\\breact\\b"
-      ],
-      "answer": "Yes, Bradley knows React. He has used it in ProjectHub and other projects.",
-      "sourceIds": [
-        "skills",
-        "projects"
-      ]
-    },
-    {
-      "id": "rust-not-documented",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "does .* (?:know|use|code in) rust",
-        "can .* code in rust",
-        "is .* proficient in rust",
-        "\\brust\\b.*\\bskill"
-      ],
-      "answer": "That language is not one of Bradley's documented skills. His documented skills include JavaScript, TypeScript, React, Node.js, and AWS.",
-      "sourceIds": [
-        "skills"
-      ]
-    },
-    {
-      "id": "school-attended",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "what.*school",
-        "where.*study",
-        "where.*go to school",
-        "what.*university",
-        "where.*attend"
-      ],
-      "answer": "Bradley attended Full Sail University, where he earned a Bachelor of Science in Web Development (B.S.).",
-      "sourceIds": [
-        "education"
-      ]
-    },
-    {
-      "id": "tech-stack",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "^(?!.*projecthub).*?what.*technolog",
-        "^(?!.*projecthub).*?what.*tech.*use",
-        "what.*tech stack",
-        "what.*skills.*(?:have|use)",
-        "what.*(?:languages|frameworks).*use"
-      ],
-      "answer": "Bradley's documented skills include JavaScript, TypeScript, React, Node.js, SQL, AWS, Git, and related web technologies.",
-      "sourceIds": [
-        "skills"
-      ]
-    },
-    {
-      "id": "web-projects",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "^(?!.*projecthub).*?(?:web project|some of.*project|what.*project.*work|tell me about.*project)"
-      ],
-      "answer": "Bradley's web projects include ProjectHub, an interactive Pokedex, CheeseMath, a Voice Ops Platform, CodePen experiments, and CIRIS Ethical AI. Details and links are available in the projects section.",
-      "sourceIds": [
-        "projects"
-      ]
-    },
-    {
-      "id": "projecthub-summary",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "what is projecthub",
-        "tell me about projecthub"
-      ],
-      "answer": "ProjectHub is an embeddable, AI-powered recruiter chat widget and portfolio site that showcases Bradley Matera's web development projects and CodePens. It is built with vanilla JavaScript and served from GitHub Pages, and its live analytics dashboard is built with Vite and Carbon. It is powered by Scout, a portable generative intelligence engine Bradley is building.",
-      "sourceIds": [
-        "projects",
-        "summary"
-      ]
-    },
-    {
-      "id": "projecthub-tech",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "what.*technology.*projecthub.*use",
-        "what.*tech.*projecthub.*use",
-        "what stack.*projecthub"
-      ],
-      "answer": "ProjectHub uses vanilla JavaScript, HTML/CSS, GitHub Pages, and a Vite + Carbon Design System bundle for the live analytics dashboard. The Scout backend uses Node.js and Cloudflare Workers AI for inference.",
-      "sourceIds": [
-        "projects",
-        "summary"
-      ]
-    },
-    {
-      "id": "aws-experience",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "what.*aws.*(?:do|work|experience)",
-        "aws.*(?:do|experience|work)",
-        "what did.*do at aws"
-      ],
-      "answer": "Bradley completed an AWS support engineering internship from May 2025 to August 2025. The work focused on guided troubleshooting labs, support engineering training, and a serverless capstone project using Lambda, DynamoDB, S3, and Amplify.",
-      "sourceIds": [
-        "experience",
-        "education"
-      ]
-    },
-    {
-      "id": "aws-production-tickets",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "production.*aws.*ticket",
-        "production.*ticket",
-        "worked production"
-      ],
-      "answer": "No, Bradley has not worked production AWS tickets. His AWS experience is from the internship training and capstone project.",
-      "sourceIds": [
-        "experience",
-        "boundaries.no-production-aws"
-      ]
-    },
-    {
-      "id": "kubernetes-skill",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "does .* know kubernetes",
-        "do .* know kubernetes",
-        "\\bkubernetes\\b.*\\bskill",
-        "\\bkubernetes\\b.*\\b(use|have)"
-      ],
-      "answer": "That technology is not one of Bradley's documented skills. His documented skills include JavaScript, TypeScript, React, Node.js, and AWS.",
-      "sourceIds": [
-        "skills"
-      ]
-    },
-    {
-      "id": "kubernetes-certification",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "kubernetes.*certification",
-        "certification.*kubernetes",
-        "\\bcka\\b",
-        "\\bckad\\b"
-      ],
-      "answer": "No, Bradley does not have a certification in that technology. His certifications are AWS Certified Solutions Architect - Associate and AWS Certified AI Practitioner.",
-      "sourceIds": [
-        "certifications"
-      ]
-    },
-    {
-      "id": "microsoft-employment",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "work at microsoft",
-        "microsoft.*work",
-        "did .* work.*microsoft"
-      ],
-      "answer": "There is no verified record of Bradley working at Microsoft. His documented work history does not include Microsoft.",
-      "sourceIds": [
-        "experience"
-      ]
-    },
-    {
-      "id": "biggest-weakness",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "what is (?:your|bradley'?s|his) biggest weakness",
-        "\\b(?:his|bradley'?s) biggest weakness"
-      ],
-      "answer": "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
-      "sourceIds": [
-        "interviewStories.7",
-        "faq.1"
-      ]
-    },
-    {
-      "id": "weaknesses",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "what are (?:bradley'?s|his) weaknesses",
-        "\\b(?:his|bradley'?s) weaknesses"
-      ],
-      "answer": "His biggest current gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He cannot reliably solve most LeetCode-style problems on his own yet, and he struggles to architect solutions from scratch for unfamiliar problems. He is aware of the gap, willing to put in the work to fix it, and learns well with mentorship.",
-      "sourceIds": [
-        "faq.1",
-        "interviewStories.7"
-      ]
-    },
-    {
-      "id": "main-weakness",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "what is (?:your|bradley'?s|his) (?:main|primary|greatest|worst) weakness",
-        "\\b(?:his|bradley'?s) (?:main|primary|greatest|worst) weakness"
-      ],
-      "answer": "His main documented gap is data structures and algorithms (DSA). He has taken Udemy courses and discussed the math with others, but he has never had production mentorship in DSA and has no formal computer science education. He is aware of the gap and is willing to improve with mentorship.",
-      "sourceIds": [
-        "interviewStories.7",
-        "faq.1"
-      ]
-    },
-    {
-      "id": "bad-at",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "what is (?:bradley|he) bad at",
-        "what.*(?:bradley|he).*bad at",
-        "\\b(?:bradley|he) is bad at"
-      ],
-      "answer": "The public profile does not document what Bradley is bad at. His documented learning/gap areas include data structures and algorithms (DSA), turning brand-new problems into working code from a blank file, most LeetCode-style problems, choosing the right data structure or algorithm for unfamiliar production problems, ERP concepts and business workflows, and software support and user support fundamentals.",
-      "sourceIds": [
-        "summary.honestGaps",
-        "skills.learningOrAdjacent"
-      ]
-    },
-    {
-      "id": "current-progress-gaps",
-      "intents": [
-        "direct"
-      ],
-      "questionPatterns": [
-        "is (?:he|bradley) (?:working|making progress|improving|addressing) on (?:those|these|his) gaps",
-        "does (?:he|bradley) (?:work on|improve|address) (?:those|these|his) gaps",
-        "is (?:he|bradley) (?:currently|actively) (?:working|improving|studying) on (?:those|these|his) gaps"
-      ],
-      "answer": "There is no verified public evidence of current progress on those documented gaps. The profile lists them as learning/gap areas but does not establish that he is currently working on them.",
-      "sourceIds": [
-        "summary.honestGaps",
-        "interviewStories.6"
-      ]
+      "id": "website-hire",
+      "answer": "Yes, Bradley offers website design, website repair, small-business website builds, local SEO, Google Business Profile work, hosting, maintenance, and consultations. The best way to ask about a project is through https://bradleymatera.dev/ or bradmatera@gmail.com."
     }
-  ]
+  ],
+  "business": {
+    "services": [
+      {
+        "name": "Website design",
+        "description": "Design and build small-business websites.",
+        "url": "https://bradleymatera.dev/"
+      },
+      {
+        "name": "Website repair",
+        "description": "Fix broken or outdated sites.",
+        "url": "https://bradleymatera.dev/"
+      },
+      {
+        "name": "Small-business website builds",
+        "description": "End-to-end builds for small businesses.",
+        "url": "https://bradleymatera.dev/"
+      },
+      {
+        "name": "Local SEO",
+        "description": "Local search optimization for small businesses.",
+        "url": "https://bradleymatera.dev/"
+      },
+      {
+        "name": "Google Business Profile",
+        "description": "Set up and optimize Google Business Profiles.",
+        "url": "https://bradleymatera.dev/"
+      },
+      {
+        "name": "Hosting and maintenance",
+        "description": "Ongoing hosting and maintenance support.",
+        "url": "https://bradleymatera.dev/"
+      },
+      {
+        "name": "Consultations",
+        "description": "General web and IT consultations.",
+        "url": "https://bradleymatera.dev/"
+      }
+    ],
+    "availability": "Bradley accepts freelance and small-business web work. The best way to ask about a project is through the contact options on https://bradleymatera.dev/.",
+    "contact": {
+      "portfolio": "https://bradleymatera.dev/",
+      "email": "bradmatera@gmail.com",
+      "phone": "(608) 313-5373"
+    },
+    "notes": "These services are based on the current public professional website. Specific project scope, pricing, and timeline require direct contact."
+  }
 }
