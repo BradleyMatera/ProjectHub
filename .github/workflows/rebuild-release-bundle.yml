@@ -1,0 +1,24 @@
+name: Rebuild release bundle
+
+on:
+  push:
+    branches:
+      - release/scout-prod-2026-09-02
+
+permissions:
+  contents: read
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Rebuild canonical ProjectHub.js
+        run: |
+          { cat data.js; printf '\n'; cat utils.js; printf '\n'; cat logic.js; printf '\n'; cat ui.js; } > ProjectHub.js
+      - name: Upload rebuilt bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: rebuilt-projecthub-bundle
+          path: ProjectHub.js
+          if-no-files-found: error
