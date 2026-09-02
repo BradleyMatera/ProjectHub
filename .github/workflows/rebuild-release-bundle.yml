@@ -6,19 +6,26 @@ on:
       - release/scout-prod-2026-09-02
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   rebuild:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: release/scout-prod-2026-09-02
       - name: Rebuild canonical ProjectHub.js
         run: |
           { cat data.js; printf '\n'; cat utils.js; printf '\n'; cat logic.js; printf '\n'; cat ui.js; } > ProjectHub.js
-      - name: Upload rebuilt bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: rebuilt-projecthub-bundle
-          path: ProjectHub.js
-          if-no-files-found: error
+      - name: Commit rebuilt bundle when changed
+        run: |
+          if git diff --quiet -- ProjectHub.js; then
+            echo "ProjectHub.js already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ProjectHub.js
+          git commit -m "build: refresh canonical ProjectHub.js bundle"
+          git push origin HEAD:release/scout-prod-2026-09-02
