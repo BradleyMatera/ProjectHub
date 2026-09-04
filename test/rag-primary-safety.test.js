@@ -128,6 +128,42 @@ test('C. invalid primary + fewer-reason repair still rejects', async () => {
   assert.strictEqual(result.generationCalls[1].accepted, false);
 });
 
+test('primary prose reaches validation and the user unchanged, including dotted technology names', async () => {
+  const answer = 'Ada used Node.js for a small service. She also used SQL for reports. Her work was supervised training, not production ownership.';
+  const { runRagPrimaryAgent } = freshAgent((candidate) => {
+    assert.strictEqual(candidate, answer);
+    return makeValid();
+  });
+  makeRouter([answer]);
+  const result = await runRagPrimaryAgent({
+    question: 'What skills does Ada use?',
+    conversationState: { recentTurns: [] },
+    evidence: [{ kind: 'skills', description: answer, evidenceScore: 1 }],
+    knowledge: { identity: { name: 'Ada' }, skills: { technical: ['Node.js', 'SQL'] }, projects: [], experience: [] },
+    sessionId: 'unchanged-primary',
+    policyContract: { mode: null }
+  });
+  assert.strictEqual(result.reply, answer);
+  assert.strictEqual(result.rawPrimary, answer);
+});
+
+test('repair cannot bypass a validator rejection of leaked internal language', async () => {
+  const { runRagPrimaryAgent } = freshAgent(() => makeInvalid(['leaked_internal_language']));
+  const tracker = makeRouter(['An unsupported relationship was detected.', 'The entity is not grounded in the supplied facts.']);
+  const result = await runRagPrimaryAgent({
+    question: 'What skills does Ada use?',
+    conversationState: { recentTurns: [] },
+    evidence: baseEvidence,
+    knowledge: baseKnowledge,
+    sessionId: 'repair-scaffolding',
+    policyContract: { mode: null }
+  });
+  assert.strictEqual(result.reply, null);
+  assert.strictEqual(result.proseSource, 'TECHNICAL_ERROR');
+  assert.strictEqual(tracker.calls, 2);
+  assert.ok(result.generationCalls.every(call => !call.accepted));
+});
+
 test('D. valid primary uses exactly one provider call', async () => {
   const { runRagPrimaryAgent } = freshAgent(() => makeValid());
   const tracker = makeRouter(['Bradley did not work at Google.']);
