@@ -186,3 +186,49 @@ test('D. valid primary uses exactly one provider call', async () => {
   assert.strictEqual(result.generationCalls[0].accepted, true);
   assert.strictEqual(result.validation.valid, true);
 });
+
+test('E. visitor name colliding with a subject alias stays a control turn', async () => {
+  const { runRagPrimaryAgent } = freshAgent(() => makeValid());
+  const tracker = makeRouter(["Nice to meet you, Brad. I am Scout, Bradley's recruiter assistant."]);
+  const knowledge = {
+    ...baseKnowledge,
+    identity: { ...baseKnowledge.identity, preferredName: 'Brad' },
+    subjectAliases: ['Bradley', 'Brad', 'Matera']
+  };
+
+  const result = await runRagPrimaryAgent({
+    question: 'my names brad',
+    conversationState: { recentTurns: [] },
+    evidence: baseEvidence,
+    knowledge,
+    sessionId: 'test-e',
+    policyContract: { mode: 'USER_PROFILE_UPDATE', visitorName: 'Brad' }
+  });
+
+  assert.strictEqual(result.operation, 'control');
+  assert.strictEqual(result.reply, "Nice to meet you, Brad. I am Scout, Bradley's recruiter assistant.");
+  assert.strictEqual(tracker.calls, 1);
+});
+
+test('F. a distinct subject mention still forces the substantive path', async () => {
+  const { runRagPrimaryAgent } = freshAgent(() => makeValid());
+  const tracker = makeRouter(['Bradley uses React in ProjectHub.']);
+  const knowledge = {
+    ...baseKnowledge,
+    identity: { ...baseKnowledge.identity, preferredName: 'Brad' },
+    subjectAliases: ['Bradley', 'Brad', 'Matera']
+  };
+
+  const result = await runRagPrimaryAgent({
+    question: 'my name is alex, what does bradley know?',
+    conversationState: { recentTurns: [] },
+    evidence: baseEvidence,
+    knowledge,
+    sessionId: 'test-f',
+    policyContract: { mode: 'USER_PROFILE_UPDATE', visitorName: 'Alex' }
+  });
+
+  assert.notStrictEqual(result.operation, 'control');
+  assert.strictEqual(result.reply, 'Bradley uses React in ProjectHub.');
+  assert.ok(tracker.calls >= 1);
+});
