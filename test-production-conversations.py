@@ -17,9 +17,13 @@ Usage:
 """
 
 import argparse
+import base64
+from contextlib import ExitStack
+import http.client
 import json
 import os
 import re
+import tempfile
 import time
 import uuid
 import urllib.error
@@ -209,8 +213,37 @@ def send_message(url, message, session_id, history, diagnose=False):
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=20) as response:
-        return json.loads(response.read().decode("utf-8"))
+    result = {
+        "response": {}, "httpStatus": None, "httpHeaders": [],
+        "rawBody": "", "transportError": None, "decodeError": None,
+    }
+    body = b""
+    try:
+        try:
+            response = urllib.request.urlopen(request, timeout=20)
+        except urllib.error.HTTPError as error:
+            response = error
+        with response:
+            result["httpStatus"] = response.code
+            result["httpHeaders"] = list(response.headers.items())
+            try:
+                body = response.read()
+            except http.client.IncompleteRead as error:
+                body = error.partial
+                raise
+    except (urllib.error.URLError, OSError, http.client.HTTPException) as error:
+        result["transportError"] = f"{type(error).__name__}: {error}"
+    result["rawBody"] = body.decode("utf-8", errors="replace")
+    if body or not result["transportError"]:
+        try:
+            parsed = json.loads(body.decode("utf-8"))
+            if not isinstance(parsed, dict):
+                raise ValueError("response JSON is not an object")
+            result["response"] = parsed
+        except (ValueError, UnicodeError) as error:
+            result["decodeError"] = f"{type(error).__name__}: {error}"
+            result["rawBodyBase64"] = base64.b64encode(body).decode("ascii")
+    return result
 
 
 def add_rule(rules, pattern, any_terms=(), all_terms=(), forbidden=(), max_words=None):
@@ -451,7 +484,7 @@ def check_reply(message, reply, response, prior_reply, latency):
     return issues
 
 
-def classify_failure(issues, response, latency):
+def classify_semantic_failure(issues, response, latency):
     error = response.get("error")
     agent = response.get("agent") or response.get("agentMeta") or {}
     contract = response.get("contract") or {}
@@ -475,14 +508,91 @@ def classify_failure(issues, response, latency):
     return "OTHER"
 
 
-def run(url, selected, verbose, delay, diagnose=False):
+def candidate_validation(response):
+    diagnostics = response.get("diagnostics") or {}
+    containers = [response, response.get("agent") or {}, response.get("agentMeta") or {},
+                  diagnostics, diagnostics.get("agentMeta") or {}]
+    calls = []
+    for container in containers:
+        for call in container.get("generationCalls") or []:
+            if isinstance(call, dict) and call not in calls:
+                calls.append(call)
+    checked = [call for call in calls if call.get("validationVerdict") or call.get("validationReasons")]
+    rejected = [call for call in checked if call.get("accepted") is False]
+    observed = bool(checked)
+    return {
+        "validatorRejectedCandidates": bool(rejected) if observed else None,
+        "validationObserved": observed,
+        "rejectedCandidates": rejected,
+    }
+
+
+def failure_classes(issues, response, latency, http_status=None, transport_error=None, decode_error=None):
+    classes = []
+    if http_status == 429:
+        classes.append("RATE_LIMIT")
+    if ((http_status is not None and http_status >= 500) or transport_error
+            or (decode_error and (http_status is None or 200 <= http_status < 300))):
+        classes.append("INFRASTRUCTURE")
+    if http_status is not None and not 200 <= http_status < 300 and http_status != 429 and http_status < 500:
+        classes.append("HTTP_ERROR")
+    if latency > MAX_LATENCY_SECONDS:
+        classes.append("LATENCY")
+    semantic_issues = [issue for issue in issues if not issue.startswith(("latency ", "request failed:", "HTTP status ", "invalid response:"))]
+    if semantic_issues and (http_status is None or 200 <= http_status < 300) and not transport_error and not decode_error:
+        semantic = classify_semantic_failure(semantic_issues, response, latency)
+        if response.get("error") == "INFERENCE_UNAVAILABLE" and candidate_validation(response)["validatorRejectedCandidates"] and semantic != "DEADLINE":
+            semantic = "VALIDATION"
+        classes.append(semantic)
+    return list(dict.fromkeys(classes))
+
+
+def classify_failure(issues, response, latency, http_status=None, transport_error=None, decode_error=None):
+    classes = failure_classes(issues, response, latency, http_status, transport_error, decode_error)
+    return classes[0] if classes else "OTHER"
+
+
+def output_paths(summary_output=None, diagnostics_output=None):
+    prefix = os.path.join(tempfile.gettempdir(), f"scout-production-{uuid.uuid4().hex}")
+    summary_path = os.path.abspath(os.path.expanduser(summary_output or prefix + "-results.json"))
+    diagnostics_path = os.path.abspath(os.path.expanduser(diagnostics_output or prefix + "-diagnostics.json"))
+    if os.path.normcase(summary_path) == os.path.normcase(diagnostics_path):
+        raise ValueError("Summary and diagnostics must use different output paths")
+    return summary_path, diagnostics_path
+
+
+def write_json(handle, value):
+    handle.seek(0)
+    json.dump(value, handle, indent=2, ensure_ascii=False)
+    handle.write("\n")
+    handle.truncate()
+    handle.flush()
+
+
+def run(url, selected, verbose, delay, diagnose=False, scenario_cooldown=0.0,
+        summary_output=None, diagnostics_output=None):
+    summary_path, diagnostics_path = output_paths(summary_output, diagnostics_output)
+    with ExitStack() as stack:
+        summary_handle = stack.enter_context(open(summary_path, "x", encoding="utf-8"))
+        diagnostics_handle = stack.enter_context(open(diagnostics_path, "x", encoding="utf-8"))
+        print(f"Detailed results: {summary_path}")
+        print(f"Per-turn diagnostics: {diagnostics_path}")
+        return run_conversations(url, selected, verbose, delay, diagnose, scenario_cooldown,
+                                 summary_handle, diagnostics_handle)
+
+
+def run_conversations(url, selected, verbose, delay, diagnose, scenario_cooldown,
+                      summary_handle, diagnostics_handle):
     failures = []
     total_turns = 0
     session_passes = 0
     results = []
     diagnostics = []
 
-    for name, turns in selected:
+    write_json(diagnostics_handle, diagnostics)
+    for scenario_index, (name, turns) in enumerate(selected):
+        if scenario_index and scenario_cooldown:
+            time.sleep(scenario_cooldown)
         session_id = f"prod-regression-{uuid.uuid4()}"
         history = []
         previous_reply = ""
@@ -493,18 +603,27 @@ def run(url, selected, verbose, delay, diagnose=False):
         for index, message in enumerate(turns, 1):
             if delay and total_turns:
                 time.sleep(delay)
-            started = time.time()
-            try:
-                response = send_message(url, message, session_id, history, diagnose=diagnose)
-                latency = time.time() - started
-                reply = str(response.get("reply") or "")
-                issues = check_reply(message, reply, response, previous_reply, latency)
-            except (urllib.error.URLError, TimeoutError, ValueError) as error:
-                latency = time.time() - started
-                response = {}
-                reply = ""
-                issues = [f"request failed: {error}"]
-
+            request_history = [dict(turn) for turn in history[-5:]]
+            started = time.monotonic()
+            exchange = send_message(url, message, session_id, history, diagnose=diagnose)
+            latency = time.monotonic() - started
+            response = exchange["response"]
+            reply = str(response.get("reply") or "")
+            issues = []
+            if exchange["transportError"]:
+                issues.append(f"request failed: {exchange['transportError']}")
+            if exchange["decodeError"]:
+                issues.append(f"invalid response: {exchange['decodeError']}")
+            http_status = exchange["httpStatus"]
+            if http_status is not None and not 200 <= http_status < 300:
+                issues.append(f"HTTP status {http_status}")
+            if http_status is not None and 200 <= http_status < 300 and not exchange["transportError"] and not exchange["decodeError"]:
+                issues.extend(check_reply(message, reply, response, previous_reply, latency))
+            elif latency > MAX_LATENCY_SECONDS:
+                issues.append(f"latency {latency:.2f}s exceeds {MAX_LATENCY_SECONDS:.0f}s")
+            classes = failure_classes(issues, response, latency, http_status,
+                                      exchange["transportError"], exchange["decodeError"])
+            validation = candidate_validation(response)
             passed = not issues
             session_ok = session_ok and passed
             total_turns += 1
@@ -514,8 +633,12 @@ def run(url, selected, verbose, delay, diagnose=False):
                 "latencySeconds": round(latency, 3),
                 "source": response.get("provider"),
                 "issues": issues,
+                "httpStatus": http_status,
+                "failureClass": classes[0] if classes else "",
+                "failureClasses": classes,
+                "validatorRejectedCandidates": validation["validatorRejectedCandidates"],
             })
-            failure_class = classify_failure(issues, response, latency) if issues else ""
+            failure_class = classes[0] if classes else ""
             if issues:
                 failures.append(f"{name} turn {index} {message!r}: {'; '.join(issues)}")
             if verbose or issues or diagnose:
@@ -546,6 +669,17 @@ def run(url, selected, verbose, delay, diagnose=False):
                 "passed": passed,
                 "issues": issues,
                 "failureClass": failure_class,
+                "failureClasses": classes,
+                **validation,
+                "sessionId": session_id,
+                "requestHistory": request_history,
+                "httpStatus": http_status,
+                "httpHeaders": exchange["httpHeaders"],
+                "transportError": exchange["transportError"],
+                "decodeError": exchange["decodeError"],
+                "rawBody": exchange["rawBody"],
+                "rawBodyBase64": exchange.get("rawBodyBase64"),
+                "response": response,
                 "latencySeconds": round(latency, 3),
                 "provider": response.get("provider"),
                 "model": response.get("model"),
@@ -559,6 +693,7 @@ def run(url, selected, verbose, delay, diagnose=False):
                 "reply": reply,
                 "previousReply": previous_reply,
             })
+            write_json(diagnostics_handle, diagnostics)
             history.append({"user": message, "assistant": reply})
             history = history[-5:]
             previous_reply = reply
@@ -578,16 +713,24 @@ def run(url, selected, verbose, delay, diagnose=False):
         "turnPasses": total_turns - len(failures),
         "failures": failures,
         "results": results,
+        "delaySeconds": delay,
+        "scenarioCooldownSeconds": scenario_cooldown,
+        "maxLatencySeconds": MAX_LATENCY_SECONDS,
+        "diagnose": diagnose,
+        "summaryOutput": summary_handle.name,
+        "diagnosticsOutput": diagnostics_handle.name,
+        "failureClassCounts": {
+            label: sum(label in turn["failureClasses"] for turn in diagnostics)
+            for label in sorted({label for turn in diagnostics for label in turn["failureClasses"]})
+        },
+        "validatorRejectedCandidateTurns": sum(turn["validatorRejectedCandidates"] is True for turn in diagnostics),
     }
-    with open("/tmp/scout-production-conversation-results.json", "w", encoding="utf-8") as handle:
-        json.dump(summary, handle, indent=2)
-    if diagnose:
-        with open("/tmp/scout-gate-diagnostics.json", "w", encoding="utf-8") as handle:
-            json.dump(diagnostics, handle, indent=2)
+    write_json(summary_handle, summary)
     print("\n" + "=" * 64)
     print(f"Conversations: {session_passes}/{len(selected)} passed")
     print(f"Turns: {total_turns - len(failures)}/{total_turns} passed")
-    print("Detailed results: /tmp/scout-production-conversation-results.json")
+    print(f"Detailed results: {summary_handle.name}")
+    print(f"Per-turn diagnostics: {diagnostics_handle.name}")
     return 0 if not failures else 1
 
 
@@ -596,6 +739,9 @@ def main():
     parser.add_argument("--url", default=DEFAULT_URL)
     parser.add_argument("--only", help="Run conversation names containing this text")
     parser.add_argument("--delay", type=float, default=0.0, help="Seconds between requests")
+    parser.add_argument("--scenario-cooldown", type=float, default=0.0, help="Additional seconds between conversations, on top of --delay")
+    parser.add_argument("--summary-output", help="New summary JSON path; defaults to a unique file in the OS temporary directory; never overwrites")
+    parser.add_argument("--diagnostics-output", help="New per-turn JSON path (always saved); defaults to a unique temporary file; never overwrites")
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--diagnose", action="store_true", help="SCOUT_GATE_DEBUG: capture per-turn policy, contract, agent, and pipeline metadata")
     args = parser.parse_args()
@@ -605,7 +751,9 @@ def main():
     if not selected:
         parser.error("--only did not match any conversation")
     diagnose = args.diagnose or os.environ.get("SCOUT_GATE_DEBUG", "").lower() in ("1", "true", "yes")
-    raise SystemExit(run(args.url, selected, args.verbose, max(0.0, args.delay), diagnose=diagnose))
+    raise SystemExit(run(args.url, selected, args.verbose, max(0.0, args.delay), diagnose=diagnose,
+                         scenario_cooldown=max(0.0, args.scenario_cooldown),
+                         summary_output=args.summary_output, diagnostics_output=args.diagnostics_output))
 
 
 if __name__ == "__main__":
