@@ -1858,35 +1858,6 @@ app.post('/api/chat', async (req, res) => {
           evidenceScore: r.rrfScore || r.score
         })).filter(e => e.description);
 
-        // Policy-driven evidence backfill: some policy modes require chunk
-        // categories that BM25 may not surface for terse phrasings (e.g.
-        // "give me links" needs the contact chunk). Append any missing
-        // required chunks so the agent sees the evidence the contract
-        // promises, rather than answering from an empty retrieval set.
-        const POLICY_REQUIRED_TAGS = {
-          CONTACT: ['contact', 'identity']
-        };
-        const requiredTags = POLICY_REQUIRED_TAGS[policy.mode];
-        if (requiredTags) {
-          const allChunks = ragChunks || buildRagChunks(knowledge);
-          const presentTags = new Set(evidence.map(e => e.kind));
-          for (const chunk of allChunks) {
-            if (requiredTags.includes(chunk.tag) && !presentTags.has(chunk.tag) && chunk.text) {
-              evidence.push({
-                kind: chunk.tag,
-                name: chunk.title || '',
-                description: chunk.text,
-                tech: chunk.tech || [],
-                skills: chunk.skills || [],
-                category: chunk.category || null,
-                url: chunk.url || null,
-                evidenceScore: 0
-              });
-              presentTags.add(chunk.tag);
-            }
-          }
-        }
-
         // Get server-owned structured conversation state (now includes any just-
         // committed conversational-control intent, e.g. userName).
         const convState = sessionState.getState(sessionId);
