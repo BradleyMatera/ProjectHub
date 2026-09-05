@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:widget": "node -e \"const fs=require('node:fs');fs.writeFileSync('ProjectHub.js',['data.js','utils.js','logic.js','ui.js'].map(p=>fs.readFileSync(p,'utf8')).join('\\n'))\"",
     "preview": "vite preview",
     "postinstall": "node scripts/setup-git-safety.js --install-only",
     "setup:git-safety": "node scripts/setup-git-safety.js",

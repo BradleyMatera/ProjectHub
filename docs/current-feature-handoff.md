@@ -422,3 +422,25 @@ An earlier private-preview deployment at commit `a4c8bd4` passed the then-curren
 - `scripts/eval-lite.js` — 28-case LITE evaluation.
 - `test-production-conversations.py` — sanitized 132-input replay.
 - `deploy-agent-preview.sh`, `scripts/open-agent-preview.sh`, and `deploy/projecthub-agent-preview.service` — private preview path.
+
+---
+
+# Path A integration state (2026-09-05)
+
+**Historical integration checkpoint, corrected during release hardening.** Resolve current SHAs from GitHub, the staging source marker, and backend health. This checkpoint is not production authorization.
+
+- `ProjectHub/develop` HEAD: `ed3976c` (query `git ls-remote origin develop`).
+- Production backend last observed source: `4a1eee7`. This is not GitHub master HEAD; remote master was `8ac02fb5fa09a6a5595b9c9d0194eb713494ddee` at the release-hardening preflight.
+- PR #23 (conversation-gate fixes) merged into `develop`.
+- PR #26 (widget scroll/input lock) merged into `develop`.
+- Idempotency hotfix for `ProjectHub.js` initialization is in `develop`.
+- Staging mirror: `ProjectHub-dev:main` prepared by `projecthub-staging-deployer`.
+- Dev backend and prepared staging marker last verified at `10c2b3603224e2e9865612cb391d2176b59c1bbb`; requalify and update provenance after hardening merges.
+- Release PR #25: direct `develop → master` is conflicting. Do not force it through; prepare an exact-qualified-tree release commit parented by current master after the hardening and staging gates.
+- Gatsby recruiter site (`bradleymatera.dev`): proxy timeout raised to 18s, typed `NETLIFY_PROXY_ERROR` responses, build-derived `ProjectHub.js` cache-busting, and synthetic `DOMContentLoaded` redispatch removed.
+- Recruiter incident: the 14s/15s timeout mismatch and unsafe initialization were verified code defects. The original request was not correlated to proxy errors or a browser Network trace, so its exact failure cause and whether one click produced the repeated blocks remain unproven. Healthy later probes do not exclude earlier backend/provider failures.
+- Live qualification on `4d39995` (pre-merge): 21/33 conversations, 94/132 turns; 14 of 38 failures had `inference-unavailable`. That outcome alone does not prove an external provider fault. Remaining failures are deferred per Path A, not established as wording-only or free of logic defects.
+- Release hardening adds server-authorized per-request diagnostics with cache isolation, retry-safe widget initialization with partial setup rollback, and removal of unused timeout helpers. Browser regressions also exposed and fixed erased drafts and broken bottom-follow behavior. No model/prompt/retrieval tuning is included.
+- Local hardening validation: 1019/1019 tests (including real Chromium cases), retrieval Recall@6 1.000 and MRR@6 0.942, analytics build, widget parity, syntax, whitespace, and feature workspace checks passed. Live staging must be rerun after merge.
+- Gatsby `edb278b` accidentally removed the SEO post-build hook, recruiter navigation controls, and successful backend telemetry forwarding. A separate preservation hotfix must restore these and sanitize public proxy errors before release; the earlier success smoke was not sufficient proof.
+- Next gate: reviewed hardening PR to develop, updated dev/staging hashes and browser/API smokes, then an exact-tree release branch from master. Do not promote production while these gates remain incomplete.
