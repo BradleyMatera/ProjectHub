@@ -128,6 +128,42 @@ test('C. invalid primary + fewer-reason repair still rejects', async () => {
   assert.strictEqual(result.generationCalls[1].accepted, false);
 });
 
+test('primary prose reaches validation and the user unchanged, including dotted technology names', async () => {
+  const answer = 'Ada used Node.js for a small service. She also used SQL for reports. Her work was supervised training, not production ownership.';
+  const { runRagPrimaryAgent } = freshAgent((candidate) => {
+    assert.strictEqual(candidate, answer);
+    return makeValid();
+  });
+  makeRouter([answer]);
+  const result = await runRagPrimaryAgent({
+    question: 'What skills does Ada use?',
+    conversationState: { recentTurns: [] },
+    evidence: [{ kind: 'skills', description: answer, evidenceScore: 1 }],
+    knowledge: { identity: { name: 'Ada' }, skills: { technical: ['Node.js', 'SQL'] }, projects: [], experience: [] },
+    sessionId: 'unchanged-primary',
+    policyContract: { mode: null }
+  });
+  assert.strictEqual(result.reply, answer);
+  assert.strictEqual(result.rawPrimary, answer);
+});
+
+test('repair cannot bypass a validator rejection of leaked internal language', async () => {
+  const { runRagPrimaryAgent } = freshAgent(() => makeInvalid(['leaked_internal_language']));
+  const tracker = makeRouter(['An unsupported relationship was detected.', 'The entity is not grounded in the supplied facts.']);
+  const result = await runRagPrimaryAgent({
+    question: 'What skills does Ada use?',
+    conversationState: { recentTurns: [] },
+    evidence: baseEvidence,
+    knowledge: baseKnowledge,
+    sessionId: 'repair-scaffolding',
+    policyContract: { mode: null }
+  });
+  assert.strictEqual(result.reply, null);
+  assert.strictEqual(result.proseSource, 'TECHNICAL_ERROR');
+  assert.strictEqual(tracker.calls, 2);
+  assert.ok(result.generationCalls.every(call => !call.accepted));
+});
+
 test('D. valid primary uses exactly one provider call', async () => {
   const { runRagPrimaryAgent } = freshAgent(() => makeValid());
   const tracker = makeRouter(['Bradley did not work at Google.']);
@@ -149,4 +185,50 @@ test('D. valid primary uses exactly one provider call', async () => {
   assert.strictEqual(result.generationCalls[0].attemptType, 'PRIMARY');
   assert.strictEqual(result.generationCalls[0].accepted, true);
   assert.strictEqual(result.validation.valid, true);
+});
+
+test('E. visitor name colliding with a subject alias stays a control turn', async () => {
+  const { runRagPrimaryAgent } = freshAgent(() => makeValid());
+  const tracker = makeRouter(["Nice to meet you, Brad. I am Scout, Bradley's recruiter assistant."]);
+  const knowledge = {
+    ...baseKnowledge,
+    identity: { ...baseKnowledge.identity, preferredName: 'Brad' },
+    subjectAliases: ['Bradley', 'Brad', 'Matera']
+  };
+
+  const result = await runRagPrimaryAgent({
+    question: 'my names brad',
+    conversationState: { recentTurns: [] },
+    evidence: baseEvidence,
+    knowledge,
+    sessionId: 'test-e',
+    policyContract: { mode: 'USER_PROFILE_UPDATE', visitorName: 'Brad' }
+  });
+
+  assert.strictEqual(result.operation, 'control');
+  assert.strictEqual(result.reply, "Nice to meet you, Brad. I am Scout, Bradley's recruiter assistant.");
+  assert.strictEqual(tracker.calls, 1);
+});
+
+test('F. a distinct subject mention still forces the substantive path', async () => {
+  const { runRagPrimaryAgent } = freshAgent(() => makeValid());
+  const tracker = makeRouter(['Bradley uses React in ProjectHub.']);
+  const knowledge = {
+    ...baseKnowledge,
+    identity: { ...baseKnowledge.identity, preferredName: 'Brad' },
+    subjectAliases: ['Bradley', 'Brad', 'Matera']
+  };
+
+  const result = await runRagPrimaryAgent({
+    question: 'my name is alex, what does bradley know?',
+    conversationState: { recentTurns: [] },
+    evidence: baseEvidence,
+    knowledge,
+    sessionId: 'test-f',
+    policyContract: { mode: 'USER_PROFILE_UPDATE', visitorName: 'Alex' }
+  });
+
+  assert.notStrictEqual(result.operation, 'control');
+  assert.strictEqual(result.reply, 'Bradley uses React in ProjectHub.');
+  assert.ok(tracker.calls >= 1);
 });

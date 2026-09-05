@@ -1632,6 +1632,51 @@ app.post('/api/chat', async (req, res) => {
   const REQUEST_DEADLINE_MS = Math.min(parseInt(process.env.REQUEST_DEADLINE_MS || '15000', 10), 15000);
   const deadlineAt = reqStart + REQUEST_DEADLINE_MS;
   let deadlineFired = false;
+  let policy = { mode: 'UNKNOWN' };
+  let resolvedMessage = '';
+  let queryRewritten = false;
+  let evidence = [];
+  let agentMeta = null;
+  let contractSummary = null;
+
+  // SCOUT_GATE_DEBUG: attach detailed per-turn diagnostics to the response only when requested.
+  const gateDebug = process.env.SCOUT_GATE_DEBUG === 'true' || req.body?.gateDebug === true || req.query?.gateDebug === '1';
+  if (gateDebug) {
+    const origJson = res.json.bind(res);
+    res.json = function (obj) {
+      if (obj && typeof obj === 'object') {
+        obj.diagnostics = {
+          question: userMessage,
+          resolvedQuery: resolvedMessage || userMessage,
+          queryRewritten,
+          policy: {
+            mode: policy?.mode || 'UNKNOWN',
+            directAnswer: policy?.directAnswer || null,
+            activeEntity: policy?.activeEntity || null,
+            evidenceStatus: policy?.evidenceStatus || null,
+            boundary: policy?.boundary || null,
+            forbiddenClaims: policy?.forbiddenClaims || []
+          },
+          contract: contractSummary,
+          evidence: (evidence || []).slice(0, 10).map((e, i) => ({
+            id: `${e.kind || 'evidence'}-${i + 1}`,
+            kind: e.kind || null,
+            name: e.name || '',
+            snippet: (e.description || '').slice(0, 120)
+          })),
+          agentMeta,
+          pipeline: pipeline.slice(),
+          latencyMs: Date.now() - reqStart,
+          deadlineFired,
+          failureStage: obj.error ? (obj.failureStage || 'UNKNOWN') : null,
+          generationCalls: agentMeta?.generationCalls || [],
+          proseSource: obj.proseSource || null
+        };
+      }
+      return origJson(obj);
+    };
+  }
+
   const requestAbortController = new AbortController();
   const deadlineTimer = setTimeout(() => {
     if (!res.headersSent) {
@@ -1685,14 +1730,14 @@ app.post('/api/chat', async (req, res) => {
     // technology does it use?" resolve to "What technology does ProjectHub (Scout)
     // use?" and prevents broad direct-answer patterns from misfiring.
     const preGenerationState = sessionState.getState(sessionId);
-    let resolvedMessage = userMessage;
-    let queryRewritten = false;
+    resolvedMessage = userMessage;
+    queryRewritten = false;
 
     // Classify the conversational act FIRST. Greetings, small talk, request-to-say,
     // and clarification do not require candidate evidence and must not be rewritten
     // into candidate queries by anaphora resolution.
     const NO_RETRIEVAL_MODES = new Set(['GREETING', 'USER_PROFILE_UPDATE', 'USER_PROFILE_QUERY', 'THANKS', 'FAREWELL', 'HELP', 'CONVERSATIONAL', 'SMALL_TALK', 'REQUEST_TO_SAY', 'CLARIFY_PREVIOUS_ASSISTANT']);
-    let policy = classifyResponsePolicy(userMessage, history, knowledge);
+    policy = classifyResponsePolicy(userMessage, history, knowledge);
 
     if (SCOUT_AGENT_ENGINE_ENABLED && !NO_RETRIEVAL_MODES.has(policy.mode)) {
       const rewrite = rewriteQuery(userMessage, preGenerationState, knowledge, history);
@@ -1704,6 +1749,8 @@ app.post('/api/chat', async (req, res) => {
       policy = classifyResponsePolicy(resolvedMessage, history, knowledge);
     }
     pipeline.push(`policy:${policy.mode}`);
+    // expose policy for diagnostics
+    policy = Object.assign({}, policy);
 
     const cacheKey = normalizeQuery(resolvedMessage, knowledge);
 
@@ -1755,7 +1802,7 @@ app.post('/api/chat', async (req, res) => {
       }
     }
 
-    const cached = !hasHistory ? responseCache.get(cacheKey) : null;
+    const cached = !hasHistory && !gateDebug ? responseCache.get(cacheKey) : null;
     if (cached && (Date.now() - cached.ts) < RESPONSE_CACHE_MS) {
       clearTimeout(deadlineTimer);
       pipeline.push('cache-hit');
@@ -1784,9 +1831,7 @@ app.post('/api/chat', async (req, res) => {
     // 2. ALL queries go through generative inference. Deterministic code
     //    classifies, retrieves, and builds contracts but does NOT write prose.
     let generated = false;
-    let agentMeta = null;
     let agentEvents = null;
-    let evidence = [];
     let inferenceProvider = localModelRouter.inferenceProvider || 'ollama';
     currentStanceContext = getStanceContext(sessionId);
 
@@ -1799,10 +1844,10 @@ app.post('/api/chat', async (req, res) => {
         // Retrieve evidence via BM25 for the agent context packet.
         // Retrieval is always performed; the agent decides whether to use it.
         const understood = understandQuery(resolvedMessage, history, ragChunks || buildRagChunks(knowledge));
-        const bm25Results = bm25Index
+        const _bm25Results = bm25Index
           ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 10)
           : [];
-        evidence = bm25Results.map(r => ({
+        evidence = _bm25Results.map(r => ({
           kind: r.tag || r.chunk?.kind || 'evidence',
           name: r.chunk?.title || r.chunk?.name || '',
           description: r.text || r.chunk?.text || r.chunk?.description || '',
@@ -1872,6 +1917,7 @@ app.post('/api/chat', async (req, res) => {
           reply = agentResult.reply;
           provider = inferenceProvider;
           model = agentResult.model;
+          const _validationVerdict = agentResult.validation?.verdict;
           agentMeta = {
             used: true,
             engine: SCOUT_AGENT_MODE === 'lite' ? 'scout-lite' : 'scout-agent',
@@ -1880,7 +1926,7 @@ app.post('/api/chat', async (req, res) => {
             tools: (agentResult.toolResults || []).map(t => t.tool),
             steps: agentResult.steps.length,
             contextTokens: agentResult.contextTokens,
-            validation: agentResult.validation?.verdict || null,
+            validation: _validationVerdict || null,
             outcome: agentResult.outcome || 'accepted',
             executionEngine: SCOUT_AGENT_MODE === 'lite' ? 'scout-lite' : 'scout-agent',
             languageLayer: inferenceProvider,
@@ -1901,6 +1947,7 @@ app.post('/api/chat', async (req, res) => {
           agentEvents = agentResult.events;
           generated = true;
         } else if (agentResult.inferenceUnavailable) {
+          agentMeta = agentMeta || {};
           // All generative attempts failed — return typed service-unavailable response
           pipeline.push(`scout-agent-${SCOUT_AGENT_MODE}:inference-unavailable`);
           agentEvents = agentResult.events;
@@ -1931,6 +1978,7 @@ app.post('/api/chat', async (req, res) => {
           return res.json({
             ok: false,
             error: 'INFERENCE_UNAVAILABLE',
+            failureStage: 'GENERATION',
             reply: INFERENCE_UNAVAILABLE_REPLY,
             proseSource: 'TECHNICAL_ERROR',
             pipeline,
@@ -1940,7 +1988,6 @@ app.post('/api/chat', async (req, res) => {
             agentMeta,
             agentEvents,
             retrievalCandidates: agentMeta?.retrievalCandidates || evidence.slice(0, 10).map((e, i) => ({ kind: e.kind || 'evidence', tag: e.kind || 'evidence', name: e.name || '', id: `${e.kind || 'evidence'}-${i + 1}` })) || [],
-            failureStage: 'GENERATION',
             generationAttempts: agentResult.generationAttempts || 0,
             contract: safeContractProjection(agentResult.responseContract)
           });
