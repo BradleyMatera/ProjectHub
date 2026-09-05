@@ -648,7 +648,8 @@ if (typeof module !== 'undefined' && module.exports) {
   };
 }
 
-function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData) {
+function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData, initialization = {}) {
+  const listenerOptions = { signal: initialization.signal };
   const isDevHost = typeof window !== "undefined" && /projecthub-dev/i.test(window.location.hostname + window.location.pathname);
   const devLabel = isDevHost ? " (dev)" : "";
   const botLabel = "Scout" + devLabel;
@@ -738,6 +739,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   if (existingStyle) existingStyle.remove();
 
   const style = document.createElement("style");
+  initialization.style = style;
   style.id = "projecthub-chat-styles";
   style.textContent = `
     :root {
@@ -1472,6 +1474,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   document.head.appendChild(style);
 
   const chatDiv = document.createElement("section");
+  initialization.chatDiv = chatDiv;
   chatDiv.id = "bradley-chat";
   chatDiv.setAttribute("aria-label", "Scout chat");
 
@@ -1623,8 +1626,9 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     `;
 
     if (options.statusId) row.id = options.statusId;
+    const followBottom = isNearBottom();
     chatOutput.appendChild(row);
-    if (isNearBottom()) chatOutput.scrollTop = chatOutput.scrollHeight;
+    if (followBottom) chatOutput.scrollTo({ top: chatOutput.scrollHeight, behavior: "instant" });
     return row;
   }
 
@@ -1665,8 +1669,9 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
           // Escape lone ampersands so partial HTML stays valid, but don't double-escape entities
           buffer += token.replace(/&(?![a-zA-Z]+;|#[0-9]+;)/g, '&amp;');
         }
+        const followBottom = isNearBottom();
         contentEl.innerHTML = buffer;
-        if (isNearBottom()) chatOutput.scrollTop = chatOutput.scrollHeight;
+        if (followBottom) chatOutput.scrollTo({ top: chatOutput.scrollHeight, behavior: "instant" });
         setTimeout(next, wordDelayMs);
       }
       next();
@@ -1749,61 +1754,61 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     minimizeBtn.innerHTML = isMinimized ? "+" : "−";
     minimizeBtn.setAttribute("aria-label", isMinimized ? "Open chat" : "Minimize chat");
     minimizeBtn.title = isMinimized ? "Open chat" : "Minimize chat";
-  });
+  }, listenerOptions);
 
   settingsBtn.addEventListener("click", () => {
     chatDiv.classList.toggle("projecthub-settings-open");
-  });
+  }, listenerOptions);
 
   settingsCloseBtn.addEventListener("click", () => {
     chatDiv.classList.remove("projecthub-settings-open");
-  });
+  }, listenerOptions);
 
   chatDiv.querySelectorAll(".setting-toggle").forEach(toggle => {
     toggle.addEventListener("change", () => {
       chatSettings = { ...chatSettings, [toggle.dataset.setting]: toggle.checked };
       saveSettings();
-    });
+    }, listenerOptions);
   });
 
   clearMemoryBtn.addEventListener("click", () => {
     resetChatMemory();
     chatDiv.classList.remove("projecthub-settings-open");
-  });
+  }, listenerOptions);
 
   renameBtn.addEventListener("click", () => {
     saveVisitorName("");
     appendMessage("bot", botLabel, "No problem. What should I call you for this session?");
     chatDiv.classList.remove("projecthub-settings-open");
     chatInput.focus();
-  });
+  }, listenerOptions);
 
-  chatInput.addEventListener("input", resizeInput);
+  chatInput.addEventListener("input", resizeInput, listenerOptions);
 
   suggestionBar.addEventListener("click", event => {
     const suggestionButton = event.target.closest(".suggestion-chip");
     if (!suggestionButton || isRequestInFlight) return;
     setInputValue(suggestionButton.dataset.suggestion || suggestionButton.textContent || "");
     submitChat();
-  });
+  }, listenerOptions);
 
   if (suggestionToggle) {
     suggestionToggle.addEventListener('click', () => {
       suggestionBar.classList.toggle('projecthub-suggestions--collapsed');
       updateSuggestionToggle();
-    });
+    }, listenerOptions);
   }
 
   window.addEventListener('resize', () => {
     renderSuggestions();
-  });
+  }, listenerOptions);
 
   chatOutput.addEventListener("click", event => {
     const followupButton = event.target.closest(".followup-chip");
     if (!followupButton || isRequestInFlight) return;
     setInputValue(followupButton.dataset.followup || followupButton.textContent || "");
     submitChat();
-  });
+  }, listenerOptions);
 
   const MIN_TYPING_MS = 700;
   const WORD_DELAY_MS = 32;
@@ -1831,8 +1836,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     if (pendingQuery) {
       const nextQuery = pendingQuery;
       pendingQuery = "";
-      setInputValue(nextQuery);
-      submitChat();
+      submitChat(nextQuery);
     }
   }
 
@@ -1842,14 +1846,14 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     return row;
   }
 
-  const submitChat = async () => {
+  const submitChat = async (queuedQuery = null) => {
     const now = Date.now();
     if (now - lastRequestTime < requestInterval) {
       chatInput.placeholder = "One moment...";
       return;
     }
 
-    const userQuery = chatInput.value.trim();
+    const userQuery = (queuedQuery ?? chatInput.value).trim();
     if (!userQuery) return;
 
     const normalizedQuery = userQuery.toLowerCase().replace(/\s+/g, " ");
@@ -1872,6 +1876,10 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     lastSubmittedQuery = normalizedQuery;
     lastSubmittedAt = now;
     setBusy(true);
+    if (queuedQuery === null) {
+      chatInput.value = "";
+      resizeInput();
+    }
 
     appendMessage("user", "You", escapeHtml(userQuery));
 
@@ -1884,8 +1892,6 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
         rememberTurn("user", userQuery);
         rememberTurn("assistant", greetingText);
         turnCount += 1;
-        chatInput.value = "";
-        resizeInput();
         setBusy(false);
         flushPendingQuery();
         chatInput.focus();
@@ -1910,7 +1916,6 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       const finalReply = reply;
 
       // Prepare the composer for the next question while the bot types.
-      chatInput.value = "";
       resizeInput();
       chatInput.focus();
 
@@ -1933,19 +1938,19 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   composer.addEventListener("submit", event => {
     event.preventDefault();
     submitChat();
-  });
+  }, listenerOptions);
 
   chatInput.addEventListener("keydown", event => {
     if (chatSettings.enterToSend && event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       submitChat();
     }
-  });
+  }, listenerOptions);
 
   saveSettings();
   window.matchMedia('(max-width: 640px)').addEventListener('change', e => {
     chatDiv.classList.toggle("projecthub-compact", e.matches || Boolean(chatSettings.compactMode));
-  });
+  }, listenerOptions);
   renderSuggestions();
   const freeNote = `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(57,217,138,0.12);border:1px solid rgba(57,217,138,0.28);color:#b8f5d3;font-size:12px;">🟢 Scout runs on free-tier infrastructure — GitHub Pages and Cloudflare Workers AI.</span>`;
   const devNote = isDevHost ? `<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:rgba(255,193,7,0.12);border:1px solid rgba(255,193,7,0.35);color:#ffd54f;font-size:12px;">⚠️ You are on the dev/staging environment.</span>` : "";
@@ -1962,13 +1967,24 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 // dynamically injecting the script, and guard against duplicate initialization.
 function initProjectHub() {
   if (typeof window !== "undefined") {
-    if (window.__projectHubInitialized) return;
-    window.__projectHubInitialized = true;
+    if (window.__projectHubInitialized || window.__projectHubInitializing) return;
+    window.__projectHubInitializing = true;
   }
+  const initialization = {};
+  let controller;
   try {
-    setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData);
+    controller = new AbortController();
+    initialization.signal = controller.signal;
+    setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData, initialization);
+    if (typeof window !== "undefined") window.__projectHubInitialized = true;
   } catch (error) {
+    if (typeof window !== "undefined") window.__projectHubInitialized = false;
+    controller?.abort();
+    initialization.chatDiv?.remove();
+    initialization.style?.remove();
     console.error("Error initializing ProjectHub:", error);
+  } finally {
+    if (typeof window !== "undefined") window.__projectHubInitializing = false;
   }
 }
 
