@@ -1620,6 +1620,7 @@ app.post('/api/chat', async (req, res) => {
   let policy = { mode: 'UNKNOWN' };
   let resolvedMessage = '';
   let queryRewritten = false;
+  let rewriteDebug = null;
   let evidence = [];
   let agentMeta = null;
   let contractSummary = null;
@@ -1656,7 +1657,29 @@ app.post('/api/chat', async (req, res) => {
           deadlineFired,
           failureStage: obj.error ? (obj.failureStage || 'UNKNOWN') : null,
           generationCalls: agentMeta?.generationCalls || [],
-          proseSource: obj.proseSource || null
+          proseSource: obj.proseSource || null,
+          discourse: (() => {
+            const frame = sessionState.getState(sessionId)?.discourseFrame;
+            if (!frame) return null;
+            return {
+              frame: {
+                intent: frame.intent || null,
+                subject: frame.subject || null,
+                createdAtTurn: frame.createdAtTurn ?? null,
+                updatedAtTurn: frame.updatedAtTurn ?? null
+              },
+              alternatives: (frame.alternatives || []).map(a => ({
+                name: a.name,
+                type: a.type || 'unknown',
+                source: a.source || 'user',
+                turnIndex: a.turnIndex ?? null,
+                confidence: a.confidence || null,
+                active: a.active !== false
+              })),
+              resolvedSet: rewriteDebug?.referentContext || null,
+              resolutionReason: rewriteDebug?.referentType || null
+            };
+          })()
         };
       }
       return origJson(obj);
@@ -1723,16 +1746,17 @@ app.post('/api/chat', async (req, res) => {
     // and clarification do not require candidate evidence and must not be rewritten
     // into candidate queries by anaphora resolution.
     const NO_RETRIEVAL_MODES = new Set(['GREETING', 'USER_PROFILE_UPDATE', 'USER_PROFILE_QUERY', 'THANKS', 'FAREWELL', 'HELP', 'CONVERSATIONAL', 'SMALL_TALK', 'REQUEST_TO_SAY', 'CLARIFY_PREVIOUS_ASSISTANT']);
-    policy = classifyResponsePolicy(userMessage, history, knowledge);
+    policy = classifyResponsePolicy(userMessage, history, knowledge, preGenerationState);
 
     if (SCOUT_AGENT_ENGINE_ENABLED && !NO_RETRIEVAL_MODES.has(policy.mode)) {
       const rewrite = rewriteQuery(userMessage, preGenerationState, knowledge, history);
+      rewriteDebug = rewrite;
       if (rewrite && rewrite.rewritten_ && rewrite.rewritten !== userMessage) {
         resolvedMessage = rewrite.rewritten;
         queryRewritten = true;
         pipeline.push('query-rewrite');
       }
-      policy = classifyResponsePolicy(resolvedMessage, history, knowledge);
+      policy = classifyResponsePolicy(resolvedMessage, history, knowledge, preGenerationState);
     }
     pipeline.push(`policy:${policy.mode}`);
     // expose policy for diagnostics
@@ -1807,6 +1831,9 @@ app.post('/api/chat', async (req, res) => {
     // Commit any conversational control intent (greeting, name update, etc.)
     // BEFORE generation, so the model can see the just-introduced user state.
     sessionState.applyControlIntent(sessionId, resolvedMessage, knowledge, policy.mode);
+    // Commit the current turn's semantic discourse state (frame + alternatives)
+    // for the NEXT turn — server-owned, user-sourced, never assistant-derived.
+    sessionState.commitDiscourseTurn(sessionId, userMessage, policy, knowledge);
 
     // Default reply is NOT set — all prose must come from generative inference.
     // If inference fails, we return INFERENCE_UNAVAILABLE.

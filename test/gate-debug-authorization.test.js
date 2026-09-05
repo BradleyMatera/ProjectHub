@@ -18,7 +18,7 @@ function harness(serverFlag, direct = false) {
     extractReferrer: () => '',
     getConversationHistory: () => [],
     fetchKnowledge: async () => ({}),
-    sessionState: { getState: () => ({}), updateState() {}, applyControlIntent() {} },
+    sessionState: { getState: () => ({}), updateState() {}, applyControlIntent() {}, commitDiscourseTurn() {} },
     SCOUT_AGENT_MODE: 'lite',
     localModelRouter: { inferenceProvider: 'cloudflare', agentModel: () => 'fixture-model' },
     getStanceContext: () => '',
