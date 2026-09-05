@@ -21,6 +21,31 @@ const { runRagPrimaryAgent } = require(path.join(ROOT, 'lib/rag-agent'));
 
 const bradleyKnowledge = require(path.join(ROOT, 'data/recruiter-knowledge.json'));
 
+// Existing-tenant portability fixture — mirrors TENANT_ALPHA (Northstar Desk)
+// from tenant-portability.test.js so the primitive is proven on a tenant
+// structure Scout already supports.
+const northstarKnowledge = {
+  identity: {
+    name: 'Avery Chen',
+    role: 'Founder',
+    company: 'Northstar Desk',
+    location: 'Seattle, WA',
+    contact: { email: 'avery@northstar.desk', phone: '206-555-0142' }
+  },
+  agent: { name: 'Scout' },
+  products: [
+    { name: 'Northstar Desk', type: 'B2B SaaS', description: 'Customer support ticketing platform' }
+  ],
+  skills: ['TypeScript', 'React', 'Node.js', 'PostgreSQL', 'AWS'],
+  projects: [
+    { name: 'Desk v2', tech: ['React', 'Node.js'], description: 'Support dashboard rewrite' }
+  ],
+  policies: {
+    privateData: ['ssn', 'password', 'credit card', 'bank account'],
+    refusalTopics: ['personal financial information']
+  }
+};
+
 // Minimal unrelated-tenant fixture — a bicycle shop, not a recruiter.
 const bikeKnowledge = {
   identity: { name: 'Northstar Cycles', preferredName: 'Northstar' },
@@ -319,6 +344,308 @@ test('A2: resolved comparison turn reaches generation (no zero-attempt path)', a
     });
     assert.ok(genCalls.length >= 1, `expected >=1 generation attempt, got ${result.generationAttempts}`);
     assert.notEqual(result.clarification, true);
+  } finally {
+    router.generate = origGenerate;
+    router.inferenceProvider = origProvider;
+  }
+});
+
+// ---------------------------------------------------------------------------
+// M. Explicit comparison must classify COMPARISON even when names match
+//    known entities (single-entity detail must not steal it).
+// ---------------------------------------------------------------------------
+test('M: explicit comparison beats specific-project detail', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bikeKnowledge;
+
+  const direct = classifyResponsePolicy('Compare TrailRunner and CityBike.', [], k, sessionState.freshState());
+  assert.equal(direct.mode, 'COMPARISON', 'explicit compare must be COMPARISON, not PROJECT_DETAIL');
+
+  const t1 = runTurn(null, sessionId, 'Compare TrailRunner and CityBike.', k, history);
+  assert.equal(t1.policy.mode, 'COMPARISON');
+  const f = frameOf(t1);
+  assert.equal(f.intent, 'COMPARISON');
+  assert.deepEqual(altNames(t1).sort(), ['CityBike', 'TrailRunner']);
+
+  const t2 = runTurn(null, sessionId, 'What about Roadster?', k, history);
+  assert.equal(t2.policy.mode, 'COMPARISON', 'continuation must stay in the comparison relation');
+  assert.equal(t2.policy.contextualInheritance, true);
+  assert.ok(altNames(t2).includes('Roadster'));
+
+  const conv = buildConversationState(history, k, sessionState.getState(sessionId));
+  const t3 = resolveReferent('Which of those is lightest?', conv, k);
+  assert.equal(t3.resolved, true);
+  const p3 = classifyResponsePolicy(t3.rewrittenQuery, history, k, sessionState.getState(sessionId));
+  assert.notEqual(p3.mode, 'PROJECT_DETAIL', 'set comparison must not collapse to single-entity detail');
+});
+
+// ---------------------------------------------------------------------------
+// N/O/P. Stale frame: a new entity-less substantive topic must invalidate the
+// previous alternative frame (frame lifetime is semantic, not just turn count).
+// ---------------------------------------------------------------------------
+test('N: certifications topic closes the stale role-fit frame', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bradleyKnowledge;
+
+  runTurn(null, sessionId, "I'm hiring for a junior frontend developer. Is he a fit?", k, history);
+  const t2 = runTurn(null, sessionId, 'What certifications does he have?', k, history);
+  const f2 = frameOf(t2);
+  assert.ok(!f2 || f2.intent !== 'ROLE_FIT', 'new substantive topic must close the role-fit frame');
+
+  const t3 = runTurn(null, sessionId, 'What about AWS?', k, history);
+  assert.notEqual(t3.policy.contextualInheritance, true, 'must not inherit the stale role-fit frame');
+  assert.notEqual(t3.policy.mode, 'ROLE_FIT');
+});
+
+test('O: experience topic closes the stale role-fit frame', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bradleyKnowledge;
+
+  runTurn(null, sessionId, "I'm hiring for a junior frontend developer. Is he a fit?", k, history);
+  const t2 = runTurn(null, sessionId, 'What experience does he have?', k, history);
+  const f2 = frameOf(t2);
+  assert.ok(!f2 || f2.intent !== 'ROLE_FIT');
+
+  const t3 = runTurn(null, sessionId, 'What about AWS?', k, history);
+  assert.notEqual(t3.policy.contextualInheritance, true);
+  assert.notEqual(t3.policy.mode, 'ROLE_FIT');
+});
+
+test('P: contact topic closes a stale comparison frame', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bikeKnowledge;
+
+  runTurn(null, sessionId, 'Compare TrailRunner and CityBike.', k, history);
+  runTurn(null, sessionId, 'How do I contact you?', k, history);
+  const t3 = runTurn(null, sessionId, 'What about LinkedIn?', k, history);
+  assert.notEqual(t3.policy.contextualInheritance, true, 'must not inherit the stale comparison frame');
+  assert.ok(!altNames(t3).some(n => /linkedin/i.test(n)), 'LinkedIn must not join the bike set');
+});
+
+// ---------------------------------------------------------------------------
+// Q/R/S. Facet vs alternative: possessive/demonstrative continuations are
+// facets of the current referent, not new substitutable alternatives.
+// ---------------------------------------------------------------------------
+test('Q: possessive facet follow-up is not a new alternative', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bradleyKnowledge;
+
+  runTurn(null, sessionId, "I'm hiring for a junior frontend developer. Is he a fit?", k, history);
+  const t2 = runTurn(null, sessionId, 'What about his AWS experience?', k, history);
+  assert.notEqual(t2.policy.contextualInheritance, true, 'facet follow-up must not inherit frame alternatives');
+  assert.ok(!altNames(t2).some(n => /aws experience/i.test(n)), '"his AWS experience" is a facet, not an alternative');
+
+  // The frame itself survives — a facet follow-up does not end the discussion.
+  const t3 = runTurn(null, sessionId, 'And QA?', k, history);
+  assert.ok(altNames(t3).includes('QA'), 'frame must still accept genuine alternatives');
+});
+
+test('R: subject-possessive facet is not an alternative', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bradleyKnowledge;
+
+  runTurn(null, sessionId, "I'm hiring for a junior frontend developer. Is he a fit?", k, history);
+  const t2 = runTurn(null, sessionId, "What about Bradley's internship?", k, history);
+  assert.notEqual(t2.policy.contextualInheritance, true);
+  assert.ok(!altNames(t2).some(n => /internship/i.test(n)));
+});
+
+test('S: non-Bradley facet — "its warranty" is not a new option', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bikeKnowledge;
+
+  runTurn(null, sessionId, 'Compare TrailRunner and CityBike.', k, history);
+  const t2 = runTurn(null, sessionId, 'What about its warranty?', k, history);
+  assert.notEqual(t2.policy.contextualInheritance, true);
+  assert.ok(!altNames(t2).some(n => /warranty/i.test(n)), 'its warranty is a facet of an option, not an option');
+});
+
+// ---------------------------------------------------------------------------
+// T/U. Clarification provider semantics: failed or empty generation must be a
+// technical failure with attempts recorded — never a fake MODEL_GENERATION.
+// ---------------------------------------------------------------------------
+test('T: clarification provider failure is INFERENCE_UNAVAILABLE, not fake success', async () => {
+  const origGenerate = router.generate;
+  const origProvider = router.inferenceProvider;
+  router.generate = async () => ({ ok: false, text: '', error: 'simulated provider failure', usage: { provider: 'stub' }, latencyMs: 1 });
+  router.inferenceProvider = 'stub';
+  try {
+    const result = await runRagPrimaryAgent({
+      question: 'Which of those is better?',
+      conversationState: sessionState.freshState(),
+      evidence: [],
+      knowledge: bradleyKnowledge,
+      sessionId: sid(),
+      model: 'stub',
+      policyContract: { mode: 'VERIFIED_FACT' },
+      deadlineAt: Date.now() + 15000,
+      abortSignal: new AbortController().signal
+    });
+    assert.equal(result.inferenceUnavailable, true);
+    assert.equal(result.proseSource, 'TECHNICAL_ERROR');
+    assert.equal(result.generationAttempts, 1, 'the failed provider call must be counted');
+    assert.equal(result.generationCalls?.[0]?.ok, false);
+    assert.ok(!result.reply);
+  } finally {
+    router.generate = origGenerate;
+    router.inferenceProvider = origProvider;
+  }
+});
+
+test('U: empty clarification output is not a fabricated success', async () => {
+  const origGenerate = router.generate;
+  const origProvider = router.inferenceProvider;
+  router.generate = async () => ({ ok: true, text: '', usage: { provider: 'stub' }, latencyMs: 1 });
+  router.inferenceProvider = 'stub';
+  try {
+    const result = await runRagPrimaryAgent({
+      question: 'Which of those is better?',
+      conversationState: sessionState.freshState(),
+      evidence: [],
+      knowledge: bradleyKnowledge,
+      sessionId: sid(),
+      model: 'stub',
+      policyContract: { mode: 'VERIFIED_FACT' },
+      deadlineAt: Date.now() + 15000,
+      abortSignal: new AbortController().signal
+    });
+    assert.notEqual(result.proseSource, 'MODEL_GENERATION', 'empty output is not generated prose');
+    assert.equal(result.generationAttempts, 1);
+    assert.ok(!result.reply);
+  } finally {
+    router.generate = origGenerate;
+    router.inferenceProvider = origProvider;
+  }
+});
+
+// ---------------------------------------------------------------------------
+// V/W. True no-tenant state: discourse tracking must not require a knowledge
+// base at all ({} and null knowledge).
+// ---------------------------------------------------------------------------
+test('V: discourse set works with completely empty knowledge {}', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = {};
+
+  runTurn(null, sessionId, 'I am choosing between Alpha and Beta.', k, history);
+  const t2 = runTurn(null, sessionId, 'What about Gamma?', k, history);
+  assert.ok(altNames(t2).includes('Gamma'));
+  const conv = buildConversationState(history, k, sessionState.getState(sessionId));
+  const r = resolveReferent('Which of those did I mention first?', conv, k);
+  assert.equal(r.resolved, true);
+});
+
+test('W: discourse state survives null knowledge without crashing', () => {
+  const sessionId = sid();
+  assert.doesNotThrow(() => {
+    sessionState.commitDiscourseTurn(sessionId, 'I am choosing between Alpha and Beta.', { mode: 'CONVERSATIONAL' }, null);
+    sessionState.commitDiscourseTurn(sessionId, 'What about Gamma?', { mode: 'COMPARISON', contextualInheritance: true, activeEntity: 'Gamma' }, null);
+  });
+  const frame = sessionState.getState(sessionId).discourseFrame;
+  assert.ok(frame);
+  assert.ok((frame.alternatives || []).some(a => /gamma/i.test(a.name)));
+  const conv = buildConversationState([], null, sessionState.getState(sessionId));
+  const r = resolveReferent('Which of those is first?', conv, null);
+  assert.equal(r.resolved, true);
+});
+
+// ---------------------------------------------------------------------------
+// X. Portability on the existing tenant fixture shape (Northstar Desk /
+// tenant-portability.test.js mirror).
+// ---------------------------------------------------------------------------
+test('X: existing-tenant fixture supports the generic alternative set', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = northstarKnowledge;
+
+  const t1 = runTurn(null, sessionId, 'Compare TypeScript and PostgreSQL.', k, history);
+  assert.equal(t1.policy.mode, 'COMPARISON');
+  const alts1 = frameOf(t1).alternatives;
+  assert.deepEqual(alts1.map(a => a.name).sort(), ['PostgreSQL', 'TypeScript']);
+  assert.ok(alts1.every(a => a.type !== 'role'), 'tenant skills must not be typed as roles');
+
+  runTurn(null, sessionId, 'What about React?', k, history);
+  const conv = buildConversationState(history, k, sessionState.getState(sessionId));
+  const r = resolveReferent('Which of those did Avery use most?', conv, k);
+  assert.equal(r.resolved, true);
+  assert.match(r.rewrittenQuery, /React/i);
+});
+
+// ---------------------------------------------------------------------------
+// Y/Z. Grounded UNKNOWN assessment — the contract, not prose. An inherited or
+// uncovered alternative gets open-world UNKNOWN semantics: uncertainty is a
+// legal completion and invented direct experience is forbidden.
+// ---------------------------------------------------------------------------
+test('Y: contextual inherited alternative gets open-world UNKNOWN contract', async () => {
+  const origGenerate = router.generate;
+  const origProvider = router.inferenceProvider;
+  router.generate = async () => ({ ok: true, text: 'The verified evidence does not directly establish experience for that option.', model: 'stub', usage: { provider: 'stub' }, latencyMs: 1 });
+  router.inferenceProvider = 'stub';
+  try {
+    const result = await runRagPrimaryAgent({
+      question: 'What about DevOps?',
+      conversationState: sessionState.freshState(),
+      evidence: [],
+      knowledge: bradleyKnowledge,
+      sessionId: sid(),
+      model: 'stub',
+      policyContract: { mode: 'ROLE_FIT', contextualInheritance: true, activeEntity: 'DevOps' },
+      deadlineAt: Date.now() + 15000,
+      abortSignal: new AbortController().signal
+    });
+    const contract = result.responseContract || {};
+    assert.equal(contract.evidenceStatus, 'UNVERIFIED', 'discourse-introduced target must be UNKNOWN, never silently verified');
+    assert.match(String(contract.boundary || ''), /insufficient|not.*verified|not established/i);
+    assert.ok((contract.forbiddenClaims || []).some(c => /devops/i.test(c) && /not.*evidence|does not show/i.test(c)),
+      'must forbid verified-experience claims the evidence does not contain');
+    assert.ok(result.generationAttempts >= 1, 'generation is still attempted');
+  } finally {
+    router.generate = origGenerate;
+    router.inferenceProvider = origProvider;
+  }
+});
+
+test('Z: set question marks uncovered members as UNKNOWN, keeps generation alive', async () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bradleyKnowledge;
+  runTurn(null, sessionId, "I'm hiring for a junior frontend developer. Is he a fit?", k, history);
+  runTurn(null, sessionId, 'What about DevOps?', k, history);
+  runTurn(null, sessionId, 'And Zebra?', k, history);
+
+  const conv = buildConversationState(history, k, sessionState.getState(sessionId));
+  const ref = resolveReferent('Which of those is the strongest fit?', conv, k);
+  const question = ref.resolved ? ref.rewrittenQuery : 'Which of those is the strongest fit?';
+
+  const origGenerate = router.generate;
+  const origProvider = router.inferenceProvider;
+  router.generate = async () => ({ ok: true, text: 'The verified evidence does not directly establish experience for those options.', model: 'stub', usage: { provider: 'stub' }, latencyMs: 1 });
+  router.inferenceProvider = 'stub';
+  try {
+    const result = await runRagPrimaryAgent({
+      question,
+      conversationState: sessionState.getState(sessionId),
+      evidence: [],
+      knowledge: k,
+      sessionId,
+      model: 'stub',
+      policyContract: { mode: 'VERIFIED_FACT' },
+      deadlineAt: Date.now() + 15000,
+      abortSignal: new AbortController().signal
+    });
+    const contract = result.responseContract || {};
+    // Zebra has no KB coverage at all — it must be bound as unverifiable.
+    assert.ok((contract.forbiddenClaims || []).some(c => /zebra/i.test(c)),
+      'uncovered set member must be explicitly unverifiable');
+    assert.equal(contract.evidenceStatus, 'UNVERIFIED');
+    assert.ok(result.generationAttempts >= 1, 'the comparison still reaches generation');
   } finally {
     router.generate = origGenerate;
     router.inferenceProvider = origProvider;
