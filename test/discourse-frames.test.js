@@ -571,7 +571,11 @@ test('X: existing-tenant fixture supports the generic alternative set', () => {
   assert.deepEqual(alts1.map(a => a.name).sort(), ['PostgreSQL', 'TypeScript']);
   assert.ok(alts1.every(a => a.type !== 'role'), 'tenant skills must not be typed as roles');
 
-  runTurn(null, sessionId, 'What about React?', k, history);
+  const t2 = runTurn(null, sessionId, 'What about React?', k, history);
+  // React is has_skill in this tenant — discourse introduction is neutral;
+  // the tenant relationship keeps it verified.
+  assert.equal(t2.policy.contextualInheritance, true);
+  assert.equal(t2.policy.evidenceStatus, 'VERIFIED');
   const conv = buildConversationState(history, k, sessionState.getState(sessionId));
   const r = resolveReferent('Which of those did Avery use most?', conv, k);
   assert.equal(r.resolved, true);
@@ -579,11 +583,78 @@ test('X: existing-tenant fixture supports the generic alternative set', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Y/Z. Grounded UNKNOWN assessment — the contract, not prose. An inherited or
-// uncovered alternative gets open-world UNKNOWN semantics: uncertainty is a
-// legal completion and invented direct experience is forbidden.
+// Y. Two-axis model: discourse membership is independent of knowledge status.
+//    User introduction neither creates nor erases verified knowledge — the
+//    tenant relationship graph decides the evidence state.
 // ---------------------------------------------------------------------------
-test('Y: contextual inherited alternative gets open-world UNKNOWN contract', async () => {
+function seedRoleFitFrame(sessionId, history, k = bradleyKnowledge) {
+  runTurn(null, sessionId, "I'm hiring for a junior frontend developer. Is he a fit?", k, history);
+}
+
+test('Y1: contextual target with no KB relationship is UNKNOWN (discourse-neutral)', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bradleyKnowledge;
+  seedRoleFitFrame(sessionId, history, k);
+  const t = runTurn(null, sessionId, 'What about DevOps?', k, history);
+  assert.equal(t.policy.contextualInheritance, true);
+  assert.equal(t.policy.activeEntity, 'DevOps');
+  assert.equal(t.policy.evidenceStatus, 'UNKNOWN',
+    'no supported relationship -> UNKNOWN regardless of discourse introduction');
+});
+
+test('Y2: contextual target with a verified relationship stays VERIFIED', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bradleyKnowledge;
+  seedRoleFitFrame(sessionId, history, k);
+  const t = runTurn(null, sessionId, 'What about JavaScript?', k, history);
+  assert.equal(t.policy.contextualInheritance, true, 'still a discourse continuation');
+  assert.equal(t.policy.evidenceStatus, 'VERIFIED',
+    'has_skill in the tenant graph means user introduction did not make it unverified');
+  assert.ok(!(t.policy.forbiddenClaims || []).some(c => /javascript/i.test(c)),
+    'a verified target must not carry an unverifiable forbidden claim');
+});
+
+test('Y3: gap-only relationship is not positive verified experience', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bradleyKnowledge;
+  seedRoleFitFrame(sessionId, history, k);
+  const t = runTurn(null, sessionId, 'What about LeetCode?', k, history);
+  assert.equal(t.policy.contextualInheritance, true);
+  assert.equal(t.policy.evidenceStatus, 'GAP',
+    'has_gap is evidence of a documented gap, not verified expertise');
+});
+
+test('Y4: rag contract keeps the assessed state, does not blanket-UNVERIFIED', async () => {
+  const origGenerate = router.generate;
+  const origProvider = router.inferenceProvider;
+  router.generate = async () => ({ ok: true, text: 'He has verified JavaScript project experience.', model: 'stub', usage: { provider: 'stub' }, latencyMs: 1 });
+  router.inferenceProvider = 'stub';
+  try {
+    const result = await runRagPrimaryAgent({
+      question: 'What about JavaScript?',
+      conversationState: sessionState.freshState(),
+      evidence: [],
+      knowledge: bradleyKnowledge,
+      sessionId: sid(),
+      model: 'stub',
+      policyContract: { mode: 'ROLE_FIT', contextualInheritance: true, activeEntity: 'JavaScript' },
+      deadlineAt: Date.now() + 15000,
+      abortSignal: new AbortController().signal
+    });
+    const contract = result.responseContract || {};
+    assert.equal(contract.evidenceStatus, 'VERIFIED',
+      'a graph-verified contextual target must not be downgraded to unverified');
+    assert.ok(!(contract.forbiddenClaims || []).some(c => /javascript/i.test(c)));
+  } finally {
+    router.generate = origGenerate;
+    router.inferenceProvider = origProvider;
+  }
+});
+
+test('Y5: uncovered contextual target still gets the UNKNOWN contract + narrowing', async () => {
   const origGenerate = router.generate;
   const origProvider = router.inferenceProvider;
   router.generate = async () => ({ ok: true, text: 'The verified evidence does not directly establish experience for that option.', model: 'stub', usage: { provider: 'stub' }, latencyMs: 1 });
@@ -601,53 +672,146 @@ test('Y: contextual inherited alternative gets open-world UNKNOWN contract', asy
       abortSignal: new AbortController().signal
     });
     const contract = result.responseContract || {};
-    assert.equal(contract.evidenceStatus, 'UNVERIFIED', 'discourse-introduced target must be UNKNOWN, never silently verified');
-    assert.match(String(contract.boundary || ''), /insufficient|not.*verified|not established/i);
-    assert.ok((contract.forbiddenClaims || []).some(c => /devops/i.test(c) && /not.*evidence|does not show/i.test(c)),
-      'must forbid verified-experience claims the evidence does not contain');
-    assert.ok(result.generationAttempts >= 1, 'generation is still attempted');
+    assert.equal(contract.evidenceStatus, 'UNKNOWN');
+    assert.match(String(contract.boundary || ''), /insufficient|unverified|not established/i);
+    assert.ok((contract.forbiddenClaims || []).some(c => /devops/i.test(c)));
+    assert.ok(result.generationAttempts >= 1);
   } finally {
     router.generate = origGenerate;
     router.inferenceProvider = origProvider;
   }
 });
 
-test('Z: set question marks uncovered members as UNKNOWN, keeps generation alive', async () => {
+// ---------------------------------------------------------------------------
+// G/D. Resolved plural ranking: relation from the frame + generic COMPARE
+//      operation + per-member evidence states — never generic VERIFIED_FACT.
+// ---------------------------------------------------------------------------
+test('G: resolved set ranking yields frame relation + COMPARE operation + per-member states', () => {
   const sessionId = sid();
   const history = [];
   const k = bradleyKnowledge;
+
   runTurn(null, sessionId, "I'm hiring for a junior frontend developer. Is he a fit?", k, history);
   runTurn(null, sessionId, 'What about DevOps?', k, history);
-  runTurn(null, sessionId, 'And Zebra?', k, history);
+  runTurn(null, sessionId, 'And QA?', k, history);
+
+  // Classify the RAW user text the way production does — no injected policy.
+  const raw = classifyResponsePolicy('Which of those is the strongest fit?', history, k, sessionState.getState(sessionId));
+  assert.equal(raw.mode, 'ROLE_FIT', 'relation comes from the frame, not a fresh fallback');
+  assert.equal(raw.setOperation, 'COMPARE', 'plural selection over the set is a comparison operation');
+  assert.deepEqual(raw.alternatives, ['junior frontend developer', 'DevOps', 'QA']);
 
   const conv = buildConversationState(history, k, sessionState.getState(sessionId));
   const ref = resolveReferent('Which of those is the strongest fit?', conv, k);
-  const question = ref.resolved ? ref.rewrittenQuery : 'Which of those is the strongest fit?';
+  const resolved = classifyResponsePolicy(ref.rewrittenQuery, history, k, sessionState.getState(sessionId));
+  assert.equal(resolved.mode, 'ROLE_FIT');
+  assert.equal(resolved.setOperation, 'COMPARE');
+  assert.notEqual(resolved.mode, 'VERIFIED_FACT');
+  assert.notEqual(resolved.mode, 'PROJECT_DETAIL');
+});
 
+test('D: mixed set keeps per-member evidence states (verified/unknown/gap)', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bradleyKnowledge;
+
+  runTurn(null, sessionId, 'Compare JavaScript and Zebra.', k, history);
+  runTurn(null, sessionId, 'What about LeetCode?', k, history);
+  const p = classifyResponsePolicy('Which of those is best?', history, k, sessionState.getState(sessionId));
+  assert.equal(p.setOperation, 'COMPARE');
+  const byName = new Map((p.memberEvidence || []).map(m => [m.name, m.evidenceStatus]));
+  assert.equal(byName.get('JavaScript'), 'VERIFIED');
+  assert.equal(byName.get('Zebra'), 'UNKNOWN');
+  assert.equal(byName.get('LeetCode'), 'GAP', 'gap relation is kept distinct — not flattened to unknown or promoted to verified');
+});
+
+// ---------------------------------------------------------------------------
+// E/F. Aspirational mention is not claim: text that mentions a target without
+//      a supporting relationship leaves it UNKNOWN — for single targets and
+//      for set members alike.
+// ---------------------------------------------------------------------------
+test('E: aspirational-text mention without a relationship stays UNKNOWN', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bradleyKnowledge; // devops-engineer.mdx mentions DevOps, claims nothing
+  seedRoleFitFrame(sessionId, history, k);
+  const t = runTurn(null, sessionId, 'What about DevOps?', k, history);
+  assert.equal(t.policy.evidenceStatus, 'UNKNOWN', 'mention in practice text is not a claimed relationship');
+});
+
+test('F: set member with only aspirational mentions stays UNKNOWN', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bradleyKnowledge;
+  runTurn(null, sessionId, 'Compare JavaScript and React.', k, history);
+  runTurn(null, sessionId, 'What about DevOps?', k, history);
+  const p = classifyResponsePolicy('Which of those is best?', history, k, sessionState.getState(sessionId));
+  const byName = new Map((p.memberEvidence || []).map(m => [m.name, m.evidenceStatus]));
+  assert.equal(byName.get('DevOps'), 'UNKNOWN');
+  assert.equal(byName.get('JavaScript'), 'VERIFIED');
+  assert.equal(byName.get('React'), 'VERIFIED');
+});
+
+// ---------------------------------------------------------------------------
+// H/I. PROFILE_SUMMARY: normal path is generative; DIRECT_KB stays an
+//      explicit opt-in, not the default authoring path.
+// ---------------------------------------------------------------------------
+test('H: PROFILE_SUMMARY produces model generation, not deterministic prose', async () => {
   const origGenerate = router.generate;
   const origProvider = router.inferenceProvider;
-  router.generate = async () => ({ ok: true, text: 'The verified evidence does not directly establish experience for those options.', model: 'stub', usage: { provider: 'stub' }, latencyMs: 1 });
+  const origEnv = process.env.SCOUT_DIRECT_KB_ENABLED;
+  delete process.env.SCOUT_DIRECT_KB_ENABLED;
+  router.generate = async () => ({ ok: true, text: 'Bradley Matera is an early-career software engineer based in Davis, Illinois.', model: 'stub', usage: { provider: 'stub' }, latencyMs: 1 });
   router.inferenceProvider = 'stub';
   try {
     const result = await runRagPrimaryAgent({
-      question,
-      conversationState: sessionState.getState(sessionId),
+      question: 'Tell me about Bradley.',
+      conversationState: sessionState.freshState(),
       evidence: [],
-      knowledge: k,
-      sessionId,
+      knowledge: bradleyKnowledge,
+      sessionId: sid(),
       model: 'stub',
       policyContract: { mode: 'VERIFIED_FACT' },
       deadlineAt: Date.now() + 15000,
       abortSignal: new AbortController().signal
     });
-    const contract = result.responseContract || {};
-    // Zebra has no KB coverage at all — it must be bound as unverifiable.
-    assert.ok((contract.forbiddenClaims || []).some(c => /zebra/i.test(c)),
-      'uncovered set member must be explicitly unverifiable');
-    assert.equal(contract.evidenceStatus, 'UNVERIFIED');
-    assert.ok(result.generationAttempts >= 1, 'the comparison still reaches generation');
+    assert.equal(result.responseContract?.subIntent, 'PROFILE_SUMMARY', 'test must exercise the profile-summary path');
+    assert.ok(result.generationAttempts >= 1, 'the model must write the sentence');
+    assert.equal(result.proseSource, 'MODEL_GENERATION');
   } finally {
     router.generate = origGenerate;
     router.inferenceProvider = origProvider;
+    if (origEnv === undefined) delete process.env.SCOUT_DIRECT_KB_ENABLED;
+    else process.env.SCOUT_DIRECT_KB_ENABLED = origEnv;
+  }
+});
+
+test('I: DIRECT_KB explicit opt-in still returns the direct answer', async () => {
+  const origGenerate = router.generate;
+  const origProvider = router.inferenceProvider;
+  const origEnv = process.env.SCOUT_DIRECT_KB_ENABLED;
+  process.env.SCOUT_DIRECT_KB_ENABLED = 'true';
+  router.generate = async () => { throw new Error('must not be called under explicit DIRECT_KB opt-in'); };
+  router.inferenceProvider = 'stub';
+  try {
+    const result = await runRagPrimaryAgent({
+      question: 'Tell me about Bradley.',
+      conversationState: sessionState.freshState(),
+      evidence: [],
+      knowledge: bradleyKnowledge,
+      sessionId: sid(),
+      model: 'stub',
+      policyContract: { mode: 'VERIFIED_FACT' },
+      deadlineAt: Date.now() + 15000,
+      abortSignal: new AbortController().signal
+    });
+    assert.equal(result.proseSource, 'DIRECT_KB', 'explicit opt-in keeps the canonical direct-answer path');
+    assert.ok(result.reply && result.reply.length > 10);
+    assert.equal(result.generationAttempts, 0);
+  } finally {
+    router.generate = origGenerate;
+    router.inferenceProvider = origProvider;
+    if (origEnv === undefined) delete process.env.SCOUT_DIRECT_KB_ENABLED;
+    else process.env.SCOUT_DIRECT_KB_ENABLED = origEnv;
   }
 });
