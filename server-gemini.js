@@ -915,23 +915,6 @@ function buildPrompt(knowledge, question, history, provider) {
 const GEN_MODEL = process.env.GEN_MODEL || 'qwen2.5:1.5b';
 const GEN_TIMEOUT_MS = Math.max(1000, Math.min(parseInt(process.env.GEN_TIMEOUT_MS || '12500', 10), 60000));
 const GEN_ENABLED = process.env.GEN_ENABLED !== 'false';
-// Reserve enough time for retrieval, validation, response shaping, and tunnel
-// overhead while keeping the visitor-visible request below the configured deadline.
-const CHAT_GENERATION_BUDGET_MS = Math.min(GEN_TIMEOUT_MS, 60000);
-const CHAT_RESPONSE_BUDGET_MS = Math.min(CHAT_GENERATION_BUDGET_MS + 1000, 61000);
-
-async function resolveWithin(promise, budgetMs) {
-  let timer;
-  try {
-    return await Promise.race([
-      promise,
-      new Promise(resolve => { timer = setTimeout(() => resolve(null), budgetMs); })
-    ]);
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 const STOPWORDS = new Set(['the', 'a', 'an', 'is', 'are', 'was', 'were', 'his', 'her', 'he', 'she', 'it', 'and', 'or', 'of', 'to', 'in', 'for', 'with', 'about', 'what', 'who', 'how', 'does', 'do', 'did', 'can', 'me', 'tell', 'you', 'your', 'this', 'that', 'on', 'at', 'i']);
 
 function retrieveChunks(question, chunks, k = 5) {
@@ -1629,6 +1612,8 @@ app.post('/api/chat', async (req, res) => {
   // The AbortController is request-scoped and passed through runLiteAgent
   // → router.generate → Ollama fetch. When the timer fires, controller.abort()
   // terminates all outstanding inference calls immediately.
+  // Reserve enough time for retrieval, validation, response shaping, and tunnel
+  // overhead while keeping the visitor-visible request below the configured deadline.
   const REQUEST_DEADLINE_MS = Math.min(parseInt(process.env.REQUEST_DEADLINE_MS || '15000', 10), 15000);
   const deadlineAt = reqStart + REQUEST_DEADLINE_MS;
   let deadlineFired = false;
@@ -1640,8 +1625,9 @@ app.post('/api/chat', async (req, res) => {
   let contractSummary = null;
 
   // SCOUT_GATE_DEBUG: attach detailed per-turn diagnostics to the response only when requested.
-  const gateDebug = process.env.SCOUT_GATE_DEBUG === 'true' || req.body?.gateDebug === true || req.query?.gateDebug === '1';
+  const gateDebug = process.env.SCOUT_GATE_DEBUG === 'true' && (req.body?.gateDebug === true || req.query?.gateDebug === '1');
   if (gateDebug) {
+    res.set('Cache-Control', 'no-store');
     const origJson = res.json.bind(res);
     res.json = function (obj) {
       if (obj && typeof obj === 'object') {
@@ -1791,7 +1777,7 @@ app.post('/api/chat', async (req, res) => {
         sessionMemory: { turns: Math.min(history.length + 1, CONVERSATION_MAX_TURNS), retained: true },
         contract: directContract
       };
-      if (!hasHistory) {
+      if (!hasHistory && !gateDebug) {
         responseCache.set(cacheKey, { ts: Date.now(), payload: directPayload });
       }
       rememberConversation(sessionId, userMessage, directReply);
@@ -2122,7 +2108,7 @@ app.post('/api/chat', async (req, res) => {
     payload.local = { only: true, memoryTurns: Math.min(history.length, 5), stanceTopics: (stanceStore.get(sessionId) || []).length, model: model || localModelRouter.defaultModel() };
     if (agentMeta) payload.agent = agentMeta;
     if (agentEvents) payload.agentEvents = agentEvents;
-    if (!hasHistory) {
+    if (!hasHistory && !gateDebug) {
       responseCache.set(cacheKey, { ts: Date.now(), payload });
       if (responseCache.size > RESPONSE_CACHE_LIMIT) {
         responseCache.delete(responseCache.keys().next().value);
