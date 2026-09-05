@@ -1284,13 +1284,23 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   console.log("ProjectHub loaded!");
 }
 
-// Run the chat widget once the DOM is ready
+// Run the chat widget once the DOM is ready.
+// Expose the initializer globally so embedders can call it explicitly after
+// dynamically injecting the script, and guard against duplicate initialization.
 function initProjectHub() {
+  if (typeof window !== "undefined") {
+    if (window.__projectHubInitialized) return;
+    window.__projectHubInitialized = true;
+  }
   try {
     setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHubData);
   } catch (error) {
     console.error("Error initializing ProjectHub:", error);
   }
+}
+
+if (typeof window !== "undefined") {
+  window.initProjectHub = initProjectHub;
 }
 
 if (document.readyState === "loading") {
