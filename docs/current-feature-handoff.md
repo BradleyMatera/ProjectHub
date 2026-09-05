@@ -1,5 +1,20 @@
 # Scout Feature Handoff
 
+**Updated:** 2026-09-05 — `feat/generic-conversation-sets` (generic discourse
+frames + generated clarification). Feature branch published and deployed to the
+dev VM only (`5bd9437b1811`). Adds a server-owned `discourseFrame`
+(`sessionState.discourseFrame`, committed per-turn by `commitDiscourseTurn`)
+that tracks the active conversational relation and the ordered user-introduced
+alternative set; elliptical continuations (`What about X?`) inherit the frame
+intent without acquiring entity type; bare plural-set questions with no set
+classify `CLARIFICATION` and produce a generated clarifying question.
+Ambiguity is no longer a zero-generation `INFERENCE_UNAVAILABLE`. New suite:
+`test/discourse-frames.test.js` (12 tests). Full suite green; retrieval eval
+unchanged. Awaiting Bradley review before any `develop` merge. Open issue:
+evidence-thin inherited alternatives can still end in validation-rejected
+`INFERENCE_UNAVAILABLE` (recovery lacks an honest-negative path that passes
+grounding).
+
 **Updated:** 2026-08-18 (continued — primary-path hardening pass)
 
 **Working branch:** `develop` (integration branch; `feat/agent-systems-network` is historical)
