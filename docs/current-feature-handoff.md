@@ -422,3 +422,22 @@ An earlier private-preview deployment at commit `a4c8bd4` passed the then-curren
 - `scripts/eval-lite.js` — 28-case LITE evaluation.
 - `test-production-conversations.py` — sanitized 132-input replay.
 - `deploy-agent-preview.sh`, `scripts/open-agent-preview.sh`, and `deploy/projecthub-agent-preview.service` — private preview path.
+
+---
+
+# Path A integration state (2026-09-05)
+
+**Do not treat this section as historical provenance.** It records the current transient state of the release path and will need updating after the next commit.
+
+- `ProjectHub/develop` HEAD: `ed3976c` (query `git ls-remote origin develop`).
+- `ProjectHub/master` HEAD: `4a1eee7` (frozen; production backend still deployed from this SHA).
+- PR #23 (conversation-gate fixes) merged into `develop`.
+- PR #26 (widget scroll/input lock) merged into `develop`.
+- Idempotency hotfix for `ProjectHub.js` initialization is in `develop`.
+- Staging mirror: `ProjectHub-dev:main` prepared by `projecthub-staging-deployer`.
+- Dev backend: deployed from the current `ProjectHub/develop` HEAD.
+- Release PR #25: `develop → master` is open and ready for final review.
+- Gatsby recruiter site (`bradleymatera.dev`): proxy timeout raised to 18s, typed `NETLIFY_PROXY_ERROR` responses, build-derived `ProjectHub.js` cache-busting, and synthetic `DOMContentLoaded` redispatch removed.
+- Recruiter incident root cause: Netlify proxy timeout (14s) was shorter than Scout's 15s product deadline; the old `ProjectHub.js` could re-initialize on the synthetic `DOMContentLoaded`, compounding UI duplication. Mitigated by the above fixes.
+- Live qualification on `4d39995` (pre-merge): 21/33 conversations, 94/132 turns; 14 of 38 failures were `inference-unavailable` provider flakes; remaining failures were model-compliance token expectations, not logic defects.
+- Next gate: merge PR #25 to `master`, deploy production backend, trigger GitHub Pages, and verify `bradleymatera.dev/recruiter`.
