@@ -88,8 +88,14 @@ describe('Generic Policy Classifier — unrelated fixture', () => {
     assert.ok(r.requiredEntities.includes('ChurnPredictor'));
   });
 
-  it('classifies out-of-scope question', () => {
+  it('classifies arithmetic as conversational control', () => {
     const r = classifyResponsePolicy('What is 2+2?', [], fixture);
+    assert.equal(r.mode, 'CONVERSATIONAL');
+    assert.ok(r.boundary);
+  });
+
+  it('classifies non-arithmetic external question as out-of-scope', () => {
+    const r = classifyResponsePolicy('Who won the world series?', [], fixture);
     assert.equal(r.mode, 'OUT_OF_SCOPE');
     assert.ok(r.boundary);
   });

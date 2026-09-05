@@ -317,6 +317,17 @@ test('deduplicates repeated technology mentions', () => {
   assert.equal(result.unsupportedTechs.length, 0);
 });
 
+test('generic service category followed by examples extracts the examples', () => {
+  const answer = 'Maria has used AWS services such as Lambda and S3.';
+  const evidence = 'Maria built Nebula Engine with AWS Lambda and S3 storage.';
+  const result = validateTechClaims(answer, evidence);
+  assert.equal(result.valid, true);
+  assert.equal(result.unsupportedTechs.length, 0);
+  assert.ok(result.details.some(d => d.technology === 'Lambda' && d.verdict === 'supported'));
+  assert.ok(result.details.some(d => d.technology === 'S3' && d.verdict === 'supported'));
+  assert.ok(!result.details.some(d => d.technology && d.technology.toLowerCase().startsWith('aws services')));
+});
+
 test('negation in one clause does not mask affirmative claim in another', () => {
   const answer = 'Maria does not use Kubernetes, but she uses Docker.';
   const evidence = 'Maria built Nebula Engine with Docker.';
@@ -324,4 +335,14 @@ test('negation in one clause does not mask affirmative claim in another', () => 
   assert.equal(result.valid, true);
   const k8sClaim = result.unsupportedTechs.find(t => t.technology === 'Kubernetes');
   assert.equal(k8sClaim, undefined, 'Kubernetes is negated, should not be flagged');
+});
+
+test('period-delimited claim and internal punctuation in Node.js / Next.js are not broken', () => {
+  const answer = 'The app is built with Next.js. She also knows Node.js.';
+  const evidence = 'Maria built Nebula Engine using Node.js and Next.js.';
+  const result = validateTechClaims(answer, evidence);
+  assert.equal(result.valid, true);
+  assert.equal(result.unsupportedTechs.length, 0);
+  assert.ok(result.details.some(d => d.technology === 'Next.js' && d.verdict === 'supported'));
+  assert.ok(result.details.some(d => d.technology === 'Node.js' && d.verdict === 'supported'));
 });
