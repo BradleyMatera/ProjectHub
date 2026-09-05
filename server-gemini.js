@@ -1745,7 +1745,7 @@ app.post('/api/chat', async (req, res) => {
     // Classify the conversational act FIRST. Greetings, small talk, request-to-say,
     // and clarification do not require candidate evidence and must not be rewritten
     // into candidate queries by anaphora resolution.
-    const NO_RETRIEVAL_MODES = new Set(['GREETING', 'USER_PROFILE_UPDATE', 'USER_PROFILE_QUERY', 'THANKS', 'FAREWELL', 'HELP', 'CONVERSATIONAL', 'SMALL_TALK', 'REQUEST_TO_SAY', 'CLARIFY_PREVIOUS_ASSISTANT']);
+    const NO_RETRIEVAL_MODES = new Set(['GREETING', 'USER_PROFILE_UPDATE', 'USER_PROFILE_QUERY', 'THANKS', 'FAREWELL', 'HELP', 'CONVERSATIONAL', 'SMALL_TALK', 'REQUEST_TO_SAY', 'CLARIFY_PREVIOUS_ASSISTANT', 'CLARIFICATION']);
     policy = classifyResponsePolicy(userMessage, history, knowledge, preGenerationState);
 
     if (SCOUT_AGENT_ENGINE_ENABLED && !NO_RETRIEVAL_MODES.has(policy.mode)) {
@@ -1761,6 +1761,12 @@ app.post('/api/chat', async (req, res) => {
     pipeline.push(`policy:${policy.mode}`);
     // expose policy for diagnostics
     policy = Object.assign({}, policy);
+
+    // Commit the current turn's semantic discourse state (frame + alternatives)
+    // for the NEXT turn — server-owned, user-sourced, never assistant-derived.
+    // Runs before cache/direct-KB early returns so a cache-hit turn still
+    // contributes its semantic state to the session.
+    sessionState.commitDiscourseTurn(sessionId, userMessage, policy, knowledge);
 
     const cacheKey = normalizeQuery(resolvedMessage, knowledge);
 
@@ -1831,9 +1837,6 @@ app.post('/api/chat', async (req, res) => {
     // Commit any conversational control intent (greeting, name update, etc.)
     // BEFORE generation, so the model can see the just-introduced user state.
     sessionState.applyControlIntent(sessionId, resolvedMessage, knowledge, policy.mode);
-    // Commit the current turn's semantic discourse state (frame + alternatives)
-    // for the NEXT turn — server-owned, user-sourced, never assistant-derived.
-    sessionState.commitDiscourseTurn(sessionId, userMessage, policy, knowledge);
 
     // Default reply is NOT set — all prose must come from generative inference.
     // If inference fails, we return INFERENCE_UNAVAILABLE.
@@ -1879,6 +1882,7 @@ app.post('/api/chat', async (req, res) => {
         // Policy contract from classifyResponsePolicy is injected to guide generation
         const policyContract = {
           mode: policy.mode,
+          policyMode: policy.mode,
           ...policy,
         };
         delete policyContract.contract; // flatten — no nested contract object
