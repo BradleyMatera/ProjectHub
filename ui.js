@@ -8,6 +8,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   let lastSubmittedQuery = "";
   let lastSubmittedAt = 0;
   let lastBotReplyText = "";
+  let pendingQuery = "";
   let conversationContext = [];
   let turnCount = 0;
 
@@ -948,6 +949,12 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     appendMessage("bot", botLabel, "Memory cleared. What should I call you for this new session?");
   }
 
+  function isNearBottom() {
+    if (!chatOutput) return true;
+    const threshold = 80;
+    return chatOutput.scrollHeight - chatOutput.clientHeight - chatOutput.scrollTop <= threshold;
+  }
+
   function appendMessage(type, label, html, options = {}) {
     const row = document.createElement("div");
     row.className = `message-row ${type}-row`;
@@ -967,7 +974,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
     if (options.statusId) row.id = options.statusId;
     chatOutput.appendChild(row);
-    chatOutput.scrollTop = chatOutput.scrollHeight;
+    if (isNearBottom()) chatOutput.scrollTop = chatOutput.scrollHeight;
     return row;
   }
 
@@ -1009,7 +1016,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
           buffer += token.replace(/&(?![a-zA-Z]+;|#[0-9]+;)/g, '&amp;');
         }
         contentEl.innerHTML = buffer;
-        chatOutput.scrollTop = chatOutput.scrollHeight;
+        if (isNearBottom()) chatOutput.scrollTop = chatOutput.scrollHeight;
         setTimeout(next, wordDelayMs);
       }
       next();
@@ -1041,7 +1048,9 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
   function setBusy(isBusy) {
     isRequestInFlight = isBusy;
     sendButton.disabled = isBusy;
-    chatInput.disabled = isBusy;
+    // Keep the input enabled so users can type while a reply is in flight;
+    // submitChat() queues additional submissions instead of locking the composer.
+    chatInput.classList.toggle("projecthub-input-busy", isBusy);
     chatDiv.classList.toggle("projecthub-busy", isBusy);
   }
 
@@ -1168,6 +1177,15 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     return statusRow;
   }
 
+  function flushPendingQuery() {
+    if (pendingQuery) {
+      const nextQuery = pendingQuery;
+      pendingQuery = "";
+      setInputValue(nextQuery);
+      submitChat();
+    }
+  }
+
   async function typeNewBotMessage(html) {
     const row = appendMessage("bot", botLabel, "");
     await typeHtml(row.querySelector(".message-content"), html, WORD_DELAY_MS);
@@ -1186,7 +1204,12 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
 
     const normalizedQuery = userQuery.toLowerCase().replace(/\s+/g, " ");
     if (isRequestInFlight) {
-      chatInput.placeholder = "Still working on that answer...";
+      // Queue the next question instead of locking the composer. The current
+      // turn will submit the queued query when it finishes.
+      pendingQuery = userQuery;
+      chatInput.value = "";
+      resizeInput();
+      chatInput.placeholder = "Question queued; Scout will answer next...";
       return;
     }
 
@@ -1214,6 +1237,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
         chatInput.value = "";
         resizeInput();
         setBusy(false);
+        flushPendingQuery();
         chatInput.focus();
         return;
       }
@@ -1235,11 +1259,9 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
       lastQueryTopic = newTopic;
       const finalReply = reply;
 
-      // Re-enable the composer while the bot types so the user can start
-      // their next question; isRequestInFlight still prevents double submits.
+      // Prepare the composer for the next question while the bot types.
       chatInput.value = "";
       resizeInput();
-      chatInput.disabled = false;
       chatInput.focus();
 
       await showBotReply(statusRow, linkifyHtml(finalReply), typingStart);
@@ -1253,6 +1275,7 @@ function setupChatUI(projects, codePens, suggestions, handleQuery, fetchAllGitHu
     } finally {
       setBusy(false);
       chatInput.placeholder = "Ask Scout about Bradley's work, projects, skills, or roles...";
+      flushPendingQuery();
       chatInput.focus();
     }
   };
