@@ -1,5 +1,21 @@
 # Scout Feature Handoff
 
+**Updated:** 2026-09-06 (final pre-integration) — `feat/generic-conversation-sets`
+(`fa589a82bcf6`, deployed to dev only). Three-axis model complete and unified:
+(1) discourse membership, (2) entity knowledge via `assessEntityEvidence()`,
+(3) requested-proposition support via `assessRelationSupport()` /
+`assessComparisonSupport()`. Employment/founder/certification relations can no
+longer masquerade as skill proof ("Does he know Amazon?" stays NOT-YES while
+`worked_at Amazon` keeps the entity VERIFIED). `lib/knowledge-entities.js`
+normalizes projects/codePens/products/services with provenance; collection
+membership types an entity but never infers `built_by` (a tire shop did not
+build Michelin). Graph, resolver, RAG chunks, and planner all consume the shared
+normalizer; flat `skills: [...]` now reach graph + planner + RAG identically.
+Comparison coverage is FULL/PARTIAL/UNKNOWN with `supportingFacts` transported
+into the actual model packet. Real product (Northstar Desk) and service (Rivera
+"Panel Upgrade") fixtures prove end-to-end packets without project semantics.
+Test floor 1116/1116. Retrieval 1.000/0.942 unchanged.
+
 **Updated:** 2026-09-06 — `feat/generic-conversation-sets` (`b1976f85fc4c`,
 deployed to dev only). Adds the two-axis discourse/knowledge model: user
 introduction is discourse-neutral, the tenant relationship graph decides
