@@ -137,7 +137,7 @@ test('M: bare skill follow-up after skills question routes to SKILL_EVIDENCE', (
   const k = freshKnowledge();
   const sessionId = sid();
   const ss = require(path.join(ROOT, 'lib/session-state'));
-  ss.freshState(sessionId);
+  ss.setState(sessionId, ss.freshState());
   const h = [];
   const p1 = classifyResponsePolicy('What skills does he have?', h, k, ss.getState(sessionId));
   ss.commitDiscourseTurn(sessionId, 'What skills does he have?', p1, k);
