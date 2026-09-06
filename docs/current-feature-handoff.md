@@ -1,5 +1,21 @@
 # Scout Feature Handoff
 
+**Updated:** 2026-09-06 — `fix/post-integration-semantic-reliability` (`3d5a1a1ff3fa`, not yet deployed). Second semantic-reliability pass:
+1. Replaced ad-hoc history parsing with a single `getRecentUserTexts()` helper used by `inferPriorTopic()`, `inferActiveEntityFromHistory()`, and follow-up resolution; now supports both `{role,text}` and `{user,assistant}` server shapes.
+2. Locked `expectedStance()` authority order: `requiredStance` > `answerStance` > `directAnswer` > `factState`, with conflict tests.
+3. Added qualified-uncertainty leading patterns and `assessFacetSupport()` to provide requested-proposition support for active-entity facets (e.g., ProjectHub `deployed_at` is SUPPORTED; Northstar Desk `warranty` is UNKNOWN).
+4. Fixed product/service contract in `buildResponseContract()` to consume policy `factState`/`answerStance`/`requiredStance` instead of hard-coding `TRUE`.
+
+Verification:
+- Local test floor: 1156/1156 pass.
+- Retrieval: Recall@6 1.000 (40/40), MRR@6 0.942.
+- `npm run build` and `npm run build:widget` pass.
+- `node --check server-gemini.js` and `git diff --check` clean.
+- PR #31 open, base `develop`, not merged. `master` untouched.
+- Next: deploy to DEV, run live battery, run 132-turn gate, merge if clean.
+
+---
+
 **Updated:** 2026-09-06 — `fix/post-integration-semantic-reliability` (`aa16d04efb2a`, deployed to dev only). Closes two live DEV gaps discovered after `feat/generic-conversation-sets` (#30):
 1. Unknown-skill questions (`LeetCode`, `Terraform`, `DSA`) were rejecting qualified answers that started with "There is no verified evidence..." because `parseLeadingStance` checked `LEADING_DENY_RE` before `LEADING_QUALIFY_RE`. Reordered so qualified uncertainty is recognised first.
 2. Facet follow-ups (`What about its deployment?`) and bare-entity follow-ups (`JavaScript?`) were returning `OUT_OF_SCOPE` or `TECHNICAL_ERROR` in the live API because `inferActiveEntityFromHistory` only accepted `{role,text}` history, while `server-gemini.js` passes sanitized `{user,assistant}` history. Now accepts both formats and `resolveFacetFollowUp` also handles resolved/expanded forms (`what about X of Y`, `what about Y's X`).
