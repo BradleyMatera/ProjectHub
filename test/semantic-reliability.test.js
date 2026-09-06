@@ -128,3 +128,54 @@ test('L: validateAnswer accepts YES under YES contract', () => {
   const v = validateAnswer('Yes, the candidate has project experience with JavaScript.', 'JavaScript used in Project Animal Sounds', 'Does he know JavaScript?', bradleyKnowledge, [], buildRelationshipGraph(bradleyKnowledge), null, { directAnswer: 'YES', factState: 'TRUE' });
   assert.ok(v.valid, 'YES under YES contract should be accepted');
 });
+
+// ---------------------------------------------------------------------------
+// B. Bare known-entity follow-ups
+// ---------------------------------------------------------------------------
+
+test('M: bare skill follow-up after skills question routes to SKILL_EVIDENCE', () => {
+  const k = freshKnowledge();
+  const sessionId = sid();
+  const ss = require(path.join(ROOT, 'lib/session-state'));
+  ss.freshState(sessionId);
+  const h = [];
+  const p1 = classifyResponsePolicy('What skills does he have?', h, k, ss.getState(sessionId));
+  ss.commitDiscourseTurn(sessionId, 'What skills does he have?', p1, k);
+  h.push({ role: 'user', text: 'What skills does he have?' });
+  const p2 = classifyResponsePolicy('JavaScript?', h, k, ss.getState(sessionId));
+  assert.equal(p2.mode, 'SKILL_EVIDENCE');
+  assert.equal(p2.activeEntity, 'javascript');
+});
+
+test('N: bare project follow-up routes to VERIFIED_FACT with active entity', () => {
+  const k = freshKnowledge();
+  const h = [{ role: 'user', text: 'Tell me about his projects.' }];
+  const p = classifyResponsePolicy('ProjectHub?', h, k, null);
+  assert.equal(p.activeEntity, 'projecthub');
+  assert.equal(p.mode, 'VERIFIED_FACT');
+});
+
+// ---------------------------------------------------------------------------
+// C. Facet follow-ups
+// ---------------------------------------------------------------------------
+
+test('O: project deployment facet preserves active entity', () => {
+  const k = freshKnowledge();
+  const h = [{ role: 'user', text: 'Tell me about ProjectHub.' }];
+  const p = classifyResponsePolicy('What about its deployment?', h, k, null);
+  assert.equal(p.activeEntity, 'projecthub');
+  assert.equal(p.requestedTopic, 'deployment');
+});
+
+test('P: product price facet preserves active entity', () => {
+  const k = {
+    identity: { name: 'Avery Chen', role: 'Founder', company: 'Northstar Desk' },
+    products: [{ name: 'Northstar Desk', type: 'B2B SaaS', description: 'Customer support ticketing platform', attributes: { price: '$99/mo' } }],
+    skills: [],
+    projects: []
+  };
+  const h = [{ role: 'user', text: 'Tell me about Northstar Desk.' }];
+  const p = classifyResponsePolicy('What about its price?', h, k, null);
+  assert.equal(p.activeEntity, 'northstar desk');
+  assert.equal(p.requestedTopic, 'price');
+});
