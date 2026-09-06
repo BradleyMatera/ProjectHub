@@ -853,7 +853,7 @@ test('AA2: supported dimension via generic has_property attributes', () => {
   const p = classifyResponsePolicy('Which of those is cheaper?', history, k, sessionState.getState(sessionId));
   assert.equal(p.setOperation, 'COMPARE');
   assert.equal(p.dimension, 'price');
-  assert.equal(p.dimensionSupport, 'SUPPORTED', 'has_property price edges support a price comparison');
+  assert.equal(p.dimensionSupport, 'FULL', 'has_property price edges on both members support a price comparison');
 });
 
 test('AA3: role-fit ranking is an assessment, not a stored fact', () => {
@@ -1019,4 +1019,232 @@ test('AE2: exact and alias resolution carry high confidence', () => {
   const alias = assessEntityEvidence(g, 'ProjectHub');
   assert.equal(alias.resolution?.confidence, 'high');
   assert.equal(alias.resolution?.method, 'alias');
+});
+
+// ---------------------------------------------------------------------------
+// AF. Planner truth unification: entity existence is not proposition support.
+//     has_gap must never become YES; absent entity is UNKNOWN, not NO, under
+//     open-world semantics.
+// ---------------------------------------------------------------------------
+const { planResponse, assessComparisonSupport } = require(path.join(ROOT, 'lib/response-planner'));
+const { buildRelationshipGraph } = require(path.join(ROOT, 'lib/relationship-graph'));
+
+test('AF1: has_gap entity must never yield a YES direct answer', () => {
+  const g = buildRelationshipGraph(bradleyKnowledge);
+  const plan = planResponse('Does he know LeetCode?', bradleyKnowledge, [], { subjectName: 'Bradley Matera' });
+  assert.notEqual(plan.directAnswer, 'yes', 'a has_gap edge is not positive skill evidence');
+});
+
+test('AF2: has_skill entity yields positive support', () => {
+  const plan = planResponse('Does he know JavaScript?', bradleyKnowledge, [], { subjectName: 'Bradley Matera' });
+  assert.equal(plan.directAnswer, 'yes', 'has_skill is direct positive support');
+});
+
+test('AF3: completely absent technology is UNKNOWN, not automatic NO', () => {
+  const plan = planResponse('Does he know ZebraLang?', bradleyKnowledge, [], { subjectName: 'Bradley Matera' });
+  assert.notEqual(plan.directAnswer, 'yes');
+  assert.notEqual(plan.directAnswer, 'no',
+    'open-world: absent relation is not a negative claim without an authoritative closed category');
+});
+
+test('AF4: planner strength derives from graph relations, not substring truth', () => {
+  const g = buildRelationshipGraph(bradleyKnowledge);
+  const { assessEvidenceStrength } = require(path.join(ROOT, 'lib/response-planner'));
+  const s = assessEvidenceStrength(['JavaScript', 'LeetCode', 'Pizza'], bradleyKnowledge, g);
+  assert.ok(['DIRECT', 'EXPERIENCE_BASED', 'PROJECT_AND_SKILL', 'PROJECT_ONLY', 'SKILL_LISTED'].includes(s.JavaScript),
+    'verified skill maps to a positive planner label');
+  assert.equal(s.LeetCode, 'GAP', 'gap edge maps to GAP, never a positive label');
+  assert.equal(s.Pizza, 'UNKNOWN');
+});
+
+test('AF5: flat skills array produces consistent planner semantics', () => {
+  const g = buildRelationshipGraph(northstarKnowledge); // skills: ['TypeScript','React',...]
+  const { assessEvidenceStrength } = require(path.join(ROOT, 'lib/response-planner'));
+  const s = assessEvidenceStrength(['React', 'TypeScript'], northstarKnowledge, g);
+  const graphReact = assessEntityEvidence(g, 'React').status;
+  assert.equal(graphReact, 'VERIFIED', 'flat skills emit has_skill edges');
+  assert.notEqual(s.React, 'UNKNOWN', 'planner sees the same evidence the graph sees');
+  assert.notEqual(s.React, 'GAP');
+  assert.equal(s.TypeScript === 'UNKNOWN', false);
+});
+
+// ---------------------------------------------------------------------------
+// AG. Comparison coverage: FULL / PARTIAL / UNKNOWN. One known member is not
+//     a verified winner.
+// ---------------------------------------------------------------------------
+const propertyTenant = {
+  identity: { name: 'Acme Gadgets' },
+  agent: { name: 'Scout' },
+  projects: [
+    { name: 'Alpha Unit', tech: ['React'], attributes: { price: '$10', storage: '256GB', batteryLife: '8h' } },
+    { name: 'Beta Unit', tech: ['Vue'], attributes: { price: '$20', storage: '512GB', batteryLife: '12h' } },
+    { name: 'Gamma Unit', tech: [], attributes: { price: '$15' } }
+  ]
+};
+const partialTenant = {
+  identity: { name: 'Acme Gadgets' },
+  agent: { name: 'Scout' },
+  projects: [
+    { name: 'Alpha Unit', attributes: { price: '$10' } },
+    { name: 'Beta Unit', attributes: {} }
+  ]
+};
+
+test('AG1: one-sided property is PARTIAL, not SUPPORTED', () => {
+  const g = buildRelationshipGraph(partialTenant);
+  const d = assessComparisonSupport('Which is cheaper?', ['Alpha Unit', 'Beta Unit'], g);
+  assert.equal(d.dimension, 'price');
+  assert.equal(d.memberSupport['Alpha Unit'], 'SUPPORTED');
+  assert.equal(d.memberSupport['Beta Unit'], 'UNKNOWN');
+  assert.equal(d.support, 'PARTIAL', 'one member priced cannot verify a comparison');
+});
+
+test('AG2: all members priced is FULL', () => {
+  const g = buildRelationshipGraph(propertyTenant);
+  const d = assessComparisonSupport('Which is cheaper?', ['Alpha Unit', 'Beta Unit'], g);
+  assert.equal(d.support, 'FULL');
+  assert.ok(d.supportingFacts.length >= 2, 'per-member price facts preserved for transport');
+});
+
+test('AG3: absent property is UNKNOWN', () => {
+  const g = buildRelationshipGraph(bikeKnowledge);
+  const d = assessComparisonSupport('Which of those is lightest?', ['TrailRunner', 'CityBike'], g);
+  assert.equal(d.dimension, 'weight');
+  assert.equal(d.support, 'UNKNOWN');
+});
+
+test('AG4: relation dimension is PARTIAL when only some members match', () => {
+  const g = buildRelationshipGraph(propertyTenant); // Alpha uses React, Beta uses Vue
+  const d = assessComparisonSupport('Which of those used React?', ['Alpha Unit', 'Beta Unit'], g);
+  assert.equal(d.dimensionKind, 'relation');
+  assert.equal(d.memberSupport['Alpha Unit'], 'SUPPORTED');
+  assert.equal(d.memberSupport['Beta Unit'], 'UNKNOWN');
+  assert.equal(d.support, 'PARTIAL');
+});
+
+// ---------------------------------------------------------------------------
+// AH. Schema-first dimension resolution: arbitrary tenant property keys drive
+//     the dimension — no dictionary entry required.
+// ---------------------------------------------------------------------------
+test('AH1: arbitrary camelCase property keys resolve from question text', () => {
+  const g = buildRelationshipGraph(propertyTenant);
+  const d1 = assessComparisonSupport('Which has better battery life?', ['Alpha Unit', 'Beta Unit'], g);
+  assert.equal(d1.dimensionKind, 'property');
+  assert.equal(d1.dimension, 'batteryLife', 'tenant-declared key resolved without any dictionary entry');
+  assert.equal(d1.support, 'FULL');
+  const d2 = assessComparisonSupport('Which has more storage?', ['Alpha Unit', 'Beta Unit'], g);
+  assert.equal(d2.dimension, 'storage');
+  assert.equal(d2.support, 'FULL');
+});
+
+test('AH2: absent arbitrary property is UNKNOWN', () => {
+  const g = buildRelationshipGraph(propertyTenant);
+  const d = assessComparisonSupport('Which has better warranty coverage?', ['Alpha Unit', 'Beta Unit'], g);
+  assert.equal(d.support, 'UNKNOWN', 'no warranty property declared anywhere -> honest unknown');
+});
+
+test('AH3: multi-word relation targets are not truncated', () => {
+  const g = buildRelationshipGraph(propertyTenant);
+  const d = assessComparisonSupport('Which of those used React Native?', ['Alpha Unit', 'Beta Unit'], g);
+  assert.equal(d.dimensionKind, 'relation');
+  assert.match(d.dimension, /react native/i);
+});
+
+// ---------------------------------------------------------------------------
+// AI. Fuzzy confidence applies to gaps too: a low-confidence collision cannot
+//     manufacture a definitive GAP.
+// ---------------------------------------------------------------------------
+test('AI1: embedded-fragment match does not produce definitive GAP', () => {
+  const g = buildRelationshipGraph(bradleyKnowledge);
+  const a = assessEntityEvidence(g, 'kubernet'); // fragment of a gap name, not a word
+  assert.notEqual(a.status, 'GAP', 'low-confidence fragment must not assert a documented gap');
+  assert.notEqual(a.status, 'VERIFIED');
+});
+
+test('AI2: word-level reference to a gap still produces GAP', () => {
+  const g = buildRelationshipGraph(bradleyKnowledge);
+  const a = assessEntityEvidence(g, 'LeetCode');
+  assert.equal(a.status, 'GAP', 'the gap object literally names LeetCode');
+});
+
+// ---------------------------------------------------------------------------
+// AJ. Evidence transport: property facts must reach the actual model packet,
+//     not only an internal boolean.
+// ---------------------------------------------------------------------------
+test('AJ1: FULL price comparison puts both values in the model input', async () => {
+  const sessionId = sid();
+  const history = [];
+  const k = propertyTenant;
+  runTurn(null, sessionId, 'Compare Alpha Unit and Beta Unit.', k, history);
+  const policy = classifyResponsePolicy('Which is cheaper?', history, k, sessionState.getState(sessionId));
+  assert.equal(policy.dimensionSupport, 'FULL');
+  const origGenerate = router.generate;
+  const origProvider = router.inferenceProvider;
+  let captured = null;
+  router.generate = async (model, messages, opts) => {
+    if (!captured) captured = messages;
+    return { ok: true, text: 'Alpha Unit is cheaper at $10 versus Beta Unit at $20.', model: 'stub', usage: { provider: 'stub' }, latencyMs: 1 };
+  };
+  router.inferenceProvider = 'stub';
+  try {
+    const result = await runRagPrimaryAgent({
+      question: 'Which is cheaper?',
+      conversationState: sessionState.getState(sessionId),
+      evidence: [],
+      knowledge: k,
+      sessionId,
+      model: 'stub',
+      policyContract: policy,
+      deadlineAt: Date.now() + 15000,
+      abortSignal: new AbortController().signal
+    });
+    const packetText = (captured || []).map(m => m.content).join('\n');
+    assert.ok(/Alpha Unit/.test(packetText), 'member A in packet');
+    assert.ok(/Beta Unit/.test(packetText), 'member B in packet');
+    assert.ok(/\$?10/.test(packetText), 'price A reaches the model');
+    assert.ok(/\$?20/.test(packetText), 'price B reaches the model');
+    assert.ok(result.generationAttempts >= 1);
+    assert.equal(result.proseSource, 'MODEL_GENERATION');
+  } finally {
+    router.generate = origGenerate;
+    router.inferenceProvider = origProvider;
+  }
+});
+
+test('AJ2: PARTIAL price comparison marks the missing member unknown', async () => {
+  const sessionId = sid();
+  const history = [];
+  const k = partialTenant;
+  runTurn(null, sessionId, 'Compare Alpha Unit and Beta Unit.', k, history);
+  const policy = classifyResponsePolicy('Which is cheaper?', history, k, sessionState.getState(sessionId));
+  assert.equal(policy.dimensionSupport, 'PARTIAL');
+  const origGenerate = router.generate;
+  const origProvider = router.inferenceProvider;
+  let captured = null;
+  router.generate = async (model, messages) => {
+    if (!captured) captured = messages;
+    return { ok: true, text: 'Alpha Unit has a verified price of $10, but there is no verified price for Beta Unit, so the evidence cannot determine which is cheaper.', model: 'stub', usage: { provider: 'stub' }, latencyMs: 1 };
+  };
+  router.inferenceProvider = 'stub';
+  try {
+    const result = await runRagPrimaryAgent({
+      question: 'Which is cheaper?',
+      conversationState: sessionState.getState(sessionId),
+      evidence: [],
+      knowledge: k,
+      sessionId,
+      model: 'stub',
+      policyContract: policy,
+      deadlineAt: Date.now() + 15000,
+      abortSignal: new AbortController().signal
+    });
+    const packetText = (captured || []).map(m => m.content).join('\n');
+    assert.ok(/\$?10/.test(packetText), 'known member price reaches the model');
+    assert.ok(/Beta Unit/i.test(packetText) && /unknown|no verified|insufficient/i.test(packetText),
+      'unknown member is explicitly qualified in the packet');
+    assert.notEqual(result.proseSource, 'TECHNICAL_ERROR');
+  } finally {
+    router.generate = origGenerate;
+    router.inferenceProvider = origProvider;
+  }
 });
