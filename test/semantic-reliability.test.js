@@ -1,0 +1,130 @@
+'use strict';
+
+// Post-PR#30 semantic reliability tests.
+// Focus: contract-aligned polarity, bare known-entity follow-ups, facets.
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('path');
+
+const ROOT = path.join(__dirname, '..');
+const sessionState = require(path.join(ROOT, 'lib/session-state'));
+const { classifyResponsePolicy } = require(path.join(ROOT, 'lib/response-policy'));
+const router = require(path.join(ROOT, 'lib/local-model-router'));
+const { runRagPrimaryAgent } = require(path.join(ROOT, 'lib/rag-agent'));
+const { validateAnswer, checkStance } = require(path.join(ROOT, 'lib/grounding-validator'));
+const { buildRelationshipGraph } = require(path.join(ROOT, 'lib/relationship-graph'));
+
+const bradleyKnowledge = require(path.join(ROOT, 'data/recruiter-knowledge.json'));
+
+function sid() { return `sr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`; }
+
+function freshKnowledge() { return JSON.parse(JSON.stringify(bradleyKnowledge)); }
+
+async function stubRun(question, answerText, knowledge = bradleyKnowledge, history = []) {
+  const sessionId = sid();
+  const state = sessionState.freshState();
+  const policy = classifyResponsePolicy(question, history, knowledge, state);
+  const origGenerate = router.generate;
+  const origProvider = router.inferenceProvider;
+  let captured = null;
+  router.generate = async (model, messages) => {
+    if (!captured) captured = messages;
+    return { ok: true, text: answerText, model: 'stub', usage: { provider: 'stub' }, latencyMs: 1 };
+  };
+  router.inferenceProvider = 'stub';
+  try {
+    const result = await runRagPrimaryAgent({
+      question,
+      conversationState: state,
+      evidence: [],
+      knowledge,
+      sessionId,
+      model: 'stub',
+      policyContract: policy,
+      deadlineAt: Date.now() + 15000
+    });
+    return { ...result, policy, captured };
+  } finally {
+    router.generate = origGenerate;
+    router.inferenceProvider = origProvider;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// A. Contract-aligned stance validation
+// ---------------------------------------------------------------------------
+
+test('A: positive skill contract accepts a YES stub', async () => {
+  const k = freshKnowledge();
+  const result = await stubRun('Does he know JavaScript?', 'Yes, the candidate has project experience with JavaScript.', k);
+  assert.equal(result.proseSource, 'MODEL_GENERATION');
+  const contract = result.responseContract;
+  assert.ok(contract.directAnswer === 'YES' || contract.factState === 'TRUE' || contract.evidenceStrength === 'PROJECT',
+    'contract should be positive for JavaScript');
+});
+
+test('B: positive skill contract rejects a NO stub', async () => {
+  const k = freshKnowledge();
+  const result = await stubRun('Does he know JavaScript?', 'No, he does not know JavaScript.', k);
+  assert.notEqual(result.proseSource, 'MODEL_GENERATION', 'stance mismatch should reject the contradiction');
+});
+
+test('C: LeetCode gap contract rejects a YES stub', async () => {
+  const k = freshKnowledge();
+  const result = await stubRun('Does he know LeetCode?', 'Yes, Bradley has mixed evidence for LeetCode, as he has taken Udemy courses and discussed the math with others, but he has never had production mentorship in data structures and algorithms.', k);
+  assert.notEqual(result.proseSource, 'MODEL_GENERATION',
+    'a leading YES under an UNKNOWN/GAP contract must be rejected');
+});
+
+test('D: LeetCode gap contract accepts a qualified stub', async () => {
+  const k = freshKnowledge();
+  const result = await stubRun('Does he know LeetCode?', 'The profile documents LeetCode as a learning gap rather than verified proficiency.', k);
+  assert.equal(result.proseSource, 'MODEL_GENERATION');
+});
+
+test('E: gap question can still answer YES when asked about the gap itself', async () => {
+  const k = freshKnowledge();
+  const result = await stubRun('Is data structures and algorithms documented as a gap?', 'Yes, data structures and algorithms is listed among the documented learning gaps.', k);
+  assert.equal(result.proseSource, 'MODEL_GENERATION');
+});
+
+test('F: unknown technology rejects a closed NO under open world', async () => {
+  const k = freshKnowledge();
+  const result = await stubRun('Does he know ZebraLang?', 'No, he does not know ZebraLang.', k);
+  assert.notEqual(result.proseSource, 'MODEL_GENERATION',
+    'open-world unknown must not accept a definitive NO');
+});
+
+test('G: checkStance rejects YES under UNKNOWN contract', () => {
+  const s = checkStance('Yes, he knows LeetCode.', 'Does he know LeetCode?', { directAnswer: 'UNKNOWN', factState: 'UNKNOWN' });
+  assert.ok(!s.valid, 'YES under UNKNOWN contract is a stance mismatch');
+  assert.ok(s.reason && /stance/.test(s.reason), `expected stance-related reason, got: ${s.reason}`);
+});
+
+test('H: checkStance accepts YES under YES contract', () => {
+  const s = checkStance('Yes, the candidate has project experience with JavaScript.', 'Does he know JavaScript?', { directAnswer: 'YES', factState: 'TRUE' });
+  assert.ok(s.valid, 'YES under YES contract should be accepted');
+});
+
+test('I: checkStance accepts NO under NO contract', () => {
+  const s = checkStance('No, the verified profile does not document that.', 'Does he know COBOL?', { directAnswer: 'NO', factState: 'FALSE' });
+  assert.ok(s.valid, 'NO under NO contract should be accepted');
+});
+
+test('J: checkStance accepts qualified answer under UNKNOWN contract', () => {
+  const s = checkStance('The available evidence is insufficient to determine that.', 'Does he know ZebraLang?', { directAnswer: 'UNKNOWN', factState: 'UNKNOWN' });
+  assert.ok(s.valid, 'qualified answer under UNKNOWN should pass');
+});
+
+test('K: validateAnswer rejects YES under UNKNOWN contract', () => {
+  const v = validateAnswer('Yes, he knows LeetCode.', 'LeetCode style problem gap', 'Does he know LeetCode?', bradleyKnowledge, [], buildRelationshipGraph(bradleyKnowledge), null, { directAnswer: 'UNKNOWN', factState: 'UNKNOWN' });
+  assert.ok(!v.valid, 'YES under UNKNOWN contract is a stance mismatch');
+  const reasons = (v.reasons || []).join(' ');
+  assert.ok(/stance/.test(reasons), `expected stance-related reason, got: ${reasons}`);
+});
+
+test('L: validateAnswer accepts YES under YES contract', () => {
+  const v = validateAnswer('Yes, the candidate has project experience with JavaScript.', 'JavaScript used in Project Animal Sounds', 'Does he know JavaScript?', bradleyKnowledge, [], buildRelationshipGraph(bradleyKnowledge), null, { directAnswer: 'YES', factState: 'TRUE' });
+  assert.ok(v.valid, 'YES under YES contract should be accepted');
+});
