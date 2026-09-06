@@ -899,6 +899,82 @@ test('completeness check detects adversarial without refutation', () => {
 
 // === Response planner tests ===
 
+test('response planner does not turn worked_at Amazon into knowing Amazon', () => {
+  const { planResponse } = require('../lib/response-planner');
+  const { assessEntityEvidence } = require('../lib/relationship-graph');
+  const knowledge = { experience: [{ company: 'Amazon', role: 'Engineer' }] };
+  const graph = buildRelationshipGraph(knowledge);
+  assert.ok(graph.triples.some(t => t.subject === graph.subjectName && t.relation === 'worked_at' && t.object === 'Amazon'));
+  assert.equal(assessEntityEvidence(graph, 'Amazon').status, 'VERIFIED');
+  const plan = planResponse('Does he know Amazon?', knowledge, [], {});
+  assert.equal(plan.intent, 'SKILL');
+  assert.notEqual(plan.directAnswer, 'yes');
+});
+
+test('response planner does not turn certification into usage', () => {
+  const { planResponse } = require('../lib/response-planner');
+  const knowledge = { certifications: [{ name: 'Quanta' }] };
+  const plan = planResponse('Has he used Quanta?', knowledge, [], {});
+  assert.equal(plan.intent, 'SKILL');
+  assert.equal(plan.directAnswer, 'unknown');
+});
+
+test('response planner relation support keeps founder and employment separate from skills', () => {
+  const { assessRelationSupport } = require('../lib/response-planner');
+  for (const relation of ['founder_of', 'worked_at', 'interned_at', 'employed_at', 'employed_as', 'company_behind']) {
+    const graph = { triples: [{ subject: 'Person', relation, object: 'Quanta' }] };
+    assert.equal(assessRelationSupport({ graph, subject: 'Person', target: 'Quanta', requestedRelation: 'knowledge' }).support, 'UNKNOWN');
+    assert.equal(assessRelationSupport({ graph, subject: 'Person', target: 'Quanta', requestedRelation: 'usage' }).support, 'UNKNOWN');
+    assert.equal(assessRelationSupport({ graph, subject: 'Person', target: 'Quanta', requestedRelation: relation }).support, 'SUPPORTED');
+  }
+});
+
+test('response planner has_skill supports knowledge but not usage', () => {
+  const { planResponse } = require('../lib/response-planner');
+  const knowledge = { skills: ['Quanta', 'C++', 'Wide Area Networking'] };
+  for (const skill of knowledge.skills) {
+    assert.equal(planResponse(`Does he know ${skill}?`, knowledge, [], {}).directAnswer, 'yes');
+  }
+  assert.equal(planResponse('Has he used Quanta?', knowledge, [], {}).directAnswer, 'unknown');
+  assert.notEqual(planResponse('Does Another Person know Quanta?', knowledge, [], {}).directAnswer, 'yes');
+});
+
+test('response planner documented gap stays unknown and absent skill stays open world', () => {
+  const { planResponse } = require('../lib/response-planner');
+  const knowledge = { summary: { honestGaps: ['Quanta'] } };
+  assert.equal(planResponse('Does he know Quanta?', knowledge, [], {}).directAnswer, 'unknown');
+  assert.equal(planResponse('Does he know Unlisted?', knowledge, [], {}).directAnswer, null);
+});
+
+test('response planner project-only knowledge is adjacent while owned project supports usage', () => {
+  const { planResponse, assessRelationSupport } = require('../lib/response-planner');
+  const knowledge = { projects: [{ name: 'Sample', tech: ['Quanta'] }] };
+  const graph = buildRelationshipGraph(knowledge);
+  assert.equal(assessRelationSupport({ graph, subject: graph.subjectName, target: 'Quanta', requestedRelation: 'knowledge' }).support, 'ADJACENT');
+  assert.equal(planResponse('Does he know Quanta?', knowledge, [], {}).directAnswer, 'unknown');
+  assert.equal(planResponse('Has he used Quanta?', knowledge, [], {}).directAnswer, 'yes');
+  assert.equal(planResponse('Does he know Sample?', knowledge, [], {}).directAnswer, null);
+  assert.equal(assessRelationSupport({ graph, subject: 'Unrelated Person', target: 'Quanta', requestedRelation: 'usage' }).support, 'UNKNOWN');
+});
+
+test('response planner relation support requires exact or alias matches and correct direction', () => {
+  const { assessRelationSupport } = require('../lib/response-planner');
+  const graph = buildRelationshipGraph({ projects: [{ name: 'Sample Project', aliases: ['Demo'], tech: ['Quanta'] }] });
+  const assess = (subject, target, requestedRelation = 'usage') => assessRelationSupport({ graph, subject, target, requestedRelation });
+  assert.equal(assess('Demo', 'Quanta').support, 'SUPPORTED');
+  assert.equal(assess('Sample', 'Quanta').support, 'UNKNOWN');
+  assert.equal(assess('Sample Project', 'Quant').support, 'UNKNOWN');
+  assert.equal(assess('Quanta', 'Sample Project').support, 'UNKNOWN');
+  assert.equal(assess('Quanta', 'Sample Project', 'knowledge').support, 'UNKNOWN');
+  graph.triples.push({ subject: 'Person', relation: 'has_skill', object: 'Quanta', _conf: 'low' });
+  assert.equal(assess('Person', 'Quanta', 'knowledge').support, 'UNKNOWN');
+  graph.triples.push({ subject: 'Person', relation: 'has_skill', object: 'Quanta' });
+  graph.aliasToCanonical.set('qtech', 'Quanta');
+  assert.equal(assess('Person', 'QTech', 'knowledge').support, 'SUPPORTED');
+  assert.equal(assess('Quanta', 'Person', 'knowledge').support, 'UNKNOWN');
+  assert.equal(assessRelationSupport().support, 'UNKNOWN');
+});
+
 test('response planner produces a plan for skill questions', () => {
   const { planResponse } = require('../lib/response-planner');
   const knowledge = require('../data/recruiter-knowledge.json');
@@ -910,6 +986,17 @@ test('response planner produces a plan for skill questions', () => {
   assert.ok(plan.entities.includes('DynamoDB'));
   assert.ok(plan.evidenceStrength['DynamoDB']);
   assert.ok(plan.evidenceStrength['DynamoDB'] === 'DIRECT' || plan.evidenceStrength['DynamoDB'] === 'PROJECT_AND_SKILL');
+});
+
+test('response planner recruiter skills use shared normalization without unnamed entries', () => {
+  const { planResponse } = require('../lib/response-planner');
+  const { normalizeKnowledgeSkills } = require('../lib/knowledge-entities');
+  const knowledge = { skills: { technical: [{ name: 'Quanta', summary: 'Core tool' }], strategy: { summary: 'Plans delivery' } } };
+  const plan = planResponse('Give me a recruiter brief', knowledge, [], {});
+  const names = normalizeKnowledgeSkills(knowledge).map(skill => skill.name).filter(Boolean).slice(0, 6);
+  assert.deepEqual(plan.recruiterBrief.topStrengths, names);
+  assert.ok(plan.recruiterBrief.topStrengths.includes('Quanta'));
+  assert.ok(plan.recruiterBrief.topStrengths.every(Boolean));
 });
 
 test('response planner produces a plan for adversarial questions', () => {
@@ -940,6 +1027,56 @@ test('response planner produces a plan for comparison questions', () => {
   ], { subjectName: 'Bradley Matera' });
   assert.equal(plan.intent, 'COMPARISON');
   assert.ok(plan.comparisonDimensions.length > 0);
+});
+
+test('response planner quicker services use declared duration and preserve property provenance', () => {
+  const { assessComparisonSupport } = require('../lib/response-planner');
+  const knowledge = { services: [
+    { name: 'Full Service', attributes: { duration: '1 day' } },
+    { name: 'Express Service', attributes: { duration: '4 hours' } }
+  ] };
+  const graph = buildRelationshipGraph(knowledge);
+  const result = assessComparisonSupport('Which service is quicker?', knowledge.services.map(s => s.name), graph);
+  assert.equal(result.dimension, 'duration');
+  assert.equal(result.dimensionKind, 'property');
+  assert.equal(result.support, 'FULL');
+  assert.deepEqual(result.supportingFacts.map(f => f.object), ['1 day', '4 hours']);
+  assert.deepEqual(result.supportingFacts.map(f => f.source), ['services[0].attributes.duration', 'services[1].attributes.duration']);
+  assert.ok(result.supportingFacts.every(f => f.meta.property === 'duration'));
+});
+
+test('response planner longer tire warranty uses warrantyMiles and preserves property provenance', () => {
+  const { assessComparisonSupport } = require('../lib/response-planner');
+  const knowledge = { products: [
+    { name: 'Touring Tire', attributes: { warrantyMiles: 60000 } },
+    { name: 'Premium Tire', attributes: { warrantyMiles: 80000 } }
+  ] };
+  const graph = buildRelationshipGraph(knowledge);
+  const result = assessComparisonSupport('Which has the longer warranty?', knowledge.products.map(p => p.name), graph);
+  assert.equal(result.dimension, 'warrantyMiles');
+  assert.equal(result.support, 'FULL');
+  assert.deepEqual(result.supportingFacts.map(f => f.object), ['60000', '80000']);
+  assert.deepEqual(result.supportingFacts.map(f => f.source), ['products[0].attributes.warrantyMiles', 'products[1].attributes.warrantyMiles']);
+  assert.ok(result.supportingFacts.every(f => f.meta.property === 'warrantyMiles'));
+});
+
+test('response planner speed aliases consult compared schemas without inventing duration', () => {
+  const { assessComparisonSupport } = require('../lib/response-planner');
+  const graph = buildRelationshipGraph({
+    services: [{ name: 'Timed Option', attributes: { duration: '4 hours' } }, { name: 'Unspecified Choice' }],
+    products: [{ name: 'Speed Option', attributes: { speed: '20 mph' } }]
+  });
+  for (const adjective of ['quicker', 'faster', 'slower']) {
+    const result = assessComparisonSupport(`Which is ${adjective}?`, ['Timed Option', 'Unspecified Choice'], graph);
+    assert.equal(result.dimension, 'duration');
+    assert.equal(result.support, 'PARTIAL');
+  }
+  const speed = assessComparisonSupport('Which is quicker?', ['Speed Option'], graph);
+  assert.equal(speed.dimension, 'speed');
+  assert.equal(speed.support, 'FULL');
+  const absent = assessComparisonSupport('Which is quicker?', ['Unspecified Choice'], graph);
+  assert.equal(absent.dimension, 'speed');
+  assert.equal(absent.support, 'UNKNOWN');
 });
 
 test('response planner formatPlanForPrompt produces compact text', () => {
