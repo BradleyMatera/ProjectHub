@@ -815,3 +815,208 @@ test('I: DIRECT_KB explicit opt-in still returns the direct answer', async () =>
     else process.env.SCOUT_DIRECT_KB_ENABLED = origEnv;
   }
 });
+
+// ---------------------------------------------------------------------------
+// AA. Dimension-aware comparison support: entity knowledge and requested-
+//     proposition support are different axes. Known entities + an unsupported
+//     requested dimension must NOT become a verified comparison.
+// ---------------------------------------------------------------------------
+const { assessEntityEvidence } = require(path.join(ROOT, 'lib/relationship-graph'));
+
+const pricedBikeKnowledge = {
+  ...bikeKnowledge,
+  projects: bikeKnowledge.projects.map((p, i) => ({
+    ...p,
+    attributes: { price: ['£900', '£650', '£1400'][i] }
+  }))
+};
+
+test('AA1: known entities + unsupported dimension -> dimension UNKNOWN, generation allowed', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bikeKnowledge; // TrailRunner/CityBike exist, no weight data anywhere
+  runTurn(null, sessionId, 'Compare TrailRunner and CityBike.', k, history);
+  const p = classifyResponsePolicy('Which of those is lightest?', history, k, sessionState.getState(sessionId));
+  assert.equal(p.setOperation, 'COMPARE');
+  assert.ok((p.memberEvidence || []).every(m => m.evidenceStatus === 'VERIFIED'),
+    'both products are known entities with claiming edges');
+  assert.equal(p.dimensionSupport, 'UNKNOWN',
+    'no weight/lightness relationship exists — the requested proposition is unverifiable');
+  assert.notEqual(p.mode, 'VERIFIED_FACT');
+});
+
+test('AA2: supported dimension via generic has_property attributes', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = pricedBikeKnowledge;
+  runTurn(null, sessionId, 'Compare TrailRunner and CityBike.', k, history);
+  const p = classifyResponsePolicy('Which of those is cheaper?', history, k, sessionState.getState(sessionId));
+  assert.equal(p.setOperation, 'COMPARE');
+  assert.equal(p.dimension, 'price');
+  assert.equal(p.dimensionSupport, 'SUPPORTED', 'has_property price edges support a price comparison');
+});
+
+test('AA3: role-fit ranking is an assessment, not a stored fact', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bradleyKnowledge;
+  runTurn(null, sessionId, "I'm hiring for a junior frontend developer. Is he a fit?", k, history);
+  runTurn(null, sessionId, 'What about DevOps?', k, history);
+  runTurn(null, sessionId, 'And QA?', k, history);
+  const p = classifyResponsePolicy('Which of those is the strongest fit?', history, k, sessionState.getState(sessionId));
+  assert.equal(p.setOperation, 'COMPARE');
+  assert.equal(p.dimensionKind, 'assessment', 'role-fit ranking is synthesized from member evidence, not stored');
+  assert.equal(p.dimensionSupport, 'SUPPORTED', 'assessment may proceed from member profiles');
+});
+
+test('AA4: no-KB set is understood, dimension unknown, no recruiter requirements', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = {};
+  runTurn(null, sessionId, 'I am choosing between Alpha and Beta.', k, history);
+  const p = classifyResponsePolicy('Which is better?', history, k, sessionState.getState(sessionId));
+  assert.equal(p.setOperation, 'COMPARE');
+  assert.ok(!(p.evidenceRequirements || []).some(r => /subject\.|project\d\./.test(r)),
+    'empty tenant must not get recruiter evidence requirements');
+});
+
+test('AA5: unsupported dimension still reaches generation, never fabricated', async () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bikeKnowledge;
+  runTurn(null, sessionId, 'Compare TrailRunner and CityBike.', k, history);
+  const policy = classifyResponsePolicy('Which of those is lightest?', history, k, sessionState.getState(sessionId));
+  const origGenerate = router.generate;
+  const origProvider = router.inferenceProvider;
+  router.generate = async () => ({ ok: true, text: 'I do not have verified weight data to compare them.', model: 'stub', usage: { provider: 'stub' }, latencyMs: 1 });
+  router.inferenceProvider = 'stub';
+  try {
+    const result = await runRagPrimaryAgent({
+      question: 'Which of those is lightest?',
+      conversationState: sessionState.getState(sessionId),
+      evidence: [],
+      knowledge: k,
+      sessionId,
+      model: 'stub',
+      policyContract: policy,
+      deadlineAt: Date.now() + 15000,
+      abortSignal: new AbortController().signal
+    });
+    const contract = result.responseContract || {};
+    assert.equal(contract.dimensionSupport, 'UNKNOWN');
+    assert.ok(result.generationAttempts >= 1, 'generation still happens for honest uncertainty');
+    assert.equal(result.proseSource, 'MODEL_GENERATION');
+  } finally {
+    router.generate = origGenerate;
+    router.inferenceProvider = origProvider;
+  }
+});
+
+// ---------------------------------------------------------------------------
+// AB. Explicit comparison parser: all claimed forms must populate the member
+//     set — keyword-first AND infix "A vs B" forms.
+// ---------------------------------------------------------------------------
+for (const [q, a, b] of [
+  ['Compare TrailRunner and CityBike.', 'TrailRunner', 'CityBike'],
+  ['Compare TrailRunner with CityBike.', 'TrailRunner', 'CityBike'],
+  ['Compare TrailRunner to CityBike.', 'TrailRunner', 'CityBike'],
+  ['Difference between TrailRunner and CityBike?', 'TrailRunner', 'CityBike'],
+  ['TrailRunner vs CityBike', 'TrailRunner', 'CityBike'],
+  ['TrailRunner versus CityBike', 'TrailRunner', 'CityBike'],
+  ['React vs Vue', 'React', 'Vue'],
+  ['Choosing between TrailRunner and CityBike.', 'TrailRunner', 'CityBike']
+]) {
+  test(`AB: "${q}" extracts both members`, () => {
+    const p = classifyResponsePolicy(q, [], bikeKnowledge, sessionState.freshState());
+    assert.equal(p.mode, 'COMPARISON');
+    assert.equal((p.requiredEntities || []).length, 2, 'must never emit an empty comparison contract');
+    assert.match(p.requiredEntities[0], new RegExp(a, 'i'));
+    assert.match(p.requiredEntities[1], new RegExp(b, 'i'));
+  });
+}
+
+test('AB2: unextractable comparison degrades honestly, never empty contract', () => {
+  const p = classifyResponsePolicy('Can you compare them?', [], {}, sessionState.freshState());
+  assert.notEqual(p.mode, 'COMPARISON', 'no extractable members -> not an empty comparison');
+});
+
+// ---------------------------------------------------------------------------
+// AC. Evidence requirements are semantic — no project/recruiter hardcoding
+//     leaks into unrelated domains.
+// ---------------------------------------------------------------------------
+test('AC1: skill comparison carries no project requirements', () => {
+  const p = classifyResponsePolicy('Compare TypeScript and PostgreSQL.', [], bradleyKnowledge, sessionState.freshState());
+  assert.equal(p.mode, 'COMPARISON');
+  assert.ok(!(p.evidenceRequirements || []).some(r => /project\d|subject\.experience|subject\.skills/.test(r)),
+    'a skills comparison must not demand project or subject-experience evidence');
+});
+
+test('AC2: product comparison needs entity evidence, not subject experience', () => {
+  const p = classifyResponsePolicy('Compare TrailRunner and CityBike.', [], bikeKnowledge, sessionState.freshState());
+  assert.equal(p.mode, 'COMPARISON');
+  assert.ok(!(p.evidenceRequirements || []).some(r => /subject\.experience|subject\.skills/.test(r)));
+});
+
+test('AC3: role-fit keeps subject evidence requirements', () => {
+  const p = classifyResponsePolicy("I'm hiring for a junior frontend developer. Is he a fit?", [], bradleyKnowledge, sessionState.freshState());
+  assert.equal(p.mode, 'ROLE_FIT');
+  assert.ok((p.evidenceRequirements || []).some(r => /subject\./.test(r)),
+    'role-fit legitimately needs subject skills/experience');
+});
+
+// ---------------------------------------------------------------------------
+// AD. Homogeneous-set type compatibility for elliptical inheritance.
+// ---------------------------------------------------------------------------
+test('AD1: known incompatible type does not silently inherit into a project set', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bradleyKnowledge;
+  runTurn(null, sessionId, 'Compare ProjectHub and Voice Ops Platform.', k, history);
+  const f = frameOf(sessionState.getState(sessionId) && { state: sessionState.getState(sessionId) });
+  const alts = (sessionState.getState(sessionId).discourseFrame?.alternatives || []).map(a => a.name);
+  assert.equal(alts.length, 2, 'explicit project set exists');
+  const t = runTurn(null, sessionId, 'What about JavaScript?', k, history);
+  assert.ok(!t.policy.contextualInheritance,
+    'a confidently-typed skill must not silently join a homogeneous project set');
+});
+
+test('AD2: unknown-type alternative still inherits a homogeneous set', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bradleyKnowledge;
+  runTurn(null, sessionId, 'Compare ProjectHub and Voice Ops Platform.', k, history);
+  const t = runTurn(null, sessionId, 'What about Zebra?', k, history);
+  assert.equal(t.policy.contextualInheritance, true, 'unknown type preserves the user words as a new option');
+});
+
+test('AD3: explicit heterogeneous set is preserved (user truth wins)', () => {
+  const sessionId = sid();
+  const history = [];
+  const k = bradleyKnowledge;
+  runTurn(null, sessionId, 'Compare ProjectHub and JavaScript.', k, history);
+  const alts = (sessionState.getState(sessionId).discourseFrame?.alternatives || []).map(a => a.name);
+  assert.deepEqual(alts, ['ProjectHub', 'JavaScript'],
+    'an explicitly constructed mixed set is never "corrected"');
+});
+
+// ---------------------------------------------------------------------------
+// AE. Fuzzy resolution cannot create silent high-confidence verification.
+// ---------------------------------------------------------------------------
+test('AE1: low-confidence fuzzy resolution is not promoted to VERIFIED', () => {
+  const { buildRelationshipGraph } = require(path.join(ROOT, 'lib/relationship-graph'));
+  const g = buildRelationshipGraph(bradleyKnowledge);
+  const a = assessEntityEvidence(g, 'data structures');
+  assert.notEqual(a.status, 'VERIFIED',
+    'fuzzy match onto a certification name is not high-confidence verification');
+  assert.equal(a.resolution?.confidence, 'low');
+});
+
+test('AE2: exact and alias resolution carry high confidence', () => {
+  const { buildRelationshipGraph } = require(path.join(ROOT, 'lib/relationship-graph'));
+  const g = buildRelationshipGraph(bradleyKnowledge);
+  const exact = assessEntityEvidence(g, 'JavaScript');
+  assert.equal(exact.resolution?.confidence, 'high');
+  const alias = assessEntityEvidence(g, 'ProjectHub');
+  assert.equal(alias.resolution?.confidence, 'high');
+  assert.equal(alias.resolution?.method, 'alias');
+});
