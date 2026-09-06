@@ -1,5 +1,18 @@
 # Scout Feature Handoff
 
+**Updated:** 2026-09-06 — `fix/post-integration-semantic-reliability` (`aa16d04efb2a`, deployed to dev only). Closes two live DEV gaps discovered after `feat/generic-conversation-sets` (#30):
+1. Unknown-skill questions (`LeetCode`, `Terraform`, `DSA`) were rejecting qualified answers that started with "There is no verified evidence..." because `parseLeadingStance` checked `LEADING_DENY_RE` before `LEADING_QUALIFY_RE`. Reordered so qualified uncertainty is recognised first.
+2. Facet follow-ups (`What about its deployment?`) and bare-entity follow-ups (`JavaScript?`) were returning `OUT_OF_SCOPE` or `TECHNICAL_ERROR` in the live API because `inferActiveEntityFromHistory` only accepted `{role,text}` history, while `server-gemini.js` passes sanitized `{user,assistant}` history. Now accepts both formats and `resolveFacetFollowUp` also handles resolved/expanded forms (`what about X of Y`, `what about Y's X`).
+
+Verification:
+- Local test floor: 1132/1132 pass.
+- Retrieval: Recall@6 1.000 (40/40), MRR@6 0.942.
+- DEV health: `https://dev.projecthub-chat.bradleymatera.dev/health` reports `sourceCommit: aa16d04efb2a...`.
+- Live battery: `Does Bradley know LeetCode?` → qualified unknown, no leading "Yes"; `JavaScript?` → `policy:SKILL_EVIDENCE`; `What about its deployment?` → `policy:VERIFIED_FACT` with active entity `projecthub`.
+- PR #31 open (`fix/post-integration-semantic-reliability` → `develop`), not merged. `master` untouched.
+
+
+
 **Updated:** 2026-09-06 (final pre-integration) — `feat/generic-conversation-sets`
 (`fa589a82bcf6`, deployed to dev only). Three-axis model complete and unified:
 (1) discourse membership, (2) entity knowledge via `assessEntityEvidence()`,
