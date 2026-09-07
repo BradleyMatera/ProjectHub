@@ -212,6 +212,23 @@ test('extractClaims: legitimate degree and certificate claims still extracted', 
   assert.ok(claims.some(c => c.relation === 'has_cert' && c.object.toLowerCase().includes('aws')));
 });
 
+// --- 6b. claim-extractor: leading "This application" resolves to primary entity ---
+
+test('extractClaims: "This application uses X" resolves to the question entity', () => {
+  const graph = buildRelationshipGraph(makeKnowledge({
+    skills: { core: ['React'] },
+    projects: [{ name: 'Atlas', category: 'web app', tech: ['React', 'Scout'] }]
+  }));
+  const claims = extractClaims(
+    'This application uses Scout.',
+    graph,
+    'Tell me about Atlas'
+  );
+  const uses = claims.find(c => c.relation === 'uses_tech' && c.object.toLowerCase().includes('scout'));
+  assert.ok(uses, 'uses_tech claim for Scout should be extracted');
+  assert.ok(/\bAtlas\b/.test(uses.subject), 'subject should resolve to the question entity Atlas, not "This application"');
+});
+
 // --- 7. Negation scope: question entity in a denial clause ---
 
 test('isTokenNegated: tokenized matching avoids Go matching Google', () => {
