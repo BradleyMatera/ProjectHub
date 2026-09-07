@@ -282,3 +282,25 @@ test('validateAnswer: saying a project is a separate/unrelated project is not an
   const result = validateAnswer(text, '', 'Tell me about ProjectHub', knowledge, [], graph);
   assert.ok(!result.reasons.some(r => r.startsWith('unsupported_description:')));
 });
+
+// --- 11. includes relationship with evidence support ---
+
+test('validateRelationships: project featuring an included app is supported when evidence contains both', () => {
+  const knowledge = makeKnowledge({
+    skills: { core: ['React'] },
+    projects: [
+      { name: 'ProjectHub (Scout)', category: 'web app', tech: ['React'], description: 'ProjectHub Recruiter Alpha is the first application built on Scout.' }
+    ]
+  });
+  const graph = buildRelationshipGraph(knowledge);
+  const evidence = [{ kind: 'project', description: 'ProjectHub (Scout). ProjectHub Recruiter Alpha is the first application built on Scout. Tech: React' }];
+  const result = validateRelationships('ProjectHub features ProjectHub Recruiter Alpha', graph, 'Tell me about ProjectHub', [], '', evidence);
+  assert.ok(!result.unsupportedClaims.some(c => c.relation === 'context_drift'));
+});
+
+test('isTechInEvidence: multiword project-specific description is supported when it appears in evidence', () => {
+  const evidence = 'Scout uses deterministic query understanding, BM25/RRF retrieval, and evidence tools.';
+  const known = new Set(['JavaScript', 'React']);
+  assert.equal(isTechInEvidence('deterministic query understanding', evidence, known), true);
+  assert.equal(isTechInEvidence('BM25/RRF retrieval', evidence, known), true);
+});
