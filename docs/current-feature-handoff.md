@@ -1,19 +1,20 @@
 # Scout Feature Handoff
 
-**Updated:** 2026-09-07 — `fix/post-integration-semantic-reliability` (`be36152bbc70`, published, not merged). Tenant-neutrality and anti-overfit cleanup on PR #31:
+**Updated:** 2026-09-07 — `fix/post-integration-semantic-reliability` (`e8f76ad7acb1`, published, not merged). Tenant-neutrality and anti-overfit cleanup on PR #31:
 1. Remove Bradley-shaped/nontechnical occupation keyword classification from `lib/rag-agent.js`; experience sorting now uses explicit tenant `classification`/`domain`/`category`/`type`/`tags` metadata, with the query-driven non-technical branch preserved.
 2. Remove the static `FORBIDDEN_OCCUPATION_TERMS` truth table and literal `neurosurgeon` hardcoding from `lib/grounding-validator.js`; occupation validation is now structural against `identity.title`, `summary.whoIAm`, `experience` records, and relationship-graph `employed_as`/`worked_at` triples, with a small generic-assessment skip set for role-fit wording.
 3. Remove learning-platform brand inference from `lib/relationship-graph.js`; `uses_platform` now comes only from explicit `knowledge.relationships` or experience/platform metadata.
-4. Remove Bradley/DSA/Udemy-specific tenant story and `he/his` fallback from `lib/response-contract.js` and `lib/lite-agent.js`; instructions now use `${subjectName}` and neutral, portable language.
-5. Add portable synthetic regression tests in `test/tenant-neutrality-cleanup.test.js` using unrelated synthetic identities, roles, skills, gaps, and platforms.
-6. Preserve all existing semantic, provenance, expertise, coreference, and core behavior from the accepted 9cc baseline.
+4. Remove Bradley/DSA/Udemy-specific tenant story and `he/his` fallback from `lib/response-contract.js`, `lib/lite-agent.js`, and `lib/recovery-contract.js`; instructions now use `${subjectName}` and neutral, portable language.
+5. Default subject pronouns fall back to `they/them/their`; `lib/source-preparation.js` and `lib/knowledge-access.js` no longer hardcode `He/him/his`.
+6. Add portable synthetic regression tests in `test/tenant-neutrality-cleanup.test.js` using unrelated synthetic identities, roles, skills, gaps, and platforms.
+7. Preserve all existing semantic, provenance, expertise, coreference, and core behavior from the accepted 9cc baseline.
 
 Verification:
 - Local test floor: 1255/1255 pass.
 - Retrieval: Recall@6 1.000 (40/40), MRR@6 0.929.
 - `npm run build` and `npm run build:widget` pass.
 - `node --check server-gemini.js` and `git diff --check` clean.
-- Branch `fix/post-integration-semantic-reliability` published to GitHub at `d494b86e3188`.
+- Branch `fix/post-integration-semantic-reliability` published to GitHub at `e8f76ad7acb1`.
 - PR #31 open, base `develop`, not merged. `master` untouched.
 - CI `verify` run `34163669568` on the branch: tests/build/retrieval/syntax checks all green; final step `npm audit --audit-level=moderate` fails due to 4 pre-existing dependency advisories (2 moderate, 2 high: dompurify, nanoid, postcss, qs) unrelated to this change.
 - Next: do not merge; resolve dependency audit or await review.
