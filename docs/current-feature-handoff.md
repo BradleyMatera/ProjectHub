@@ -1,6 +1,6 @@
 # Scout Feature Handoff
 
-**Updated:** 2026-09-07 — `fix/post-integration-semantic-reliability` (`e8f76ad7acb1`, published, not merged). Tenant-neutrality and anti-overfit cleanup on PR #31:
+**Updated:** 2026-09-07 — `fix/post-integration-semantic-reliability` (`0ea4e0528988`, published, not merged). Tenant-neutrality and anti-overfit cleanup on PR #31:
 1. Remove Bradley-shaped/nontechnical occupation keyword classification from `lib/rag-agent.js`; experience sorting now uses explicit tenant `classification`/`domain`/`category`/`type`/`tags` metadata, with the query-driven non-technical branch preserved.
 2. Remove the static `FORBIDDEN_OCCUPATION_TERMS` truth table and literal `neurosurgeon` hardcoding from `lib/grounding-validator.js`; occupation validation is now structural against `identity.title`, `summary.whoIAm`, `experience` records, and relationship-graph `employed_as`/`worked_at` triples, with a small generic-assessment skip set for role-fit wording.
 3. Remove learning-platform brand inference from `lib/relationship-graph.js`; `uses_platform` now comes only from explicit `knowledge.relationships` or experience/platform metadata.
@@ -14,7 +14,7 @@ Verification:
 - Retrieval: Recall@6 1.000 (40/40), MRR@6 0.929.
 - `npm run build` and `npm run build:widget` pass.
 - `node --check server-gemini.js` and `git diff --check` clean.
-- Branch `fix/post-integration-semantic-reliability` published to GitHub at `e8f76ad7acb1`.
+- Branch `fix/post-integration-semantic-reliability` published to GitHub at `0ea4e0528988`.
 - PR #31 open, base `develop`, not merged. `master` untouched.
 - CI `verify` run `34163669568` on the branch: tests/build/retrieval/syntax checks all green; final step `npm audit --audit-level=moderate` fails due to 4 pre-existing dependency advisories (2 moderate, 2 high: dompurify, nanoid, postcss, qs) unrelated to this change.
 - Next: do not merge; resolve dependency audit or await review.
