@@ -349,3 +349,84 @@ test('validateAnswer: project that is also a known employer is not flagged as pr
   const result = validateAnswer(text, '', 'What jobs has Bradley had?', knowledge, [], graph);
   assert.ok(!result.reasons.some(r => r.startsWith('wrong_relationship:project_as_company')));
 });
+
+const boundedRoleKnowledge = makeKnowledge({
+  experience: [
+    { company: 'Summit Roofing', role: 'Construction Worker' },
+    { company: 'Harbor Clinic', role: 'Receptionist' }
+  ]
+});
+
+for (const [label, text, rejected] of [
+  ['documented pair', 'Alex worked as a Construction Worker at Summit Roofing.', false],
+  ['invented role at known employer', 'Alex worked as a Neurosurgeon at Summit Roofing.', true],
+  ['known role at wrong employer', 'Alex worked as a Construction Worker at Harbor Clinic.', true],
+  ['unsupported surgeon at known employer', 'Alex worked as a Surgeon at Summit Roofing.', true],
+  ['standalone documented role', 'Alex is a Construction Worker.', false],
+  ['scoped role denial', 'Alex was not a Neurosurgeon at Summit Roofing.', false],
+  ['unrelated denial cannot rescue role', 'Alex did not use React, but he worked as a Neurosurgeon at Summit Roofing.', true],
+  ['denied role cannot hide later invention', 'Alex is not a Surgeon; he is a Neurosurgeon at Summit Roofing.', true]
+]) {
+  test(`bounded grounding roles: ${label}`, () => {
+    const result = validateAnswer(text, 'Alex worked as a Construction Worker at Summit Roofing and a Receptionist at Harbor Clinic.',
+      'What work has Alex done?', boundedRoleKnowledge, [], buildRelationshipGraph(boundedRoleKnowledge));
+    assert.equal(result.reasons.some(r => r.startsWith('fabricated_occupation:')), rejected, JSON.stringify(result.reasons));
+    if (rejected) assert.equal(result.valid, false);
+  });
+}
+
+for (const title of ['Surgeon', 'Neurosurgeon', 'Expert']) {
+  test(`bounded grounding roles: standalone documented ${title}`, () => {
+    const knowledge = makeKnowledge();
+    knowledge.identity.title = title;
+    const text = `Alex is a ${title}. Alex provides documented guidance.`;
+    const result = validateAnswer(text, text, 'Tell me about Alex', knowledge, [], buildRelationshipGraph(knowledge));
+    assert.equal(result.valid, true, JSON.stringify(result.reasons));
+  });
+}
+
+const boundedProvenanceKnowledge = makeKnowledge({ projects: [
+  { name: 'Alpha', category: 'personal project', tech: ['React'], description: 'A dashboard discussing production environments.' },
+  { name: 'Beta', category: 'freelance project', tech: ['Vue'], description: 'A freelance dashboard with authentication.' }
+] });
+
+for (const [label, text, rejected] of [
+  ['A target cannot borrow freelance marker', 'Alpha is a freelance project.', true],
+  ['B target supported freelance allowed', 'Beta is a freelance project.', false],
+  ['C production mention is not ownership', 'Alex owned Alpha in production.', true],
+  ['D separate internship disavowal', 'Alpha is separate from Beta and was not part of an internship.', false],
+  ['E generic descriptive words', 'Alpha is a dashboard with authentication.', false],
+  ['E generic production discussion', 'Alpha discusses production environments.', false],
+  ['E own technology remains valid', 'Alpha uses React.', false],
+  ['unsupported capstone with unrelated negation', 'Alpha is a capstone project that does not hardcode secrets.', true],
+  ['named internship attribution', 'Alpha was built during his AWS internship.', true],
+  ['affirmative target in multiple project sentence', 'Alpha is a freelance project, whereas Beta is a personal project.', true],
+  ['cross project technology remains rejected', 'Alpha uses Vue.', true]
+]) {
+  test(`bounded grounding provenance: ${label}`, () => {
+    const result = validateAnswer(text, '', 'Tell me about Alpha and Beta', boundedProvenanceKnowledge, [], buildRelationshipGraph(boundedProvenanceKnowledge));
+    assert.equal(result.reasons.some(r => r.startsWith('wrong_relationship:project_provenance:')), rejected, JSON.stringify(result.reasons));
+    if (rejected) assert.equal(result.valid, false);
+  });
+}
+
+test('bounded grounding provenance: unsupported attribution needs no second project', () => {
+  const knowledge = makeKnowledge({ projects: [boundedProvenanceKnowledge.projects[0]] });
+  const result = validateAnswer('Alpha was built during an internship.', '', 'Tell me about Alpha', knowledge, [], buildRelationshipGraph(knowledge));
+  assert.ok(result.reasons.some(r => r.startsWith('wrong_relationship:project_provenance:')), JSON.stringify(result.reasons));
+});
+
+for (const [label, evidence, rejected] of [
+  ['explicit target relation', [{ kind: 'project', description: 'Alpha was built as a freelance project.' }], false],
+  ['cross target relation', [{ kind: 'project', description: 'Alpha is a dashboard. Beta was built as a freelance project.' }], true],
+  ['generic same block mention', [{ kind: 'project', description: 'Alpha explains freelance employment.' }], true],
+  ['negated target relation', [{ kind: 'project', description: 'Alpha was not built as a freelance project.' }], true],
+  ['structured target category', [{ kind: 'project', name: 'Alpha', category: 'freelance project' }], false],
+  ['structured other category', [{ kind: 'project', name: 'Beta', category: 'freelance project' }], true]
+]) {
+  test(`bounded grounding provenance: evidence ${label}`, () => {
+    const result = validateAnswer('Alpha is a freelance project.', '', 'Tell me about Alpha', boundedProvenanceKnowledge, [],
+      buildRelationshipGraph(boundedProvenanceKnowledge), null, null, evidence);
+    assert.equal(result.reasons.some(r => r.startsWith('wrong_relationship:project_provenance:')), rejected, JSON.stringify(result.reasons));
+  });
+}
