@@ -3,11 +3,11 @@
   "sourceOfTruth": "GitHub",
   "workspaces": [
     {
-      "branch": "feat/agent-systems-network",
-      "purpose": "Current Scout local-model conversational parity and agent-systems work",
+      "branch": "fix/post-integration-semantic-reliability",
+      "purpose": "PR #31 tenant-neutrality and anti-overfit cleanup on Scout/ProjectHub",
       "status": "github-backed-active",
-      "remote": "origin/feat/agent-systems-network",
-      "checkpoint": "adbf81914294b92dfd43bf216726a38691c18cd3",
+      "remote": "origin/fix/post-integration-semantic-reliability",
+      "checkpoint": "ab44aa36b531dfbfdaf10a6e2cd2aaa8689ddd40",
       "note": "Active Scout workspace. Resume this exact GitHub branch on any PC, IDE, or coding agent. Fetch origin first; do not recreate it from master or develop. Publish committed work back to this branch before switching environments."
     }
   ]
