@@ -13,9 +13,10 @@ Verification:
 - Retrieval: Recall@6 1.000 (40/40), MRR@6 0.929.
 - `npm run build` and `npm run build:widget` pass.
 - `node --check server-gemini.js` and `git diff --check` clean.
-- Branch `fix/post-integration-semantic-reliability` published to GitHub at `be36152bbc70`.
+- Branch `fix/post-integration-semantic-reliability` published to GitHub at `d494b86e3188`.
 - PR #31 open, base `develop`, not merged. `master` untouched.
-- Next: do not merge; await review or continue qualification.
+- CI `verify` run `34163669568` on the branch: tests/build/retrieval/syntax checks all green; final step `npm audit --audit-level=moderate` fails due to 4 pre-existing dependency advisories (2 moderate, 2 high: dompurify, nanoid, postcss, qs) unrelated to this change.
+- Next: do not merge; resolve dependency audit or await review.
 
 ---
 
