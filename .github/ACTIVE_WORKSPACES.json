@@ -7,7 +7,7 @@
       "purpose": "PR #31 tenant-neutrality and anti-overfit cleanup on Scout/ProjectHub",
       "status": "github-backed-active",
       "remote": "origin/fix/post-integration-semantic-reliability",
-      "checkpoint": "ab44aa36b531dfbfdaf10a6e2cd2aaa8689ddd40",
+      "checkpoint": "3b5c3be80c8fd0e7f6104baa6922b42abd9506e1",
       "note": "Active Scout workspace. Resume this exact GitHub branch on any PC, IDE, or coding agent. Fetch origin first; do not recreate it from master or develop. Publish committed work back to this branch before switching environments."
     }
   ]
