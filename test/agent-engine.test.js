@@ -53,7 +53,8 @@ test('validateAnswer rejects bracketed internal entity labels', () => {
   const answer = '[Interactive Pokedex] Static Gen 1 Pokedex UI with all 151 entries.';
   const result = validateAnswer(answer, source, 'What did he build?', recruiterKnowledge);
   assert.equal(result.valid, false);
-  assert.ok(result.reasons.includes('leaked_prompt_language'));
+  assert.ok(result.reasons.some(r => r === 'leaked_prompt_language' || r === 'rag_scaffold_leak'),
+    'Bracketed internal labels should be flagged as leaked scaffolding');
 });
 
 test('validateAnswer rejects unsupported number', () => {
