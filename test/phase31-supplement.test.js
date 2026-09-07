@@ -273,3 +273,33 @@ test('AJ: LeetCode qualified variants pass standalone stance check', () => {
     assert.ok(s.valid, `qualified answer should pass stance check: ${answer}`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// AK/AL: gap-proposition "Is X documented as a gap?" is distinct from "Does
+// he know X?" and produces YES/TRUE/AFFIRM when the graph has has_gap.
+// ---------------------------------------------------------------------------
+
+test('AK: knowledge question "Does he know LeetCode?" remains UNKNOWN/QUALIFY', () => {
+  const k = freshKnowledge();
+  const p = classifyResponsePolicy('Does he know LeetCode?', [], k, null);
+  assert.equal(p.directAnswer, 'UNKNOWN', 'LeetCode is not a verified skill');
+  assert.equal(p.requiredStance, 'QUALIFY');
+});
+
+test('AL: gap-proposition "Is LeetCode documented as a gap?" is YES/TRUE/AFFIRM', () => {
+  const k = freshKnowledge();
+  const p = classifyResponsePolicy('Is LeetCode documented as a gap?', [], k, null);
+  assert.equal(p.directAnswer, 'YES', 'has_gap(Bradley, LeetCode) is verified');
+  assert.equal(p.factState, 'TRUE');
+  assert.equal(p.answerStance, 'AFFIRM');
+  assert.equal(p.requiredStance, 'AFFIRM');
+  assert.equal(p.evidenceStatus, 'VERIFIED');
+  assert.equal(p.requestedRelation, 'has_gap');
+
+  const contract = buildResponseContract('Is LeetCode documented as a gap?', '', k, [], p);
+  assert.equal(contract.directAnswer, 'YES');
+  assert.equal(contract.factState, 'TRUE');
+  assert.equal(contract.requiredStance, 'AFFIRM');
+  assert.equal(contract.policyMode, 'SKILL_EVIDENCE');
+  assert.equal(contract.claimCeiling, 'has a documented gap for');
+});
