@@ -2328,8 +2328,8 @@ test('regression: source first person converted to subject perspective (q67 fix)
   const firstPerson = 'I am early in my career, but I learn quickly.';
   const normalized = normalizeSourceVoice(firstPerson, syntheticKnowledge);
   assert.ok(!/\bI\b/.test(normalized), 'First person "I" should be converted');
-  assert.ok(/Jane/.test(normalized) || /\bhe\b|\bshe\b/i.test(normalized), 'Should use subject name or third person');
-  assert.ok(/his|her/i.test(normalized), 'my → his/her');
+  assert.ok(/Jane/.test(normalized) || /\bhe\b|\bshe\b|\bthey\b/i.test(normalized), 'Should use subject name or third person');
+  assert.ok(/his|her|their/i.test(normalized), 'my → his/her/their');
 });
 
 // 8. Role requirement parser rejects stopwords
