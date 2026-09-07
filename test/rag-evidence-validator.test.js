@@ -22,6 +22,7 @@ function makeKnowledge(opts = {}) {
     identity: { name: opts.name || 'Alex Doe', preferredName: opts.preferredName || 'Alex' },
     skills: opts.skills || { core: ['React'] },
     projects: opts.projects || [{ name: 'Atlas', category: 'web app', tech: ['React'] }],
+    experience: opts.experience || [],
   };
 }
 
@@ -303,4 +304,18 @@ test('isTechInEvidence: multiword project-specific description is supported when
   const known = new Set(['JavaScript', 'React']);
   assert.equal(isTechInEvidence('deterministic query understanding', evidence, known), true);
   assert.equal(isTechInEvidence('BM25/RRF retrieval', evidence, known), true);
+});
+
+// --- 12. project-as-company should not fire when the entity is also a known employer ---
+
+test('validateAnswer: project that is also a known employer is not flagged as project_as_company', () => {
+  const knowledge = makeKnowledge({
+    skills: { core: ['React'] },
+    projects: [{ name: 'CIRIS Ethical AI', category: 'web app', tech: ['React'] }],
+    experience: [{ company: 'CIRIS Ethical AI', role: 'Junior Frontend Developer', type: 'Freelance', dates: '2024-2025' }]
+  });
+  const graph = buildRelationshipGraph(knowledge);
+  const text = 'Bradley worked as a Junior Frontend Developer at CIRIS Ethical AI.';
+  const result = validateAnswer(text, '', 'What jobs has Bradley had?', knowledge, [], graph);
+  assert.ok(!result.reasons.some(r => r.startsWith('wrong_relationship:project_as_company')));
 });
