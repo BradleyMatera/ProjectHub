@@ -1,5 +1,24 @@
 # Scout Feature Handoff
 
+**Updated:** 2026-09-07 — `fix/post-integration-semantic-reliability` (`be36152bbc70`, published, not merged). Tenant-neutrality and anti-overfit cleanup on PR #31:
+1. Remove Bradley-shaped/nontechnical occupation keyword classification from `lib/rag-agent.js`; experience sorting now uses explicit tenant `classification`/`domain`/`category`/`type`/`tags` metadata, with the query-driven non-technical branch preserved.
+2. Remove the static `FORBIDDEN_OCCUPATION_TERMS` truth table and literal `neurosurgeon` hardcoding from `lib/grounding-validator.js`; occupation validation is now structural against `identity.title`, `summary.whoIAm`, `experience` records, and relationship-graph `employed_as`/`worked_at` triples, with a small generic-assessment skip set for role-fit wording.
+3. Remove learning-platform brand inference from `lib/relationship-graph.js`; `uses_platform` now comes only from explicit `knowledge.relationships` or experience/platform metadata.
+4. Remove Bradley/DSA/Udemy-specific tenant story and `he/his` fallback from `lib/response-contract.js` and `lib/lite-agent.js`; instructions now use `${subjectName}` and neutral, portable language.
+5. Add portable synthetic regression tests in `test/tenant-neutrality-cleanup.test.js` using unrelated synthetic identities, roles, skills, gaps, and platforms.
+6. Preserve all existing semantic, provenance, expertise, coreference, and core behavior from the accepted 9cc baseline.
+
+Verification:
+- Local test floor: 1255/1255 pass.
+- Retrieval: Recall@6 1.000 (40/40), MRR@6 0.929.
+- `npm run build` and `npm run build:widget` pass.
+- `node --check server-gemini.js` and `git diff --check` clean.
+- Branch `fix/post-integration-semantic-reliability` published to GitHub at `be36152bbc70`.
+- PR #31 open, base `develop`, not merged. `master` untouched.
+- Next: do not merge; await review or continue qualification.
+
+---
+
 **Updated:** 2026-09-06 — `fix/post-integration-semantic-reliability` (`3d5a1a1ff3fa`, not yet deployed). Second semantic-reliability pass:
 1. Replaced ad-hoc history parsing with a single `getRecentUserTexts()` helper used by `inferPriorTopic()`, `inferActiveEntityFromHistory()`, and follow-up resolution; now supports both `{role,text}` and `{user,assistant}` server shapes.
 2. Locked `expectedStance()` authority order: `requiredStance` > `answerStance` > `directAnswer` > `factState`, with conflict tests.
