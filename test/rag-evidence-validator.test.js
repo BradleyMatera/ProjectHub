@@ -178,6 +178,19 @@ test('validateProjectTechnologyRelationships: tech list still validates as a sin
   assert.ok(!details.some(d => d.detail.toLowerCase().includes('javascript') || d.detail.toLowerCase().includes('node.js')), 'tech list items should not be false positives');
 });
 
+// --- 5c. project name/description should not be treated as unverified tech ---
+
+test('validateProjectTechnologyRelationships: project name containing the tech is not a false claim', () => {
+  const knowledge = makeKnowledge({
+    skills: { core: ['AWS'] },
+    projects: [{ name: 'AWS Serverless Metadata Extraction Workflow', category: 'web app', tech: ['AWS Lambda', 'DynamoDB'] }]
+  });
+  const text = 'His AWS internship capstone project uses Lambda and DynamoDB.';
+  const invalid = validateProjectTechnologyRelationships(text, null, knowledge, '');
+  const details = invalid.filter(i => i.type === 'PROJECT_RELATIONSHIP_CLAIM');
+  assert.deepEqual(details, [], 'AWS in the project name should not be an unverified tech claim');
+});
+
 // --- 6. claim-extractor: degree and certificate false extraction ---
 
 test('extractClaims: degree not extracted from narrative phrases', () => {
