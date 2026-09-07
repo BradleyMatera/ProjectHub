@@ -153,6 +153,30 @@ test('validateProjectTechnologyRelationships: evidence rescues project tech clai
   assert.deepEqual(invalid, []);
 });
 
+// --- 5b. clause-aware project tech validation (regression for live 132 gate) ---
+
+test('validateProjectTechnologyRelationships: tech in a separate clause is not misattributed', () => {
+  const knowledge = makeKnowledge({
+    skills: { core: ['AI'] },
+    projects: [{ name: 'ProjectHub (Scout)', category: 'web app', tech: ['JavaScript', 'Node.js', 'Express'] }]
+  });
+  const text = 'ProjectHub (Scout) uses a two-branch release model, and it has a canonical instruction source for AI coding agents.';
+  const invalid = validateProjectTechnologyRelationships(text, null, knowledge, '');
+  assert.deepEqual(invalid, []);
+});
+
+test('validateProjectTechnologyRelationships: tech list still validates as a single claim', () => {
+  const knowledge = makeKnowledge({
+    skills: { core: ['AI'] },
+    projects: [{ name: 'Atlas', category: 'web app', tech: ['React'] }]
+  });
+  const text = 'Atlas uses JavaScript, Node.js, and AI to process data.';
+  const invalid = validateProjectTechnologyRelationships(text, null, knowledge, '');
+  const details = invalid.filter(i => i.type === 'PROJECT_RELATIONSHIP_CLAIM');
+  assert.ok(details.some(d => d.detail.toLowerCase().includes('ai')), 'AI not in Atlas tech should be flagged');
+  assert.ok(!details.some(d => d.detail.toLowerCase().includes('javascript') || d.detail.toLowerCase().includes('node.js')), 'tech list items should not be false positives');
+});
+
 // --- 6. claim-extractor: degree and certificate false extraction ---
 
 test('extractClaims: degree not extracted from narrative phrases', () => {
@@ -241,4 +265,20 @@ test('validateAnswer: positive unsupported claim for a question entity still fai
     graph
   );
   assert.equal(result.valid, false);
+});
+
+// --- 10. project description: disavowal should not trigger unsupported_description ---
+
+test('validateAnswer: saying a project is a separate/unrelated project is not an unsupported description', () => {
+  const knowledge = makeKnowledge({
+    skills: { core: ['React'] },
+    projects: [
+      { name: 'ProjectHub', category: 'web app', tech: ['React'], description: 'A portfolio widget with embedded chat.', aliases: ['ProjectHub'] },
+      { name: 'Pokedex', category: 'demo', tech: ['React'], description: 'An interactive Pokedex that uses the PokeAPI.' }
+    ]
+  });
+  const graph = buildRelationshipGraph(knowledge);
+  const text = 'The Pokedex is a separate project, and its relationship to ProjectHub is not clear.';
+  const result = validateAnswer(text, '', 'Tell me about ProjectHub', knowledge, [], graph);
+  assert.ok(!result.reasons.some(r => r.startsWith('unsupported_description:')));
 });
