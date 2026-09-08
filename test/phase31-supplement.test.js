@@ -63,7 +63,7 @@ function kBase() {
       { name: 'Panel Upgrade', type: 'electrical repair', description: 'Residential panel replacement', attributes: { duration: '1 day' }, aliases: ['Panel Upgrade'] }
     ],
     projects: [
-      { name: 'ProjectHub (Scout)', url: 'https://bradleymatera.github.io/ProjectHub/', description: 'Portable generative intelligence engine', tech: ['JavaScript', 'Node.js'], aliases: ['ProjectHub', 'projecthub'] }
+      { name: 'ProjectHub (Scout)', url: 'https://bradleymatera.github.io/ProjectHub/', platform: 'GitHub Pages', description: 'Portable generative intelligence engine', tech: ['JavaScript', 'Node.js'], aliases: ['ProjectHub', 'projecthub'] }
     ],
     skills: [],
     certifications: [

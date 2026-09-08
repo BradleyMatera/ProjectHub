@@ -13,7 +13,7 @@ const syntheticKB = {
   identity: { name: 'Maria Lopez', location: 'Austin, TX' },
   projects: [
     { name: 'Atlas', category: 'Data platform', tech: ['Python'], url: null },
-    { name: 'Orion', category: 'Dashboard', tech: ['React'], url: 'https://bradleymatera.github.io/Orion/' }
+    { name: 'Orion', category: 'Dashboard', tech: ['React'], url: 'https://bradleymatera.github.io/Orion/', platform: 'GitHub Pages' }
   ],
   skills: { languages: ['Python', 'JavaScript'] },
   experience: [{ company: 'Acme Corp', role: 'Developer', type: 'full-time' }],
@@ -105,8 +105,8 @@ test('D5: Denying existence of Orion (which exists) → contradicted', () => {
   assert.ok(existDenial, 'denial_of_existence for Orion (in KB) should be UNSUPPORTED');
 });
 
-// 6. Denying availability of Orion (which has a URL) → contradicted
-test('D6: Denying availability of Orion (has GitHub Pages URL) → contradicted', () => {
+// 6. Denying availability of Orion (which has deployment evidence) → contradicted
+test('D6: Denying availability of Orion (has deployment evidence) → contradicted', () => {
   const result = validateRelationships(
     'Orion is not publicly available.',
     graph, '', []

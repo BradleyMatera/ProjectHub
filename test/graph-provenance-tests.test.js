@@ -11,7 +11,7 @@ const { normalizeEntity } = require('../lib/canonical-entities');
 const syntheticKB = {
   identity: { name: 'Maria Lopez', location: 'Austin, TX' },
   projects: [
-    { name: 'Atlas', category: 'Data platform', tech: ['Python'], url: 'https://bradleymatera.github.io/Atlas/' },
+    { name: 'Atlas', category: 'Data platform', tech: ['Python'], url: 'https://bradleymatera.github.io/Atlas/', platform: 'GitHub Pages' },
     { name: 'Nebula Engine', category: 'Game engine', tech: ['C++'], founder: 'Maria Lopez', company: 'Lopez Studios', published_on: 'Steam', comparative_advantage: 'Atlas' }
   ],
   skills: { languages: ['Python', 'JavaScript'] },
@@ -52,8 +52,8 @@ test('G3: published_on triple exists ONLY from explicit published_on field', () 
   assert.equal(publishedTriples[0].object, 'Steam');
 });
 
-// 4. deployed_at: from URL (explicit deployment evidence)
-test('G4: deployed_at triple from URL evidence', () => {
+// 4. deployed_at: from explicit platform metadata
+test('G4: deployed_at triple from explicit platform metadata', () => {
   const deployedTriples = graph.triples.filter(t => t.relation === 'deployed_at');
   // Atlas has a URL → deployed_at triple
   const atlasDeployed = deployedTriples.find(t => t.subjectNorm === normalizeEntity('Atlas'));

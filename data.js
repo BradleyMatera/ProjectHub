@@ -92,13 +92,13 @@ const projects = [
 ];
 
 const codePens = [
-  { name: "JavaScript Garbage Collection Tutorial", url: "https://codepen.io/student-account-bradley-matera/pen/ZYzoWpL" },
-  { name: "React Calculator", url: "https://codepen.io/student-account-bradley-matera/pen/ogvGZjJ" },
-  { name: "Sound Machine", url: "https://codepen.io/student-account-bradley-matera/details/dPbVvoa" },
-  { name: "Markdown Previewer", url: "https://codepen.io/student-account-bradley-matera/pen/ZYzXeEJ" },
-  { name: "Random Quote Machine", url: "https://codepen.io/student-account-bradley-matera/pen/azoLpeG" },
-  { name: "Random Quote Generator", url: "https://codepen.io/student-account-bradley-matera/pen/PwYJWMY" },
-  { name: "Data Visualization", url: "https://codepen.io/student-account-bradley-matera/details/dyEYbPO" }
+  { name: "JavaScript Garbage Collection Tutorial", url: "https://codepen.io/student-account-bradley-matera/pen/ZYzoWpL", platform: "CodePen" },
+  { name: "React Calculator", url: "https://codepen.io/student-account-bradley-matera/pen/ogvGZjJ", platform: "CodePen" },
+  { name: "Sound Machine", url: "https://codepen.io/student-account-bradley-matera/details/dPbVvoa", platform: "CodePen" },
+  { name: "Markdown Previewer", url: "https://codepen.io/student-account-bradley-matera/pen/ZYzXeEJ", platform: "CodePen" },
+  { name: "Random Quote Machine", url: "https://codepen.io/student-account-bradley-matera/pen/azoLpeG", platform: "CodePen" },
+  { name: "Random Quote Generator", url: "https://codepen.io/student-account-bradley-matera/pen/PwYJWMY", platform: "CodePen" },
+  { name: "Data Visualization", url: "https://codepen.io/student-account-bradley-matera/details/dyEYbPO", platform: "CodePen" }
 ];
 
 // Dropdown suggestions
