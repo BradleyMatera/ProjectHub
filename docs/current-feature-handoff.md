@@ -1,6 +1,6 @@
 # Scout Feature Handoff
 
-**Updated:** 2026-09-08 — `fix/post-integration-semantic-reliability` @ `cc3e308caf6a` (latest published head, not merged). Tenant-neutrality and anti-overfit cleanup on PR #31:
+**Updated:** 2026-09-08 — `fix/post-integration-semantic-reliability` @ `4012c206c4b0` (latest published head, not merged). Runtime deployed to DEV from `cc3e308caf6a`. Tenant-neutrality and anti-overfit cleanup on PR #31:
 1. Remove Bradley-shaped/nontechnical occupation keyword classification from `lib/rag-agent.js`; experience sorting now uses explicit tenant `classification`/`domain`/`category`/`type`/`tags` metadata, with the query-driven non-technical branch preserved.
 2. Remove the static `FORBIDDEN_OCCUPATION_TERMS` truth table and literal `neurosurgeon` hardcoding from `lib/grounding-validator.js`; occupation validation is now structural against `identity.title`, `summary.whoIAm`, `experience` records, and relationship-graph `employed_as`/`worked_at` triples.
 3. Remove learning-platform brand inference from `lib/relationship-graph.js`; `uses_platform` now comes only from explicit `knowledge.relationships` or experience/platform metadata.
@@ -19,7 +19,7 @@ Verification:
 - Local test floor: **1268/1268 pass**.
 - `npm run build` / `npm run build:widget` pass.
 - `node --check server-gemini.js` and `git diff --check` clean.
-- Branch `fix/post-integration-semantic-reliability` published to GitHub; current head `cc3e308caf6a`.
+- Branch `fix/post-integration-semantic-reliability` published to GitHub; current head `4012c206c4b0`.
 - Dev backend deployed from `cc3e308caf6a`; health check and smoke test verified at `https://dev.projecthub-chat.bradleymatera.dev/health`.
 - 132-turn live gate: **95/132 turns passed (18/33 conversations)**. This is within prior provider-variance bands and not a clean gate.
 - PR #31 open, base `develop`, not merged. `master` untouched.
