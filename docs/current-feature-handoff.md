@@ -1,23 +1,37 @@
 # Scout Feature Handoff
 
-**Updated:** 2026-09-07 — `fix/post-integration-semantic-reliability` (latest published head, not merged). Tenant-neutrality and anti-overfit cleanup on PR #31:
+**Updated:** 2026-09-08 — `fix/post-integration-semantic-reliability` @ `cc3e308caf6a` (latest published head, not merged). Tenant-neutrality and anti-overfit cleanup on PR #31:
 1. Remove Bradley-shaped/nontechnical occupation keyword classification from `lib/rag-agent.js`; experience sorting now uses explicit tenant `classification`/`domain`/`category`/`type`/`tags` metadata, with the query-driven non-technical branch preserved.
-2. Remove the static `FORBIDDEN_OCCUPATION_TERMS` truth table and literal `neurosurgeon` hardcoding from `lib/grounding-validator.js`; occupation validation is now structural against `identity.title`, `summary.whoIAm`, `experience` records, and relationship-graph `employed_as`/`worked_at` triples, with a small generic-assessment skip set for role-fit wording.
+2. Remove the static `FORBIDDEN_OCCUPATION_TERMS` truth table and literal `neurosurgeon` hardcoding from `lib/grounding-validator.js`; occupation validation is now structural against `identity.title`, `summary.whoIAm`, `experience` records, and relationship-graph `employed_as`/`worked_at` triples.
 3. Remove learning-platform brand inference from `lib/relationship-graph.js`; `uses_platform` now comes only from explicit `knowledge.relationships` or experience/platform metadata.
 4. Remove Bradley/DSA/Udemy-specific tenant story and `he/his` fallback from `lib/response-contract.js`, `lib/lite-agent.js`, and `lib/recovery-contract.js`; instructions now use `${subjectName}` and neutral, portable language.
-5. Default subject pronouns fall back to `they/them/their`; `lib/source-preparation.js` and `lib/knowledge-access.js` no longer hardcode `He/him/his`.
+5. Default subject pronouns fall back to `they/them/their`; `lib/source-preparation.js` and `lib/knowledge-access.js` no longer hardcode `he/him/his`.
 6. Add portable synthetic regression tests in `test/tenant-neutrality-cleanup.test.js` using unrelated synthetic identities, roles, skills, gaps, and platforms.
 7. Preserve all existing semantic, provenance, expertise, coreference, and core behavior from the accepted 9cc baseline.
 
+**Latest hardening pass (2026-09-08):**
+- `lib/rag-agent.js`: keeps gap/boundary/direct-answer evidence in the packet for negative-assessment, future-capability, and job-fit questions, even when the assessed target is `UNKNOWN`, so the model can name documented learning areas without confabulation.
+- `lib/grounding-validator.js`: allows expanded-overclaim words whose root appears in the provided evidence (e.g., a gap that says "architect a solution" permits the model's "architecting solutions").
+- `lib/response-contract.js`: recruiter/candidate recommendation questions now select concrete facts instead of falling through to empty source-entity filtering; `RECRUITER` fact scoring keywords include `project`, `skill`, `internship`, `junior`, and `candidate`.
+- `lib/acceptance-scorer.js`: correctly accepts negated unknown-skill and future-capability answers ("does not know X", "could learn X").
+
 Verification:
-- Local test floor: 1255/1255 pass.
-- Retrieval: Recall@6 1.000 (40/40), MRR@6 0.929.
-- `npm run build` and `npm run build:widget` pass.
+- Local test floor: **1268/1268 pass**.
+- `npm run build` / `npm run build:widget` pass.
 - `node --check server-gemini.js` and `git diff --check` clean.
-- Branch `fix/post-integration-semantic-reliability` published to GitHub; use `git log origin/fix/post-integration-semantic-reliability` for the current head.
+- Branch `fix/post-integration-semantic-reliability` published to GitHub; current head `cc3e308caf6a`.
+- Dev backend deployed from `cc3e308caf6a`; health check and smoke test verified at `https://dev.projecthub-chat.bradleymatera.dev/health`.
+- 132-turn live gate: **95/132 turns passed (18/33 conversations)**. This is within prior provider-variance bands and not a clean gate.
 - PR #31 open, base `develop`, not merged. `master` untouched.
-- CI `verify` run `34164341050` on the branch: all steps pass (the `npm audit --audit-level=moderate` step reports 4 pre-existing dependency advisories but has `continue-on-error: true`).
-- Next: do not merge; resolve dependency audit or await review.
+
+Known limitations:
+- The 132-turn live gate is still not consistently clean; remaining failures include `INFERENCE_UNAVAILABLE` on role-fit turns (notably `What about a DevOps role?`), harness keyword misses on provocation/sensitive/arithmetic turns, and model phrasing variance.
+- `What about a DevOps role?` and related DevOps follow-ups still fail live generation; the answer needs to name generic role-domain terms (`DevOps`, `CI/CD`, `infrastructure`) that the current technology-claim validator treats as unsupported when they do not appear in the retrieved evidence. A narrow, context-aware fix for role-domain terms in `JOB_FIT` answers is still open.
+- `npm audit --audit-level=moderate` reports the same 4 pre-existing dependency advisories (continues on error in CI).
+
+Next: do not merge; continue narrowing the DevOps role-domain validation and re-run the 132-turn gate until it is stable.
+
+
 
 ---
 
