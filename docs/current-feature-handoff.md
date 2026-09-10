@@ -1,5 +1,35 @@
 # Scout Feature Handoff
 
+**Updated:** 2026-09-10 — `fix/post-integration-semantic-reliability` @ `09c37d63ec04` (published head, not merged). Runtime deployed to DEV from `09c37d63ec04`. Generic role-fit and assessment cleanup on PR #31:
+1. Removed the hardcoded `ROLE_HINTS` role-name-to-requirements table from `lib/agent-tools.js`; `match_role` no longer guesses requirements from an unknown role name.
+2. Replaced recruiter lexical scoring in `lib/response-contract.js` with generic role-fit/interview assessment instructions; removed `internship`/`junior`/`candidate` lexical terms from scoring.
+3. Made `requestedRole` request context rather than tenant evidence; `extractRequestedRole` now handles negative presupposition forms (`Why isn't DevOps a good fit?`, `Why isn't an Orbital Reliability Specialist a good fit?`).
+4. Generalized role-title and job-fit overclaim checks in `lib/claim-validator.js` and `lib/grounding-validator.js`; `fabricated_occupation`/`job_fit_overclaim` now use `requestedRole` and evidence instead of role-name vocabulary.
+5. `lib/rag-agent.js` `formatToolEnrichment` now skips empty `match_role` strong/partial/gap arrays so unknown roles do not inject meaningless "Strong: . Partial: . Gaps:" text.
+6. `scripts/eval-local-api.js` added a finite `CLIENT_TIMEOUT_MS`/`AbortSignal.timeout` client timeout so the evaluator cannot hang on a stalled request.
+7. Fixed an infinite `exec` loop in `lib/acceptance-scorer.js` (`masteryRe` and `NEGATION_PATTERNS.currentAbilityFromFuture` lacked `/g`), which had been hanging the local API evaluator.
+8. Added synthetic request-context, negative-presupposition, unknown-role, and empty-knowledge regressions in `test/semantic-reliability.test.js`.
+
+Verification:
+- `npm test` — **1272/1272 pass**.
+- `npm run eval-retrieval` — Recall@6 1.000 (40/40), MRR@6 0.929.
+- `npm run build` / `npm run build:widget` pass.
+- `node --check` on changed files clean; `git diff --check` clean.
+- Exact-SHA CI `Test and Verify` run `34476153520` succeeded for `09c37d63ec04`.
+- DEV deployed from `09c37d63ec04`; health verified at `https://dev.projecthub-chat.bradleymatera.dev/health`.
+- Targeted live battery: `What about a DevOps role?` and `Why isn't DevOps a good fit?` now return `ok:true` with conservative UNKNOWN/MIXED answers instead of `INFERENCE_UNAVAILABLE`; `Why is Bradley a good junior candidate?` and `Could he learn Rust?` remain accepted.
+- `eval:local-api` (DEV): **16/23 GOOD**, `clientTimeouts: 0`, `inferenceUnavailables: 4`, `rateLimits: 3`; failures on `role-fit`, `negative-assessment`, `memory-follow-up-a`, `memory-follow-up-b`, `unknown-tech-2`, `skill-frame`, `injection`.
+- 132-turn live gate (DEV, `--delay 2.0`): **100/132 turns passed (18/33 conversations)**. Failures: `GENERATION` 21 (harness keyword misses on provocation/sensitive/arithmetic/personal/context turns), `VALIDATION` 8 (keyword misses on junior/frontend/blog/remote/customer-service facets), `OTHER` 2 (length/word-count), `NEAR_DUPLICATE` 1 (`Can he learn cobol?`). No `RATE_LIMIT` or `INFERENCE_UNAVAILABLE` failures in the slow gate.
+
+Known limitations:
+- `eval:local-api` still reports `INFERENCE_UNAVAILABLE` on `Is he a fit for a junior frontend role?`, `What's his honest weakness?`, and the memory-follow-up turns; these are model-compliance failures on neutral negative phrasing and role-fit evidence, not new code regressions.
+- The 132-turn live gate is still not consistently clean; remaining failures are provider/model phrasing and harness keyword misses, not structural scout bugs.
+- `npm audit --audit-level=moderate` still reports the same 4 pre-existing dependency advisories.
+
+Next: do not merge; request review on PR #31 and keep `develop`/`master` unchanged.
+
+---
+
 **Updated:** 2026-09-08 — `fix/post-integration-semantic-reliability` @ `4012c206c4b0` (latest published head, not merged). Runtime deployed to DEV from `cc3e308caf6a`. Tenant-neutrality and anti-overfit cleanup on PR #31:
 1. Remove Bradley-shaped/nontechnical occupation keyword classification from `lib/rag-agent.js`; experience sorting now uses explicit tenant `classification`/`domain`/`category`/`type`/`tags` metadata, with the query-driven non-technical branch preserved.
 2. Remove the static `FORBIDDEN_OCCUPATION_TERMS` truth table and literal `neurosurgeon` hardcoding from `lib/grounding-validator.js`; occupation validation is now structural against `identity.title`, `summary.whoIAm`, `experience` records, and relationship-graph `employed_as`/`worked_at` triples.
