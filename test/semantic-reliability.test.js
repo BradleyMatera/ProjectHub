@@ -13,6 +13,8 @@ const { classifyResponsePolicy } = require(path.join(ROOT, 'lib/response-policy'
 const router = require(path.join(ROOT, 'lib/local-model-router'));
 const { runRagPrimaryAgent } = require(path.join(ROOT, 'lib/rag-agent'));
 const { validateAnswer, checkStance } = require(path.join(ROOT, 'lib/grounding-validator'));
+const { buildResponseContract } = require(path.join(ROOT, 'lib/response-contract'));
+const { executeAgentTool } = require(path.join(ROOT, 'lib/agent-tools'));
 const { buildRelationshipGraph } = require(path.join(ROOT, 'lib/relationship-graph'));
 
 const bradleyKnowledge = require(path.join(ROOT, 'data/recruiter-knowledge.json'));
@@ -178,4 +180,43 @@ test('P: product price facet preserves active entity', () => {
   const p = classifyResponsePolicy('What about its price?', h, k, null);
   assert.equal(p.activeEntity, 'northstar desk');
   assert.equal(p.requestedTopic, 'price');
+});
+
+// ---------------------------------------------------------------------------
+// D. Generic assessment / request-context regressions
+// ---------------------------------------------------------------------------
+
+test('Q: extractRequestedRole handles negative presupposition (isn\'t)', () => {
+  const k = freshKnowledge();
+  const contract = buildResponseContract('Why isn\'t an Orbital Reliability Specialist a good fit?', 'No documented orbital reliability experience.', k);
+  assert.equal(contract.subIntent, 'JOB_FIT');
+  assert.equal(contract.requestedRole, 'orbital reliability specialist');
+  assert.equal(contract.directAnswer, 'UNKNOWN');
+  assert.equal(contract.factState, 'UNKNOWN');
+});
+
+test('R: requested role is request context, not subject evidence', () => {
+  const k = freshKnowledge();
+  const contract = buildResponseContract('What about an Orbital Reliability Specialist role?', 'No documented orbital reliability experience.', k);
+  assert.equal(contract.requestedRole, 'orbital reliability specialist');
+  const answer = 'The public profile does not show whether the subject fits the Orbital Reliability Specialist role.';
+  const result = validateAnswer(answer, 'No documented orbital reliability experience.', 'What about an Orbital Reliability Specialist role?', k, [], null, null, contract, []);
+  assert.equal(result.valid, true, JSON.stringify(result.reasons));
+});
+
+test('S: match_role does not infer requirements for an unknown role name', () => {
+  const result = executeAgentTool('match_role', { jobDescription: 'Is he a fit for an Orbital Reliability Specialist role?' }, freshKnowledge());
+  assert.equal(result.role, null);
+  assert.deepEqual(result.matchedSkills, []);
+  assert.deepEqual(result.strong, []);
+  assert.deepEqual(result.partial, []);
+  assert.deepEqual(result.gaps, []);
+});
+
+test('T: non-recruiter assessment on empty knowledge stays UNKNOWN', () => {
+  const emptyKnowledge = { identity: { name: 'Avery Chen' } };
+  const contract = buildResponseContract('Is this candidate a good fit for our support team?', '', emptyKnowledge);
+  assert.equal(contract.subIntent, 'JOB_FIT');
+  assert.equal(contract.directAnswer, 'UNKNOWN');
+  assert.equal(contract.factState, 'UNKNOWN');
 });

@@ -15,6 +15,7 @@ const { cases } = require('../lib/eval-cases');
 
 const BASE_URL = process.env.PROJECTHUB_API_URL || 'http://127.0.0.1:3000';
 const MAX_LATENCY_MS = Number(process.env.PROJECTHUB_MAX_LATENCY_MS || 60000);
+const CLIENT_TIMEOUT_MS = Number(process.env.PROJECTHUB_EVAL_TIMEOUT_MS || 20000);
 const CASE_DELAY_MS = Number(process.env.PROJECTHUB_EVAL_INTERVAL_MS || 1200);
 const MAX_RETRIES = Number(process.env.PROJECTHUB_EVAL_MAX_RETRIES || 3);
 const RATE_LIMIT_BACKOFF_MS = Number(process.env.PROJECTHUB_RATE_LIMIT_BACKOFF_MS || 15000);
@@ -46,7 +47,8 @@ async function ask(message, sessionId, retries = 0) {
     const response = await fetch(`${BASE_URL}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, sessionId })
+      body: JSON.stringify({ message, sessionId }),
+      signal: AbortSignal.timeout(CLIENT_TIMEOUT_MS)
     });
     const latencyMs = Date.now() - startedAt;
     const text = await response.text();
@@ -62,14 +64,21 @@ async function ask(message, sessionId, retries = 0) {
     }
     return { status: response.status, body, latencyMs, network: false };
   } catch (error) {
-    return { status: 0, body: { ok: false, error: 'NETWORK', detail: error.message }, latencyMs: Date.now() - startedAt, network: true };
+    const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError';
+    return {
+      status: 0,
+      body: { ok: false, error: isTimeout ? 'CLIENT_TIMEOUT' : 'NETWORK', detail: error.message },
+      latencyMs: Date.now() - startedAt,
+      network: !isTimeout,
+      timedOut: isTimeout
+    };
   }
 }
 
 async function main() {
   const state = loadState();
   const results = [];
-  const summary = { baseUrl: BASE_URL, startedAt: new Date().toISOString(), total: 0, good: 0, byQuality: {}, latencies: [], failedIds: [], details: [] };
+  const summary = { baseUrl: BASE_URL, startedAt: new Date().toISOString(), total: 0, good: 0, byQuality: {}, latencies: [], failedIds: [], details: [], clientTimeouts: 0, inferenceUnavailables: 0, providerErrors: 0, rateLimits: 0 };
 
   // Map sessions by id to keep conversational state for sessioned cases
   const sessions = {};
@@ -95,6 +104,10 @@ async function main() {
     summary.total++;
     summary.byQuality[score.quality] = (summary.byQuality[score.quality] || 0) + 1;
     summary.latencies.push(result.latencyMs);
+    if (result.timedOut || result.body?.error === 'CLIENT_TIMEOUT') summary.clientTimeouts++;
+    if (result.body?.error === 'INFERENCE_UNAVAILABLE') summary.inferenceUnavailables++;
+    if (result.status === 429 || result.body?.error === 'RATE_LIMIT') summary.rateLimits++;
+    if (result.network || (result.body?.error && result.body.error !== 'CLIENT_TIMEOUT' && result.body.error !== 'RATE_LIMIT' && result.body.error !== 'INFERENCE_UNAVAILABLE')) summary.providerErrors++;
     if (score.quality === QUALITY.GOOD) summary.good++;
     else summary.failedIds.push(c.id);
 
@@ -121,6 +134,10 @@ async function main() {
     passRate: `${summary.passRate}%`,
     byQuality: summary.byQuality,
     latencyMs: summary.latencyMs,
+    clientTimeouts: summary.clientTimeouts,
+    inferenceUnavailables: summary.inferenceUnavailables,
+    providerErrors: summary.providerErrors,
+    rateLimits: summary.rateLimits,
     failedIds: summary.failedIds,
     resultFile: RESULT_FILE,
     historical: 'scripts/eval-local-api.historical.js'
