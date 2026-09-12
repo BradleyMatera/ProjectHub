@@ -1,5 +1,24 @@
 # Scout Feature Handoff
 
+**Updated:** 2026-09-12 — `fix/post-integration-semantic-reliability` @ `a815b3a604b6` (published head, not merged). Runtime deployed to DEV from `a815b3a604b6`. Generic assessment-phrase fix on PR #31:
+1. `lib/grounding-validator.js` and `lib/relationship-validator.js` now treat generic role-fit/availability phrases (`partial fit`, `open to relocation`, `available for remote roles`, `willing`, `ready`, `able`) as assessments rather than fabricated occupations or unsupported `is_type` claims.
+2. Added regression test `R2` in `test/semantic-reliability.test.js` verifying `partial fit` is accepted for a junior-frontend role-fit question.
+
+Verification:
+- `npm test` — **1273/1273 pass**.
+- Exact-SHA CI `Test and Verify` run succeeded for `a815b3a604b6` after one flaky `test/deadline-cancellation.test.js` rerun.
+- DEV deployed from `a815b3a604b6`; health verified at `https://dev.projecthub-chat.bradleymatera.dev/health`.
+- `eval:local-api` (DEV) — **23/23 GOOD (100%)**, `clientTimeouts: 0`, `inferenceUnavailables: 0`, `rateLimits: 0`.
+- 132-turn live gate (DEV, `--delay 3.0`) — **97/132 turns passed (18/33 conversations)**. No `RATE_LIMIT` failures. Failures: `GENERATION` 23 (harness keyword misses on provocation/sensitive/arithmetic/personal/context turns), `VALIDATION` 7 (keyword misses on junior/frontend/remote/blog/customer-service facets), `OTHER` 2 (length/word-count), `NEAR_DUPLICATE` 3 (`Can he learn cobol?` sequence). The `Archived complete remote request` scenarios now pass.
+
+Known limitations:
+- The 132-turn live gate is still not consistently clean; remaining failures are provider/model phrasing and harness keyword misses, not structural scout bugs.
+- `npm audit --audit-level=moderate` still reports the same 4 pre-existing dependency advisories.
+
+Final readiness for this branch: **READY_FOR_DEVELOP_REVIEW** (PR #31 is open and should be reviewed; do not merge until the 132-turn gate is consistently clean if that is the develop merge criterion).
+
+---
+
 **Updated:** 2026-09-10 — `fix/post-integration-semantic-reliability` @ `09c37d63ec04` (published head, not merged). Runtime deployed to DEV from `09c37d63ec04`. Generic role-fit and assessment cleanup on PR #31:
 1. Removed the hardcoded `ROLE_HINTS` role-name-to-requirements table from `lib/agent-tools.js`; `match_role` no longer guesses requirements from an unknown role name.
 2. Replaced recruiter lexical scoring in `lib/response-contract.js` with generic role-fit/interview assessment instructions; removed `internship`/`junior`/`candidate` lexical terms from scoring.
