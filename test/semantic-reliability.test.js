@@ -204,6 +204,16 @@ test('R: requested role is request context, not subject evidence', () => {
   assert.equal(result.valid, true, JSON.stringify(result.reasons));
 });
 
+test('R2: role-fit accepts "partial fit" as a generic assessment', () => {
+  const k = freshKnowledge();
+  const q = 'Is he a fit for a junior frontend developer role?';
+  const contract = buildResponseContract(q, 'JavaScript, React, TypeScript, Node, no dedicated frontend title.', k);
+  const answer = 'Bradley Matera is a partial fit for the junior frontend developer role because he has JavaScript and React experience but has not worked in a dedicated frontend position.';
+  const graph = buildRelationshipGraph(k);
+  const result = validateAnswer(answer, 'JavaScript React TypeScript Node no dedicated frontend title.', q, k, [], graph, null, contract, []);
+  assert.equal(result.valid, true, JSON.stringify(result.reasons));
+});
+
 test('S: match_role does not infer requirements for an unknown role name', () => {
   const result = executeAgentTool('match_role', { jobDescription: 'Is he a fit for an Orbital Reliability Specialist role?' }, freshKnowledge());
   assert.equal(result.role, null);
