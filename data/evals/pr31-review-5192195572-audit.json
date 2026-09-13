@@ -1,0 +1,112 @@
+{
+  "review": {
+    "id": 5192195572,
+    "reviewedCommit": "4d81b05",
+    "reviewer": "copilot-pull-request-reviewer",
+    "state": "COMMENTED",
+    "verdict": "CHANGES RECOMMENDED",
+    "filesReviewed": "62/66",
+    "visibleComments": 5,
+    "suppressedFindings": 4
+  },
+  "findings": [
+    {
+      "n": 1,
+      "source": "visible",
+      "file": "lib/agent-tools.js:396",
+      "issue": "isKnown used substring containment; criterion JavaScript with known skill Java matched (termNorm.includes(normalized(s))), so no gap was reported.",
+      "reproduction": "match_role with jobDescription 'We require JavaScript for this build' and skills ['Java'] produced gaps: [].",
+      "classification": "CONFIRMED_BUG",
+      "fix": "isKnown now uses the existing token-aware skillOverlaps()",
+      "tests": ["review-5192195572 P1"]
+    },
+    {
+      "n": 2,
+      "source": "visible",
+      "file": "server-gemini.js:1775",
+      "issue": "Cache discriminator /[-+*/%^]/ missed Unicode × ÷ (and −) that the arithmetic parser accepts; normalizeQuery strips them, so '4 × 2' collided with '4 - 2' cache keys.",
+      "reproduction": "exprKeyed test on '4 × 2' returned false -> shared cacheKey with a different expression.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "discriminator extended to /[-+*/%^×÷−]/",
+      "tests": ["review-5192195572 P2"]
+    },
+    {
+      "n": 3,
+      "source": "visible",
+      "file": "lib/agent-tools.js:292 (via lib/response-contract.js extractRequestedRole)",
+      "issue": "'Looking for a data scientist requiring Python' has no role/position/job marker, so extractRequestedRole returned null and 'data scientist' leaked into explicitCriteria.",
+      "reproduction": "match_role produced explicitCriteria ['data scientist','python'].",
+      "classification": "CONFIRMED_BUG",
+      "fix": "extractRequestedRole gained a looking-for/seeking pattern that captures the title and stops at the next requirement marker",
+      "tests": ["review-5192195572 P3", "P3b"]
+    },
+    {
+      "n": 4,
+      "source": "visible",
+      "file": "lib/grounding-validator.js:398",
+      "issue": "LEADING_AFFIRM_RE / LEADING_DENY_RE / LEADING_QUALIFY_RE hardcoded he/she/they; 'Ze is not experienced with Rust' under an AFFIRM-required contract was parsed UNKNOWN and bypassed the stance guard.",
+      "reproduction": "parseLeadingStance('Ze is not experienced with Rust.', zeKb) returned UNKNOWN (pre-fix).",
+      "classification": "CONFIRMED_BUG",
+      "fix": "stance patterns are built per tenant from getSubjectPronouns (cached); also added the missing spaced 'is/are not' denial forms for all pronouns; checkStance threads knowledge through",
+      "tests": ["review-5192195572 P4", "P4b"]
+    },
+    {
+      "n": 5,
+      "source": "visible",
+      "file": "lib/knowledge-access.js:377",
+      "issue": "getSubjectPronouns returned object-form pronouns verbatim; { subject: 'ze' } made prompt interpolation emit 'ze/undefined'.",
+      "reproduction": "getSubjectPronouns({identity:{pronouns:{subject:'ze'}}}) returned { subject: 'ze' } with no object/possessive.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "object form now fills missing fields (object falls back to subject, possessive to object)",
+      "tests": ["review-5192195572 P5"]
+    },
+    {
+      "n": 6,
+      "source": "suppressed",
+      "file": "lib/claim-validator.js:217",
+      "issue": "CLAUSE_BOUNDARY lookahead and buildCandidateSubjectRe hardcoded it|he|she|they; a configured 'ze' subject clause ('…and ze wrote plugins using Vue') did not split, so Vue was validated as an Atlas project technology.",
+      "reproduction": "validateProjectTechnologyRelationships('Atlas is a dashboard, and ze wrote plugins using Vue.') pre-fix flagged 'Atlas is linked to unverified technology vue'; post-fix returns [].",
+      "classification": "CONFIRMED_BUG",
+      "fix": "CLAUSE_BOUNDARY lookahead and candidateSubjectRe now include the configured subject pronoun",
+      "tests": ["review-5192195572 P6"]
+    },
+    {
+      "n": 7,
+      "source": "suppressed",
+      "file": "lib/evidence-relations.js:186",
+      "issue": "Every colon was a hard clause boundary; rendered project evidence 'Project Atlas: a dashboard. Tech: React' stranded the subject from the Tech: cue, so documented technology evidence did not support the claim.",
+      "reproduction": "evidenceSupportsTechnologyRelation(['Atlas'],'React','Atlas: uses React for rendering.') returned false pre-fix.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "colon removed from the clause split (subjectRe already tolerates a label colon); LABEL_FIELD_RE parses Tech:/Stack:/Skills: value lists against the last established subject; cue-only clauses may inherit the block subject; a leading non-subject label colon is retried after",
+      "tests": ["review-5192195572 P7", "P7b"]
+    },
+    {
+      "n": 8,
+      "source": "suppressed",
+      "file": "lib/grounding-validator.js:835",
+      "issue": "numberMatches extracted only the magnitude of a signed computed result — 'the result is -1' matched '1' and was rejected number_not_grounded:1 even though the computed fact was -1.",
+      "reproduction": "validateAnswer('The result is -1.', ..., contract {computedFacts:[{result:-1}]}) -> reasons ['number_not_grounded:1'].",
+      "classification": "CONFIRMED_BUG",
+      "fix": "number regex is now /(?<![\\w.])[-+]?\\d[\\d.,]*\\b/ — sign captured, but '3-4' still yields 3 and 4",
+      "tests": ["review-5192195572 P8", "P8b"]
+    },
+    {
+      "n": 9,
+      "source": "suppressed",
+      "file": "lib/response-planner.js:428",
+      "issue": "isSubjectRef recognized only he/she/they + object forms; 'What projects has ze built?' treated ze as an unresolved entity instead of the tenant subject.",
+      "reproduction": "assessPrimaryFacet with ze/zir knowledge returned subject:'ze'; with the fix subject:'Morgan Vale'.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "isSubjectRef now includes the configured subject/object/possessive pronouns",
+      "tests": ["review-5192195572 P9"]
+    }
+  ],
+  "summary": {
+    "total": 9,
+    "confirmedBug": 9,
+    "falsePositive": 0,
+    "alreadyFixed": 0,
+    "regressionSuite": "test/review-5192195572.test.js (13 tests, all passing)",
+    "deterministicFloor": "1375/1375"
+  }
+}

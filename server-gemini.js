@@ -1772,7 +1772,7 @@ app.post('/api/chat', async (req, res) => {
     // Arithmetic-bearing questions must not share a cache entry:
     // normalizeQuery strips operator characters, so "3 - 5" and "-3 + 5"
     // would collapse to the same key and serve each other's computed answer.
-    const exprKeyed = /[-+*/%^]/.test(resolvedMessage)
+    const exprKeyed = /[-+*/%^×÷−]/.test(resolvedMessage)
       ? `${cacheKey}|expr:${resolvedMessage.trim().toLowerCase().replace(/\s+/g, ' ')}`
       : cacheKey;
 
