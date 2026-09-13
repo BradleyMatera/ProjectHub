@@ -1,8 +1,43 @@
 # Scout Feature Handoff
 
-**Updated:** 2026-09-13 — `fix/post-integration-semantic-reliability` (PR #31 open, base `develop`, not merged). Final semantic-reliability blocker pass:
+**Updated:** 2026-09-13 — `fix/post-integration-semantic-reliability` (PR #31 open, base `develop`, not merged). Semantic-reliability freeze candidate:
 
-- Qualified runtime candidate / DEV deployed runtime: `3ec5cd882f48cbe8c9e6e422ea78d1bdfad0fcd3`
+- Frozen runtime candidate / DEV deployed runtime: `fe3b8e7cf5fa0eeacd8cc481c4ab9bf8cac9f522`
+- Exact-SHA CI `Test and Verify` run `34743398141` **success** on `fe3b8e7` (all jobs green).
+- Fresh Copilot review requested on `fe3b8e7` (PR head).
+- Prior qualified runtime `3ec5cd882f48` evidence preserved under `data/evals/pr31-3ec5cd8-*`; new artifacts under `data/evals/pr31-fe3b8e7-*`.
+
+Changes in `fe3b8e7` since `3ec5cd8` (live-path and validation-semantics fixes, all tenant-neutral):
+
+1. `lib/arithmetic-tool.js` + `lib/rag-agent.js` — arithmetic actually wired into the live path: computed facts in the response contract, computed-result guardrail, computed result prepended to enrichment (survives 200-char truncation), `missing_computed_result` repair hint. `lib/lite-agent.js` wiring kept for parity; `REPAIR_HINTS` exported and mapped into rag-agent repair prompts.
+2. `lib/rag-agent.js` — parse failures (empty/too-short provider completions) now enter the repair path instead of returning early; stance rail emitted from the full contract (`factState`/`answerStance`/`requiredStance`), not only when `directAnswer` is set; honest-uncertainty repair escape extended to `UNKNOWN`/`PARTIAL` `factState` (previously keyed only on `evidenceStatus`); repair hints added for `stance_mismatch`, `refusal_mismatch`, `future_capability_wrong_frame`, and related classes.
+3. `lib/grounding-validator.js` — qualified subject-lack-of-evidence openings ("He does not have verified X experience, but he could learn") classify as QUALIFY not DENY; `currentRoleRe` no longer flags foundation statements ("he can use React") as current-role overclaims; abstract/propositional nouns (`fact`, `question`, `area`, `trajectory`, `point`, `topic`, `aspect`, `feature`) excluded from occupation heads; employer-phrase guard for `for your …` false employers; content-word floor lowered to 3 chars so kinship claims (`son`, `kid`, `dog`) can't auto-pass; overlap check runs after relationship validation so coherent-source-validated claims contribute their words; subject-name words count as grounded.
+4. `lib/relationship-validator.js` — `has_property`/`has_relation` claims require a single coherent source unit; derivational stem matching (`relocate`/`relocation`/`relocating`) via verb↔event-noun suffixes plus prefix-tolerant stem equality; `unitLower.includes(word)` raw-substring hole closed (token-based matching — `son` no longer matches `Mason`/`reason`/`lesson`); `resolveEntity` substring/word-overlap branches given minimum-ratio/word-length floors (`son` no longer resolves to `masoncountywa`).
+5. `lib/claim-extractor.js` — `is_type` patterns extended to the `being a X` gerund evasion ("evidence for being a dedicated father"); `has_relation` scalar-attribute guard extended (`price of $10`, `strong learning trajectory`); abstract relation-noun list extended (`trajectory`, `area`).
+6. `lib/response-planner.js` — `assessPrimaryFacet` for requested-facet completeness (e.g. "what AWS services" must name services or honestly report undocumented); qualifier-token expansion across entity names with artifact-type exclusion; word-boundary qualifier matching.
+7. Assessment-language handling — `strong junior candidate` accepted when grounded: generic assessment words (`strong`, `good`, `candidate`, `fit`) excluded from the factual type core; level-synonym normalization (`junior`/`early-career`/`entry-level`); bare `candidate` not treated as an occupation when remaining role language is grounded.
+
+Verification on `fe3b8e7`:
+- `npm test` — **1292/1292 pass, 26 suites**.
+- `npm run eval-retrieval` — Recall@6 1.000 (40/40), MRR@6 0.929.
+- Builds, `node --check`, `git diff --check`, `npm run workspace:check` clean.
+- DEV `/health` verified `sourceCommit fe3b8e7`, cloudflare, `@cf/meta/llama-3.1-8b-instruct-fast`, 15000ms deadline.
+- `eval:local-api` (DEV): **22/23 GOOD (95.7%)**, p50 497ms, p95 1309ms, no timeouts/provider errors/rate limits. Sole non-GOOD: `unknown-tech-2` — scorer artifact (negated-mention miss on "no verified evidence that Bradley has experience with rust"); reply is correctly future-framed. Artifact: `data/evals/pr31-fe3b8e7-local-api.json`.
+- 132-turn live gate (DEV, `--delay 3.0 --scenario-cooldown 2.0`): **97/132 turns, 18/33 conversations**, zero 429s. Failure classes: GENERATION 18, VALIDATION 13, NEAR_DUPLICATE 3, OTHER 1. Artifact: `data/evals/pr31-fe3b8e7-132-turn.json` (+`-diag.json`).
+- Key live outcomes: arithmetic returns computed results ("2 + 2 equals 4"); father fabrication fully blocked (TECHNICAL_ERROR, no fabricated claim ships); "does he have kids?" → bounded unknown; relocate/future-capability/junior-candidate all grounded and accepted.
+
+Known limitations (unchanged class profile vs `3ec5cd8` baseline of 100/132):
+- Most gate failures are harness keyword misses and honest TECHNICAL_ERRORs where the 8B model won't produce the bounded-unknown phrasing under repair.
+- `unknown-tech-2` scorer false positive persists (scorer-side, not runtime).
+- Same 4 pre-existing `npm audit` advisories (CI step is continue-on-error).
+
+Next: fresh Copilot review on `fe3b8e7` → reviewed release to `develop` → staging mirror → production per release spec. Do not merge yet; `develop`, `master`, `ProjectHub-dev` unchanged.
+
+---
+
+**Updated:** 2026-09-13 — `fix/post-integration-semantic-reliability` (PR #31 open, base `develop`, not merged). Prior semantic-reliability blocker pass:
+
+- Prior qualified runtime candidate (superseded by `fe3b8e7` above): `3ec5cd882f48cbe8c9e6e422ea78d1bdfad0fcd3`
 - Runtime tree `fff3422811506c2850e8d80832075bb3973e2b36`, parent `1b10f361a0d0e8b14d1b2bdb225c0a6d7b295122`
 - Documentation snapshot: this commit is a descendant of the qualified runtime. Query `git ls-remote origin fix/post-integration-semantic-reliability` for the current branch HEAD.
 - Prior qualified runtime `a815b3a604b645f176a9a476f3e0d502e44b6959` evidence is preserved under `data/evals/pr31-a815b3a-*`.
