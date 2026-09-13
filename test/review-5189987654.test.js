@@ -362,3 +362,80 @@ test('H3: project-tech claim supported only by evidenceText validates', () => {
   const invalid = validateClaims('Project Alpha uses Rust.', 'What does Alpha use?', contract, evidenceText, knowledge, []);
   assert.ok(!invalid.some(i => i.type === 'PROJECT_RELATIONSHIP_CLAIM'), JSON.stringify(invalid));
 });
+
+// ---------- I. Live-qualification follow-ups (post-deploy battery) ----------
+
+test('I1: bare computed result answer is not a parse failure', async () => {
+  // Live battery: "What is 2024 - 2025?" — the model answered
+  // {"answer":"-1"}; the <3-char check rejected it and the repair produced
+  // the same correct JSON, yielding INFERENCE_UNAVAILABLE for a correct
+  // computed answer.
+  const router = require('../lib/local-model-router');
+  const { runRagPrimaryAgent } = require('../lib/rag-agent');
+  const knowledge = { identity: { name: 'Avery Chen' } };
+  const origGenerate = router.generate;
+  router.generate = async () => ({
+    ok: true,
+    text: JSON.stringify({ answer: '-1' }),
+    usage: { provider: 'stub', promptEvalCount: 10, evalCount: 4 },
+    latencyMs: 50,
+    model: 'stub-model'
+  });
+  try {
+    const result = await runRagPrimaryAgent({
+      question: 'What is 2024 - 2025?',
+      conversationState: { turns: [] },
+      evidence: [],
+      knowledge,
+      sessionId: 'i1',
+      policyContract: { mode: 'CONVERSATIONAL' },
+      deadlineAt: Date.now() + 15000
+    });
+    assert.equal(result.inferenceUnavailable, undefined, JSON.stringify(result.events));
+    assert.equal(result.reply, '-1');
+    assert.equal(result.proseSource, 'MODEL_GENERATION');
+  } finally {
+    router.generate = origGenerate;
+  }
+});
+
+test('I2: declared subjectAliases resolve as the tenant subject in facet questions', () => {
+  // Live battery: "What roles did Bradley have from 2024-2025?" — the
+  // contract's framing subject was a company, so 'bradley' was not a name
+  // part and the facet silently resolved to entity 'brad' → supported:false
+  // → the correct model answer was rejected and "not documented" accepted.
+  const knowledge = {
+    identity: { name: 'Avery Chen' },
+    subjectAliases: ['Avery', 'Chen'],
+    experience: [{ role: 'Data Engineer', company: 'Acme Corp', type: 'Full-time' }]
+  };
+  const g = buildRelationshipGraph(knowledge);
+  const r = assessPrimaryFacet({
+    question: 'What roles did Chen have from 2024-2025?',
+    knowledge,
+    graph: g,
+    subjectName: 'Acme Corp'  // framing subject is a company, not the person
+  });
+  assert.equal(r.matched, true);
+  assert.equal(r.supported, true, JSON.stringify(r));
+  assert.deepEqual(r.values, ['Data Engineer']);
+});
+
+test('I3: token resolving to the tenant subject stays a subject reference', () => {
+  // No declared aliases: 'avery chen' is not in subjectAliases but fuzzy-
+  // resolves to the subjectNorm — it must not become an entitySubject.
+  const knowledge = {
+    identity: { name: 'Avery Chen-Watanabe' },
+    experience: [{ role: 'Site Reliability Engineer', company: 'Initech', type: 'Full-time' }]
+  };
+  const g = buildRelationshipGraph(knowledge);
+  const r = assessPrimaryFacet({
+    question: 'What roles did Avery Chen have?',
+    knowledge,
+    graph: g,
+    subjectName: 'Initech'
+  });
+  assert.equal(r.matched, true);
+  assert.equal(r.supported, true, JSON.stringify(r));
+  assert.deepEqual(r.values, ['Site Reliability Engineer']);
+});
