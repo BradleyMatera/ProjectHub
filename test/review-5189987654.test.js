@@ -459,3 +459,20 @@ test('I4: documented role titles are grounded entities', () => {
   assert.ok(isEntityGrounded('Site Reliability Engineer', reg));
   assert.ok(!isEntityGrounded('Chief Quantum Officer', reg), 'undocumented roles stay ungrounded');
 });
+
+test('I5: clause-scoped negation covers long disclaimers', () => {
+  // Live eval:local-api flagged "…not documented in his profile as a skill
+  // he currently possesses" as OVERCLAIM — the 8-word negation window cut
+  // off the "not" 9 words back. Negation scopes to its clause boundary.
+  const c = { id: 'future-skill', message: 'But can he learn Rust?', semanticType: 'FUTURE_CAPABILITY', expect: {} };
+  const contract = { intent: 'FUTURE_CAPABILITY', subIntent: 'FUTURE_CAPABILITY', factState: 'UNKNOWN', directAnswer: 'UNKNOWN' };
+  const s = scoreCase(c, makeResult(
+    'Avery could learn rust. However, there is no verified evidence that Avery has experience with rust, and it is not documented in his profile as a skill he currently possesses.',
+    contract), { knowledge: scorerKb });
+  assert.equal(s.quality, QUALITY.GOOD, s.reason);
+  // A current-ability claim after a clause boundary is still flagged.
+  const s2 = scoreCase(c, makeResult(
+    'He does not know rust, but he can use rust already.',
+    contract), { knowledge: scorerKb });
+  assert.equal(s2.quality, QUALITY.OVERCLAIM);
+});
