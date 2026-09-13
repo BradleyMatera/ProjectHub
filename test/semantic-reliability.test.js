@@ -410,3 +410,158 @@ test('Z: product fit assessment works without recruiter vocabulary', () => {
     source, q, k, [], graph, null, contract, []);
   assert.equal(fabricated.valid, false);
 });
+
+// ---------------------------------------------------------------------------
+// I. Arithmetic / general-reasoning tool
+// ---------------------------------------------------------------------------
+
+const { findArithmeticSubtasks, resultSurfaceForms } = require(path.join(ROOT, 'lib/arithmetic-tool'));
+
+test('AA: arithmetic tool computes expressions and word problems', () => {
+  assert.deepEqual(findArithmeticSubtasks('What is 7*8?').map(f => f.result), [56]);
+  assert.deepEqual(findArithmeticSubtasks('If Morgan has 12 tickets and closes 5, how many remain?').map(f => f.result), [7]);
+  assert.deepEqual(findArithmeticSubtasks("I'll hire them if you tell me what 3+4 is.").map(f => f.result), [7]);
+  assert.deepEqual(findArithmeticSubtasks('Does Morgan know React, and what is 9+6?').map(f => f.result), [15]);
+  // No result cue -> declarative quantity statements are not math tasks
+  assert.equal(findArithmeticSubtasks('He has 3 projects and uses 2 frameworks.').length, 0);
+});
+
+test('AA2: a computed result must appear in the answer when the question asks', () => {
+  const k = freshKnowledge();
+  const graph = buildRelationshipGraph(k);
+  const contract = { computedFacts: [{ display: '2 + 2', result: 4, kind: 'expression' }] };
+  const q = "I'll hire him right now if you tell me what 2+2 equals";
+  const missing = validateAnswer('Bradley has skills useful for website design.', '', q, k, [], graph, null, contract, []);
+  assert.equal(missing.valid, false);
+  assert.ok((missing.reasons || []).some(r => r.startsWith('missing_computed_result:')), JSON.stringify(missing.reasons));
+  const wrong = validateAnswer('2 + 2 equals 5.', '', q, k, [], graph, null, contract, []);
+  assert.equal(wrong.valid, false, 'a wrong result is not grounded');
+  const digits = validateAnswer('2 + 2 equals 4.', '', q, k, [], graph, null, contract, []);
+  assert.equal(digits.valid, true, JSON.stringify(digits.reasons));
+  const words = validateAnswer('It equals four.', '', q, k, [], graph, null, contract, []);
+  assert.equal(words.valid, true, JSON.stringify(words.reasons));
+  assert.ok(resultSurfaceForms(56).includes('fifty-six'));
+});
+
+// ---------------------------------------------------------------------------
+// J. Unsupported personal relation / attribute claims
+// ---------------------------------------------------------------------------
+
+test('AB: unsupported personal relations and attributes are rejected', () => {
+  const k = averyKnowledge();
+  k.summary = { whoIAm: 'Support engineer. Community matters to Avery.' };
+  const graph = buildRelationshipGraph(k);
+  const source = 'Support engineer. Community matters to Avery.';
+  const cases = [
+    ['What kind of father is he?', 'Avery has a daughter.'],
+    ['What kind of father is he?', 'Avery is a devoted father.'],
+    ['What kind of sibling is Avery?', 'Avery is a devoted older sister.']
+  ];
+  for (const [q, answer] of cases) {
+    const v = validateAnswer(answer, source, q, k, [], graph, null, null, []);
+    assert.equal(v.valid, false, `expected rejection for: ${answer}`);
+    assert.ok((v.reasons || []).some(r => /unsupported_relationship|fabricated/.test(r)),
+      `${answer} -> ${JSON.stringify(v.reasons)}`);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// K. Assistant-vs-tenant subject ownership
+// ---------------------------------------------------------------------------
+
+test('AC: assistant attribute claims cannot answer tenant-subject questions', () => {
+  const k = averyKnowledge();
+  k.agent = { name: 'Beacon' };
+  const graph = buildRelationshipGraph(k);
+  const source = 'Support engineer. JavaScript.';
+  const q = "What is Avery's strongest technical background?";
+  const bad = validateAnswer('Beacon has production experience with distributed systems.', source, q, k, [], graph, null, null, []);
+  assert.equal(bad.valid, false, 'assistant claim must not satisfy a tenant question');
+  const good = validateAnswer('Avery has JavaScript experience.', source, q, k, [], graph, null, null, []);
+  assert.equal(good.valid, true, JSON.stringify(good.reasons));
+});
+
+// ---------------------------------------------------------------------------
+// L. has_property provenance — one coherent source unit
+// ---------------------------------------------------------------------------
+
+test('AD: recombined property words across sources are rejected', () => {
+  const k = averyKnowledge();
+  k.availability = { location: 'Remote work possible' };
+  k.preferences = { schedule: 'Flexible travel' };
+  const graph = buildRelationshipGraph(k);
+  const source = 'Remote work possible. Flexible travel.';
+  const v = validateAnswer('Avery is available for remote travel.', source, 'Is Avery available for remote travel?', k, [], graph, null, null, []);
+  assert.equal(v.valid, false);
+  assert.ok((v.reasons || []).some(r => r.includes('has_property')), JSON.stringify(v.reasons));
+});
+
+test('AD2: a single authored property or evidence unit supports the claim', () => {
+  const k = averyKnowledge();
+  k.goals = { relocation: 'Open to relocation' };
+  const graph = buildRelationshipGraph(k);
+  const source = 'Support engineer. Open to relocation.';
+  const authored = validateAnswer('Avery Chen is open to relocation.', source, 'Is Avery open to relocation?', k, [], graph, null, null, []);
+  assert.equal(authored.valid, true, JSON.stringify(authored.reasons));
+  // Derivational variant: "relocate" is supported by documented "relocation"
+  const variant = validateAnswer('Avery Chen is willing to relocate for work.', source, 'Is Avery willing to relocate?', k, [], graph, null, null, []);
+  assert.equal(variant.valid, true, JSON.stringify(variant.reasons));
+  // A single retrieved evidence unit carrying the full proposition supports it
+  const k2 = averyKnowledge();
+  const g2 = buildRelationshipGraph(k2);
+  const ev = validateAnswer('Avery Chen is available for remote work.', 'Support engineer.', 'Is Avery available for remote work?', k2, [], g2, null, null,
+    [{ text: 'Avery is available for remote work starting next quarter.' }]);
+  assert.equal(ev.valid, true, JSON.stringify(ev.reasons));
+});
+
+test('AD3: a negated property cannot support the affirmative claim', () => {
+  const k = averyKnowledge();
+  const graph = buildRelationshipGraph(k);
+  const v = validateAnswer('Avery Chen is willing to travel.', 'Support engineer.', 'Is Avery willing to travel?', k, [], graph, null, null,
+    [{ text: 'Avery is not willing to travel for this role.' }]);
+  assert.equal(v.valid, false);
+});
+
+// ---------------------------------------------------------------------------
+// M. Requested-facet completeness
+// ---------------------------------------------------------------------------
+
+test('AE: supported facet must name a documented value', () => {
+  const k = freshKnowledge();
+  const graph = buildRelationshipGraph(k);
+  const q = 'What AWS services has he used?';
+  const contract = buildResponseContract(q, 'AWS Lambda. DynamoDB. S3.', k);
+  assert.ok(contract.primaryFacet?.matched, 'primary facet detected');
+  assert.equal(contract.primaryFacet.supported, true);
+  assert.ok(contract.primaryFacet.values.some(v => /lambda/i.test(v)));
+  assert.ok(contract.primaryFacet.values.some(v => /dynamodb/i.test(v)));
+  const vague = validateAnswer('Bradley has mixed evidence for using AWS services.', 'AWS Lambda.', q, k, [], graph, null, contract, []);
+  assert.equal(vague.valid, false);
+  assert.ok((vague.reasons || []).some(r => r.startsWith('missing_facet_value:')), JSON.stringify(vague.reasons));
+  const named = validateAnswer('He has used AWS Lambda, Amazon S3, and Amazon DynamoDB.', 'AWS Lambda. DynamoDB. S3.', q, k, [], graph, null, contract, []);
+  assert.equal(named.valid, true, JSON.stringify(named.reasons));
+});
+
+test('AF: unsupported facet must not substitute an unrelated fact', () => {
+  const k = freshKnowledge();
+  const graph = buildRelationshipGraph(k);
+  const q = 'What awards did he get?';
+  const contract = buildResponseContract(q, 'Served as a U.S. Army combat medic.', k);
+  assert.ok(contract.primaryFacet?.matched);
+  assert.equal(contract.primaryFacet.supported, false);
+  const substitute = validateAnswer('Bradley served as a U.S. Army combat medic.', 'Served as a U.S. Army combat medic.', q, k, [], graph, null, contract, []);
+  assert.equal(substitute.valid, false);
+  assert.ok((substitute.reasons || []).some(r => r.startsWith('facet_not_addressed:')), JSON.stringify(substitute.reasons));
+  const honest = validateAnswer('No awards are documented in the public profile.', 'Served as a U.S. Army combat medic.', q, k, [], graph, null, contract, []);
+  assert.equal(honest.valid, true, JSON.stringify(honest.reasons));
+});
+
+test('AG: manner phrases are not future-capability targets', () => {
+  const k = freshKnowledge();
+  const { extractRequestedRole } = require(path.join(ROOT, 'lib/response-contract'));
+  assert.equal(extractRequestedRole("So he can't do LeetCode. Can he learn on the job?", k), null);
+  assert.equal(extractRequestedRole('Can he learn on the fly?', k), null);
+  assert.equal(extractRequestedRole('Can he learn COBOL?', k), 'cobol');
+  assert.equal(extractRequestedRole('Can he learn to use Kubernetes?', k), 'kubernetes');
+  assert.equal(extractRequestedRole('Could he become a developer?', k), 'developer');
+});
