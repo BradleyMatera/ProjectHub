@@ -325,7 +325,7 @@ test('Role-fit with frontend evidence returns FIT, not NOT_FIT', () => {
 
 test('Role-fit does not leak generic honestGaps into gaps', () => {
   const tools = require('../lib/agent-tools');
-  const result = tools.executeAgentTool('match_role', { jobDescription: 'Is he a fit for a junior frontend role?' }, knowledge);
+  const result = tools.executeAgentTool('match_role', { jobDescription: 'Is he a fit for a role requiring JavaScript, React, HTML, and CSS?' }, knowledge);
   assert.ok(result.matchedSkills.some(s => /javascript|react|html|css/i.test(s)), `matchedSkills was ${JSON.stringify(result.matchedSkills)}`);
   assert.equal((result.gaps || []).some(g => /LeetCode|DSA|data structures/i.test(g.skill)), false);
   assert.deepEqual(result.honestGaps || [], []);

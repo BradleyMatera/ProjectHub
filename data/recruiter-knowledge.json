@@ -625,37 +625,44 @@
     {
       "name": "JavaScript Garbage Collection Tutorial",
       "url": "https://codepen.io/student-account-bradley-matera/pen/ZYzoWpL",
-      "category": "JavaScript tutorial"
+      "category": "JavaScript tutorial",
+      "platform": "CodePen"
     },
     {
       "name": "React Calculator",
       "url": "https://codepen.io/student-account-bradley-matera/pen/ogvGZjJ",
-      "category": "React demo"
+      "category": "React demo",
+      "platform": "CodePen"
     },
     {
       "name": "Sound Machine",
       "url": "https://codepen.io/student-account-bradley-matera/details/dPbVvoa",
-      "category": "JavaScript demo"
+      "category": "JavaScript demo",
+      "platform": "CodePen"
     },
     {
       "name": "Markdown Previewer",
       "url": "https://codepen.io/student-account-bradley-matera/pen/ZYzXeEJ",
-      "category": "JavaScript demo"
+      "category": "JavaScript demo",
+      "platform": "CodePen"
     },
     {
       "name": "Random Quote Machine",
       "url": "https://codepen.io/student-account-bradley-matera/pen/azoLpeG",
-      "category": "JavaScript demo"
+      "category": "JavaScript demo",
+      "platform": "CodePen"
     },
     {
       "name": "Random Quote Generator",
       "url": "https://codepen.io/student-account-bradley-matera/pen/PwYJWMY",
-      "category": "JavaScript demo"
+      "category": "JavaScript demo",
+      "platform": "CodePen"
     },
     {
       "name": "Data Visualization",
       "url": "https://codepen.io/student-account-bradley-matera/details/dyEYbPO",
-      "category": "Data visualization demo"
+      "category": "Data visualization demo",
+      "platform": "CodePen"
     }
   ],
   "interviewStories": [

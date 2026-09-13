@@ -26,6 +26,7 @@ const syntheticKnowledge = {
       category: 'Rendering engine',
       tech: ['Rust', 'WebGPU'],
       url: 'https://example.github.io/nebula',
+      platform: 'GitHub Pages',
       description: 'A real-time rendering engine built with Rust and WebGPU.',
       aliases: ['Nebula'],
     },

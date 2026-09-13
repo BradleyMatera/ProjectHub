@@ -1,4 +1,4 @@
-const { parseGeneratedAnswer, evidenceToIdentifiers, buildRagPrimaryPacket } = require('../lib/rag-agent');
+const { parseGeneratedAnswer, evidenceToIdentifiers, buildRagPrimaryPacket, buildRagEvidence } = require('../lib/rag-agent');
 const assert = require('node:assert');
 const { test } = require('node:test');
 
@@ -28,6 +28,24 @@ test('validator rejects diagnostic classifications echoed as skills', () => {
   const answer = 'The skills that match include unknown technology payroll treated as documented skill.';
   const result = validateAnswer(answer, 'Ada processes support tickets.', 'What are her skills?');
   assert.ok(result.reasons.includes('leaked_internal_language'));
+});
+
+test('structured source provenance stays outside model-visible evidence', () => {
+  const provenance = { sourcePath: 'projects[0].description' };
+  const item = { kind: 'project', name: 'Atlas', sourceEntity: 'Atlas', provenance, description: 'Atlas is built with React.', evidenceScore: 1 };
+  const packet = buildRagEvidence([item]);
+  assert.strictEqual(packet.text, '- Atlas is built with React.');
+  assert.strictEqual(packet.selected[0].provenance, provenance);
+  assert.strictEqual(packet.selected[0].sourceEntity, 'Atlas');
+  assert.ok(!/FACT\s+\d|\[project:|\[source:|projects\[0\]/.test(packet.text));
+});
+
+test('publication backfill keeps internal platform IDs out of model evidence', () => {
+  const knowledge = { blogCatalog: { records: [{ title: 'Database Notes', brief: 'A guide to query planning.', platform: 'internal-catalog' }] } };
+  const packet = buildRagEvidence([], 1100, 8, 'GENERAL', knowledge, 'What has she published?');
+  assert.ok(packet.text.includes('Database Notes: A guide to query planning.'));
+  assert.ok(!packet.text.includes('[internal-catalog-0]'));
+  assert.strictEqual(packet.selected[0].name, 'Database Notes');
 });
 
 test('parseGeneratedAnswer strips leading Q: / A: scaffolding', () => {

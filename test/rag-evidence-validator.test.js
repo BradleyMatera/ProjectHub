@@ -22,6 +22,7 @@ function makeKnowledge(opts = {}) {
     identity: { name: opts.name || 'Alex Doe', preferredName: opts.preferredName || 'Alex' },
     skills: opts.skills || { core: ['React'] },
     projects: opts.projects || [{ name: 'Atlas', category: 'web app', tech: ['React'] }],
+    experience: opts.experience || [],
   };
 }
 
@@ -153,6 +154,43 @@ test('validateProjectTechnologyRelationships: evidence rescues project tech clai
   assert.deepEqual(invalid, []);
 });
 
+// --- 5b. clause-aware project tech validation (regression for live 132 gate) ---
+
+test('validateProjectTechnologyRelationships: tech in a separate clause is not misattributed', () => {
+  const knowledge = makeKnowledge({
+    skills: { core: ['AI'] },
+    projects: [{ name: 'ProjectHub (Scout)', category: 'web app', tech: ['JavaScript', 'Node.js', 'Express'] }]
+  });
+  const text = 'ProjectHub (Scout) uses a two-branch release model, and it has a canonical instruction source for AI coding agents.';
+  const invalid = validateProjectTechnologyRelationships(text, null, knowledge, '');
+  assert.deepEqual(invalid, []);
+});
+
+test('validateProjectTechnologyRelationships: tech list still validates as a single claim', () => {
+  const knowledge = makeKnowledge({
+    skills: { core: ['AI'] },
+    projects: [{ name: 'Atlas', category: 'web app', tech: ['React'] }]
+  });
+  const text = 'Atlas uses JavaScript, Node.js, and AI to process data.';
+  const invalid = validateProjectTechnologyRelationships(text, null, knowledge, '');
+  const details = invalid.filter(i => i.type === 'PROJECT_RELATIONSHIP_CLAIM');
+  assert.ok(details.some(d => d.detail.toLowerCase().includes('ai')), 'AI not in Atlas tech should be flagged');
+  assert.ok(!details.some(d => d.detail.toLowerCase().includes('javascript') || d.detail.toLowerCase().includes('node.js')), 'tech list items should not be false positives');
+});
+
+// --- 5c. project name/description should not be treated as unverified tech ---
+
+test('validateProjectTechnologyRelationships: project name containing the tech is not a false claim', () => {
+  const knowledge = makeKnowledge({
+    skills: { core: ['AWS'] },
+    projects: [{ name: 'AWS Serverless Metadata Extraction Workflow', category: 'web app', tech: ['AWS Lambda', 'DynamoDB'] }]
+  });
+  const text = 'His AWS internship capstone project uses Lambda and DynamoDB.';
+  const invalid = validateProjectTechnologyRelationships(text, null, knowledge, '');
+  const details = invalid.filter(i => i.type === 'PROJECT_RELATIONSHIP_CLAIM');
+  assert.deepEqual(details, [], 'AWS in the project name should not be an unverified tech claim');
+});
+
 // --- 6. claim-extractor: degree and certificate false extraction ---
 
 test('extractClaims: degree not extracted from narrative phrases', () => {
@@ -185,6 +223,23 @@ test('extractClaims: legitimate degree and certificate claims still extracted', 
   );
   assert.ok(claims.some(c => c.relation === 'has_degree' && c.object.toLowerCase().includes('state university')));
   assert.ok(claims.some(c => c.relation === 'has_cert' && c.object.toLowerCase().includes('aws')));
+});
+
+// --- 6b. claim-extractor: leading "This application" resolves to primary entity ---
+
+test('extractClaims: "This application uses X" resolves to the question entity', () => {
+  const graph = buildRelationshipGraph(makeKnowledge({
+    skills: { core: ['React'] },
+    projects: [{ name: 'Atlas', category: 'web app', tech: ['React', 'Scout'] }]
+  }));
+  const claims = extractClaims(
+    'This application uses Scout.',
+    graph,
+    'Tell me about Atlas'
+  );
+  const uses = claims.find(c => c.relation === 'uses_tech' && c.object.toLowerCase().includes('scout'));
+  assert.ok(uses, 'uses_tech claim for Scout should be extracted');
+  assert.ok(/\bAtlas\b/.test(uses.subject), 'subject should resolve to the question entity Atlas, not "This application"');
 });
 
 // --- 7. Negation scope: question entity in a denial clause ---
@@ -242,3 +297,136 @@ test('validateAnswer: positive unsupported claim for a question entity still fai
   );
   assert.equal(result.valid, false);
 });
+
+// --- 10. project description: disavowal should not trigger unsupported_description ---
+
+test('validateAnswer: saying a project is a separate/unrelated project is not an unsupported description', () => {
+  const knowledge = makeKnowledge({
+    skills: { core: ['React'] },
+    projects: [
+      { name: 'ProjectHub', category: 'web app', tech: ['React'], description: 'A portfolio widget with embedded chat.', aliases: ['ProjectHub'] },
+      { name: 'Pokedex', category: 'demo', tech: ['React'], description: 'An interactive Pokedex that uses the PokeAPI.' }
+    ]
+  });
+  const graph = buildRelationshipGraph(knowledge);
+  const text = 'The Pokedex is a separate project, and its relationship to ProjectHub is not clear.';
+  const result = validateAnswer(text, '', 'Tell me about ProjectHub', knowledge, [], graph);
+  assert.ok(!result.reasons.some(r => r.startsWith('unsupported_description:')));
+});
+
+// --- 11. includes relationship with evidence support ---
+
+test('validateRelationships: project featuring an included app is supported when evidence contains both', () => {
+  const knowledge = makeKnowledge({
+    skills: { core: ['React'] },
+    projects: [
+      { name: 'ProjectHub (Scout)', category: 'web app', tech: ['React'], description: 'ProjectHub Recruiter Alpha is the first application built on Scout.' }
+    ]
+  });
+  const graph = buildRelationshipGraph(knowledge);
+  const evidence = [{ kind: 'project', description: 'ProjectHub (Scout). ProjectHub Recruiter Alpha is the first application built on Scout. Tech: React' }];
+  const result = validateRelationships('ProjectHub features ProjectHub Recruiter Alpha', graph, 'Tell me about ProjectHub', [], '', evidence);
+  assert.ok(!result.unsupportedClaims.some(c => c.relation === 'context_drift'));
+});
+
+test('isTechInEvidence: multiword project-specific description is supported when it appears in evidence', () => {
+  const evidence = 'Scout uses deterministic query understanding, BM25/RRF retrieval, and evidence tools.';
+  const known = new Set(['JavaScript', 'React']);
+  assert.equal(isTechInEvidence('deterministic query understanding', evidence, known), true);
+  assert.equal(isTechInEvidence('BM25/RRF retrieval', evidence, known), true);
+});
+
+// --- 12. project-as-company should not fire when the entity is also a known employer ---
+
+test('validateAnswer: project that is also a known employer is not flagged as project_as_company', () => {
+  const knowledge = makeKnowledge({
+    skills: { core: ['React'] },
+    projects: [{ name: 'CIRIS Ethical AI', category: 'web app', tech: ['React'] }],
+    experience: [{ company: 'CIRIS Ethical AI', role: 'Junior Frontend Developer', type: 'Freelance', dates: '2024-2025' }]
+  });
+  const graph = buildRelationshipGraph(knowledge);
+  const text = 'Bradley worked as a Junior Frontend Developer at CIRIS Ethical AI.';
+  const result = validateAnswer(text, '', 'What jobs has Bradley had?', knowledge, [], graph);
+  assert.ok(!result.reasons.some(r => r.startsWith('wrong_relationship:project_as_company')));
+});
+
+const boundedRoleKnowledge = makeKnowledge({
+  experience: [
+    { company: 'Summit Roofing', role: 'Construction Worker' },
+    { company: 'Harbor Clinic', role: 'Receptionist' }
+  ]
+});
+
+for (const [label, text, rejected] of [
+  ['documented pair', 'Alex worked as a Construction Worker at Summit Roofing.', false],
+  ['invented role at known employer', 'Alex worked as a Neurosurgeon at Summit Roofing.', true],
+  ['known role at wrong employer', 'Alex worked as a Construction Worker at Harbor Clinic.', true],
+  ['unsupported surgeon at known employer', 'Alex worked as a Surgeon at Summit Roofing.', true],
+  ['standalone documented role', 'Alex is a Construction Worker.', false],
+  ['scoped role denial', 'Alex was not a Neurosurgeon at Summit Roofing.', false],
+  ['unrelated denial cannot rescue role', 'Alex did not use React, but he worked as a Neurosurgeon at Summit Roofing.', true],
+  ['denied role cannot hide later invention', 'Alex is not a Surgeon; he is a Neurosurgeon at Summit Roofing.', true]
+]) {
+  test(`bounded grounding roles: ${label}`, () => {
+    const result = validateAnswer(text, 'Alex worked as a Construction Worker at Summit Roofing and a Receptionist at Harbor Clinic.',
+      'What work has Alex done?', boundedRoleKnowledge, [], buildRelationshipGraph(boundedRoleKnowledge));
+    assert.equal(result.reasons.some(r => r.startsWith('fabricated_occupation:')), rejected, JSON.stringify(result.reasons));
+    if (rejected) assert.equal(result.valid, false);
+  });
+}
+
+for (const title of ['Surgeon', 'Neurosurgeon', 'Expert']) {
+  test(`bounded grounding roles: standalone documented ${title}`, () => {
+    const knowledge = makeKnowledge();
+    knowledge.identity.title = title;
+    const text = `Alex is a ${title}. Alex provides documented guidance.`;
+    const result = validateAnswer(text, text, 'Tell me about Alex', knowledge, [], buildRelationshipGraph(knowledge));
+    assert.equal(result.valid, true, JSON.stringify(result.reasons));
+  });
+}
+
+const boundedProvenanceKnowledge = makeKnowledge({ projects: [
+  { name: 'Alpha', category: 'personal project', tech: ['React'], description: 'A dashboard discussing production environments.' },
+  { name: 'Beta', category: 'freelance project', tech: ['Vue'], description: 'A freelance dashboard with authentication.' }
+] });
+
+for (const [label, text, rejected] of [
+  ['A target cannot borrow freelance marker', 'Alpha is a freelance project.', true],
+  ['B target supported freelance allowed', 'Beta is a freelance project.', false],
+  ['C production mention is not ownership', 'Alex owned Alpha in production.', true],
+  ['D separate internship disavowal', 'Alpha is separate from Beta and was not part of an internship.', false],
+  ['E generic descriptive words', 'Alpha is a dashboard with authentication.', false],
+  ['E generic production discussion', 'Alpha discusses production environments.', false],
+  ['E own technology remains valid', 'Alpha uses React.', false],
+  ['unsupported capstone with unrelated negation', 'Alpha is a capstone project that does not hardcode secrets.', true],
+  ['named internship attribution', 'Alpha was built during his AWS internship.', true],
+  ['affirmative target in multiple project sentence', 'Alpha is a freelance project, whereas Beta is a personal project.', true],
+  ['cross project technology remains rejected', 'Alpha uses Vue.', true]
+]) {
+  test(`bounded grounding provenance: ${label}`, () => {
+    const result = validateAnswer(text, '', 'Tell me about Alpha and Beta', boundedProvenanceKnowledge, [], buildRelationshipGraph(boundedProvenanceKnowledge));
+    assert.equal(result.reasons.some(r => r.startsWith('wrong_relationship:project_provenance:')), rejected, JSON.stringify(result.reasons));
+    if (rejected) assert.equal(result.valid, false);
+  });
+}
+
+test('bounded grounding provenance: unsupported attribution needs no second project', () => {
+  const knowledge = makeKnowledge({ projects: [boundedProvenanceKnowledge.projects[0]] });
+  const result = validateAnswer('Alpha was built during an internship.', '', 'Tell me about Alpha', knowledge, [], buildRelationshipGraph(knowledge));
+  assert.ok(result.reasons.some(r => r.startsWith('wrong_relationship:project_provenance:')), JSON.stringify(result.reasons));
+});
+
+for (const [label, evidence, rejected] of [
+  ['explicit target relation', [{ kind: 'project', description: 'Alpha was built as a freelance project.' }], false],
+  ['cross target relation', [{ kind: 'project', description: 'Alpha is a dashboard. Beta was built as a freelance project.' }], true],
+  ['generic same block mention', [{ kind: 'project', description: 'Alpha explains freelance employment.' }], true],
+  ['negated target relation', [{ kind: 'project', description: 'Alpha was not built as a freelance project.' }], true],
+  ['structured target category', [{ kind: 'project', name: 'Alpha', category: 'freelance project' }], false],
+  ['structured other category', [{ kind: 'project', name: 'Beta', category: 'freelance project' }], true]
+]) {
+  test(`bounded grounding provenance: evidence ${label}`, () => {
+    const result = validateAnswer('Alpha is a freelance project.', '', 'Tell me about Alpha', boundedProvenanceKnowledge, [],
+      buildRelationshipGraph(boundedProvenanceKnowledge), null, null, evidence);
+    assert.equal(result.reasons.some(r => r.startsWith('wrong_relationship:project_provenance:')), rejected, JSON.stringify(result.reasons));
+  });
+}

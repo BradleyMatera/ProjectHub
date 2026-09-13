@@ -1,5 +1,154 @@
 # Scout Feature Handoff
 
+**Updated:** 2026-09-13 — `fix/post-integration-semantic-reliability` (PR #31 open, base `develop`, not merged). Final semantic-reliability blocker pass:
+
+- Qualified runtime candidate / DEV deployed runtime: `3ec5cd882f48cbe8c9e6e422ea78d1bdfad0fcd3`
+- Runtime tree `fff3422811506c2850e8d80832075bb3973e2b36`, parent `1b10f361a0d0e8b14d1b2bdb225c0a6d7b295122`
+- Documentation snapshot: this commit is a descendant of the qualified runtime. Query `git ls-remote origin fix/post-integration-semantic-reliability` for the current branch HEAD.
+- Prior qualified runtime `a815b3a604b645f176a9a476f3e0d502e44b6959` evidence is preserved under `data/evals/pr31-a815b3a-*`.
+
+Changes in `3ec5cd8`:
+1. `lib/agent-tools.js` `matchRole` — explicit criteria now come only from requirement markers or verbatim skill mentions outside the role-title span. Role-title words surface as `contextMatches`; `requiredTerms`/`gaps` never include title-derived terms. The old `roleNameMatches → targetSkills` path is gone; the stopword set (`REQUEST_SYNTAX_WORDS`) is grammar/syntax words only, no domain vocabulary.
+2. `lib/response-contract.js` `extractRequestedRole` — stops at `requiring|requires|needs|must have|with` boundaries so supplied criteria are not swallowed into the role title.
+3. `lib/claim-extractor.js` — `has_property` claims for `open to`/`available for`/`willing to`/`ready for`/`able to`/`capable of`/`prepared for` propositions; captured subjects containing the tenant subject's name normalize to `subject`; assistant-capability claims are skipped.
+4. `lib/relationship-graph.js` — subject-level `goals`/`availability`/`preferences` string values (and their content words) indexed as `has_property` triples.
+5. `lib/relationship-validator.js` — new `has_property` branch grounds predicates against graph triples and evidence; unsupported property claims report `unsupported_relationship:<subject>|has_property|<predicate>` instead of passing via assessment-word skips.
+6. `lib/grounding-validator.js` — `LEADING_NAMED_DENY_RE` rejects named-subject hard denials ("Morgan definitely cannot use X") under UNKNOWN/qualified contracts; known non-person entity types ("support ticketing platform") no longer trigger `fabricated_occupation`; duplicate `unsupported_relationship` reasons deduped.
+7. `lib/lite-agent.js`/`lib/rag-agent.js` — `match_role` compression surfaces `explicitCriteria` separately.
+8. `test/deadline-cancellation.test.js` — aborts a deterministically in-flight fetch against a local server that never responds, instead of racing `ECONNREFUSED` on a dead port. Root cause of CI run `34699418882` attempt-1 failure (`fetch failed` vs `request_deadline`); verified 30/30 local iterations.
+9. `test/semantic-reliability.test.js` — new regressions U–Z: role-title context separation, explicit-criteria provenance, availability/capability validation (all five predicates + supported property + piggyback), Morgan Vale provenance, and non-recruiter product assessment.
+
+Verification:
+- `npm test` — **1282/1282 pass**.
+- `npm run eval-retrieval` — Recall@6 1.000 (40/40), MRR@6 0.929.
+- `npm run build` / `npm run build:widget` pass; `node --check` clean; `git diff --check` clean.
+- Exact-SHA CI `Test and Verify` run `34732014867` **passed on attempt 1** for `3ec5cd882f48`.
+- DEV `/health`: `sourceCommit 3ec5cd882f48cbe8c9e6e422ea78d1bdfad0fcd3`, provider `cloudflare`, model `@cf/meta/llama-3.1-8b-instruct-fast`, `deadlineMs 15000`.
+- `eval:local-api` (DEV, `3ec5cd8`): **20/23 GOOD** — `INFERENCE_UNAVAILABLE` on `negative-assessment`, `memory-follow-up-a`, `memory-follow-up-b` (generation candidates rejected under the stricter property validation; identical retry passes; provider variance). Artifact: `data/evals/pr31-3ec5cd8-local-api.json`.
+- 132-turn live gate (DEV, `--delay 3.0 --scenario-cooldown 2.0`): **100/132 turns, 18/33 conversations**. Failure classes: `GENERATION` 22, `VALIDATION` 8, `OTHER` 1, `NEAR_DUPLICATE` 1; no `RATE_LIMIT`. Semantic classification of all 32 failures: `data/evals/pr31-3ec5cd8-132-turn-failure-analysis.json` (HARNESS 16, REPAIR 8, LENGTH_ONLY 3, MODEL_VARIANCE 2, REAL_RUNTIME_SEMANTIC 2, NEAR_DUPLICATE 1). Artifact: `data/evals/pr31-3ec5cd8-132-turn.json`.
+
+Known limitations:
+- Two REAL_RUNTIME_SEMANTIC_FAILURE gate turns remain: `what kind of father is he?` asserts unsupported specifics ("has a daughter", "devoted father"), and `strongest technical background` produced a subject-confusion answer attributing production experience to Scout.
+- The 132-turn gate is still not consistently clean; most remaining failures are harness keyword misses and repair-exhaustion on adversarial phrasing.
+- `npm audit --audit-level=moderate` still reports the same 4 pre-existing dependency advisories (CI step is `continue-on-error`).
+
+Next: request fresh PR #31 review; do not merge. `develop`, `master`, `ProjectHub-dev` unchanged.
+
+---
+
+**Updated:** 2026-09-12 — `fix/post-integration-semantic-reliability` @ `a815b3a604b6` (published head, not merged). Runtime deployed to DEV from `a815b3a604b6`. Generic assessment-phrase fix on PR #31:
+1. `lib/grounding-validator.js` and `lib/relationship-validator.js` now treat generic role-fit/availability phrases (`partial fit`, `open to relocation`, `available for remote roles`, `willing`, `ready`, `able`) as assessments rather than fabricated occupations or unsupported `is_type` claims.
+2. Added regression test `R2` in `test/semantic-reliability.test.js` verifying `partial fit` is accepted for a junior-frontend role-fit question.
+
+Verification:
+- `npm test` — **1273/1273 pass**.
+- Exact-SHA CI `Test and Verify` run succeeded for `a815b3a604b6` after one flaky `test/deadline-cancellation.test.js` rerun.
+- DEV deployed from `a815b3a604b6`; health verified at `https://dev.projecthub-chat.bradleymatera.dev/health`.
+- `eval:local-api` (DEV) — **23/23 GOOD (100%)**, `clientTimeouts: 0`, `inferenceUnavailables: 0`, `rateLimits: 0`.
+- 132-turn live gate (DEV, `--delay 3.0`) — **97/132 turns passed (18/33 conversations)**. No `RATE_LIMIT` failures. Failures: `GENERATION` 23 (harness keyword misses on provocation/sensitive/arithmetic/personal/context turns), `VALIDATION` 7 (keyword misses on junior/frontend/remote/blog/customer-service facets), `OTHER` 2 (length/word-count), `NEAR_DUPLICATE` 3 (`Can he learn cobol?` sequence). The `Archived complete remote request` scenarios now pass.
+
+Known limitations:
+- The 132-turn live gate is still not consistently clean; remaining failures are provider/model phrasing and harness keyword misses, not structural scout bugs.
+- `npm audit --audit-level=moderate` still reports the same 4 pre-existing dependency advisories.
+
+Final readiness for this branch: **READY_FOR_DEVELOP_REVIEW** (PR #31 is open and should be reviewed; do not merge until the 132-turn gate is consistently clean if that is the develop merge criterion).
+
+---
+
+**Updated:** 2026-09-10 — `fix/post-integration-semantic-reliability` @ `09c37d63ec04` (published head, not merged). Runtime deployed to DEV from `09c37d63ec04`. Generic role-fit and assessment cleanup on PR #31:
+1. Removed the hardcoded `ROLE_HINTS` role-name-to-requirements table from `lib/agent-tools.js`; `match_role` no longer guesses requirements from an unknown role name.
+2. Replaced recruiter lexical scoring in `lib/response-contract.js` with generic role-fit/interview assessment instructions; removed `internship`/`junior`/`candidate` lexical terms from scoring.
+3. Made `requestedRole` request context rather than tenant evidence; `extractRequestedRole` now handles negative presupposition forms (`Why isn't DevOps a good fit?`, `Why isn't an Orbital Reliability Specialist a good fit?`).
+4. Generalized role-title and job-fit overclaim checks in `lib/claim-validator.js` and `lib/grounding-validator.js`; `fabricated_occupation`/`job_fit_overclaim` now use `requestedRole` and evidence instead of role-name vocabulary.
+5. `lib/rag-agent.js` `formatToolEnrichment` now skips empty `match_role` strong/partial/gap arrays so unknown roles do not inject meaningless "Strong: . Partial: . Gaps:" text.
+6. `scripts/eval-local-api.js` added a finite `CLIENT_TIMEOUT_MS`/`AbortSignal.timeout` client timeout so the evaluator cannot hang on a stalled request.
+7. Fixed an infinite `exec` loop in `lib/acceptance-scorer.js` (`masteryRe` and `NEGATION_PATTERNS.currentAbilityFromFuture` lacked `/g`), which had been hanging the local API evaluator.
+8. Added synthetic request-context, negative-presupposition, unknown-role, and empty-knowledge regressions in `test/semantic-reliability.test.js`.
+
+Verification:
+- `npm test` — **1272/1272 pass**.
+- `npm run eval-retrieval` — Recall@6 1.000 (40/40), MRR@6 0.929.
+- `npm run build` / `npm run build:widget` pass.
+- `node --check` on changed files clean; `git diff --check` clean.
+- Exact-SHA CI `Test and Verify` run `34476153520` succeeded for `09c37d63ec04`.
+- DEV deployed from `09c37d63ec04`; health verified at `https://dev.projecthub-chat.bradleymatera.dev/health`.
+- Targeted live battery: `What about a DevOps role?` and `Why isn't DevOps a good fit?` now return `ok:true` with conservative UNKNOWN/MIXED answers instead of `INFERENCE_UNAVAILABLE`; `Why is Bradley a good junior candidate?` and `Could he learn Rust?` remain accepted.
+- `eval:local-api` (DEV): **16/23 GOOD**, `clientTimeouts: 0`, `inferenceUnavailables: 4`, `rateLimits: 3`; failures on `role-fit`, `negative-assessment`, `memory-follow-up-a`, `memory-follow-up-b`, `unknown-tech-2`, `skill-frame`, `injection`.
+- 132-turn live gate (DEV, `--delay 2.0`): **100/132 turns passed (18/33 conversations)**. Failures: `GENERATION` 21 (harness keyword misses on provocation/sensitive/arithmetic/personal/context turns), `VALIDATION` 8 (keyword misses on junior/frontend/blog/remote/customer-service facets), `OTHER` 2 (length/word-count), `NEAR_DUPLICATE` 1 (`Can he learn cobol?`). No `RATE_LIMIT` or `INFERENCE_UNAVAILABLE` failures in the slow gate.
+
+Known limitations:
+- `eval:local-api` still reports `INFERENCE_UNAVAILABLE` on `Is he a fit for a junior frontend role?`, `What's his honest weakness?`, and the memory-follow-up turns; these are model-compliance failures on neutral negative phrasing and role-fit evidence, not new code regressions.
+- The 132-turn live gate is still not consistently clean; remaining failures are provider/model phrasing and harness keyword misses, not structural scout bugs.
+- `npm audit --audit-level=moderate` still reports the same 4 pre-existing dependency advisories.
+
+Next: do not merge; request review on PR #31 and keep `develop`/`master` unchanged.
+
+---
+
+**Updated:** 2026-09-08 — `fix/post-integration-semantic-reliability` @ `4012c206c4b0` (latest published head, not merged). Runtime deployed to DEV from `cc3e308caf6a`. Tenant-neutrality and anti-overfit cleanup on PR #31:
+1. Remove Bradley-shaped/nontechnical occupation keyword classification from `lib/rag-agent.js`; experience sorting now uses explicit tenant `classification`/`domain`/`category`/`type`/`tags` metadata, with the query-driven non-technical branch preserved.
+2. Remove the static `FORBIDDEN_OCCUPATION_TERMS` truth table and literal `neurosurgeon` hardcoding from `lib/grounding-validator.js`; occupation validation is now structural against `identity.title`, `summary.whoIAm`, `experience` records, and relationship-graph `employed_as`/`worked_at` triples.
+3. Remove learning-platform brand inference from `lib/relationship-graph.js`; `uses_platform` now comes only from explicit `knowledge.relationships` or experience/platform metadata.
+4. Remove Bradley/DSA/Udemy-specific tenant story and `he/his` fallback from `lib/response-contract.js`, `lib/lite-agent.js`, and `lib/recovery-contract.js`; instructions now use `${subjectName}` and neutral, portable language.
+5. Default subject pronouns fall back to `they/them/their`; `lib/source-preparation.js` and `lib/knowledge-access.js` no longer hardcode `he/him/his`.
+6. Add portable synthetic regression tests in `test/tenant-neutrality-cleanup.test.js` using unrelated synthetic identities, roles, skills, gaps, and platforms.
+7. Preserve all existing semantic, provenance, expertise, coreference, and core behavior from the accepted 9cc baseline.
+
+**Latest hardening pass (2026-09-08):**
+- `lib/rag-agent.js`: keeps gap/boundary/direct-answer evidence in the packet for negative-assessment, future-capability, and job-fit questions, even when the assessed target is `UNKNOWN`, so the model can name documented learning areas without confabulation.
+- `lib/grounding-validator.js`: allows expanded-overclaim words whose root appears in the provided evidence (e.g., a gap that says "architect a solution" permits the model's "architecting solutions").
+- `lib/response-contract.js`: recruiter/candidate recommendation questions now select concrete facts instead of falling through to empty source-entity filtering; `RECRUITER` fact scoring keywords include `project`, `skill`, `internship`, `junior`, and `candidate`.
+- `lib/acceptance-scorer.js`: correctly accepts negated unknown-skill and future-capability answers ("does not know X", "could learn X").
+
+Verification:
+- Local test floor: **1268/1268 pass**.
+- `npm run build` / `npm run build:widget` pass.
+- `node --check server-gemini.js` and `git diff --check` clean.
+- Branch `fix/post-integration-semantic-reliability` published to GitHub; current head `4012c206c4b0`.
+- Dev backend deployed from `cc3e308caf6a`; health check and smoke test verified at `https://dev.projecthub-chat.bradleymatera.dev/health`.
+- 132-turn live gate: **95/132 turns passed (18/33 conversations)**. This is within prior provider-variance bands and not a clean gate.
+- PR #31 open, base `develop`, not merged. `master` untouched.
+
+Known limitations:
+- The 132-turn live gate is still not consistently clean; remaining failures include `INFERENCE_UNAVAILABLE` on role-fit turns (notably `What about a DevOps role?`), harness keyword misses on provocation/sensitive/arithmetic turns, and model phrasing variance.
+- `What about a DevOps role?` and related DevOps follow-ups still fail live generation; the answer needs to name generic role-domain terms (`DevOps`, `CI/CD`, `infrastructure`) that the current technology-claim validator treats as unsupported when they do not appear in the retrieved evidence. A narrow, context-aware fix for role-domain terms in `JOB_FIT` answers is still open.
+- `npm audit --audit-level=moderate` reports the same 4 pre-existing dependency advisories (continues on error in CI).
+
+Next: do not merge; continue narrowing the DevOps role-domain validation and re-run the 132-turn gate until it is stable.
+
+
+
+---
+
+**Updated:** 2026-09-06 — `fix/post-integration-semantic-reliability` (`3d5a1a1ff3fa`, not yet deployed). Second semantic-reliability pass:
+1. Replaced ad-hoc history parsing with a single `getRecentUserTexts()` helper used by `inferPriorTopic()`, `inferActiveEntityFromHistory()`, and follow-up resolution; now supports both `{role,text}` and `{user,assistant}` server shapes.
+2. Locked `expectedStance()` authority order: `requiredStance` > `answerStance` > `directAnswer` > `factState`, with conflict tests.
+3. Added qualified-uncertainty leading patterns and `assessFacetSupport()` to provide requested-proposition support for active-entity facets (e.g., ProjectHub `deployed_at` is SUPPORTED; Northstar Desk `warranty` is UNKNOWN).
+4. Fixed product/service contract in `buildResponseContract()` to consume policy `factState`/`answerStance`/`requiredStance` instead of hard-coding `TRUE`.
+
+Verification:
+- Local test floor: 1156/1156 pass.
+- Retrieval: Recall@6 1.000 (40/40), MRR@6 0.942.
+- `npm run build` and `npm run build:widget` pass.
+- `node --check server-gemini.js` and `git diff --check` clean.
+- PR #31 open, base `develop`, not merged. `master` untouched.
+- Next: deploy to DEV, run live battery, run 132-turn gate, merge if clean.
+
+---
+
+**Updated:** 2026-09-06 — `fix/post-integration-semantic-reliability` (`aa16d04efb2a`, deployed to dev only). Closes two live DEV gaps discovered after `feat/generic-conversation-sets` (#30):
+1. Unknown-skill questions (`LeetCode`, `Terraform`, `DSA`) were rejecting qualified answers that started with "There is no verified evidence..." because `parseLeadingStance` checked `LEADING_DENY_RE` before `LEADING_QUALIFY_RE`. Reordered so qualified uncertainty is recognised first.
+2. Facet follow-ups (`What about its deployment?`) and bare-entity follow-ups (`JavaScript?`) were returning `OUT_OF_SCOPE` or `TECHNICAL_ERROR` in the live API because `inferActiveEntityFromHistory` only accepted `{role,text}` history, while `server-gemini.js` passes sanitized `{user,assistant}` history. Now accepts both formats and `resolveFacetFollowUp` also handles resolved/expanded forms (`what about X of Y`, `what about Y's X`).
+
+Verification:
+- Local test floor: 1132/1132 pass.
+- Retrieval: Recall@6 1.000 (40/40), MRR@6 0.942.
+- DEV health: `https://dev.projecthub-chat.bradleymatera.dev/health` reports `sourceCommit: aa16d04efb2a...`.
+- Live battery: `Does Bradley know LeetCode?` → qualified unknown, no leading "Yes"; `JavaScript?` → `policy:SKILL_EVIDENCE`; `What about its deployment?` → `policy:VERIFIED_FACT` with active entity `projecthub`.
+- PR #31 open (`fix/post-integration-semantic-reliability` → `develop`), not merged. `master` untouched.
+
+
+
 **Updated:** 2026-09-06 (final pre-integration) — `feat/generic-conversation-sets`
 (`fa589a82bcf6`, deployed to dev only). Three-axis model complete and unified:
 (1) discourse membership, (2) entity knowledge via `assessEntityEvidence()`,
