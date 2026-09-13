@@ -218,10 +218,21 @@ test('R12: present-tense employment phrasing reaches the temporal check', () => 
     'Morgan is currently working for Globex.',
     'Morgan is currently a software engineer at Globex.',
     'Morgan is employed by Globex.',
+    'Morgan is now a senior engineer at Globex.',
   ]) {
     const res = validateClaims(text, '', {}, '', knowledge);
     assert.ok(res.some(i => i.type === 'CURRENT_TEMPORAL_CLAIM'),
       `"${text}" should trigger the current-employment check`);
+  }
+  // Non-employment phrasing must not trip the temporal check: "is a <role>
+  // at <possessive phrase>" without a temporal cue is a role claim, and
+  // "working with <tech>" is usage, not employment.
+  for (const text of [
+    'He is a TypeScript developer at his current job.',
+  ]) {
+    const res = validateClaims(text, '', {}, '', knowledge);
+    assert.ok(!res.some(i => i.type === 'CURRENT_TEMPORAL_CLAIM'),
+      `"${text}" should not trigger the current-employment check`);
   }
 });
 
