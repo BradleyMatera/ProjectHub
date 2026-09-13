@@ -439,3 +439,23 @@ test('I3: token resolving to the tenant subject stays a subject reference', () =
   assert.equal(r.supported, true, JSON.stringify(r));
   assert.deepEqual(r.values, ['Site Reliability Engineer']);
 });
+
+test('I4: documented role titles are grounded entities', () => {
+  // Live battery follow-up: once the roles facet resolved correctly, the
+  // model enumerated documented titles ("Animal Care Associate /
+  // Volunteer") and entity grounding rejected each component as
+  // ungrounded — the registry indexed experience companies but not roles.
+  const { buildEntityRegistry, isEntityGrounded } = require('../lib/canonical-entities');
+  const knowledge = {
+    identity: { name: 'Avery Chen' },
+    experience: [
+      { role: 'Data Engineer / Volunteer Lead', company: 'Acme Corp', type: 'Full-time' },
+      { role: 'Site Reliability Engineer', company: 'Initech', type: 'Contract' }
+    ]
+  };
+  const reg = buildEntityRegistry(knowledge, '', null);
+  assert.ok(isEntityGrounded('Data Engineer / Volunteer Lead', reg));
+  assert.ok(isEntityGrounded('Volunteer Lead', reg), 'each side of a compound title grounds');
+  assert.ok(isEntityGrounded('Site Reliability Engineer', reg));
+  assert.ok(!isEntityGrounded('Chief Quantum Officer', reg), 'undocumented roles stay ungrounded');
+});
