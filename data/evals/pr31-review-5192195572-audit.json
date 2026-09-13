@@ -107,6 +107,8 @@
     "falsePositive": 0,
     "alreadyFixed": 0,
     "regressionSuite": "test/review-5192195572.test.js (13 tests, all passing)",
-    "deterministicFloor": "1375/1375"
+    "deterministicFloor": "1375/1375",
+    "liveQualification": "deployed 38c2933 to dev; 22/22 battery (2 transient env failures retried clean: 1 HTTP 429, 1 model-variance TECHNICAL_ERROR passing 3/3 on retry); eval:local-api 23/23 GOOD; p50 487ms p95 1255ms",
+    "remediationCommit": "38c29339c27d8d3c83c024d9f9b81998c6fc13f0"
   }
 }
