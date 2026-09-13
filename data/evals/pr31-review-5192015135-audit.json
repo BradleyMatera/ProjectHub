@@ -140,6 +140,20 @@
     "falsePositive": 0,
     "alreadyFixed": 1,
     "regressionSuite": "test/review-5192015135.test.js (11 tests)",
-    "fullSuite": "1361/1361 pass"
+    "fullSuite": "1361/1361 pass",
+    "liveQualification": "22/22 battery + 23/23 eval on deployed b816638",
+    "remediationCommit": "b8166382f15ded99ed0d6ef98d389b2c18562ebd"
+  },
+  "liveQualification": {
+    "description": "Post-fix live qualification on dev uncovered a systematic validator/contract conflict: with directAnswer FIT, a plain fit affirmation was rejected as expanded_overclaim, producing intermittent INFERENCE_UNAVAILABLE on affirmative role-fit questions (eval role-fit, battery role-req flakes).",
+    "fix": "grounding-validator now skips the job-fit overclaim when the contract affirms fit (directAnswer FIT); UNKNOWN/PARTIAL contracts still flag unearned fit claims.",
+    "regression": "test/review-5192015135.test.js N10b",
+    "deployedCommit": "b8166382f15ded99ed0d6ef98d389b2c18562ebd",
+    "results": {
+      "liveBattery": "22/22 pass",
+      "localApiEval": "23/23 GOOD, 0 inferenceUnavailables, 0 rateLimits, p50 561ms, p95 1414ms",
+      "unitSuite": "1362/1362",
+      "ciRun": "34780721821 SUCCESS on b816638"
+    }
   }
 }
