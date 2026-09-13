@@ -174,6 +174,91 @@ test('P8b: hyphenated ranges do not fabricate negative numbers', () => {
 // "What skills does ze have?" must resolve ze to the tenant subject rather
 // than an unresolved entity.
 
+// ---------- Q-group: Copilot review 5192491141 (5 suppressed findings) ----------
+
+// ---------- Q1. acceptance-scorer: explicitWeakness honors configured pronouns ----------
+// "Ze is weak at Rust" under a negative-assessment contract was scored GOOD.
+
+test('Q1: configured-pronoun weakness claims score OVERCLAIM', () => {
+  const { scoreCase } = require('../lib/acceptance-scorer');
+  const kb = { identity: { name: 'Morgan Vale', pronouns: 'ze/zir/hir' }, subjectAliases: ['Morgan', 'Vale'] };
+  for (const reply of ['Ze is weak at Rust.', 'Zir weakness is Rust.', 'Hir struggles with Rust.']) {
+    const r = scoreCase(
+      { id: 'q1', question: 'What is his honest weakness?', expect: { semanticType: 'NEGATIVE_ASSESSMENT' } },
+      { reply, contract: { factState: 'UNKNOWN' } }, { knowledge: kb });
+    assert.equal(r.quality, 'OVERCLAIM', `${reply} -> ${r.quality}`);
+  }
+  // Bounded unknown stays GOOD.
+  const ok = scoreCase(
+    { id: 'q1b', question: 'What is his honest weakness?', expect: { semanticType: 'NEGATIVE_ASSESSMENT' } },
+    { reply: 'No weakness is documented or verified.', contract: { factState: 'UNKNOWN' } }, { knowledge: kb });
+  assert.equal(ok.quality, 'GOOD');
+});
+
+// ---------- Q2. claim-extractor: is_type captures a pronoun as subject ----------
+// "Hir is a nurse" left subject='hir' — treated as an unknown entity, skipping
+// grounding. Configured pronouns must canonicalize to 'subject'.
+
+test('Q2: configured pronoun in is_type claim canonicalizes to subject', () => {
+  const { extractClaims, configureEntityNames } = require('../lib/claim-extractor');
+  configureEntityNames({ subjectNames: ['morgan', 'vale'] });
+  try {
+    const graph = buildRelationshipGraph({ identity: { name: 'Morgan Vale', pronouns: 'ze/zir/hir' } });
+    const claims = extractClaims('Hir is a nurse at the clinic.', graph);
+    const isType = (claims || []).find(c => c.relation === 'is_type');
+    assert.ok(isType && isType.subject === 'subject', `expected subject canonicalization, got ${JSON.stringify(isType)}`);
+  } finally {
+    configureEntityNames({ subjectNames: [] });
+  }
+});
+
+// ---------- Q3. grounding-validator: epistemic cannot-confirm is QUALIFY ----------
+// "Morgan cannot confirm whether Rust is documented" is bounded uncertainty,
+// not a capability denial.
+
+test('Q3: epistemic cannot-confirm parses as QUALIFY', () => {
+  assert.equal(parseLeadingStance('Morgan cannot confirm whether Rust is documented.', zeKb()), 'QUALIFY');
+  assert.equal(parseLeadingStance('Morgan definitely cannot use Rust.', zeKb()), 'DENY');
+});
+
+// ---------- Q4. grounding-validator: professional_inflation keeps all possessives ----------
+// "He developed his projects professionally" / "Ze developed zir projects
+// professionally" lost coverage when the pattern only kept their/the.
+
+test('Q4: professional inflation covers his/her/zir possessives', () => {
+  const r1 = validateAnswer('He developed his projects professionally.',
+    'Morgan interned at Acme.', 'Tell me about his work.', zeKb(), [], null, null, null);
+  assert.ok((r1.reasons || []).some(x => /professional_inflation/.test(x)), JSON.stringify(r1.reasons));
+  const r2 = validateAnswer('Ze developed zir projects professionally.',
+    'Morgan interned at Acme.', 'Tell me about zir work.', zeKb(), [], null, null, null);
+  assert.ok((r2.reasons || []).some(x => /professional_inflation/.test(x)), JSON.stringify(r2.reasons));
+});
+
+// ---------- Q5. grounding-validator: pronoun-headed is_a claims not exempted ----------
+// "Ze is a support ticketing platform" bypassed occupation validation because
+// neither headIsSubject nor the bare is-a subject pattern recognized 'ze'.
+
+test('Q5: configured-pronoun is_a claim flagged as fabricated occupation', () => {
+  const kb = {
+    identity: { name: 'Morgan Vale', pronouns: 'ze/zir' },
+    subjectAliases: ['Morgan', 'Vale'],
+    entities: [{ name: 'Northstar Desk', type: 'support ticketing platform' }],
+    experience: [{ role: 'Developer', company: 'Acme' }]
+  };
+  const src = 'Northstar Desk is a support ticketing platform. Morgan is a Developer at Acme.';
+  const r = validateAnswer('Ze is a support ticketing platform.', src, 'What is ze?', kb, [], null, null, null);
+  assert.ok(!r.valid && (r.reasons || []).some(x => /fabricated_occupation/.test(x)),
+    `expected fabricated_occupation, got ${JSON.stringify(r.reasons)}`);
+  const r2 = validateAnswer('Ze is a support ticketing platform at Acme.', src, 'What is ze?', kb, [], null, null, null);
+  assert.ok(!r2.valid && (r2.reasons || []).some(x => /fabricated_occupation/.test(x)),
+    `expected fabricated_occupation, got ${JSON.stringify(r2.reasons)}`);
+  // Generic assessment is not an occupation claim.
+  const ok = validateAnswer('Ze is a good fit for the role based on the documented evidence.',
+    src + ' The documented evidence supports a good fit.', 'Is ze a fit?', kb, [], null, null, null);
+  assert.ok(!(ok.reasons || []).some(x => /fabricated_occupation/.test(x)),
+    `generic assessment flagged: ${JSON.stringify(ok.reasons)}`);
+});
+
 // ---------- P10. source-preparation: slash-form pronouns voice sources correctly ----------
 // The dead string branch in normalizeSourceVoice parsed only the subject
 // token; the normalized object from getSubjectPronouns is the single source.
