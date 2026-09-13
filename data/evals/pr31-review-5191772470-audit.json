@@ -1,0 +1,167 @@
+{
+  "review": {
+    "id": 5191772470,
+    "submitted": "2026-09-13T18:38:56Z",
+    "reviewedCommit": "ddf450685b1e1680c51ddd6e466824e53aabc1ff",
+    "reviewer": "copilot-pull-request-reviewer",
+    "state": "COMMENTED",
+    "verdict": "CHANGES RECOMMENDED",
+    "filesReviewed": "57/61",
+    "visibleComments": 10,
+    "suppressedFindings": 4
+  },
+  "findings": [
+    {
+      "n": 1,
+      "source": "visible",
+      "file": "lib/acceptance-scorer.js",
+      "issue": "NEGATION_PATTERNS.currentAbilityFromFuture is a global /gi regex used with exec() in a loop that can return early; lastIndex carries into the next scoreCase call, so a shorter reply skips its only overclaim.",
+      "reproduction": "scoreCase(FUTURE_CAPABILITY, 'He currently knows rust well...') -> OVERCLAIM leaves lastIndex ~12; the same-case reply 'yes he can use rust today.' then scored GOOD, and scored OVERCLAIM again on the next call.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "lastIndex reset to 0 before the exec loop.",
+      "tests": ["review-5191772470 R1"]
+    },
+    {
+      "n": 2,
+      "source": "visible",
+      "file": "lib/arithmetic-tool.js",
+      "issue": "WORD_SEQ has no word boundaries: 'stone plus two' contains 'one plus two' and is extracted as 1+2=3, attaching a computed fact to unrelated questions.",
+      "reproduction": "findArithmeticSubtasks('stone plus two') -> [{display:'1 + 2',result:3}]; 'anyone times two' -> 1*2=2.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "WORD_SEQ bounded with \\b on both ends.",
+      "tests": ["review-5191772470 R2"]
+    },
+    {
+      "n": 3,
+      "source": "visible",
+      "file": "lib/claim-extractor.js",
+      "issue": "Subject-pronoun patterns hardcode he|she|they; a tenant-configured pronoun (identity.pronouns, e.g. ze/zir) never reaches claim extraction, so 'ze is open to relocation' bypasses grounding entirely.",
+      "reproduction": "extractClaims('Ze is open to relocation.', graph(kb with pronouns ze/zir)) -> [] while 'He is open to relocation.' -> [has_property].",
+      "classification": "CONFIRMED_BUG",
+      "fix": "ensureSubjectAltFromGraph adds the configured subject pronoun (string or object form) to the subject alternation, covering all subject-pronoun patterns.",
+      "tests": ["review-5191772470 R3"]
+    },
+    {
+      "n": 4,
+      "source": "visible",
+      "file": "lib/evidence-relations.js",
+      "issue": "subjectRe's catch-all (.*)$ lets a subject name prefix-match a longer entity name: 'Avery Chen uses React' anchors the relation to subject 'Avery'.",
+      "reproduction": "evidenceSupportsTechnologyRelation(['Avery'],'React','Avery Chen uses React...') -> true.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Names sorted longest-first so declared multi-word names win; a match tail of bare words with no punctuation or function word (an entity extension like 'Chen') is rejected. Case-insensitive input safe.",
+      "tests": ["review-5191772470 R4"]
+    },
+    {
+      "n": 5,
+      "source": "visible",
+      "file": "lib/grounding-validator.js",
+      "issue": "Structured provenance accepted when target.name.startsWith(blockName): metadata for 'Alpha' can support a provenance claim about 'Alpha Beta'. Two sites: supportsProjectProvenance and the type/provenance description check.",
+      "reproduction": "KB project 'Alpha Beta'; evidence block {name:'Alpha',category:'freelance'}; answer 'Alpha Beta is a freelance project...' — the wrong-entity block supplied the marker (no provenance rejection). After fix: wrong_relationship:project_provenance:Alpha Beta|freelance|unsupported_target.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Block names must equal the target's canonical name or a declared alias (case-insensitive set membership) at both sites.",
+      "tests": ["review-5191772470 R5"]
+    },
+    {
+      "n": 6,
+      "source": "visible",
+      "file": "lib/grounding-validator.js",
+      "issue": "The entityTypeClaim exemption scans every is_type triple regardless of the sentence's asserted entity: 'He is an electrical service at Acme' skipped fabricated-occupation validation because a documented 'Panel Upgrade is_type Electrical Service' existed.",
+      "reproduction": "validateAnswer('He is an electrical service at Acme.') -> no fabricated_occupation reason before fix; after fix -> fabricated_occupation:electrical service.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Exemption disabled when the sentence head is the tenant subject (name, name part, alias, or he/she/they).",
+      "tests": ["review-5191772470 R6"]
+    },
+    {
+      "n": 7,
+      "source": "visible",
+      "file": "lib/lite-agent.js",
+      "issue": "runLiteAgent replaced the process-wide router.generate with a request wrapper; early returns (clarification, control paths, deadline exits) leave the wrapper installed, so later requests are counted by the wrong request.",
+      "reproduction": "Code inspection: router is the shared local-model-router module; wrapper assigned at line ~1585 with no restore on ~15 return paths.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Request-local countedGenerate closure replaces the mutation; all five in-function call sites plus makeRecoveryAttempt (via validationCtx.countedGenerate) use it.",
+      "tests": ["review-5191772470 R7"]
+    },
+    {
+      "n": 8,
+      "source": "visible",
+      "file": "lib/relationship-graph.js",
+      "issue": "Subject name-part aliases are checked before exact entity resolution: with subject 'Avery Stone' and a project named 'Avery', resolveEntity('Avery') returned 'averystone', detaching the project's own relationships.",
+      "reproduction": "resolveEntity(graph, 'Avery') -> 'averystone' before fix; -> 'avery' after fix while 'Stone'/'Avi' still resolve to the subject.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "subjectAliases split into declaredSubjectAliases (strong: canonical name, preferredName, declared aliases) and subjectNameParts (weak). resolveEntity order: declared aliases, entity aliasToCanonical, entityIndex entries backed by real triples, then name parts.",
+      "tests": ["review-5191772470 R8"]
+    },
+    {
+      "n": 9,
+      "source": "visible",
+      "file": "lib/relationship-validator.js",
+      "issue": "authoredValueAffirms only checks negation before the matched word; 'Relocation is not possible' passes as affirmative support for 'open to relocation'.",
+      "reproduction": "validateRelationships('Avery is open to relocation.', graph with has_property meta.value 'Relocation is not possible') -> no unsupported claim before fix; has_property unsupported after.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Added _postNegWordRe (word followed by copula+negator or bare negator) shared via _wordNegatedInUnit; applied in authoredValueAffirms and coherentUnitSupports.",
+      "tests": ["review-5191772470 R9", "R9b"]
+    },
+    {
+      "n": 10,
+      "source": "visible",
+      "file": "lib/agent-tools.js",
+      "issue": "The slash-term pass ran on rawDesc before the role-title span was stripped: 'React/TypeScript developer' became explicit criterion 'React/TypeScript'.",
+      "reproduction": "match_role({jobDescription:'...hiring for a React/TypeScript developer role...', role:'react/typescript developer'}) -> explicitCriteria ['React/TypeScript'].",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Slash pass moved after criteriaText computation; a slash term is added only when its normalized form survives title stripping.",
+      "tests": ["review-5191772470 R10"]
+    },
+    {
+      "n": 11,
+      "source": "suppressed",
+      "file": "lib/agent-tools.js",
+      "line": 296,
+      "issue": "criteriaText.includes(s) is not token-aware: 'Go' matches 'good', 'Java' matches 'JavaScript', inventing user-supplied criteria.",
+      "reproduction": "match_role({jobDescription:'...good communication. JavaScript experience required.'}) -> explicitCriteria ['developer communication','Go','Java'].",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Per-skill regex with custom token boundaries (?<![a-z0-9+#.]) ... (?![a-z0-9+#]) so compound-token chars (+ # .) still match inside skill names while interior word chars block substring hits.",
+      "tests": ["review-5191772470 R11"]
+    },
+    {
+      "n": 12,
+      "source": "suppressed",
+      "file": "lib/claim-validator.js",
+      "line": 31,
+      "issue": "CURRENT_EMPLOYMENT_RE missed 'is currently working for X', 'is employed by X', and multi-word titles ('is currently a software engineer at X'), letting unsupported current-employment claims bypass the temporal check.",
+      "reproduction": "validateClaims('Morgan is currently working for Globex.') -> no CURRENT_TEMPORAL_CLAIM before fix; flagged after. Same for the multi-word title form.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Pattern widened: 'an?' article, up to three title words before at|with, and is (currently)? (working|employed) ... at|for|with|by.",
+      "tests": ["review-5191772470 R12"]
+    },
+    {
+      "n": 13,
+      "source": "suppressed",
+      "file": "lib/relationship-validator.js",
+      "line": 921,
+      "issue": "The shared has_property/has_relation branch only selected has_property triples, so a documented has_relation edge ('has a daughter') was still reported unsupported.",
+      "reproduction": "validateRelationships('Avery has a daughter.', graph with relationships:[{relation:'has_relation',object:'daughter'}]) -> unsupportedClaims [has_relation:daughter] before fix; [] after. Fabricated 'has a son' still rejected.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "propTriples selects t.relation === claim.relation.",
+      "tests": ["review-5191772470 R13"]
+    },
+    {
+      "n": 14,
+      "source": "suppressed",
+      "file": "lib/source-preparation.js",
+      "line": 20,
+      "issue": "Neutral pronoun fallback 'They' was paired with singular agreement, producing malformed evidence text 'They is'/'They has' in prompts.",
+      "reproduction": "normalizeSourceVoice('I am a dev. I have 5 years.', kb) -> 'They is a dev. They has 5 years.'",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Plural agreement (are/were/have/had) when the resolved subject pronoun is 'they'; string-form pronoun config ('she/her') normalized to its subject segment; singular kept for configured pronouns.",
+      "tests": ["review-5191772470 R14", "architecture-invariant normalizeSourceVoice (updated assertion)"]
+    }
+  ],
+  "summary": {
+    "total": 14,
+    "confirmedBug": 14,
+    "falsePositive": 0,
+    "alreadyFixed": 0,
+    "regressionSuite": "test/review-5191772470.test.js (15 tests)",
+    "fullSuite": "1350/1350 pass"
+  }
+}
