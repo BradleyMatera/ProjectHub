@@ -59,21 +59,45 @@ test('AbortController aborts a slow provider call within deadline', async () => 
 
 test('router.generate returns request_deadline error when abortSignal fires', async () => {
   const router = require('../lib/local-model-router');
+  const http = require('node:http');
 
-  const controller = new AbortController();
+  // A server that accepts the connection but never responds keeps the fetch
+  // deterministically in-flight, so the abort — not a connection refusal —
+  // decides the outcome. (Fetching a dead port races: ECONNREFUSED may beat
+  // the 50ms abort timer, which is what made this test flaky in CI.)
+  const hangingServer = http.createServer(() => { /* never respond */ });
+  await new Promise(resolve => hangingServer.listen(0, '127.0.0.1', resolve));
+  const prevOllamaUrl = process.env.OLLAMA_URL;
+  const prevCfAccount = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const prevCfToken = process.env.CLOUDFLARE_API_TOKEN;
+  process.env.OLLAMA_URL = `http://127.0.0.1:${hangingServer.address().port}`;
+  // Force the Ollama code path regardless of ambient Cloudflare credentials.
+  delete process.env.CLOUDFLARE_ACCOUNT_ID;
+  delete process.env.CLOUDFLARE_API_TOKEN;
 
-  // Set a very short timeout and immediately abort
-  setTimeout(() => controller.abort(), 50);
+  try {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 50);
 
-  const result = await router.generate('nonexistent-model', [
-    { role: 'user', content: 'test' }
-  ], {
-    timeoutMs: 10000,
-    abortSignal: controller.signal
-  });
+    const result = await router.generate('nonexistent-model', [
+      { role: 'user', content: 'test' }
+    ], {
+      timeoutMs: 10000,
+      abortSignal: controller.signal
+    });
 
-  assert.ok(!result.ok, 'Should not be ok');
-  assert.equal(result.error, 'request_deadline', 'Error should be request_deadline, got: ' + result.error);
+    assert.ok(!result.ok, 'Should not be ok');
+    assert.equal(result.error, 'request_deadline', 'Error should be request_deadline, got: ' + result.error);
+  } finally {
+    if (prevOllamaUrl === undefined) delete process.env.OLLAMA_URL;
+    else process.env.OLLAMA_URL = prevOllamaUrl;
+    if (prevCfAccount === undefined) delete process.env.CLOUDFLARE_ACCOUNT_ID;
+    else process.env.CLOUDFLARE_ACCOUNT_ID = prevCfAccount;
+    if (prevCfToken === undefined) delete process.env.CLOUDFLARE_API_TOKEN;
+    else process.env.CLOUDFLARE_API_TOKEN = prevCfToken;
+    hangingServer.closeAllConnections?.();
+    await new Promise(resolve => hangingServer.close(resolve));
+  }
 });
 
 test('runLiteAgent returns INFERENCE_UNAVAILABLE when deadline is already exceeded', async () => {

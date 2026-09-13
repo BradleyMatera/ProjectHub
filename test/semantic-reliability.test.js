@@ -230,3 +230,183 @@ test('T: non-recruiter assessment on empty knowledge stays UNKNOWN', () => {
   assert.equal(contract.directAnswer, 'UNKNOWN');
   assert.equal(contract.factState, 'UNKNOWN');
 });
+
+// ---------------------------------------------------------------------------
+// E. Role title is context, not an implicit requirement
+// ---------------------------------------------------------------------------
+
+const morganKnowledge = () => ({
+  identity: { name: 'Morgan Vale', role: 'Systems Engineer' },
+  summary: { whoIAm: 'Systems engineer.' },
+  skills: { core: ['Telemetry Mesh', 'Signal Routing'] },
+  projects: [],
+  experience: [],
+  certifications: []
+});
+
+test('U: role title words surface context evidence, never implicit requirements', () => {
+  const result = executeAgentTool('match_role', {
+    jobDescription: 'Would they fit a Telemetry Specialist role?'
+  }, morganKnowledge());
+  // The title overlap may surface Telemetry Mesh as relevant context evidence.
+  assert.ok(result.contextMatches.includes('Telemetry Mesh'), 'Telemetry Mesh should be context evidence');
+  assert.ok(result.matchedSkills.includes('Telemetry Mesh'));
+  // But it must NOT become an explicit criterion or manufactured gap.
+  assert.deepEqual(result.explicitCriteria, []);
+  assert.deepEqual(result.gaps, []);
+});
+
+test('U2: role title words manufacture no gap when the subject lacks the skill', () => {
+  const noMesh = morganKnowledge();
+  noMesh.skills = { core: ['Signal Routing'] };
+  const result = executeAgentTool('match_role', {
+    jobDescription: 'Would they fit a Telemetry Specialist role?'
+  }, noMesh);
+  assert.deepEqual(result.explicitCriteria, []);
+  assert.deepEqual(result.contextMatches, []);
+  assert.deepEqual(result.gaps, []);
+});
+
+test('V: user-supplied criteria are explicit requirements assessed separately', () => {
+  const result = executeAgentTool('match_role', {
+    jobDescription: 'Would they fit a Telemetry Specialist role requiring Telemetry Mesh and Flight Pipelines?'
+  }, morganKnowledge());
+  assert.ok(result.explicitCriteria.some(c => /telemetry mesh/i.test(c)), 'Telemetry Mesh is a supplied criterion');
+  assert.ok(result.explicitCriteria.some(c => /flight pipelines/i.test(c)), 'Flight Pipelines is a supplied criterion');
+  assert.ok(result.matchedSkills.includes('Telemetry Mesh'));
+  assert.deepEqual(result.gaps.map(g => g.skill), ['flight pipelines']);
+});
+
+test('W: non-technology domain role title stays context-only', () => {
+  const orchard = {
+    identity: { name: 'Rowan Birch' },
+    skills: { core: ['Orchid Cultivation', 'Soil Chemistry'] },
+    projects: [], experience: [], certifications: []
+  };
+  const result = executeAgentTool('match_role', {
+    jobDescription: 'Would they fit an Orchid Curator role?'
+  }, orchard);
+  assert.ok(result.contextMatches.includes('Orchid Cultivation'));
+  assert.deepEqual(result.explicitCriteria, []);
+  assert.deepEqual(result.gaps, []);
+});
+
+// ---------------------------------------------------------------------------
+// F. Availability/capability propositions must be grounded, not exempted
+// ---------------------------------------------------------------------------
+
+const averyKnowledge = () => ({
+  identity: { name: 'Avery Chen', role: 'Support Engineer' },
+  summary: { whoIAm: 'Support engineer.' },
+  skills: { general: ['JavaScript'] },
+  projects: [], experience: [], certifications: []
+});
+
+test('X: unsupported open/available/willing/ready/able claims are rejected', () => {
+  const k = averyKnowledge();
+  const graph = buildRelationshipGraph(k);
+  const source = 'Support engineer. JavaScript.';
+  const cases = [
+    ['Is Avery open to relocation?', 'Avery Chen is open to relocation.'],
+    ['Is Avery available for remote roles?', 'Avery Chen is available for remote roles.'],
+    ['Is Avery willing to travel?', 'Avery Chen is willing to travel.'],
+    ['Is Avery ready for production ownership?', 'Avery Chen is ready for production ownership.'],
+    ['Is Avery able to administer anesthesia?', 'Avery Chen is able to administer anesthesia.']
+  ];
+  for (const [question, answer] of cases) {
+    const v = validateAnswer(answer, source, question, k, [], graph, null, null, []);
+    assert.equal(v.valid, false, `expected rejection for: ${answer}`);
+    assert.ok((v.reasons || []).some(r => r.includes('has_property') || r === 'insufficient_content_overlap'),
+      `expected has_property or overlap rejection for: ${answer}; got ${JSON.stringify(v.reasons)}`);
+  }
+});
+
+test('X2: an unsupported capability cannot piggyback on a supported clause', () => {
+  const k = averyKnowledge();
+  const graph = buildRelationshipGraph(k);
+  const source = 'Support engineer. JavaScript.';
+  const v = validateAnswer('Avery Chen is a support engineer who is able to administer anesthesia.', source, 'Is Avery able to administer anesthesia?', k, [], graph, null, null, []);
+  assert.equal(v.valid, false);
+  assert.ok((v.reasons || []).some(r => r.includes('has_property')), JSON.stringify(v.reasons));
+});
+
+test('X3: documented availability property is supported', () => {
+  const k = averyKnowledge();
+  k.goals = { relocation: 'Open to relocation.' };
+  const graph = buildRelationshipGraph(k);
+  const source = 'Support engineer. JavaScript. Open to relocation.';
+  const v = validateAnswer('Avery Chen is open to relocation.', source, 'Is Avery open to relocation?', k, [], graph, null, null, []);
+  assert.equal(v.valid, true, JSON.stringify(v.reasons));
+});
+
+// ---------------------------------------------------------------------------
+// G. Request-context provenance: supplied criteria are not tenant evidence
+// ---------------------------------------------------------------------------
+
+test('Y: user-supplied criteria never become subject relationships', () => {
+  const k = morganKnowledge();
+  const graph = buildRelationshipGraph(k);
+  const source = 'Systems engineer. Skills: Telemetry Mesh, Signal Routing.';
+  const q = 'Would Morgan fit an Orbital Reliability Specialist role requiring Telemetry Mesh and Flight Pipelines?';
+  const contract = buildResponseContract(q, source, k);
+  assert.equal(contract.subIntent, 'JOB_FIT');
+  assert.equal(contract.requestedRole, 'orbital reliability specialist');
+
+  // Request context may be restated — it is not a claim about Morgan.
+  const restate = validateAnswer('The requested role includes Telemetry Mesh and Flight Pipelines.', source, q, k, [], graph, null, contract, []);
+  assert.equal(restate.valid, true, JSON.stringify(restate.reasons));
+
+  // Tenant-supported criterion may be affirmed.
+  const supported = validateAnswer('Morgan has Telemetry Mesh experience.', source, q, k, [], graph, null, contract, []);
+  assert.equal(supported.valid, true, JSON.stringify(supported.reasons));
+
+  // Undocumented criterion must not become a has_skill/uses_tech/worked_at fact.
+  const unsupported = validateAnswer('Morgan has Flight Pipelines experience.', source, q, k, [], graph, null, contract, []);
+  assert.equal(unsupported.valid, false);
+  assert.ok((unsupported.reasons || []).some(r => /unsupported_relationship/.test(r)), JSON.stringify(unsupported.reasons));
+
+  // Open world: a hard "cannot" denial of an undocumented criterion is a
+  // stance violation under a QUALIFY contract — absence is UNKNOWN, not FALSE.
+  const hardDenial = validateAnswer('Morgan definitely cannot use Flight Pipelines.', source, q, k, [], graph, null, contract, []);
+  assert.equal(hardDenial.valid, false);
+  assert.ok((hardDenial.reasons || []).some(r => /stance/.test(r)), JSON.stringify(hardDenial.reasons));
+});
+
+// ---------------------------------------------------------------------------
+// H. Non-recruiter portability: product/service assessment
+// ---------------------------------------------------------------------------
+
+test('Z: product fit assessment works without recruiter vocabulary', () => {
+  const k = {
+    identity: { name: 'Northstar Labs' },
+    agent: { name: 'Scout' },
+    products: [{
+      name: 'Northstar Desk',
+      type: 'B2B SaaS',
+      category: 'support ticketing',
+      description: 'Customer support ticketing platform for small teams.',
+      attributes: { price: '$99/mo', supportedUsers: 'up to 20 seats' },
+      url: 'https://example.com/desk'
+    }],
+    skills: {}, projects: [], experience: [], certifications: []
+  };
+  const graph = buildRelationshipGraph(k);
+  const source = 'Northstar Desk is a customer support ticketing platform for small teams. Price: $99/mo. Supports up to 20 seats.';
+  const q = 'Would Northstar Desk be a good fit for a small clinic?';
+  const contract = buildResponseContract(q, source, k);
+
+  const grounded = validateAnswer(
+    'Northstar Desk could be a good fit for a small clinic: it is a support ticketing platform priced at $99/mo for up to 20 seats.',
+    source, q, k, [], graph, null, contract, []);
+  assert.equal(grounded.valid, true, JSON.stringify(grounded.reasons));
+
+  const qualified = validateAnswer(
+    'The available evidence does not establish whether Northstar Desk fits a small clinic; it is a support ticketing platform at $99/mo for up to 20 seats.',
+    source, q, k, [], graph, null, contract, []);
+  assert.equal(qualified.valid, true, JSON.stringify(qualified.reasons));
+
+  const fabricated = validateAnswer(
+    'Northstar Desk is able to administer anesthesia.',
+    source, q, k, [], graph, null, contract, []);
+  assert.equal(fabricated.valid, false);
+});
