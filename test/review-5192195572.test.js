@@ -259,6 +259,186 @@ test('Q5: configured-pronoun is_a claim flagged as fabricated occupation', () =>
     `generic assessment flagged: ${JSON.stringify(ok.reasons)}`);
 });
 
+// ---------- S-group: Copilot review 5192609033 (13 suppressed findings) ----------
+
+// ---------- S1. acceptance-scorer: rankedWeakness honors configured pronouns ----------
+// "Zir biggest weakness is Rust" bypassed overclaim under UNKNOWN.
+
+test('S1: configured-pronoun ranked weakness scores OVERCLAIM', () => {
+  const { scoreCase } = require('../lib/acceptance-scorer');
+  const kb = { identity: { name: 'Morgan Vale', pronouns: 'ze/zir/hir' }, subjectAliases: ['Morgan', 'Vale'] };
+  for (const reply of ['Zir biggest weakness is Rust.', 'Hir main weakness is systems design.', 'His biggest weakness is Rust.']) {
+    const r = scoreCase(
+      { id: 's1', question: "What's his biggest weakness?", expect: { semanticType: 'NEGATIVE_ASSESSMENT' } },
+      { reply, contract: { factState: 'UNKNOWN' } }, { knowledge: kb });
+    assert.equal(r.quality, 'OVERCLAIM', `${reply} -> ${r.quality}`);
+  }
+});
+
+// ---------- S2. agent-tools: slash-joined role title is not a criterion ----------
+// "React/TypeScript developer" with no separate role kept the slash term as an
+// explicit criterion and reported a role-title gap.
+
+test('S2: slash role title does not become an explicit criterion', () => {
+  const kb = { identity: { name: 'Morgan Vale' }, skills: { core: ['React', 'TypeScript'] }, projects: [] };
+  const r = executeAgentTool('match_role', { jobDescription: 'We need a React/TypeScript developer for this team.' }, kb);
+  const crit = (r.explicitCriteria || []).map(s => s.toLowerCase());
+  assert.ok(!crit.some(c => /react|typescript/.test(c)),
+    `title terms leaked into criteria: ${JSON.stringify(crit)}`);
+  // A real slash requirement still registers.
+  const r2 = executeAgentTool('match_role', { jobDescription: 'We need a developer. Requires Go/Rust experience.' }, kb);
+  assert.ok((r2.explicitCriteria || []).some(c => /go.rust/i.test(c)),
+    `real slash criterion lost: ${JSON.stringify(r2.explicitCriteria)}`);
+});
+
+// ---------- S3. arithmetic-tool: 'what is the role?' is not a quantity cue ----------
+// "Avery has 3 tickets and closes 1. What is the role?" produced a 3-1 fact.
+
+test('S3: non-quantitative what-clause does not trigger word problem', () => {
+  const { findArithmeticSubtasks } = require('../lib/arithmetic-tool');
+  assert.equal(findArithmeticSubtasks('Avery has 3 tickets and closes 1. What is the role?').length, 0);
+  const f = findArithmeticSubtasks('Avery has 3 tickets and closes 1. How many are left?');
+  assert.equal(f.length, 1);
+  assert.equal(f[0].result, 2);
+});
+
+// ---------- S4. arithmetic-tool: slash dates are not division ----------
+// "What is 1/2/2024?" matched the "1 / 2" prefix and produced 0.5.
+
+test('S4: three-part slash date is not arithmetic', () => {
+  const { findArithmeticSubtasks } = require('../lib/arithmetic-tool');
+  assert.equal(findArithmeticSubtasks('What is 1/2/2024?').length, 0);
+  assert.equal(findArithmeticSubtasks('What is 2024/1/2?').length, 0);
+  const f = findArithmeticSubtasks('What is 10 / 2?');
+  assert.equal(f.length, 1);
+  assert.equal(f[0].result, 5);
+});
+
+// ---------- S5. claim-extractor: 'requires being a developer' is not is_type ----------
+// The bare "being a <type>" pattern fired without a subject-bound context.
+
+test('S5: requirement prose does not emit is_type', () => {
+  const { extractClaims, configureEntityNames } = require('../lib/claim-extractor');
+  configureEntityNames({ subjectNames: ['morgan', 'vale'] });
+  try {
+    const graph = buildRelationshipGraph(zeKb());
+    const claims = extractClaims('The role requires being a developer with React experience.', graph);
+    assert.ok(!(claims || []).some(c => c.relation === 'is_type'),
+      `is_type leaked: ${JSON.stringify(claims)}`);
+    const c2 = extractClaims('He is known for being a mentor.', graph);
+    assert.ok((c2 || []).some(c => c.relation === 'is_type'),
+      'subject-bound "being a mentor" lost');
+  } finally {
+    configureEntityNames({ subjectNames: [] });
+  }
+});
+
+// ---------- S6. claim-validator: 'works with X' is usage, not employment ----------
+// "Morgan works with React" produced CURRENT_TEMPORAL_CLAIM.
+
+test('S6: works-with skill phrasing is not current employment', () => {
+  const { validateClaims } = require('../lib/claim-validator');
+  const kb = { identity: { name: 'Morgan Vale' }, skills: { core: ['React'] } };
+  for (const s of ['Morgan works with React on Atlas.', 'Morgan is a developer with React.']) {
+    const inv = validateClaims([s], kb);
+    assert.ok(!(inv || []).some(x => String(x.type || x).includes('CURRENT_TEMPORAL')),
+      `${s} -> ${JSON.stringify(inv)}`);
+  }
+  const inv = validateClaims(['Morgan is currently working at Acme.'], kb);
+  assert.ok((inv || []).some(x => String(x.type || x).includes('CURRENT_TEMPORAL')),
+    'real current-employment phrasing lost');
+});
+
+// ---------- S7/S8. evidence-relations: colon-label tail + subject scoping ----------
+// "Project Atlas: Maps Tech: React" — the label-colon tail was rejected as a
+// name extension; and a "Tech:" label after a different entity clause still
+// attached to the first subject.
+
+test('S7: label tail after subject colon grounds technology', () => {
+  assert.equal(evidenceSupportsTechnologyRelation(['Atlas'], 'React',
+    'Project Atlas: a dashboard tool. Tech: React.'), true);
+});
+
+test('S8: Tech label after another entity clause does not ground first subject', () => {
+  assert.equal(evidenceSupportsTechnologyRelation(['Atlas'], 'Vue',
+    'Atlas uses React. Beta is a dashboard. Tech: Vue.'), false);
+  // Same subject continues to own its labels.
+  assert.equal(evidenceSupportsTechnologyRelation(['Atlas'], 'Vue',
+    'Atlas is a dashboard. Tech: Vue.'), true);
+});
+
+// ---------- S9. grounding-validator: definite contract rejects leading QUALIFY ----------
+// "There is no verified evidence..." was accepted under an AFFIRM contract.
+
+test('S9: QUALIFY opening mismatches a definite contract', () => {
+  const kb = zeKb();
+  const src = 'Morgan knows React.';
+  const r = validateAnswer('There is no verified evidence of that.', src, 'Does he know React?', kb, [], null, null,
+    { requiredStance: 'AFFIRM', directAnswer: 'YES' });
+  assert.ok((r.reasons || []).some(x => /stance_mismatch:expected_affirm/.test(x)),
+    `QUALIFY under AFFIRM passed: ${JSON.stringify(r.reasons)}`);
+  const r2 = validateAnswer('Yes, Morgan definitely knows React.', src, 'Does he know React?', kb, [], null, null,
+    { requiredStance: 'DENY', directAnswer: 'NO' });
+  assert.ok((r2.reasons || []).some(x => /stance_mismatch:expected_deny/.test(x)),
+    `AFFIRM under DENY passed: ${JSON.stringify(r2.reasons)}`);
+});
+
+// ---------- S10. rag-agent: validated evidence matches model-visible text ----------
+// buildRagEvidence kept original text/description on selected items while the
+// prompt saw only the truncated render — validation could ground on text the
+// model never saw.
+
+test('S10: selected evidence text equals the rendered prompt text', () => {
+  const { buildRagEvidence } = require('../lib/rag-agent');
+  const long = 'Alpha '.repeat(200).trim();
+  const items = [{ kind: 'project', name: 'Atlas', description: long }];
+  const { selected, text } = buildRagEvidence(items, { maxItems: 5, maxChars: 400 });
+  assert.equal(selected.length, 1);
+  assert.ok(selected[0].text.length <= 320, `validation text longer than prompt text (${selected[0].text.length})`);
+  assert.ok(text.includes(selected[0].text.slice(0, 40)), 'rendered text not in prompt block');
+});
+
+// ---------- S11. recovery-contract: configured pronoun/name in skillMatch ----------
+// "Does ze have React experience?" skipped the fact-specific expansion and
+// stayed a bare Yes/No.
+
+test('S11: terse yes/no expansion honors configured subject forms', () => {
+  const { buildTerseYesNoContract } = require('../lib/recovery-contract');
+  const kb = {
+    identity: { name: 'Morgan Vale', pronouns: 'ze/zir/hir' },
+    subjectAliases: ['Morgan', 'Vale'],
+    projects: [{ name: 'Atlas', tech: ['React'] }]
+  };
+  for (const q of ['Does ze have React experience?', 'Does Morgan Vale have React experience?', 'Does he have React experience?']) {
+    const c = buildTerseYesNoContract('yes', q, {}, kb);
+    assert.ok(c && c.intent === 'YES_NO_EXPAND' && (c.keyFacts || []).some(f => /react/i.test(String(f.value))),
+      `${q} -> ${JSON.stringify(c && c.keyFacts)}`);
+  }
+});
+
+// ---------- S12. response-contract: 'position as X' wrapper stripped ----------
+// "looking for a position as data scientist requiring Python" captured
+// "position as data scientist" as the role.
+
+test('S12: position-as wrapper is stripped from requested role', () => {
+  assert.equal(extractRequestedRole('looking for a position as data scientist requiring Python', zeKb()), 'data scientist');
+  assert.equal(extractRequestedRole('looking for a data scientist requiring Python', zeKb()), 'data scientist');
+});
+
+// ---------- S13. response-policy-classifier: 'Is X a documented gap?' ----------
+// The pattern required the article directly before the gap term; "a
+// documented gap" fell through to generic routing.
+
+test('S13: documented-gap question routes to has_gap contract', () => {
+  const { classifyResponsePolicy } = require('../lib/response-policy-classifier');
+  const kb = zeKb();
+  const p = classifyResponsePolicy('Is Rust a documented gap?', {
+    knowledge: kb, graph: buildRelationshipGraph(kb), subjectName: 'Morgan Vale'
+  });
+  assert.ok(p && p.subIntent === 'SKILL_EVIDENCE',
+    `expected SKILL_EVIDENCE, got ${JSON.stringify(p && p.mode)}`);
+});
+
 // ---------- P10. source-preparation: slash-form pronouns voice sources correctly ----------
 // The dead string branch in normalizeSourceVoice parsed only the subject
 // token; the normalized object from getSubjectPronouns is the single source.
