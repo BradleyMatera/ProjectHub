@@ -174,6 +174,18 @@ test('P8b: hyphenated ranges do not fabricate negative numbers', () => {
 // "What skills does ze have?" must resolve ze to the tenant subject rather
 // than an unresolved entity.
 
+// ---------- P10. source-preparation: slash-form pronouns voice sources correctly ----------
+// The dead string branch in normalizeSourceVoice parsed only the subject
+// token; the normalized object from getSubjectPronouns is the single source.
+
+test('P10: slash-form pronouns produce correct subject/object/possessive voice', () => {
+  const { normalizeSourceVoice } = require('../lib/source-preparation');
+  const she = normalizeSourceVoice('I am available and my schedule is mine.', { identity: { name: 'X', pronouns: 'she/her' } });
+  assert.equal(she, 'She is available and her schedule is her.');
+  const ze = normalizeSourceVoice('I am available and my schedule is mine.', { identity: { name: 'X', pronouns: 'ze/zir' } });
+  assert.equal(ze, 'Ze is available and zir schedule is zir.');
+});
+
 test('P9: configured pronoun resolves as subject in facet question', () => {
   const kb = zeKb();
   const graph = buildRelationshipGraph(kb);
