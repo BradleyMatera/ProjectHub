@@ -145,6 +145,27 @@ test('N9: cue-less arithmetic expressions count as computed-result asks', () => 
   assert.equal(asksForComputedResult('the projects list'), false);
 });
 
+// ---------- N10b. grounding: contract-affirmed fit is not an overclaim ----------
+// Live-eval bug found during requalification: with directAnswer FIT a plain
+// "fits the <role>" affirmation was rejected as expanded_overclaim, producing
+// intermittent INFERENCE_UNAVAILABLE on affirmative fit questions.
+
+test('N10b: contract FIT permits a plain fit affirmation; UNKNOWN still flags', () => {
+  const { validateAnswer } = require('../lib/grounding-validator');
+  const kb = { identity: { name: 'Morgan Vale' }, skills: { core: ['JavaScript'] }, projects: [] };
+  const affirm = gv_validate('Yes, ze fits the junior frontend role based on project experience with JavaScript.', kb, 'junior frontend', 'FIT');
+  assert.equal(affirm.valid, true, JSON.stringify(affirm.reasons));
+  const unknown = gv_validate('Yes, ze fits the signal routing specialist role.', kb, 'signal routing specialist', 'UNKNOWN');
+  assert.equal(unknown.valid, false);
+  assert.ok(unknown.reasons.some(r => r.startsWith('expanded_overclaim:')), JSON.stringify(unknown.reasons));
+});
+
+function gv_validate(reply, kb, role, directAnswer) {
+  const { validateAnswer } = require('../lib/grounding-validator');
+  return validateAnswer(reply, 'Morgan has used JavaScript in project work.', 'fit?', kb, [], null, null,
+    { requestedRole: role, directAnswer, factState: directAnswer === 'FIT' ? 'TRUE' : 'UNKNOWN' });
+}
+
 // ---------- N10. relationship-graph: name parts normalize like lookups ----------
 
 test('N10: apostrophized name parts normalize before joining subjectAliases', () => {
