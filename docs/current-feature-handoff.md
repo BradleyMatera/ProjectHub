@@ -1,5 +1,41 @@
 # Scout Feature Handoff
 
+**Updated:** 2026-09-13 — `fix/post-integration-semantic-reliability` (PR #31 open, base `develop`, not merged). Final semantic-reliability blocker pass:
+
+- Qualified runtime candidate / DEV deployed runtime: `3ec5cd882f48cbe8c9e6e422ea78d1bdfad0fcd3`
+- Runtime tree `fff3422811506c2850e8d80832075bb3973e2b36`, parent `1b10f361a0d0e8b14d1b2bdb225c0a6d7b295122`
+- Documentation snapshot: this commit is a descendant of the qualified runtime. Query `git ls-remote origin fix/post-integration-semantic-reliability` for the current branch HEAD.
+- Prior qualified runtime `a815b3a604b645f176a9a476f3e0d502e44b6959` evidence is preserved under `data/evals/pr31-a815b3a-*`.
+
+Changes in `3ec5cd8`:
+1. `lib/agent-tools.js` `matchRole` — explicit criteria now come only from requirement markers or verbatim skill mentions outside the role-title span. Role-title words surface as `contextMatches`; `requiredTerms`/`gaps` never include title-derived terms. The old `roleNameMatches → targetSkills` path is gone; the stopword set (`REQUEST_SYNTAX_WORDS`) is grammar/syntax words only, no domain vocabulary.
+2. `lib/response-contract.js` `extractRequestedRole` — stops at `requiring|requires|needs|must have|with` boundaries so supplied criteria are not swallowed into the role title.
+3. `lib/claim-extractor.js` — `has_property` claims for `open to`/`available for`/`willing to`/`ready for`/`able to`/`capable of`/`prepared for` propositions; captured subjects containing the tenant subject's name normalize to `subject`; assistant-capability claims are skipped.
+4. `lib/relationship-graph.js` — subject-level `goals`/`availability`/`preferences` string values (and their content words) indexed as `has_property` triples.
+5. `lib/relationship-validator.js` — new `has_property` branch grounds predicates against graph triples and evidence; unsupported property claims report `unsupported_relationship:<subject>|has_property|<predicate>` instead of passing via assessment-word skips.
+6. `lib/grounding-validator.js` — `LEADING_NAMED_DENY_RE` rejects named-subject hard denials ("Morgan definitely cannot use X") under UNKNOWN/qualified contracts; known non-person entity types ("support ticketing platform") no longer trigger `fabricated_occupation`; duplicate `unsupported_relationship` reasons deduped.
+7. `lib/lite-agent.js`/`lib/rag-agent.js` — `match_role` compression surfaces `explicitCriteria` separately.
+8. `test/deadline-cancellation.test.js` — aborts a deterministically in-flight fetch against a local server that never responds, instead of racing `ECONNREFUSED` on a dead port. Root cause of CI run `34699418882` attempt-1 failure (`fetch failed` vs `request_deadline`); verified 30/30 local iterations.
+9. `test/semantic-reliability.test.js` — new regressions U–Z: role-title context separation, explicit-criteria provenance, availability/capability validation (all five predicates + supported property + piggyback), Morgan Vale provenance, and non-recruiter product assessment.
+
+Verification:
+- `npm test` — **1282/1282 pass**.
+- `npm run eval-retrieval` — Recall@6 1.000 (40/40), MRR@6 0.929.
+- `npm run build` / `npm run build:widget` pass; `node --check` clean; `git diff --check` clean.
+- Exact-SHA CI `Test and Verify` run `34732014867` **passed on attempt 1** for `3ec5cd882f48`.
+- DEV `/health`: `sourceCommit 3ec5cd882f48cbe8c9e6e422ea78d1bdfad0fcd3`, provider `cloudflare`, model `@cf/meta/llama-3.1-8b-instruct-fast`, `deadlineMs 15000`.
+- `eval:local-api` (DEV, `3ec5cd8`): **20/23 GOOD** — `INFERENCE_UNAVAILABLE` on `negative-assessment`, `memory-follow-up-a`, `memory-follow-up-b` (generation candidates rejected under the stricter property validation; identical retry passes; provider variance). Artifact: `data/evals/pr31-3ec5cd8-local-api.json`.
+- 132-turn live gate (DEV, `--delay 3.0 --scenario-cooldown 2.0`): **100/132 turns, 18/33 conversations**. Failure classes: `GENERATION` 22, `VALIDATION` 8, `OTHER` 1, `NEAR_DUPLICATE` 1; no `RATE_LIMIT`. Semantic classification of all 32 failures: `data/evals/pr31-3ec5cd8-132-turn-failure-analysis.json` (HARNESS 16, REPAIR 8, LENGTH_ONLY 3, MODEL_VARIANCE 2, REAL_RUNTIME_SEMANTIC 2, NEAR_DUPLICATE 1). Artifact: `data/evals/pr31-3ec5cd8-132-turn.json`.
+
+Known limitations:
+- Two REAL_RUNTIME_SEMANTIC_FAILURE gate turns remain: `what kind of father is he?` asserts unsupported specifics ("has a daughter", "devoted father"), and `strongest technical background` produced a subject-confusion answer attributing production experience to Scout.
+- The 132-turn gate is still not consistently clean; most remaining failures are harness keyword misses and repair-exhaustion on adversarial phrasing.
+- `npm audit --audit-level=moderate` still reports the same 4 pre-existing dependency advisories (CI step is `continue-on-error`).
+
+Next: request fresh PR #31 review; do not merge. `develop`, `master`, `ProjectHub-dev` unchanged.
+
+---
+
 **Updated:** 2026-09-12 — `fix/post-integration-semantic-reliability` @ `a815b3a604b6` (published head, not merged). Runtime deployed to DEV from `a815b3a604b6`. Generic assessment-phrase fix on PR #31:
 1. `lib/grounding-validator.js` and `lib/relationship-validator.js` now treat generic role-fit/availability phrases (`partial fit`, `open to relocation`, `available for remote roles`, `willing`, `ready`, `able`) as assessments rather than fabricated occupations or unsupported `is_type` claims.
 2. Added regression test `R2` in `test/semantic-reliability.test.js` verifying `partial fit` is accepted for a junior-frontend role-fit question.
