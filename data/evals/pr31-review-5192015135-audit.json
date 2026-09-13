@@ -1,0 +1,145 @@
+{
+  "review": {
+    "id": 5192015135,
+    "submitted": "2026-09-13T19:46:56Z",
+    "reviewedCommit": "ecf953d (runtime code identical to f7f438b — ecf953d was a docs-only commit on top)",
+    "reviewer": "copilot-pull-request-reviewer",
+    "state": "COMMENTED",
+    "verdict": "CHANGES RECOMMENDED",
+    "filesReviewed": "60/64",
+    "visibleComments": 3,
+    "suppressedFindings": 11
+  },
+  "findings": [
+    {
+      "n": 1,
+      "source": "visible",
+      "file": "lib/grounding-validator.js:1528",
+      "issue": "validateRelationships invoked without options arg; assessExpertiseClaim reads options.contract, so an explicit expertise triple is accepted even under UNKNOWN/QUALIFY contracts.",
+      "reproduction": "graph with relationships:[{has_expertise Rust}]; assessExpertiseClaim(claim,g) -> supported:true; same claim with {contract:{factState:UNKNOWN}} -> supported:false. The live call site never passed the contract.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Pass { contract: responseContract } into validateRelationships at the grounding call site."
+    },
+    {
+      "n": 2,
+      "source": "visible",
+      "file": "lib/acceptance-scorer.js:57",
+      "issue": "subjectReferencePattern hardcodes he|she|they; configured pronouns (ze/zir) evade role-fit, entry-level, and negative-assessment checks.",
+      "reproduction": "kb{pronouns:ze/zir, seniority boundary}: question \"Ze was a senior engineer at Acme Corp, right?\" + reply deriving entry-level -> GOOD before fix (claim never parsed); OVERCLAIM after.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "subjectReferencePattern now appends the configured subject pronoun; parseOpenWorldClaim reuses it. Also fixed latent ReferenceError: validateMetaCapabilities referenced bare knowledge (crashed on scope-free replies)."
+    },
+    {
+      "n": 3,
+      "source": "visible",
+      "file": "lib/claim-extractor.js:78",
+      "issue": "ensureSubjectAltFromGraph early-returns when subjectAlt is already configured; server-gemini calls configureEntityNames first, so configured pronouns never enter relation regexes.",
+      "reproduction": "configureEntityNames({subjectNames}) then extractClaims(\"Ze is open to relocation.\") -> [] before fix; extracts has_property after.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "ensureSubjectAltFromGraph now merges graph-derived names and configured pronouns into the existing alternation instead of short-circuiting."
+    },
+    {
+      "n": 4,
+      "source": "suppressed",
+      "file": ".github/ACTIVE_WORKSPACES.json:10",
+      "issue": "checkpoint still pointed at ddf4506 while handoff metadata named a different qualified SHA.",
+      "classification": "ALREADY_FIXED",
+      "fix": "Checkpoint advanced to f7f438b7b2b3ea95c7869128ec36cd9677ced4e7 in commit 4844abf (pushed before this review was submitted; the reviewed commit ecf953d predated it)."
+    },
+    {
+      "n": 5,
+      "source": "suppressed",
+      "file": "lib/agent-tools.js:275",
+      "issue": "REQUIREMENT_MARKER treats \"looking for\" as a criterion marker, so \"Looking for a frontend developer role requiring AWS\" records \"frontend developer\" as an explicit requirement.",
+      "reproduction": "match_role on that description -> explicitCriteria contained \"frontend developer aws\".",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Marker clauses now scan title-stripped normalized text and each clause is cut at the next inner requirement marker; result explicitCriteria=[\"aws\"]. Required companion fix in response-contract.extractRequestedRole: \"<title> role\" form is tried before \"role <tail>\" and the tail capture may not begin with a requirement marker (keeps B3 \"needing React\" working)."
+    },
+    {
+      "n": 6,
+      "source": "suppressed",
+      "file": "lib/agent-tools.js:307",
+      "issue": "skillOverlaps still used includes() both directions; known Java skill satisfied a JavaScript criterion.",
+      "reproduction": "match_role on \"We need JavaScript expertise\" with skills [Java, JavaScript] -> matchedSkills included Java.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "skillOverlaps and the contextMatches word check now use token-boundary containment (same (?<![a-z0-9+#.])…(?![a-z0-9+#]) rule as the verbatim scan)."
+    },
+    {
+      "n": 7,
+      "source": "suppressed",
+      "file": "lib/arithmetic-tool.js:151",
+      "issue": "bare \"2024-2025\" has empty context so isPureArithmeticContext returned true and emitted \"2024 - 2025 = -1\" with no arithmetic cue.",
+      "reproduction": "findArithmeticSubtasks(\"2024-2025\") -> [{result:-1}] before fix; [] after. \"What is 2024 - 2025?\" still computes.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "A bare NNNN-NNNN span is treated as a year/serial range unless an explicit cue word frames it."
+    },
+    {
+      "n": 8,
+      "source": "suppressed",
+      "file": "lib/arithmetic-tool.js:246",
+      "issue": "asksForComputedResult only looked for cue words, so \"19 minus 6?\" and \"2+2\" took the control shortcut where computed facts are neither injected nor completeness-validated.",
+      "reproduction": "asksForComputedResult(\"19 minus 6?\") -> false, (\"2+2\") -> false before fix; true after.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "asksForComputedResult now also matches explicit operator expressions (digit op digit, digit opword digit, N% of M)."
+    },
+    {
+      "n": 9,
+      "source": "suppressed",
+      "file": "lib/claim-extractor.js:241",
+      "issue": "lowercase pronoun is_type pattern still fixed to he|she|they while the availability pattern used subjectAlt.",
+      "reproduction": "extractClaims(\"Ze is a devoted father.\") -> [] before fix; is_type claim after.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "is_type pattern rebuilt via new RegExp with subjectAlt like the availability pattern."
+    },
+    {
+      "n": 10,
+      "source": "suppressed",
+      "file": "lib/lite-agent.js:992",
+      "issue": "getSubjectPronouns returned identity.pronouns unchanged; a string \"she/her\" made .subject/.possessive read undefined into every lite-agent prompt.",
+      "reproduction": "getSubjectPronouns({identity:{pronouns:\"ze/zir\"}}) returned the raw string; .subject was undefined.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "getSubjectPronouns now normalizes slash-delimited strings to {subject,object,possessive} centrally — fixes lite-agent:992, lite-agent:2520, recovery-contract:1174, and all server-gemini readers at once."
+    },
+    {
+      "n": 11,
+      "source": "suppressed",
+      "file": "lib/rag-agent.js:385",
+      "issue": "AFFIRM stance rail used \"He is / He has\" templates despite configurable subject pronouns.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Rail text is now pronoun-neutral (\"Yes\" or a direct \"[Subject] is/has …\" statement)."
+    },
+    {
+      "n": 12,
+      "source": "suppressed",
+      "file": "lib/recovery-contract.js:1177",
+      "issue": "buildRecoveryPrompt read .subject/.object/.possessive directly; string-form pronouns silently fell back to they/them.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Covered by the central getSubjectPronouns normalization (finding 10)."
+    },
+    {
+      "n": 13,
+      "source": "suppressed",
+      "file": "lib/relationship-graph.js:79",
+      "issue": "subjectNameParts stored raw lowercase tokens; O'Neil Stone produced \"neil\" instead of normalized \"oneil\" so resolveEntity(\"O'Neil\") could not use bare-name resolution.",
+      "reproduction": "subjectAliases contained \"neil\",\"stone\" but not \"oneil\" before fix; contains \"oneil\",\"stone\" after.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Each whitespace name part now passes through normalizeEntity before joining subjectNameParts."
+    },
+    {
+      "n": 14,
+      "source": "suppressed",
+      "file": "lib/source-preparation.js:23",
+      "issue": "Docstring still claimed default output uses He while the fallback is They.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Docstring updated to describe configured-pronoun rewriting with they/them default."
+    }
+  ],
+  "summary": {
+    "total": 14,
+    "confirmedBug": 13,
+    "falsePositive": 0,
+    "alreadyFixed": 1,
+    "regressionSuite": "test/review-5192015135.test.js (11 tests)",
+    "fullSuite": "1361/1361 pass"
+  }
+}
