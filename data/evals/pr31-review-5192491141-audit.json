@@ -65,5 +65,12 @@
     "full": "npm test -> 1381/1381",
     "evalRetrieval": "Recall@6 1.000 (40/40), MRR@6 0.942",
     "diffCheck": "git diff --check clean"
+  },
+  "liveQualification": {
+    "deployedCommit": "0999e9afdfc3e197c859794031e40578192b7768",
+    "devHealth": "https://dev.projecthub-chat.bradleymatera.dev/health 200 verified by deploy script",
+    "battery": "21/22 scripted checks; sole failure role-req was TECHNICAL_ERROR model variance — 3/4 direct retries passed MODEL_GENERATION, validator correctly failed closed on non-compliant generation",
+    "localApiEval": "23/23 GOOD against dev backend",
+    "providerModelBudget": "Cloudflare Workers AI @cf/meta/llama-3.1-8b-instruct-fast, 15s budget — unchanged (verified by deploy script)"
   }
 }
