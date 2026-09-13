@@ -7,7 +7,7 @@
       "purpose": "PR #31 tenant-neutrality and anti-overfit cleanup on Scout/ProjectHub",
       "status": "github-backed-active",
       "remote": "origin/fix/post-integration-semantic-reliability",
-      "checkpoint": "38c29339c27d8d3c83c024d9f9b81998c6fc13f0",
+      "checkpoint": "66a915c83e3f4ce2851743a6a9bae084cab4eef1",
       "checkpointSemantics": "last-qualified-runtime",
       "note": "Active Scout workspace. Resume this exact GitHub branch on any PC, IDE, or coding agent. Fetch origin first; do not recreate it from master or develop. Publish committed work back to this branch before switching environments. 'checkpoint' records the last runtime SHA that passed deterministic floor + DEV deployment + qualification gates — it is intentionally NOT a live HEAD pointer (updating it would self-invalidate on every commit)."
     }
