@@ -1769,6 +1769,12 @@ app.post('/api/chat', async (req, res) => {
     sessionState.commitDiscourseTurn(sessionId, userMessage, policy, knowledge);
 
     const cacheKey = normalizeQuery(resolvedMessage, knowledge);
+    // Arithmetic-bearing questions must not share a cache entry:
+    // normalizeQuery strips operator characters, so "3 - 5" and "-3 + 5"
+    // would collapse to the same key and serve each other's computed answer.
+    const exprKeyed = /[-+*/%^]/.test(resolvedMessage)
+      ? `${cacheKey}|expr:${resolvedMessage.trim().toLowerCase().replace(/\s+/g, ' ')}`
+      : cacheKey;
 
     // Direct KB short-circuit (opt-in): if the question matches a non-adversarial
     // directAnswer record, return it immediately. RAG-first mode keeps this OFF so
@@ -1808,7 +1814,7 @@ app.post('/api/chat', async (req, res) => {
         contract: directContract
       };
       if (!hasHistory && !gateDebug) {
-        responseCache.set(cacheKey, { ts: Date.now(), payload: directPayload });
+        responseCache.set(exprKeyed, { ts: Date.now(), payload: directPayload });
       }
       rememberConversation(sessionId, userMessage, directReply);
       sessionState.updateState(sessionId, userMessage, directReply, knowledge, null);
@@ -1818,7 +1824,7 @@ app.post('/api/chat', async (req, res) => {
       }
     }
 
-    const cached = !hasHistory && !gateDebug ? responseCache.get(cacheKey) : null;
+    const cached = !hasHistory && !gateDebug ? responseCache.get(exprKeyed) : null;
     if (cached && (Date.now() - cached.ts) < RESPONSE_CACHE_MS) {
       clearTimeout(deadlineTimer);
       pipeline.push('cache-hit');
@@ -2140,7 +2146,7 @@ app.post('/api/chat', async (req, res) => {
     if (agentMeta) payload.agent = agentMeta;
     if (agentEvents) payload.agentEvents = agentEvents;
     if (!hasHistory && !gateDebug) {
-      responseCache.set(cacheKey, { ts: Date.now(), payload });
+      responseCache.set(exprKeyed, { ts: Date.now(), payload });
       if (responseCache.size > RESPONSE_CACHE_LIMIT) {
         responseCache.delete(responseCache.keys().next().value);
       }

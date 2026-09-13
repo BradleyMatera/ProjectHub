@@ -336,6 +336,20 @@ test('H2: negated mastery in the same clause stays suppressed', () => {
   assert.equal(s.quality, QUALITY.GOOD, s.reason);
 });
 
+test('C10: control-mode turns still enforce computed-result completeness', () => {
+  const { validateAnswer } = require('../lib/grounding-validator');
+  const contract = { computedFacts: [{ display: '2024 - 2025', result: -1, kind: 'expression' }] };
+  const missing = validateAnswer(
+    'He has one year less experience than 2024.',
+    '', 'What is 2024 - 2025?', null, [], null, 'CONVERSATIONAL', contract, []);
+  assert.equal(missing.valid, false);
+  assert.ok((missing.reasons || []).some(r => r.startsWith('missing_computed_result:')));
+  const stated = validateAnswer(
+    '2024 minus 2025 is -1.',
+    '', 'What is 2024 - 2025?', null, [], null, 'CONVERSATIONAL', contract, []);
+  assert.equal(stated.valid, true, JSON.stringify(stated.reasons));
+});
+
 test('H3: project-tech claim supported only by evidenceText validates', () => {
   const knowledge = {
     identity: { name: 'Avery Chen' },
