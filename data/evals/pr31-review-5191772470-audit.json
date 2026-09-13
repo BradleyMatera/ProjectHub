@@ -19,7 +19,9 @@
       "reproduction": "scoreCase(FUTURE_CAPABILITY, 'He currently knows rust well...') -> OVERCLAIM leaves lastIndex ~12; the same-case reply 'yes he can use rust today.' then scored GOOD, and scored OVERCLAIM again on the next call.",
       "classification": "CONFIRMED_BUG",
       "fix": "lastIndex reset to 0 before the exec loop.",
-      "tests": ["review-5191772470 R1"]
+      "tests": [
+        "review-5191772470 R1"
+      ]
     },
     {
       "n": 2,
@@ -29,7 +31,9 @@
       "reproduction": "findArithmeticSubtasks('stone plus two') -> [{display:'1 + 2',result:3}]; 'anyone times two' -> 1*2=2.",
       "classification": "CONFIRMED_BUG",
       "fix": "WORD_SEQ bounded with \\b on both ends.",
-      "tests": ["review-5191772470 R2"]
+      "tests": [
+        "review-5191772470 R2"
+      ]
     },
     {
       "n": 3,
@@ -39,7 +43,9 @@
       "reproduction": "extractClaims('Ze is open to relocation.', graph(kb with pronouns ze/zir)) -> [] while 'He is open to relocation.' -> [has_property].",
       "classification": "CONFIRMED_BUG",
       "fix": "ensureSubjectAltFromGraph adds the configured subject pronoun (string or object form) to the subject alternation, covering all subject-pronoun patterns.",
-      "tests": ["review-5191772470 R3"]
+      "tests": [
+        "review-5191772470 R3"
+      ]
     },
     {
       "n": 4,
@@ -49,7 +55,9 @@
       "reproduction": "evidenceSupportsTechnologyRelation(['Avery'],'React','Avery Chen uses React...') -> true.",
       "classification": "CONFIRMED_BUG",
       "fix": "Names sorted longest-first so declared multi-word names win; a match tail of bare words with no punctuation or function word (an entity extension like 'Chen') is rejected. Case-insensitive input safe.",
-      "tests": ["review-5191772470 R4"]
+      "tests": [
+        "review-5191772470 R4"
+      ]
     },
     {
       "n": 5,
@@ -59,7 +67,9 @@
       "reproduction": "KB project 'Alpha Beta'; evidence block {name:'Alpha',category:'freelance'}; answer 'Alpha Beta is a freelance project...' — the wrong-entity block supplied the marker (no provenance rejection). After fix: wrong_relationship:project_provenance:Alpha Beta|freelance|unsupported_target.",
       "classification": "CONFIRMED_BUG",
       "fix": "Block names must equal the target's canonical name or a declared alias (case-insensitive set membership) at both sites.",
-      "tests": ["review-5191772470 R5"]
+      "tests": [
+        "review-5191772470 R5"
+      ]
     },
     {
       "n": 6,
@@ -69,7 +79,9 @@
       "reproduction": "validateAnswer('He is an electrical service at Acme.') -> no fabricated_occupation reason before fix; after fix -> fabricated_occupation:electrical service.",
       "classification": "CONFIRMED_BUG",
       "fix": "Exemption disabled when the sentence head is the tenant subject (name, name part, alias, or he/she/they).",
-      "tests": ["review-5191772470 R6"]
+      "tests": [
+        "review-5191772470 R6"
+      ]
     },
     {
       "n": 7,
@@ -79,7 +91,9 @@
       "reproduction": "Code inspection: router is the shared local-model-router module; wrapper assigned at line ~1585 with no restore on ~15 return paths.",
       "classification": "CONFIRMED_BUG",
       "fix": "Request-local countedGenerate closure replaces the mutation; all five in-function call sites plus makeRecoveryAttempt (via validationCtx.countedGenerate) use it.",
-      "tests": ["review-5191772470 R7"]
+      "tests": [
+        "review-5191772470 R7"
+      ]
     },
     {
       "n": 8,
@@ -89,7 +103,9 @@
       "reproduction": "resolveEntity(graph, 'Avery') -> 'averystone' before fix; -> 'avery' after fix while 'Stone'/'Avi' still resolve to the subject.",
       "classification": "CONFIRMED_BUG",
       "fix": "subjectAliases split into declaredSubjectAliases (strong: canonical name, preferredName, declared aliases) and subjectNameParts (weak). resolveEntity order: declared aliases, entity aliasToCanonical, entityIndex entries backed by real triples, then name parts.",
-      "tests": ["review-5191772470 R8"]
+      "tests": [
+        "review-5191772470 R8"
+      ]
     },
     {
       "n": 9,
@@ -99,7 +115,10 @@
       "reproduction": "validateRelationships('Avery is open to relocation.', graph with has_property meta.value 'Relocation is not possible') -> no unsupported claim before fix; has_property unsupported after.",
       "classification": "CONFIRMED_BUG",
       "fix": "Added _postNegWordRe (word followed by copula+negator or bare negator) shared via _wordNegatedInUnit; applied in authoredValueAffirms and coherentUnitSupports.",
-      "tests": ["review-5191772470 R9", "R9b"]
+      "tests": [
+        "review-5191772470 R9",
+        "R9b"
+      ]
     },
     {
       "n": 10,
@@ -109,7 +128,9 @@
       "reproduction": "match_role({jobDescription:'...hiring for a React/TypeScript developer role...', role:'react/typescript developer'}) -> explicitCriteria ['React/TypeScript'].",
       "classification": "CONFIRMED_BUG",
       "fix": "Slash pass moved after criteriaText computation; a slash term is added only when its normalized form survives title stripping.",
-      "tests": ["review-5191772470 R10"]
+      "tests": [
+        "review-5191772470 R10"
+      ]
     },
     {
       "n": 11,
@@ -120,7 +141,9 @@
       "reproduction": "match_role({jobDescription:'...good communication. JavaScript experience required.'}) -> explicitCriteria ['developer communication','Go','Java'].",
       "classification": "CONFIRMED_BUG",
       "fix": "Per-skill regex with custom token boundaries (?<![a-z0-9+#.]) ... (?![a-z0-9+#]) so compound-token chars (+ # .) still match inside skill names while interior word chars block substring hits.",
-      "tests": ["review-5191772470 R11"]
+      "tests": [
+        "review-5191772470 R11"
+      ]
     },
     {
       "n": 12,
@@ -131,7 +154,9 @@
       "reproduction": "validateClaims('Morgan is currently working for Globex.') -> no CURRENT_TEMPORAL_CLAIM before fix; flagged after. Same for the multi-word title form.",
       "classification": "CONFIRMED_BUG",
       "fix": "Pattern widened: 'an?' article, up to three title words before at|with, and is (currently)? (working|employed) ... at|for|with|by.",
-      "tests": ["review-5191772470 R12"]
+      "tests": [
+        "review-5191772470 R12"
+      ]
     },
     {
       "n": 13,
@@ -142,7 +167,9 @@
       "reproduction": "validateRelationships('Avery has a daughter.', graph with relationships:[{relation:'has_relation',object:'daughter'}]) -> unsupportedClaims [has_relation:daughter] before fix; [] after. Fabricated 'has a son' still rejected.",
       "classification": "CONFIRMED_BUG",
       "fix": "propTriples selects t.relation === claim.relation.",
-      "tests": ["review-5191772470 R13"]
+      "tests": [
+        "review-5191772470 R13"
+      ]
     },
     {
       "n": 14,
@@ -153,7 +180,10 @@
       "reproduction": "normalizeSourceVoice('I am a dev. I have 5 years.', kb) -> 'They is a dev. They has 5 years.'",
       "classification": "CONFIRMED_BUG",
       "fix": "Plural agreement (are/were/have/had) when the resolved subject pronoun is 'they'; string-form pronoun config ('she/her') normalized to its subject segment; singular kept for configured pronouns.",
-      "tests": ["review-5191772470 R14", "architecture-invariant normalizeSourceVoice (updated assertion)"]
+      "tests": [
+        "review-5191772470 R14",
+        "architecture-invariant normalizeSourceVoice (updated assertion)"
+      ]
     }
   ],
   "summary": {
@@ -162,6 +192,24 @@
     "falsePositive": 0,
     "alreadyFixed": 0,
     "regressionSuite": "test/review-5191772470.test.js (15 tests)",
-    "fullSuite": "1350/1350 pass"
+    "fullSuite": "1350/1350 pass",
+    "liveQualification": "22/22 battery + 23/23 eval on deployed f7f438b (post-regression fix)",
+    "remediationCommit": "f7f438b7b2b3ea95c7869128ec36cd9677ced4e7"
+  },
+  "postReviewRegression": {
+    "description": "The initial F12 fix (widening CURRENT_EMPLOYMENT_RE) introduced a live regression: \"working with TypeScript\" and multi-word role titles without temporal cues were falsely classified as current-employment claims, burning valid skill answers.",
+    "liveSymptom": "eval:local-api case skill-frame (\"What about TypeScript?\") -> INFERENCE_UNAVAILABLE on 877318e; generation attempts produced valid project-scope answers that current_temporal rejected.",
+    "rootCause": "Expanded regex accepted \"working|employed ... with <x>\" (usage phrasing, not employment) and \"is a <multiword title> at|with\" without requiring a temporal cue.",
+    "fixCommit": "f7f438b7b2b3ea95c7869128ec36cd9677ced4e7",
+    "fix": "working/employed branches narrowed to at|for|by; multi-word title branch requires currently|now; original short-form \"with\" branch left unchanged (pre-existing hole, not widened).",
+    "regressionTests": "test/review-5191772470.test.js R12 negative cases pin \"working with TypeScript\" and non-temporal multi-word titles as non-employment.",
+    "reVerification": {
+      "unitSuite": "1350/1350 pass",
+      "ciRun": "34777236140 SUCCESS on f7f438b",
+      "devDeploy": "f7f438b verified (cloudflare / @cf/meta/llama-3.1-8b-instruct-fast / 15000ms)",
+      "liveBattery": "22/22 pass",
+      "localApiEval": "23/23 GOOD, 0 inferenceUnavailables, 0 rateLimits, p50 549ms, p95 1601ms, max 1857ms",
+      "skillFrameRetries": "3/3 pass with previously-failing full history"
+    }
   }
 }
