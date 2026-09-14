@@ -1,0 +1,1878 @@
+{
+  "qualification": "132-turn production-corpus gate",
+  "runtimeSourceCommit": "0760067288734b0f9f0b4131c2b5bd01db29235a",
+  "endpointClass": "DEV",
+  "url": "https://dev.projecthub-chat.bradleymatera.dev/api/chat",
+  "provider": "cloudflare",
+  "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+  "requestDeadlineMs": 15000,
+  "source": "sanitized production corpus",
+  "delaySeconds": 4,
+  "scenarioCooldownSeconds": 2,
+  "turns": 132,
+  "turnPasses": 93,
+  "conversations": 33,
+  "conversationPasses": 18,
+  "failureClassCounts": {
+    "GENERATION": 21,
+    "NEAR_DUPLICATE": 5,
+    "OTHER": 1,
+    "VALIDATION": 12
+  },
+  "validatorRejectedCandidateTurns": 25,
+  "results": [
+    {
+      "conversation": "Initial overview",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.25,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Blog discovery and links",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": false,
+          "latencySeconds": 1.297,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('blog', 'post', 'article', 'dev.to', 'dev community')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 2,
+          "passed": true,
+          "latencySeconds": 1.344,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Provocation and pressure",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": false,
+          "latencySeconds": 0.172,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('scout', \"don't\", \"can't\", 'nope', 'software')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 2,
+          "passed": true,
+          "latencySeconds": 1.328,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 3,
+          "passed": false,
+          "latencySeconds": 1.282,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('javascript', 'js', 'react', 'project', 'code', 'coding')",
+            "near-duplicate consecutive answer"
+          ],
+          "httpStatus": 200,
+          "failureClass": "VALIDATION",
+          "failureClasses": [
+            "VALIDATION"
+          ],
+          "validatorRejectedCandidates": true
+        }
+      ]
+    },
+    {
+      "conversation": "Recruiter production workflow",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": false,
+          "latencySeconds": 0.172,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from (\"don't know\", \"isn't in\", 'not in', 'public profile', 'not verified', 'no information', 'not mentioned', 'not provided')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 2,
+          "passed": true,
+          "latencySeconds": 1.25,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 3,
+          "passed": true,
+          "latencySeconds": 0.953,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 4,
+          "passed": true,
+          "latencySeconds": 0.86,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 5,
+          "passed": true,
+          "latencySeconds": 1.015,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 6,
+          "passed": true,
+          "latencySeconds": 0.687,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 7,
+          "passed": true,
+          "latencySeconds": 0.563,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 8,
+          "passed": true,
+          "latencySeconds": 0.859,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 9,
+          "passed": true,
+          "latencySeconds": 0.734,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 10,
+          "passed": true,
+          "latencySeconds": 0.984,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 11,
+          "passed": true,
+          "latencySeconds": 0.484,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 12,
+          "passed": true,
+          "latencySeconds": 0.796,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 13,
+          "passed": true,
+          "latencySeconds": 0.891,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 14,
+          "passed": false,
+          "latencySeconds": 0.875,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from (\"don't know\", \"isn't in\", 'not in', 'public profile', 'not verified', 'no information', 'not mentioned', 'not provided')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "VALIDATION",
+          "failureClasses": [
+            "VALIDATION"
+          ],
+          "validatorRejectedCandidates": true
+        }
+      ]
+    },
+    {
+      "conversation": "Persistent general knowledge request",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.562,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 2,
+          "passed": false,
+          "latencySeconds": 0.578,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('sorry', 'mean', 'clarify', 'you said', 'more directly')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 3,
+          "passed": true,
+          "latencySeconds": 0.532,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 4,
+          "passed": true,
+          "latencySeconds": 0.797,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 5,
+          "passed": false,
+          "latencySeconds": 1.469,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('learning', 'cloud', 'software', 'not part of his verified')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": true
+        }
+      ]
+    },
+    {
+      "conversation": "Technical portfolio exploration",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.469,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 2,
+          "passed": true,
+          "latencySeconds": 1.204,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 3,
+          "passed": true,
+          "latencySeconds": 1.172,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 4,
+          "passed": true,
+          "latencySeconds": 0.64,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 5,
+          "passed": true,
+          "latencySeconds": 0.625,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 6,
+          "passed": true,
+          "latencySeconds": 1,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Repeated candidate and project check",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.781,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 2,
+          "passed": true,
+          "latencySeconds": 0.968,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Scout body-boundary question",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": false,
+          "latencySeconds": 0.546,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('scout', \"don't\", \"can't\", 'nope', 'software')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Military sensitivity and user claims",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.547,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 2,
+          "passed": true,
+          "latencySeconds": 0.703,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 3,
+          "passed": false,
+          "latencySeconds": 0.672,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('sorry', 'mean', 'clarify', 'you said', 'more directly')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 4,
+          "passed": true,
+          "latencySeconds": 0.703,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 5,
+          "passed": false,
+          "latencySeconds": 0.828,
+          "source": "cloudflare",
+          "issues": [
+            "near-duplicate consecutive answer"
+          ],
+          "httpStatus": 200,
+          "failureClass": "NEAR_DUPLICATE",
+          "failureClasses": [
+            "NEAR_DUPLICATE"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 6,
+          "passed": false,
+          "latencySeconds": 0.719,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from (\"don't know\", 'not known', 'not verified', \"can't confirm\", \"isn't documented\")"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 7,
+          "passed": false,
+          "latencySeconds": 0.672,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from (\"don't know\", 'not known', 'not verified', \"can't confirm\", \"isn't documented\")",
+            "near-duplicate consecutive answer"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 8,
+          "passed": false,
+          "latencySeconds": 0.907,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('afghanistan', '68w', 'combat medic', 'fort bragg', '2/508', 'mission', \"don't know\", 'not known', 'not verified', \"can't confirm\", \"isn't documented\")"
+          ],
+          "httpStatus": 200,
+          "failureClass": "VALIDATION",
+          "failureClasses": [
+            "VALIDATION"
+          ],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 9,
+          "passed": true,
+          "latencySeconds": 0.546,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Live user context and unsafe redirection",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": false,
+          "latencySeconds": 0.703,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('you told me', 'could be', 'may know', 'for this chat', 'not verified')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 2,
+          "passed": true,
+          "latencySeconds": 0.843,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 3,
+          "passed": false,
+          "latencySeconds": 0.734,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('you told me', 'could be', 'may know', 'for this chat', 'not verified')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 4,
+          "passed": true,
+          "latencySeconds": 0.547,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 5,
+          "passed": true,
+          "latencySeconds": 1,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 6,
+          "passed": false,
+          "latencySeconds": 0.485,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from (\"can't help\", 'not something', 'keep it', 'no thanks', \"let's\", 'not able', 'cannot', 'facilitate', 'respectful', 'scope')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Candidate pitch duplicate one",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.157,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Candidate pitch duplicate two",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.171,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Arithmetic synthetic one",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.484,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Arithmetic synthetic duplicate",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.156,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Project typo synthetic one",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 2.234,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": true
+        }
+      ]
+    },
+    {
+      "conversation": "Project typo synthetic duplicate",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 2.063,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": true
+        }
+      ]
+    },
+    {
+      "conversation": "AWS typo synthetic",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.828,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Greeting synthetic",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.156,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "False owner claim",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": false,
+          "latencySeconds": 1.016,
+          "source": "cloudflare",
+          "issues": [
+            "reply exceeds 55 words"
+          ],
+          "httpStatus": 200,
+          "failureClass": "OTHER",
+          "failureClasses": [
+            "OTHER"
+          ],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Scout learning, preference, and arithmetic",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.468,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 2,
+          "passed": true,
+          "latencySeconds": 0.578,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 3,
+          "passed": true,
+          "latencySeconds": 0.656,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 4,
+          "passed": true,
+          "latencySeconds": 0.516,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 5,
+          "passed": true,
+          "latencySeconds": 0.469,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 6,
+          "passed": false,
+          "latencySeconds": 0.438,
+          "source": "cloudflare",
+          "issues": [
+            "reply is too short"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 7,
+          "passed": false,
+          "latencySeconds": 0.485,
+          "source": "cloudflare",
+          "issues": [
+            "near-duplicate consecutive answer"
+          ],
+          "httpStatus": 200,
+          "failureClass": "NEAR_DUPLICATE",
+          "failureClasses": [
+            "NEAR_DUPLICATE"
+          ],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Introductions, arithmetic, and abuse",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": false,
+          "latencySeconds": 0.547,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('nice to meet', 'got it', 'hey', \"doesn't change\", 'public')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 2,
+          "passed": true,
+          "latencySeconds": 0.484,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 3,
+          "passed": true,
+          "latencySeconds": 0.484,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Knowledge-base repository request",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.531,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 2,
+          "passed": true,
+          "latencySeconds": 0.469,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Affection, frustration, identity, and small talk",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.516,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 2,
+          "passed": true,
+          "latencySeconds": 0.859,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 3,
+          "passed": false,
+          "latencySeconds": 0.766,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('nice to meet', 'got it', 'hey', \"doesn't change\", 'public')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "VALIDATION",
+          "failureClasses": [
+            "VALIDATION"
+          ],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 4,
+          "passed": true,
+          "latencySeconds": 0.437,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Greeting and unknown preference",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.5,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 2,
+          "passed": false,
+          "latencySeconds": 0.422,
+          "source": "cloudflare",
+          "issues": [
+            "reply is too short",
+            "missing evidence from (\"don't know\", \"isn't in\", 'not in', 'public profile', 'not verified', 'no information', 'not mentioned', 'not provided')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "ProjectHub production one-shot",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 1.078,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Skeptical recruiter and roast",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.187,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 2,
+          "passed": true,
+          "latencySeconds": 0.828,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 3,
+          "passed": true,
+          "latencySeconds": 1,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 4,
+          "passed": false,
+          "latencySeconds": 0.734,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('algorithm', 'leetcode', 'blank', 'junior', 'roast')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Archived prompt-only recruiter sequence",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.797,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 2,
+          "passed": true,
+          "latencySeconds": 1.094,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 3,
+          "passed": true,
+          "latencySeconds": 1.172,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 4,
+          "passed": true,
+          "latencySeconds": 0.938,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 5,
+          "passed": true,
+          "latencySeconds": 0.875,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 6,
+          "passed": false,
+          "latencySeconds": 1.672,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('devops', 'ci/cd', 'docker', 'infrastructure', 'gap')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "VALIDATION",
+          "failureClasses": [
+            "VALIDATION"
+          ],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 7,
+          "passed": true,
+          "latencySeconds": 0.719,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 8,
+          "passed": true,
+          "latencySeconds": 0.672,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 9,
+          "passed": false,
+          "latencySeconds": 0.578,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('javascript', 'js', 'react', 'project', 'code', 'coding')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 10,
+          "passed": true,
+          "latencySeconds": 0.906,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 11,
+          "passed": true,
+          "latencySeconds": 1.485,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 12,
+          "passed": true,
+          "latencySeconds": 1.047,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 13,
+          "passed": true,
+          "latencySeconds": 0.937,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 14,
+          "passed": true,
+          "latencySeconds": 0.891,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 15,
+          "passed": true,
+          "latencySeconds": 0.875,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 16,
+          "passed": true,
+          "latencySeconds": 0.578,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 17,
+          "passed": true,
+          "latencySeconds": 0.547,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 18,
+          "passed": false,
+          "latencySeconds": 0.781,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('pressure', 'communication', 'reliable', 'transfer', 'debug')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 19,
+          "passed": false,
+          "latencySeconds": 0.891,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('army', '68w', 'combat medic', 'afghanistan')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 20,
+          "passed": false,
+          "latencySeconds": 1.093,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('badge', 'medal', 'commendation', 'ribbon', 'no information', 'not documented', 'no awards')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "VALIDATION",
+          "failureClasses": [
+            "VALIDATION"
+          ],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 21,
+          "passed": false,
+          "latencySeconds": 0.594,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('lead', 'leadership', 'junior enlisted', 'private first class')",
+            "near-duplicate consecutive answer"
+          ],
+          "httpStatus": 200,
+          "failureClass": "VALIDATION",
+          "failureClasses": [
+            "VALIDATION"
+          ],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 22,
+          "passed": true,
+          "latencySeconds": 0.687,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 23,
+          "passed": false,
+          "latencySeconds": 1.453,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('javascript', 'typescript', 'react', 'node', 'aws')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "VALIDATION",
+          "failureClasses": [
+            "VALIDATION"
+          ],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 24,
+          "passed": true,
+          "latencySeconds": 0.859,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 25,
+          "passed": true,
+          "latencySeconds": 0.703,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 26,
+          "passed": true,
+          "latencySeconds": 0.672,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 27,
+          "passed": true,
+          "latencySeconds": 0.531,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 28,
+          "passed": true,
+          "latencySeconds": 0.718,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 29,
+          "passed": true,
+          "latencySeconds": 0.938,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 30,
+          "passed": false,
+          "latencySeconds": 0.625,
+          "source": "cloudflare",
+          "issues": [
+            "near-duplicate consecutive answer"
+          ],
+          "httpStatus": 200,
+          "failureClass": "NEAR_DUPLICATE",
+          "failureClasses": [
+            "NEAR_DUPLICATE"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 31,
+          "passed": false,
+          "latencySeconds": 1.219,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('blog', 'post', 'article', 'dev.to', 'dev community')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "VALIDATION",
+          "failureClasses": [
+            "VALIDATION"
+          ],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 32,
+          "passed": false,
+          "latencySeconds": 1,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('blog', 'post', 'article', 'dev.to', 'dev community')",
+            "near-duplicate consecutive answer"
+          ],
+          "httpStatus": 200,
+          "failureClass": "VALIDATION",
+          "failureClasses": [
+            "VALIDATION"
+          ],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 33,
+          "passed": true,
+          "latencySeconds": 1.047,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 34,
+          "passed": false,
+          "latencySeconds": 0.984,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('computer', 'javascript', 'react', 'terminal', 'git')"
+          ],
+          "httpStatus": 200,
+          "failureClass": "VALIDATION",
+          "failureClasses": [
+            "VALIDATION"
+          ],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 35,
+          "passed": false,
+          "latencySeconds": 1,
+          "source": "cloudflare",
+          "issues": [
+            "missing evidence from ('customer', 'costumer', 'people', 'communication', 'team', 'case manager')",
+            "near-duplicate consecutive answer"
+          ],
+          "httpStatus": 200,
+          "failureClass": "VALIDATION",
+          "failureClasses": [
+            "VALIDATION"
+          ],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 36,
+          "passed": true,
+          "latencySeconds": 0.672,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 37,
+          "passed": true,
+          "latencySeconds": 0.594,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 38,
+          "passed": true,
+          "latencySeconds": 0.938,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 39,
+          "passed": false,
+          "latencySeconds": 1.235,
+          "source": "cloudflare",
+          "issues": [
+            "reply is too short"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": true
+        },
+        {
+          "turn": 40,
+          "passed": true,
+          "latencySeconds": 0.656,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Archived complete location request",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.532,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Archived complete remote request one",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.531,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Archived complete remote request two",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.156,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Archived complete AWS request",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.547,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    },
+    {
+      "conversation": "Archived complete strongest-skill request",
+      "passed": true,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.875,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": true
+        }
+      ]
+    },
+    {
+      "conversation": "Unknown technology and frustration regression",
+      "passed": false,
+      "turns": [
+        {
+          "turn": 1,
+          "passed": true,
+          "latencySeconds": 0.532,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 2,
+          "passed": true,
+          "latencySeconds": 0.672,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 3,
+          "passed": false,
+          "latencySeconds": 0.688,
+          "source": "cloudflare",
+          "issues": [
+            "near-duplicate consecutive answer"
+          ],
+          "httpStatus": 200,
+          "failureClass": "NEAR_DUPLICATE",
+          "failureClasses": [
+            "NEAR_DUPLICATE"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 4,
+          "passed": false,
+          "latencySeconds": 0.735,
+          "source": "cloudflare",
+          "issues": [
+            "near-duplicate consecutive answer"
+          ],
+          "httpStatus": 200,
+          "failureClass": "NEAR_DUPLICATE",
+          "failureClasses": [
+            "NEAR_DUPLICATE"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 5,
+          "passed": false,
+          "latencySeconds": 0.531,
+          "source": "cloudflare",
+          "issues": [
+            "COBOL is not capitalized"
+          ],
+          "httpStatus": 200,
+          "failureClass": "GENERATION",
+          "failureClasses": [
+            "GENERATION"
+          ],
+          "validatorRejectedCandidates": null
+        },
+        {
+          "turn": 6,
+          "passed": true,
+          "latencySeconds": 0.797,
+          "source": "cloudflare",
+          "issues": [],
+          "httpStatus": 200,
+          "failureClass": "",
+          "failureClasses": [],
+          "validatorRejectedCandidates": null
+        }
+      ]
+    }
+  ],
+  "failures": [
+    "Blog discovery and links turn 1 'Hello! im just testing you out again! give me some examples of bradleys blogs': missing evidence from ('blog', 'post', 'article', 'dev.to', 'dev community')",
+    "Provocation and pressure turn 1 'are you a penis': missing evidence from ('scout', \"don't\", \"can't\", 'nope', 'software')",
+    "Provocation and pressure turn 3 'can he code in the streets?!? UNDER PRESSUE?!': missing evidence from ('javascript', 'js', 'react', 'project', 'code', 'coding'); near-duplicate consecutive answer",
+    "Recruiter production workflow turn 1 'what is your dogs name?': missing evidence from (\"don't know\", \"isn't in\", 'not in', 'public profile', 'not verified', 'no information', 'not mentioned', 'not provided')",
+    "Recruiter production workflow turn 14 'what kind of father is he?': missing evidence from (\"don't know\", \"isn't in\", 'not in', 'public profile', 'not verified', 'no information', 'not mentioned', 'not provided')",
+    "Persistent general knowledge request turn 2 'that is not the aswer im looking for': missing evidence from ('sorry', 'mean', 'clarify', 'you said', 'more directly')",
+    "Persistent general knowledge request turn 5 'relate it to brad': missing evidence from ('learning', 'cloud', 'software', 'not part of his verified')",
+    "Scout body-boundary question turn 1 'Do you poop?': missing evidence from ('scout', \"don't\", \"can't\", 'nope', 'software')",
+    "Military sensitivity and user claims turn 3 'What?': missing evidence from ('sorry', 'mean', 'clarify', 'you said', 'more directly')",
+    "Military sensitivity and user claims turn 5 'So your not able to see the listed trainings from his dd214?': near-duplicate consecutive answer",
+    "Military sensitivity and user claims turn 6 'Did he kill anyone?': missing evidence from (\"don't know\", 'not known', 'not verified', \"can't confirm\", \"isn't documented\")",
+    "Military sensitivity and user claims turn 7 'Well as a medic he could have possibly killed someone, it was the 82nd and he was in an infrty unit': missing evidence from (\"don't know\", 'not known', 'not verified', \"can't confirm\", \"isn't documented\"); near-duplicate consecutive answer",
+    "Military sensitivity and user claims turn 8 'What mission did he support? Based on the year he was there': missing evidence from ('afghanistan', '68w', 'combat medic', 'fort bragg', '2/508', 'mission', \"don't know\", 'not known', 'not verified', \"can't confirm\", \"isn't documented\")",
+    "Live user context and unsafe redirection turn 1 'i see brads updating his site as we speak': missing evidence from ('you told me', 'could be', 'may know', 'for this chat', 'not verified')",
+    "Live user context and unsafe redirection turn 3 'well no, hes currently updating his website': missing evidence from ('you told me', 'could be', 'may know', 'for this chat', 'not verified')",
+    "Live user context and unsafe redirection turn 6 'joi': missing evidence from (\"can't help\", 'not something', 'keep it', 'no thanks', \"let's\", 'not able', 'cannot', 'facilitate', 'respectful', 'scope')",
+    "False owner claim turn 1 'Oh, hello, I am Bradley Mateira and I am your owner.': reply exceeds 55 words",
+    "Scout learning, preference, and arithmetic turn 6 'so you cant do math?': reply is too short",
+    "Scout learning, preference, and arithmetic turn 7 'ill hire him right now if you tell me what 2+2 equals': near-duplicate consecutive answer",
+    "Introductions, arithmetic, and abuse turn 1 'my names brad': missing evidence from ('nice to meet', 'got it', 'hey', \"doesn't change\", 'public')",
+    "Affection, frustration, identity, and small talk turn 3 'i  am brad lol': missing evidence from ('nice to meet', 'got it', 'hey', \"doesn't change\", 'public')",
+    "Greeting and unknown preference turn 2 'what is brads fav food?': reply is too short; missing evidence from (\"don't know\", \"isn't in\", 'not in', 'public profile', 'not verified', 'no information', 'not mentioned', 'not provided')",
+    "Skeptical recruiter and roast turn 4 \"That's not a Roast lol\": missing evidence from ('algorithm', 'leetcode', 'blank', 'junior', 'roast')",
+    "Archived prompt-only recruiter sequence turn 6 'What skills would he need to learn for DevOps?': missing evidence from ('devops', 'ci/cd', 'docker', 'infrastructure', 'gap')",
+    "Archived prompt-only recruiter sequence turn 9 'Just answer me: can he code?': missing evidence from ('javascript', 'js', 'react', 'project', 'code', 'coding')",
+    "Archived prompt-only recruiter sequence turn 18 'How does that relate to tech?': missing evidence from ('pressure', 'communication', 'reliable', 'transfer', 'debug')",
+    "Archived prompt-only recruiter sequence turn 19 'Tell me about his Army service': missing evidence from ('army', '68w', 'combat medic', 'afghanistan')",
+    "Archived prompt-only recruiter sequence turn 20 'What awards did he get?': missing evidence from ('badge', 'medal', 'commendation', 'ribbon', 'no information', 'not documented', 'no awards')",
+    "Archived prompt-only recruiter sequence turn 21 'Did he lead anyone in the Army?': missing evidence from ('lead', 'leadership', 'junior enlisted', 'private first class'); near-duplicate consecutive answer",
+    "Archived prompt-only recruiter sequence turn 23 'What is his tech stack?': missing evidence from ('javascript', 'typescript', 'react', 'node', 'aws')",
+    "Archived prompt-only recruiter sequence turn 30 'so he DOESNT know how to use a computer?': near-duplicate consecutive answer",
+    "Archived prompt-only recruiter sequence turn 31 'what about blogs?': missing evidence from ('blog', 'post', 'article', 'dev.to', 'dev community')",
+    "Archived prompt-only recruiter sequence turn 32 'has he published anything?': missing evidence from ('blog', 'post', 'article', 'dev.to', 'dev community'); near-duplicate consecutive answer",
+    "Archived prompt-only recruiter sequence turn 34 'is brad good at computers?': missing evidence from ('computer', 'javascript', 'react', 'terminal', 'git')",
+    "Archived prompt-only recruiter sequence turn 35 'what about people skills?': missing evidence from ('customer', 'costumer', 'people', 'communication', 'team', 'case manager'); near-duplicate consecutive answer",
+    "Archived prompt-only recruiter sequence turn 39 'Has he written about AWS?': reply is too short",
+    "Unknown technology and frustration regression turn 3 'Can he learn cobol?': near-duplicate consecutive answer",
+    "Unknown technology and frustration regression turn 4 'yeah but he CAN learn cobol right?': near-duplicate consecutive answer",
+    "Unknown technology and frustration regression turn 5 'say cobol': COBOL is not capitalized"
+  ]
+}
