@@ -165,8 +165,8 @@
   },
   "reviewGate": {
     "status": "REVIEW_NOT_PERFORMED_QUOTA_EXHAUSTED",
-    "attemptedReviews": [5192739062, 5192751852, 5192754775],
-    "attemptedOnCommit": "3b8305ad587a21f9e528c1266f004bdf4ebb8c2b",
+    "attemptedReviews": [5192739062, 5192751852, 5192754775, 5193145488],
+    "attemptedOnCommits": ["3b8305ad587a21f9e528c1266f004bdf4ebb8c2b", "f9e0acc"],
     "copilotResponse": "Copilot was unable to review this pull request because the user who requested the review has reached their quota limit.",
     "note": "External review-gate block. Not a clean review, not approval, not 'no findings'. One completed clean review on the then-current HEAD is still required before READY_FOR_DEVELOP_MERGE_REVIEW."
   }
