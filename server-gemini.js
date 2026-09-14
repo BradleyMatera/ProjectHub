@@ -573,25 +573,30 @@ async function fetchKnowledge() {
         assistantNames: [assistantName],
         projectNames
       });
-      // Configure completeness-check with subject names
+      // Configure completeness-check with subject names and pronouns
       try {
         const completenessCheck = require('./lib/completeness-check');
         completenessCheck.configureSubjectNames([...subjectParts, ...aliases]);
+        completenessCheck.configureSubjectPronouns(json);
       } catch (e) {
         console.error('[completeness-check] Configuration failed:', e.message);
       }
       // Configure grounding-validator stopwords with subject names
       try {
         const groundingValidator = require('./lib/grounding-validator');
-        groundingValidator.configureStopwords([...subjectParts, ...aliases]);
+        const gvPr = knowledgeAccess.getSubjectPronouns(json) || {};
+        groundingValidator.configureStopwords([...subjectParts, ...aliases,
+          gvPr.subject, gvPr.object, gvPr.possessive].filter(Boolean));
         groundingValidator.configureAssistantName(assistantName);
       } catch (e) {
         console.error('[grounding-validator] Configuration failed:', e.message);
       }
-      // Configure local-conversation stopwords with subject names
+      // Configure local-conversation stopwords with subject names and pronouns
       try {
         const localConversation = require('./lib/local-conversation');
-        localConversation.configureStopwords([...subjectParts, ...aliases]);
+        const lcPr = knowledgeAccess.getSubjectPronouns(json) || {};
+        localConversation.configureStopwords([...subjectParts, ...aliases,
+          lcPr.subject, lcPr.object, lcPr.possessive].filter(Boolean));
       } catch (e) {
         console.error('[local-conversation] Configuration failed:', e.message);
       }
@@ -599,6 +604,7 @@ async function fetchKnowledge() {
       try {
         const queryUnderstanding = require('./lib/query-understanding');
         queryUnderstanding.configureSubjectNames([...subjectParts, ...aliases]);
+        queryUnderstanding.configureSubjectPronouns(json);
       } catch (e) {
         console.error('[query-understanding] Configuration failed:', e.message);
       }
@@ -863,7 +869,8 @@ function buildPrompt(knowledge, question, history, provider) {
   const pronouns = knowledgeAccess.getSubjectPronouns(knowledge);
   const subj = pronouns.subject || 'they';
   const poss = pronouns.possessive || 'their';
-  let context = `You are ${assistantName}, the assistant for ${name}. You're an approachable recruiter-side helper in a chat widget on the portfolio site. You answer questions about ${name} from verified facts. You are NOT ${name}, but you represent them honestly and warmly.\n\n`;
+  const audienceFrame = knowledge?.agent?.audience ? `${knowledge.agent.audience}-side` : 'site';
+  let context = `You are ${assistantName}, the assistant for ${name}. You're an approachable ${audienceFrame} helper in a chat widget on the site. You answer questions about ${name} from verified facts. You are NOT ${name}, but you represent them honestly and warmly.\n\n`;
   context += `${name} is a ${title} based in ${location}. They go by ${preferredName}.\n\n`;
 
   // RAG context — shared with the grounded fallback so answers stay aligned
@@ -974,7 +981,12 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
   const pronouns = require('./lib/knowledge-access').getSubjectPronouns(knowledge);
   const pronounSubj = pronouns.subject || 'they';
   const pronounPoss = pronouns.possessive || 'their';
-  const system = `A recruiter is asking about a job candidate named ${subjectName}. You are ${agentName}, ${agentPersona}. You are not ${subjectName}. Use ONLY the verified facts below to answer.\n\nVerified facts: ${truncateWords(source, 180)}${memory.stance ? `\n\nPrior stance to preserve: ${memory.stance}` : ''}\n\nCore behavior:\n- Answer the actual question directly and naturally.\n- Remember recent turns, resolve pronouns, and preserve the prior stance.\n- For a follow-up, build on the prior verified answer without repeating it word-for-word.\n- Every factual claim must directly paraphrase a verified fact. Never invent a contrast, cause, method, benefit, or work habit.\n- If a requested fact is unavailable, say that briefly and give the closest verified information.\n- Third person only (${pronounSubj}/${pronounPoss}).\n- Use one or two concise, complete sentences ending in punctuation.\n- Sound warm and conversational, not like a resume or sales pitch.\n- Never start with "Certainly", "Absolutely", "Great question", "As an AI", or "I would be happy".\n- Never add facts, employers, degrees, metrics, or years of experience not listed above.\n- Do not overstate the experience level beyond what the verified facts support.`;
+  const askerAudience = knowledge?.agent?.audience || 'user';
+  const subjectRole = knowledge?.agent?.subjectRole;
+  const askerFrame = subjectRole
+    ? `A ${askerAudience} is asking about a ${subjectRole} named ${subjectName}.`
+    : `A ${askerAudience} is asking about ${subjectName}.`;
+  const system = `${askerFrame} You are ${agentName}, ${agentPersona}. You are not ${subjectName}. Use ONLY the verified facts below to answer.\n\nVerified facts: ${truncateWords(source, 180)}${memory.stance ? `\n\nPrior stance to preserve: ${memory.stance}` : ''}\n\nCore behavior:\n- Answer the actual question directly and naturally.\n- Remember recent turns, resolve pronouns, and preserve the prior stance.\n- For a follow-up, build on the prior verified answer without repeating it word-for-word.\n- Every factual claim must directly paraphrase a verified fact. Never invent a contrast, cause, method, benefit, or work habit.\n- If a requested fact is unavailable, say that briefly and give the closest verified information.\n- Third person only (${pronounSubj}/${pronounPoss}).\n- Use one or two concise, complete sentences ending in punctuation.\n- Sound warm and conversational, not like a resume or sales pitch.\n- Never start with "Certainly", "Absolutely", "Great question", "As an AI", or "I would be happy".\n- Never add facts, employers, degrees, metrics, or years of experience not listed above.\n- Do not overstate the experience level beyond what the verified facts support.`;
   const user = memory.text ? `${memory.text}\nUser: ${truncateWords(question, 40)}\n${agentName}:` : truncateWords(question, 40);
 
   const controller = new AbortController();
