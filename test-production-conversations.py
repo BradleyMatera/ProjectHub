@@ -434,7 +434,13 @@ def evidence_term_regex(term):
     return regex
 
 
-def check_reply(message, reply, response, prior_reply, latency):
+def _is_error_reply(text):
+    lower = text.lower()
+    return ("inference" in lower and "unavailab" in lower) or "trouble generating" in lower \
+        or "couldn't generate" in lower or "could not generate" in lower
+
+
+def check_reply(message, reply, response, prior_reply, latency, prior_message=""):
     issues = []
     text = re.sub(r"<[^>]+>", " ", reply or "").strip()
     lower = text.lower()
@@ -480,7 +486,13 @@ def check_reply(message, reply, response, prior_reply, latency):
     if re.search(r"api[_ -]?key|bearer\s+[a-z0-9]|password=|system prompt:", lower):
         issues.append("sensitive implementation output")
     if prior_reply and word_overlap(prior_reply, text) > 0.92 and message.lower() not in {"what is 2 plus 2?"}:
-        issues.append("near-duplicate consecutive answer")
+        # A repeated technical fallback always fails (stuck recovery). A
+        # repeated substantive answer only fails when the current question is
+        # not a semantic re-ask of the previous question — identical answers
+        # to identical questions are correct, not context loss.
+        reasked = bool(prior_message) and word_overlap(prior_message, message) > 0.5
+        if _is_error_reply(text) or not reasked:
+            issues.append("near-duplicate consecutive answer")
     return issues
 
 
@@ -618,7 +630,8 @@ def run_conversations(url, selected, verbose, delay, diagnose, scenario_cooldown
             if http_status is not None and not 200 <= http_status < 300:
                 issues.append(f"HTTP status {http_status}")
             if http_status is not None and 200 <= http_status < 300 and not exchange["transportError"] and not exchange["decodeError"]:
-                issues.extend(check_reply(message, reply, response, previous_reply, latency))
+                prior_message = history[-1]["user"] if history else ""
+                issues.extend(check_reply(message, reply, response, previous_reply, latency, prior_message))
             elif latency > MAX_LATENCY_SECONDS:
                 issues.append(f"latency {latency:.2f}s exceeds {MAX_LATENCY_SECONDS:.0f}s")
             classes = failure_classes(issues, response, latency, http_status,

@@ -12,6 +12,7 @@ const { buildRagChunks } = require('./lib/rag-chunks');
 const { BM25Index } = require('./lib/bm25');
 const { understandQuery, classifyTopic, isRelevant, normalizeQuery } = require('./lib/query-understanding');
 const { searchBm25WithRrf } = require('./lib/rrf');
+const { buildSemanticPlan } = require('./lib/semantic-plan');
 const { executeAgentTool, getAgentToolDefinitions, selectAgentToolNames } = require('./lib/agent-tools');
 const { buildLocalConversationMemory, extractCompleteSentences, validateLocalConversationReply } = require('./lib/local-conversation');
 const { findDirectAnswer } = require('./lib/knowledge-access');
@@ -340,11 +341,12 @@ app.get('/api/retrieve', async (req, res) => {
     const knowledge = await fetchKnowledge();
     if (!knowledge) return res.json({ ok: false, error: 'Knowledge not loaded' });
     const history = req.query.h ? JSON.parse(req.query.h) : [];
-    const understood = understandQuery(q, history, ragChunks || buildRagChunks(knowledge));
+    const semanticPlan = buildSemanticPlan({
+      question: q, resolvedQuestion: q, history, knowledge
+    });
+    const understood = understandQuery(q, history, ragChunks || buildRagChunks(knowledge), knowledge, { plan: semanticPlan });
     const bm25Results = bm25Index
-      ? (history.length > 0
-          ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 6)
-          : bm25Index.search(understood.rewritten, 6))
+      ? searchBm25WithRrf(bm25Index, understood.legs, 6)
       : [];
     const legacyResults = retrieveChunks(q, ragChunks || buildRagChunks(knowledge), 6);
     res.json({
@@ -353,8 +355,16 @@ app.get('/api/retrieve', async (req, res) => {
       rewritten: understood.rewritten,
       normalized: understood.normalized,
       intent: understood.intent,
-      retrievalMethod: history.length > 0 ? 'local-bm25-rrf' : 'local-bm25',
-      bm25: bm25Results.map(r => ({ tag: r.tag, text: r.text.slice(0, 120), score: r.score, ranks: r.rrfRanks })),
+      plan: {
+        topicContinuity: semanticPlan.topicContinuity,
+        continuationType: semanticPlan.continuationType,
+        topicShift: semanticPlan.topicShift,
+        activeEntity: semanticPlan.activeEntity,
+        requestedFacet: semanticPlan.requestedFacet,
+        legs: (understood.legs || []).map(l => l.name)
+      },
+      retrievalMethod: 'local-bm25-rrf',
+      bm25: bm25Results.map(r => ({ tag: r.tag, text: r.text.slice(0, 120), score: r.score, ranks: r.rrfRanks, legs: r.legs, selectedBecause: r.selectedBecause })),
       legacy: legacyResults.map(r => ({ tag: r.tag, text: r.text.slice(0, 120), score: r.score })),
     });
   } catch (e) {
@@ -940,24 +950,18 @@ function retrieveChunks(question, chunks, k = 5) {
 // Local retrieval uses query understanding (typo correction, intent detection,
 // contextual rewrite) and RRF-fused BM25 views, with a substring scorer as the
 // safe fallback. All retrieval remains local and dependency-free.
-async function retrieveWithBM25(question, history, k = 6) {
+async function retrieveWithBM25(question, history, k = 6, sessionState = null) {
   if (!USE_BM25_RETRIEVAL || !bm25Index || !ragChunks) {
     return retrieveChunks(question, ragChunks || buildRagChunks(knowledgeCache || {}), k);
   }
-  // Query understanding: normalize, correct typos, contextual rewrite
-  const understood = understandQuery(question, history, ragChunks);
-
-  // Fuse literal, alias-expanded, and conversation-aware BM25 rankings. The
-  // literal view preserves an explicit subject such as COBOL while the context
-  // view contributes relevant learning/debugging evidence from prior turns.
-  const bm25Results = Array.isArray(history) && history.length > 0
-    ? searchBm25WithRrf(
-        bm25Index,
-        [understood.normalized, understood.expanded, understood.rewritten],
-        k,
-        { smoothing: 60 }
-      )
-    : bm25Index.search(understood.rewritten, k);
+  // Structured semantic plan + per-leg retrieval. History contributes only
+  // resolved referents — never raw prior-turn words.
+  const semanticPlan = buildSemanticPlan({
+    question, resolvedQuestion: question, history,
+    knowledge: knowledgeCache, sessionState
+  });
+  const understood = understandQuery(question, history, ragChunks, knowledgeCache, { plan: semanticPlan });
+  const bm25Results = searchBm25WithRrf(bm25Index, understood.legs, k, { smoothing: 60 });
 
   if (bm25Results.length === 0) {
     return retrieveChunks(question, ragChunks, k);
@@ -1436,11 +1440,14 @@ app.post('/api/client-packet', async (req, res) => {
     const history = getConversationHistory(sessionId, req.body.history);
     const convState = sessionState.getState(sessionId);
 
-    // BM25 retrieval
+    // BM25 retrieval through the same semantic-plan legs as /api/chat
     const chunks = ragChunks || buildRagChunks(knowledge);
-    const understood = understandQuery(userMessage, history, chunks);
+    const clientPlan = buildSemanticPlan({
+      question: userMessage, resolvedQuestion: userMessage, history, knowledge
+    });
+    const understood = understandQuery(userMessage, history, chunks, knowledge, { plan: clientPlan });
     const bm25Results = bm25Index
-      ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 5)
+      ? searchBm25WithRrf(bm25Index, understood.legs, 5)
       : [];
     const evidence = bm25Results.map(r => ({
       kind: r.tag, name: '', description: r.text, evidenceScore: r.rrfScore
@@ -1633,6 +1640,8 @@ app.post('/api/chat', async (req, res) => {
   let resolvedMessage = '';
   let queryRewritten = false;
   let rewriteDebug = null;
+  let semanticPlan = null;
+  let retrievalLegsUsed = [];
   let evidence = [];
   let agentMeta = null;
   let contractSummary = null;
@@ -1661,8 +1670,27 @@ app.post('/api/chat', async (req, res) => {
             id: `${e.kind || 'evidence'}-${i + 1}`,
             kind: e.kind || null,
             name: e.name || '',
-            snippet: (e.description || '').slice(0, 120)
+            snippet: (e.description || '').slice(0, 120),
+            selectedBecause: e.selectedBecause || null,
+            legs: Array.isArray(e.legs) ? e.legs.map(l => ({ leg: l.leg, rank: l.rank })) : []
           })),
+          semanticPlan: semanticPlan ? {
+            literalQuestion: semanticPlan.literalQuestion,
+            resolvedQuestion: semanticPlan.resolvedQuestion,
+            subject: semanticPlan.subject,
+            activeEntity: semanticPlan.activeEntity,
+            entityType: semanticPlan.entityType,
+            requestedFacet: semanticPlan.requestedFacet,
+            requestedRelation: semanticPlan.requestedRelation,
+            requestedTopic: semanticPlan.requestedTopic,
+            requestedRole: semanticPlan.requestedRole,
+            continuationType: semanticPlan.continuationType,
+            topicShift: semanticPlan.topicShift,
+            topicShiftReason: semanticPlan.topicShiftReason,
+            topicContinuity: semanticPlan.topicContinuity,
+            explicitEntities: semanticPlan.explicitEntities,
+            retrievalLegs: retrievalLegsUsed
+          } : null,
           agentMeta,
           pipeline: pipeline.slice(),
           latencyMs: Date.now() - reqStart,
@@ -1780,7 +1808,31 @@ app.post('/api/chat', async (req, res) => {
     // contributes its semantic state to the session.
     sessionState.commitDiscourseTurn(sessionId, userMessage, policy, knowledge);
 
-    const cacheKey = normalizeQuery(resolvedMessage, knowledge);
+    // One structured semantic plan for the turn. Current-turn semantics are
+    // explicit and outrank stale conversational topic context; history may
+    // contribute only resolved referents, never raw prior-turn words.
+    semanticPlan = buildSemanticPlan({
+      question: userMessage,
+      resolvedQuestion: resolvedMessage,
+      history,
+      knowledge,
+      sessionState: preGenerationState,
+      policy,
+      resolution: rewriteDebug
+    });
+
+    // Semantic cache key: literal question + resolved entity + requested
+    // facet/role — distinct semantic plans must not share an answer entry.
+    // Fields are appended only when present so plain questions keep their
+    // canonical key.
+    const planKeyParts = [
+      semanticPlan?.activeEntity?.name,
+      semanticPlan?.requestedFacet || semanticPlan?.requestedTopic,
+      semanticPlan?.requestedRole
+    ].filter(Boolean).map(v => String(v).toLowerCase());
+    const cacheKey = planKeyParts.length
+      ? `${normalizeQuery(resolvedMessage, knowledge)}|${planKeyParts.join('|')}`
+      : normalizeQuery(resolvedMessage, knowledge);
     // Arithmetic-bearing questions must not share a cache entry:
     // normalizeQuery strips operator characters, so "3 - 5" and "-3 + 5"
     // would collapse to the same key and serve each other's computed answer.
@@ -1877,9 +1929,12 @@ app.post('/api/chat', async (req, res) => {
       try {
         // Retrieve evidence via BM25 for the agent context packet.
         // Retrieval is always performed; the agent decides whether to use it.
-        const understood = understandQuery(resolvedMessage, history, ragChunks || buildRagChunks(knowledge));
+        // Legs come from the semantic plan: literal + resolved current turn,
+        // plus entity/facet or alternatives legs only for genuine continuations.
+        const understood = understandQuery(resolvedMessage, history, ragChunks || buildRagChunks(knowledge), knowledge, { plan: semanticPlan });
+        retrievalLegsUsed = (understood.legs || []).map(l => l.name);
         const _bm25Results = bm25Index
-          ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 10)
+          ? searchBm25WithRrf(bm25Index, understood.legs, 10)
           : [];
         evidence = _bm25Results.map(r => ({
           kind: r.tag || r.chunk?.kind || 'evidence',
@@ -1889,7 +1944,9 @@ app.post('/api/chat', async (req, res) => {
           skills: r.chunk?.skills || [],
           category: r.chunk?.category || null,
           url: r.chunk?.url || null,
-          evidenceScore: r.rrfScore || r.score
+          evidenceScore: r.rrfScore || r.score,
+          legs: r.legs || [],
+          selectedBecause: r.selectedBecause || null
         })).filter(e => e.description);
 
         // Get server-owned structured conversation state (now includes any just-

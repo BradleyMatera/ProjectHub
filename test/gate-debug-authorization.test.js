@@ -23,6 +23,7 @@ function harness(serverFlag, direct = false) {
     localModelRouter: { inferenceProvider: 'cloudflare', agentModel: () => 'fixture-model' },
     getStanceContext: () => '',
     understandQuery: () => ({}),
+    buildSemanticPlan: () => null,
     ragChunks: [],
     bm25Index: null,
     runRagPrimaryAgent: async () => ({ reply: 'Generated fixture.', model: 'fixture-model', steps: [], proseSource: 'MODEL_GENERATION' }),
