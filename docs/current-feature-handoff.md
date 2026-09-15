@@ -1,5 +1,38 @@
 # Scout Feature Handoff
 
+**Updated:** 2026-09-15 — `fix/post-integration-semantic-reliability` (PR #31 open, base `develop`, not merged). Pre-integration correctness pass:
+
+- Frozen/qualified DEV runtime: `b883209d3d99040cd57b906a779925193f72ac95`
+- Exact-SHA CI `Test and Verify` run `34911659429` **success** on `b883209`.
+- Prior qualified runtime `28fd8785cccd` evidence preserved under `data/evals/pr31-28fd878-*`; new artifacts under `data/evals/pr31-b883209-*`.
+
+Changes in `b883209` since `28fd878` (all tenant-neutral):
+
+1. `lib/relationship-graph.js` / `lib/response-planner.js` — canonical entity-vs-subject precedence: `resolveEntity` resolves exact entities and declared entity aliases before declared tenant aliases and weak name parts; `assessPrimaryFacet` uses canonical resolution (pronouns → exact entity → declared subject alias → weak name part) instead of rebuilding a flat subject-alias set. A project named `Avery` no longer resolves to tenant `Avery Stone`.
+2. `lib/semantic-plan.js` — current-target semantics: `activeEntity` is always this turn's effective target; `priorActiveEntity` records the previous discourse target. Explicit entity switches (`topicShiftReason='explicit-entity'`) never expose the old target as current.
+3. `lib/query-understanding.js` — shared `planTurn` helper (understand → plan → retrieval legs) used by `/api/chat`, `/api/retrieve`, and `/api/client-packet`. Endpoint state differences are explicit: chat has server session state; retrieve/client-packet derive all state from supplied history.
+4. `lib/semantic-plan.js` `buildPlanCacheKey` — pure cache-key helper; keys include normalized resolved question, active entity, facet/topic/role, and arithmetic expression text when present. Equivalent plans share a key; different targets do not; no raw history text enters keys.
+5. `lib/query-understanding.js` entity extraction — question words ("What") can no longer be minted as entities; exclusion patterns anchored to whole tokens so `Beta` is not filtered by the `be` stopword; entity tokens inside a full tenant-name mention are treated as name parts.
+6. `lib/acceptance-scorer.js` — diagnostic `reason` now interpolates a human-readable subject label instead of the regex alternation source.
+7. `lib/claim-validator.js` — `validateAnswer` threads an optional prebuilt `graph` into `validateProjectTechnologyRelationships` (measured rebuild ~1.3ms; fix was low-risk so applied anyway).
+8. `package.json` / lockfile — `@playwright/test@1.62.1` declared to match `playwright`; `qa:browser` script added; clean `npm ci` + spec discovery + Chromium launch verified.
+9. `test/semantic-plan.test.js` — 26 tests: portable collision matrix (Avery Stone/Avery project, Morgan Vale/Vale, local-business owner/service collision, product tenant, `ze/zir`, pronoun/ordinal continuations, assistant-mentioned entity non-authority, cache-key equivalence/discrimination, question-word entities, role-after-history, 20-turn invariance).
+
+Review-thread dispositions on this pass: agent-tools:306 `ALREADY_FIXED_STALE_THREAD` (generic looking-for/seeking role extraction + P3/P3b tests); acceptance-scorer:600 fixed (diagnostic label); claim-validator:185 `VALID_PERFORMANCE_DEBT` → fixed via optional graph param; response-planner:417 `CONFIRMED_CURRENT_BUG` → fixed; package.json:41 `CONFIRMED_CURRENT_BUG` → fixed.
+
+Verification on `b883209`:
+- `npm test` — **1420/1420 pass**.
+- `npm run eval-retrieval` — Recall@6 1.000 (40/40).
+- `npm ci` clean-install succeeds (222 pkgs); Playwright spec discovery + Chromium launch verified; same 4 non-blocking `npm audit` advisories (CI audit step is continue-on-error).
+- DEV `/health` verified `sourceCommit b883209`, cloudflare, `@cf/meta/llama-3.1-8b-instruct-fast`, 15000ms deadline.
+- `eval:local-api` (DEV): **22/23 GOOD (95.7%)**, p50 871ms, p95 1339ms, 0 rate limits, 0 provider errors. Sole non-GOOD: `skill-frame` — INFERENCE_UNAVAILABLE with correct contract (FOLLOW_UP, TypeScript resolved, directAnswer YES); model variance, fail-closed.
+- 132-turn live gate (DEV, `--delay 4.0 --diagnose`): **101/132 turns, 20/33 conversations**, zero 429s. Classes: GENERATION 15, VALIDATION 14, NEAR_DUPLICATE 1, OTHER 1 (baseline `28fd878`: 93/132, 18/33; 24/12/2/1). 14 baseline failures fixed; 6 new failures are all validators correctly rejecting small-model fabrications (`fabricated_occupation:Case Manager`, `entity_not_grounded:Veterans Court`, `leaked_internal_language`) — model variance, fail-closed; no semantic or retrieval regressions.
+- Targeted live battery: explicit entity shift (ProjectHub→Gatsby blog) clean; Army-history→tech-stack no contamination; role-vs-criteria correct; unknown entity + unsupported facet fail closed; enumeration obligations enumerate supported values.
+
+Next: Bradley's integration decision on PR #31. Do not merge; `develop`, `master`, `ProjectHub-dev` unchanged.
+
+---
+
 **Updated:** 2026-09-13 — `fix/post-integration-semantic-reliability` (PR #31 open, base `develop`, not merged). Semantic-reliability freeze candidate:
 
 - Frozen runtime candidate / DEV deployed runtime: `fe3b8e7cf5fa0eeacd8cc481c4ab9bf8cac9f522`
