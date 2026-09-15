@@ -351,8 +351,8 @@ describe('Runtime tenant entity portability', () => {
 
   it('preserves legacy project and CodePen triples, alias metadata and RAG text', () => {
     const knowledge = { identity: { name: 'Sam' },
-      projects: [{ name: 'Atlas', aliases: ['Atlas App'], category: 'Web app', description: 'Maps', tech: ['React'], url: 'https://sam.github.io/atlas', attributes: { price: '$10' } }],
-      codePens: [{ title: 'Color Mixer', aliases: ['Mixer'], tech: ['JavaScript'], url: 'https://codepen.io/example/pen/one' }] };
+      projects: [{ name: 'Atlas', aliases: ['Atlas App'], category: 'Web app', description: 'Maps', tech: ['React'], url: 'https://sam.github.io/atlas', platform: 'GitHub Pages', attributes: { price: '$10' } }],
+      codePens: [{ title: 'Color Mixer', aliases: ['Mixer'], tech: ['JavaScript'], url: 'https://codepen.io/example/pen/one', platform: 'CodePen' }] };
     const graph = buildRelationshipGraph(knowledge);
     const facts = graph.triples.map(({ subject, relation, object, source, meta }) => ({ subject, relation, object, source, meta }));
     assert.deepEqual(facts, [
@@ -360,16 +360,16 @@ describe('Runtime tenant entity portability', () => {
       { subject: 'Atlas', relation: 'has_alias', object: 'Atlas App', source: 'projects[0].aliases', meta: {} },
       { subject: 'Atlas', relation: 'uses_tech', object: 'React', source: 'projects[0].tech', meta: {} },
       { subject: 'Atlas', relation: 'built_by', object: 'Sam', source: 'projects[0]', meta: { inferred: true } },
-      { subject: 'Atlas', relation: 'deployed_at', object: 'GitHub Pages', source: 'projects[0].url', meta: { url: 'https://sam.github.io/atlas' } },
+      { subject: 'Atlas', relation: 'deployed_at', object: 'GitHub Pages', source: 'projects[0].platform', meta: { url: 'https://sam.github.io/atlas' } },
       { subject: 'Atlas', relation: 'has_property', object: '$10', source: 'projects[0].attributes.price', meta: { property: 'price' } },
       { subject: 'Color Mixer', relation: 'is_type', object: 'CodePen', source: 'codePens[0]', meta: {} },
       { subject: 'Color Mixer', relation: 'built_by', object: 'Sam', source: 'codePens[0]', meta: { inferred: true } },
-      { subject: 'Color Mixer', relation: 'deployed_at', object: 'CodePen', source: 'codePens[0].url', meta: { url: 'https://codepen.io/example/pen/one' } },
+      { subject: 'Color Mixer', relation: 'deployed_at', object: 'CodePen', source: 'codePens[0].platform', meta: { url: 'https://codepen.io/example/pen/one' } },
       { subject: 'Color Mixer', relation: 'has_alias', object: 'Mixer', source: 'codePens[0].aliases', meta: {} },
       { subject: 'Color Mixer', relation: 'uses_tech', object: 'JavaScript', source: 'codePens[0].tech', meta: {} }
     ]);
     assert.equal(buildRagChunks(knowledge).find(chunk => chunk.tag === 'project').text,
-      'Project Atlas: Maps Tech: React. Properties: price: $10. Links: https://sam.github.io/atlas.');
+      'Project Atlas: Maps Tech: React. Properties: price: $10. Links: https://sam.github.io/atlas, GitHub Pages.');
     assert.equal(graph.aliasToCanonical.get('atlasapp'), 'Atlas');
     assert.equal(graph.aliasToCanonical.get('mixer'), 'Color Mixer');
   });

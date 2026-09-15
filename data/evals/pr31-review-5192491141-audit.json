@@ -1,0 +1,76 @@
+{
+  "review": {
+    "id": 5192491141,
+    "reviewedCommit": "6c45f27",
+    "reviewer": "copilot-pull-request-reviewer",
+    "state": "COMMENTED",
+    "verdict": "CHANGES RECOMMENDED",
+    "visibleComments": 0,
+    "suppressedFindings": 5
+  },
+  "findings": [
+    {
+      "n": 1,
+      "source": "suppressed",
+      "file": "lib/acceptance-scorer.js:705",
+      "issue": "explicitWeakness detection only used the configured subject pronoun; object/possessive forms ('Zir weakness is Rust', 'Hir struggles with Rust') scored GOOD under a NEGATIVE_ASSESSMENT contract.",
+      "reproduction": "scoreCase NEGATIVE_ASSESSMENT with pronouns 'ze/zir/hir': 'Ze is weak at Rust.' OVERCLAIM after first fix; 'Zir weakness is Rust.' and 'Hir struggles with Rust.' returned GOOD.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "naAllForms now covers subject/object/possessive and feeds both the subject alternation and the possessive ('X weakness is') alternation alongside his/her/their.",
+      "tests": ["review-5192195572 Q1"]
+    },
+    {
+      "n": 2,
+      "source": "suppressed",
+      "file": "lib/claim-extractor.js:850",
+      "issue": "Named-subject is_type pattern captured a configured pronoun ('Hir is a nurse' -> subject 'hir'), emitting an unknown-entity claim that bypassed subject grounding.",
+      "reproduction": "extractClaims('Hir is a nurse at the clinic.', graph) produced {subject:'Hir',relation:'is_type',object:'nurse'}.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "is_type subject canonicalization recognizes configured pronoun forms and emits subject='subject'.",
+      "tests": ["review-5192195572 Q2"]
+    },
+    {
+      "n": 3,
+      "source": "suppressed",
+      "file": "lib/grounding-validator.js:421",
+      "issue": "Epistemic 'cannot confirm whether' phrasing parsed as DENY by the named-denial stance patterns, so bounded uncertainty was validated as a definitive denial.",
+      "reproduction": "parseLeadingStance('Morgan cannot confirm whether Rust is documented.') -> DENY; 'Morgan cannot use Rust.' -> DENY (correct).",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Epistemic cannot-confirm/whether wording is classified QUALIFY before the named-denial patterns fire; definitive capability denial still DENY.",
+      "tests": ["review-5192195572 Q3"]
+    },
+    {
+      "n": 4,
+      "source": "suppressed",
+      "file": "lib/grounding-validator.js:802",
+      "issue": "professional_inflation pattern dropped 'his'/'her' coverage and did not include configured possessives, so 'Ze developed zir projects professionally' escaped the inflation check.",
+      "reproduction": "validateAnswer('Ze developed zir projects professionally.', ...) reasons contained no professional_inflation flag.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Pattern rebuilt inside validateAnswer from getSubjectPronouns(knowledge): subject/object/possessive + his/her/their + 'the' all covered.",
+      "tests": ["review-5192195572 Q4"]
+    },
+    {
+      "n": 5,
+      "source": "suppressed",
+      "file": "lib/grounding-validator.js:1906",
+      "issue": "Pronoun-headed 'X is a <type>' claims escaped fabricated_occupation: headIsSubject (explicitRole path) lacked configured pronouns and the bare is-a subjectPattern required the literal first name.",
+      "reproduction": "validateAnswer('Ze is a support ticketing platform.', ...) valid:true, reasons:[] while 'Morgan is a support ticketing platform.' flagged fabricated_occupation.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "subjectHeadRefs includes configured subject/object/possessive; bare is-a subjectPattern alternation includes configured pronoun forms (plus are/were).",
+      "tests": ["review-5192195572 Q5"]
+    }
+  ],
+  "verification": {
+    "targeted": "node --test test/review-5192195572.test.js -> 19/19",
+    "full": "npm test -> 1381/1381",
+    "evalRetrieval": "Recall@6 1.000 (40/40), MRR@6 0.942",
+    "diffCheck": "git diff --check clean"
+  },
+  "liveQualification": {
+    "deployedCommit": "0999e9afdfc3e197c859794031e40578192b7768",
+    "devHealth": "https://dev.projecthub-chat.bradleymatera.dev/health 200 verified by deploy script",
+    "battery": "21/22 scripted checks; sole failure role-req was TECHNICAL_ERROR model variance — 3/4 direct retries passed MODEL_GENERATION, validator correctly failed closed on non-compliant generation",
+    "localApiEval": "23/23 GOOD against dev backend",
+    "providerModelBudget": "Cloudflare Workers AI @cf/meta/llama-3.1-8b-instruct-fast, 15s budget — unchanged (verified by deploy script)"
+  }
+}

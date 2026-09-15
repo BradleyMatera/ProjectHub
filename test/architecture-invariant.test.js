@@ -241,5 +241,5 @@ test('normalizeSourceVoice lives in generic source-preparation module and transf
   const firstPerson = 'I am early in my career, but I learn quickly.';
   const normalized = normalizeSourceVoice(firstPerson, knowledge);
   assert.ok(!/\bI\b/.test(normalized), 'First person "I" should be converted');
-  assert.ok(/\b(He|She|They) is\b/.test(normalized), 'Subject should be third-person singular');
+  assert.ok(/\b(?:He is|She is|They are)\b/.test(normalized), 'Subject should be third-person with correct agreement');
 });

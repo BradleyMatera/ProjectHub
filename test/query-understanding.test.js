@@ -97,14 +97,17 @@ test('classifyIntent defaults to factual-lookup', () => {
   assert.equal(classifyIntent('what is his tech stack'), 'factual-lookup');
 });
 
-test('rewriteQuery resolves bare follow-up with context', () => {
+test('rewriteQuery never merges prior-turn salient words (no contamination)', () => {
   const history = [
     { user: 'Tell me about his AWS experience', assistant: 'He did an AWS internship at CIRIS with Lambda and DynamoDB.' },
   ];
   const rewritten = rewriteQuery('what about his time as a medic', history);
-  // Should include words from both the query and the previous context
+  // Current-turn semantics stay intact; prior-turn words (aws, internship,
+  // lambda, dynamodb) must NOT be appended.
   assert.ok(rewritten.includes('medic'));
-  assert.ok(rewritten.length > 'what about his time as a medic'.length);
+  for (const leaked of ['aws', 'internship', 'lambda', 'dynamodb']) {
+    assert.ok(!rewritten.toLowerCase().includes(leaked), `leaked prior-turn word: ${leaked}`);
+  }
 });
 
 test('rewriteQuery does not modify long standalone queries', () => {
@@ -133,7 +136,7 @@ test('understandQuery runs full pipeline', () => {
   assert.ok(result.rewritten.length > 0);
 });
 
-test('understandQuery with history rewrites bare follow-up', () => {
+test('understandQuery with history emits uncontaminated current-turn legs', () => {
   const chunks = [
     { text: 'Bradley has AWS experience from CIRIS internship with Lambda and DynamoDB.' },
   ];
@@ -141,5 +144,11 @@ test('understandQuery with history rewrites bare follow-up', () => {
     { user: 'Tell me about his AWS work', assistant: 'He did structured labs with Lambda and DynamoDB at CIRIS.' },
   ];
   const result = understandQuery('what about that', history, chunks);
-  assert.ok(result.rewritten !== result.normalized || result.rewritten.length > result.normalized.length);
+  assert.ok(Array.isArray(result.legs) && result.legs.length > 0);
+  // No prior-turn vocabulary may appear in any leg.
+  for (const leg of result.legs) {
+    for (const leaked of ['aws', 'lambda', 'dynamodb', 'ciris']) {
+      assert.ok(!leg.query.toLowerCase().includes(leaked), `leg ${leg.name} leaked ${leaked}`);
+    }
+  }
 });
