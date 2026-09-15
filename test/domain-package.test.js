@@ -285,6 +285,50 @@ describe('Package capability gating + executor integration', () => {
   });
 });
 
+describe('Tool runtime integration (lite-agent wiring)', () => {
+  const { configureToolRuntime, runCapabilityFacts } = require('../lib/lite-agent');
+  const executor = new ToolExecutor(registry, { policy: readPolicy() });
+  const load = id => loadDomainPackage(path.join(PACKAGES_DIR, `${id}.package.json`));
+
+  it('capability calls through the executor are audited', async () => {
+    const { manifest, knowledge } = load('recruiter-alpha');
+    configureToolRuntime({ executor, manifest });
+    const before = executor.audit.entries().length;
+    const data = await runCapabilityFacts('calculator', { expression: '5*6' }, { knowledge });
+    assert.ok(data.facts.length >= 1);
+    const entries = executor.audit.entries();
+    assert.equal(entries.length, before + 1);
+    assert.equal(entries[entries.length - 1].tool, 'calculator');
+    assert.equal(entries[entries.length - 1].provenance, 'COMPUTED_FACT');
+  });
+
+  it('package-denied capabilities return empty, no execution', async () => {
+    const { manifest, knowledge } = load('rivera-home-electric');
+    configureToolRuntime({ executor, manifest });
+    const before = executor.audit.entries().length;
+    const data = await runCapabilityFacts('send_notification', { to: 'a@b.c', message: 'x' }, { knowledge });
+    assert.deepEqual(data, []);
+    assert.equal(executor.audit.entries().length, before); // gated before executor
+  });
+
+  it('General Scout gates knowledge tools but runs compute', async () => {
+    configureToolRuntime({ executor, manifest: GENERAL_PACKAGE });
+    const calc = await runCapabilityFacts('calculator', { expression: '1+1' }, { knowledge: {} });
+    assert.ok(calc.facts.length >= 1);
+    const lookup = await runCapabilityFacts('knowledge_lookup', { section: 'skills' }, { knowledge: {} });
+    assert.deepEqual(lookup, []);
+  });
+
+  it('unconfigured runtime falls back to direct helpers', async () => {
+    configureToolRuntime(null);
+    const data = await runCapabilityFacts('calculator', { expression: '3+3' },
+      { fallback: () => ({ facts: require('../lib/arithmetic-tool').findArithmeticSubtasks('3+3') }) });
+    assert.ok(data.facts.length >= 1);
+    // restore for other suites
+    configureToolRuntime({ executor, manifest: GENERAL_PACKAGE });
+  });
+});
+
 describe('General Scout mode', () => {
   it('empty knowledge is valid and safe', () => {
     const r = loadDomainPackage('general');

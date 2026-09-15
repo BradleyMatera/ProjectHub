@@ -94,6 +94,16 @@ const DIRECT_KB_ENABLED = process.env.SCOUT_DIRECT_KB_ENABLED === 'true';
 const FEATURE_PREVIEW_ENABLED = process.env.FEATURE_PREVIEW_ENABLED === 'true';
 const KNOWLEDGE_FILE = path.join(__dirname, process.env.KNOWLEDGE_FILE || 'data/recruiter-knowledge.json');
 const { loadDomainPackage, isCapabilityAllowed } = require('./lib/domain-package');
+const { buildToolRegistry } = require('./lib/tool-capabilities');
+const { ToolExecutor, PermissionPolicy } = require('./lib/tool-executor');
+const { configureToolRuntime } = require('./lib/lite-agent');
+// Shared read-only action runtime. Capability calls are package-gated,
+// permission-checked, deadline-bounded, and audited. Read-only scopes only —
+// no side-effecting capability is enabled in this deployment.
+const toolRegistry = buildToolRegistry();
+const sharedToolExecutor = new ToolExecutor(toolRegistry, {
+  policy: new PermissionPolicy({ scopes: ['compute', 'knowledge:read', 'search:read', 'entity:read'] })
+});
 // SCOUT_DOMAIN_PACKAGE selects the runtime's domain package: a .package.json
 // path, a bare knowledge file (legacy), or 'general' for General Scout mode.
 const SCOUT_PACKAGE_SOURCE = process.env.SCOUT_DOMAIN_PACKAGE || KNOWLEDGE_FILE;
@@ -248,7 +258,8 @@ app.get('/health', async (req, res) => {
         mode: domainPackageManifest.id === 'general-scout' ? 'general' : 'domain',
         legacy: Boolean(domainPackageManifest.legacy),
         warnings: domainPackageWarnings.length
-      } : null
+      } : null,
+      recentActions: sharedToolExecutor.audit.entries().slice(-5)
     },
     uptimeSeconds: Math.floor(process.uptime()),
     // This-restart stats
@@ -557,6 +568,7 @@ async function fetchKnowledge() {
     domainPackageWarnings = pkgResult.warnings;
     for (const w of pkgResult.warnings) console.warn(`[domain-package] WARN ${w.path}: ${w.message}`);
     const json = pkgResult.knowledge || {};
+    configureToolRuntime({ executor: sharedToolExecutor, manifest: domainPackageManifest });
 
     // Rebuild the BM25 index FIRST so no concurrent call can return a
     // knowledgeCache while ragChunks/bm25Index are still null. Then publish
