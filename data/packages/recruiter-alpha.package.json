@@ -1,0 +1,24 @@
+{
+  "packageVersion": 1,
+  "kind": "domain-package",
+  "id": "recruiter-alpha",
+  "name": "ProjectHub Recruiter Alpha",
+  "description": "Reference Scout application: recruiter-facing assistant for Bradley Matera's professional profile, projects, and public contact information.",
+  "identity": {
+    "applicationName": "ProjectHub Recruiter Alpha",
+    "assistantName": "Scout"
+  },
+  "knowledge": { "source": "../recruiter-knowledge.json" },
+  "capabilities": {
+    "allow": ["calculator", "knowledge_lookup", "entity_lookup", "content_search"],
+    "deny": ["send_notification"]
+  },
+  "policies": {
+    "confirmation": "no side-effecting capabilities are enabled for this tenant",
+    "worldModel": "open-world employment/skills claims; closed-world only for explicitly authoritative sections"
+  },
+  "presentation": {
+    "headerTitle": "Scout",
+    "headerSubtitle": "Bradley Matera · Recruiter assistant"
+  }
+}

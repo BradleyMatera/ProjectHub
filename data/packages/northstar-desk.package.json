@@ -1,0 +1,87 @@
+{
+  "packageVersion": 1,
+  "kind": "domain-package",
+  "id": "northstar-desk",
+  "name": "Northstar Desk",
+  "description": "Product Scout application: answers plan, feature, pricing, and deployment questions for the Northstar Desk support-ticketing SaaS.",
+  "identity": {
+    "applicationName": "Northstar Desk Assistant",
+    "assistantName": "Scout"
+  },
+  "knowledge": {
+    "identity": {
+      "name": "Avery Chen",
+      "preferredName": "Avery",
+      "title": "Founder",
+      "company": "Northstar Desk",
+      "location": "Seattle, WA",
+      "shortPitch": "Avery Chen is the founder of Northstar Desk, a B2B SaaS customer support ticketing platform."
+    },
+    "subjectAliases": ["Avery Chen", "Avery", "Northstar", "the company"],
+    "summary": "Northstar Desk is a B2B SaaS customer support ticketing platform. It offers seat-based plans, a shared inbox, SLA tracking, and an analytics add-on called Northstar Insights.",
+    "products": [
+      {
+        "name": "Northstar Desk",
+        "type": "B2B SaaS",
+        "description": "Customer support ticketing platform with shared inbox, SLA tracking, and routing rules.",
+        "aliases": ["the platform", "the ticketing product"],
+        "attributes": {
+          "deployment": "hosted cloud only; no on-prem option",
+          "sla": "99.9% uptime target on Team plan and above"
+        },
+        "plans": [
+          { "name": "Starter", "seats": 3, "price": "$29/mo", "features": ["shared inbox", "basic routing"] },
+          { "name": "Team", "seats": 15, "price": "$99/mo", "features": ["shared inbox", "SLA tracking", "routing rules"] },
+          { "name": "Scale", "seats": 60, "price": "$349/mo", "features": ["shared inbox", "SLA tracking", "routing rules", "audit log"] }
+        ]
+      },
+      {
+        "name": "Northstar Insights",
+        "type": "Analytics add-on",
+        "description": "Analytics add-on for Northstar Desk covering response-time and backlog reporting.",
+        "aliases": ["Insights", "the analytics add-on"],
+        "attributes": {
+          "requires": "Team plan or above",
+          "price": "$49/mo per workspace"
+        }
+      }
+    ],
+    "projects": [
+      { "name": "Desk v2", "tech": ["React", "Node.js"], "description": "Support dashboard rewrite completed in 2025" }
+    ],
+    "skills": ["TypeScript", "React", "Node.js", "PostgreSQL", "AWS"],
+    "business": {
+      "trial": "14-day free trial on all plans, no card required",
+      "billing": "monthly or annual; annual billing is discounted 15%",
+      "supportHours": "Weekdays 8am-6pm PT"
+    },
+    "boundaries": [
+      { "topic": "on-prem deployment", "claim": "Northstar Desk is hosted cloud only and has no on-prem deployment option", "category": "deployment" },
+      { "topic": "phone support", "claim": "Northstar Desk does not offer phone support on Starter or Team plans", "category": "support" }
+    ],
+    "directAnswers": [
+      { "question": "Does Northstar Desk offer on-prem deployment?", "answer": "No — Northstar Desk is hosted cloud only." },
+      { "question": "How many users does the Team plan support?", "answer": "The Team plan includes up to 15 seats." }
+    ],
+    "faq": [
+      { "q": "Is there a free trial?", "a": "Yes, 14 days on all plans with no card required." },
+      { "q": "Can I add seats mid-plan?", "a": "Yes, seats can be added at any time and are prorated." }
+    ],
+    "knowledgeCompleteness": {
+      "products": { "complete": true, "authoritative": true },
+      "business": { "complete": true, "authoritative": true }
+    }
+  },
+  "capabilities": {
+    "allow": ["calculator", "knowledge_lookup", "entity_lookup", "content_search"],
+    "deny": ["send_notification"]
+  },
+  "policies": {
+    "confirmation": "no side-effecting capabilities are enabled for this tenant",
+    "worldModel": "closed-world for products and business sections; open-world otherwise"
+  },
+  "presentation": {
+    "headerTitle": "Scout",
+    "headerSubtitle": "Northstar Desk · Product assistant"
+  }
+}

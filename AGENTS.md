@@ -112,6 +112,8 @@ Live widget URL for embedding:
 | `lib/query-understanding.js` | Query understanding pipeline — normalization, typo correction, intent classification, contextual rewriting |
 | `lib/agent-tools.js` | Allowlisted read-only agent tools for portfolio search, project comparison, role matching, and public profile evidence |
 | `lib/agent-fallback.js` | Deterministic agent planning and evidence-based recovery contracts (transitional — being converted to generative) |
+| `lib/domain-package.js` | Domain-package contract — validation, loading, capability gating; `SCOUT_DOMAIN_PACKAGE` selects package or `general` mode |
+| `data/packages/` | Shipped domain packages (recruiter-alpha, rivera-home-electric, northstar-desk); see `docs/domain-packages.md` |
 | `lib/local-conversation.js` | Five-turn memory shaping and strict generative RAG output validation |
 | `lib/cost-ledger.js` | Metering tracker for every billable-adjacent event |
 | `lib/cost-insights.js` | Cost insights builder for the /api/costs dev endpoint |
