@@ -1,5 +1,33 @@
 # Scout Feature Handoff
 
+**Updated:** 2026-09-15 — `fix/post-integration-semantic-reliability` (PR #31 open, base `develop`, not merged). Canonical-identity architecture pass:
+
+- Frozen/qualified DEV runtime: `654d25e625b15c3fb043e442fcfcfb813bf71aa9`
+- Exact-SHA CI `Test and Verify` run `34922407613` **success** on `654d25e`.
+- Prior qualified runtime `b883209` evidence preserved under `data/evals/pr31-b883209-*`; new artifacts under `data/evals/pr31-654d25e-*`.
+
+Changes in `654d25e` since `b883209` (all tenant-neutral):
+
+1. `lib/relationship-graph.js` — new exported `canonicalEntityNorm(graph, value)`: the single identity-resolution rule (exact entity/declared entity alias → declared tenant alias → weak name part → unknown normalized value).
+2. Canonical repointing — `response-planner.assessRelationSupport` (removed its local `canonical()` that let weak tenant name parts outrank real entities), `memberNorms`, `relationship-validator` (`assessExpertiseClaim`, `isCandidateSubject`, `isMainSubject`, subject-check), `claim-extractor` subject-collapse (`isSubjectRef` — real entity aliases no longer collapse into the tenant subject; genuine tenant references still do), `grounding-validator` entity-type exemptions, `semantic-plan` entity equivalence (alias of the same canonical entity no longer triggers a false `explicit-entity` topic shift).
+3. `lib/response-contract.js` — removed the exact future-answer sentence ban (`there is no verified evidence of X; it is not documented in the profile`) in favor of claim-level bans (`already knows X`, `verified experience with X`); rewrote FUTURE_CAPABILITY, UNKNOWN, and SKILL_EVIDENCE-unknown instructions as semantic obligations instead of lexical must-include word lists; removed the hardcoded tenant skill list from negative-capability instructions.
+4. `test/canonical-identity.test.js` — 32 synthetic tenant-neutral tests: relation-support collision matrix (Avery Stone/Avery skill, Morgan Vale/Vale company, preferred-name/alias collisions, has_gap and product targets, empty KB, ordinary first-name), response-policy classification, claim-extraction collisions, alias continuations, entity switches, and generative freedom (equivalent phrasings accepted, no exact sentence required).
+
+Identity audit: every `subjectAliases`/`subjectNameParts`/`aliasToCanonical`/`entityIndex` usage classified — all identity decisions route through `canonicalEntityNorm`/`resolveEntity`; remaining direct uses are intentionally different (weak-part tail inside canonical precedence, regex fold-back heuristics, subject-word extraction filters) or non-identity (intent classification inputs, alias bookkeeping). All 5 stale Copilot review threads replied with evidence and resolved — **0 unresolved threads remain**.
+
+Verification on `654d25e`:
+- `npm test` — **1452/1452 pass** (+32).
+- `npm run eval-retrieval` — Recall@6 1.000 (40/40). Builds, `node --check`, `git diff --check`, `workspace:check` clean; generated bundles fresh.
+- CI `34922407613` success on the exact SHA; DEV `/health` verified `sourceCommit 654d25e`, cloudflare, `@cf/meta/llama-3.1-8b-instruct-fast`, 15000ms deadline.
+- Browser QA: harness reproducible (6 specs discovered, Chromium launch, clean install); the 6-scenario live run remains blocked by the documented headless-mirror redirect limitation (`docs/guardrail-refinement-report.md`), not a runtime regression.
+- Targeted live battery: 8/11 lexical checks; `alias-continuation` was a semantic pass (lexical check too strict — `it` correctly rewrote to `ProjectHub (Scout)`); `entity-switch`/`long-topic-switch` succeed on retry (inference variance); `future-role`/`documented-gap` consistently fail closed — contract is `YES_NO/UNKNOWN`+QUALIFY so leading "No" denials are stance-rejected while a bare bounded statement passes; generation exhaustion, validators working as designed. Unknown-gap correctly surfaced the documented DSA gap.
+- `eval:local-api` (DEV): **19/23 GOOD (82.6%)**, p50 723ms, p95 1974ms, 0 rate limits, 0 provider errors, 2 inference-unavailable. Non-GOOD: `negative-assessment` (GENERIC — semantically correct grounded DSA-gap answer missing scorer keywords), `memory-follow-up-a` (INFERENCE_UNAVAILABLE), `memory-follow-up-b` (CONTEXT_ERROR cascade of A's failure), `skill-frame` (INFERENCE_UNAVAILABLE, same as baseline). Not tuned to scorer.
+- 132-turn live gate (DEV, `--delay 4.0 --diagnose`): **100/132 turns, 20/33 conversations**, zero 429s (baseline `b883209`: 101/132, 20/33). Classes: GENERATION 18, VALIDATION 11, NEAR_DUPLICATE 2, OTHER 1 (was 15/14/1/1). Delta: 11 fixed, 12 new, 20 unchanged. All 12 new failures manually inspected: validators correctly rejecting model fabrications (`unsupported_tech_claim`, `fabricated_occupation`, `forbidden_claim:struggle`, `entity_not_grounded`, `unsupported_relationship`), scorer-phrase misses on semantically reasonable replies, and model variance — no semantic, retrieval, or validator regression. Primary rejections 32 (was 34); rejected repairs 15 (was 17).
+
+Next: Bradley's integration decision on PR #31. Do not merge; `develop`, `master`, `ProjectHub-dev` unchanged.
+
+---
+
 **Updated:** 2026-09-15 — `fix/post-integration-semantic-reliability` (PR #31 open, base `develop`, not merged). Pre-integration correctness pass:
 
 - Frozen/qualified DEV runtime: `b883209d3d99040cd57b906a779925193f72ac95`

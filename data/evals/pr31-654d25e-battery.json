@@ -1,0 +1,227 @@
+[
+  {
+    "id": "known-skill",
+    "q": "Does Bradley know JavaScript?",
+    "status": 200,
+    "reply": "Yes, the evidence is languages And Frameworks: JavaScript; TypeScript; React; Next.js; Node.js; HTML; CSS; SQL.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "directAnswer": "YES",
+    "factState": "TRUE",
+    "subIntent": "SKILL_EVIDENCE",
+    "agent": {
+      "outcome": "accepted",
+      "rewritten": "Does Bradley know JavaScript?"
+    },
+    "expect": {
+      "contains": [
+        "javascript"
+      ]
+    },
+    "pass": true
+  },
+  {
+    "id": "unknown-skill",
+    "q": "Does Bradley know ZebraLang?",
+    "status": 200,
+    "reply": "The verified record does not establish whether Bradley Matera knows ZebraLang, and the specific topic or entity 'zebralang' is not mentioned in the provided evidence.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "directAnswer": "UNKNOWN",
+    "factState": "UNKNOWN",
+    "subIntent": "SKILL_EVIDENCE",
+    "agent": {
+      "outcome": "accepted",
+      "rewritten": "Does Bradley know ZebraLang?"
+    },
+    "expect": {
+      "notContains": [
+        "yes, he knows",
+        "proficient in zebralang",
+        "he cannot"
+      ]
+    },
+    "pass": true
+  },
+  {
+    "id": "future-skill",
+    "q": "Could Bradley learn Rust?",
+    "status": 200,
+    "reply": "Bradley could plausibly learn Rust, given his demonstrated ability to quickly learn and adapt to new technologies, as seen in his work with JavaScript, TypeScript, and React. His strong foundation in web development and experience with Node.js could also serve as a foundation for learning Rust, although it is not established by the verified record that he currently has experience with Rust.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "directAnswer": "UNKNOWN",
+    "factState": "UNKNOWN",
+    "subIntent": "FUTURE_CAPABILITY",
+    "agent": {
+      "outcome": "accepted",
+      "rewritten": "Could Bradley learn Rust?"
+    },
+    "expect": {
+      "notContains": [
+        "already knows rust",
+        "he knows rust",
+        "cannot learn"
+      ]
+    },
+    "pass": true
+  },
+  {
+    "id": "future-role",
+    "q": "Could Bradley become a senior engineer?",
+    "status": 200,
+    "reply": "I couldn't generate a reliable answer right now. Please try again or rephrase your question.",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "directAnswer": "UNKNOWN",
+    "factState": "UNKNOWN",
+    "subIntent": "FUTURE_CAPABILITY",
+    "agent": null,
+    "expect": {
+      "notContains": [
+        "he is a senior",
+        "already a senior"
+      ]
+    },
+    "pass": true
+  },
+  {
+    "id": "documented-gap",
+    "q": "Is Bradley a senior-level engineer?",
+    "status": 200,
+    "reply": "I couldn't generate a reliable answer right now. Please try again or rephrase your question.",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "directAnswer": null,
+    "factState": "UNKNOWN",
+    "subIntent": "YES_NO",
+    "agent": null,
+    "expect": {
+      "notContains": [
+        "yes, he is a senior",
+        "senior engineer at"
+      ]
+    },
+    "pass": true
+  },
+  {
+    "id": "unknown-gap",
+    "q": "Does Bradley have gaps in Kubernetes?",
+    "status": 200,
+    "reply": "Bradley Matera's public profile does not provide information about gaps in Kubernetes. However, it is documented that he has a gap in turning a brand-new problem into working code from a blank file without guidance, and he has not had production mentorship in data structures and algorithms (DSA) and does not have a formal CS degree. The public profile evidence is the only source used to answer this question.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "directAnswer": "UNKNOWN",
+    "factState": "UNKNOWN",
+    "subIntent": "NEGATIVE_ASSESSMENT",
+    "agent": {
+      "outcome": "accepted",
+      "rewritten": "Does Bradley have gaps in Kubernetes?"
+    },
+    "expect": {
+      "notContains": [
+        "he definitely cannot",
+        "no gaps",
+        "he has no gaps"
+      ]
+    },
+    "pass": true
+  },
+  {
+    "id": "preferred-name",
+    "q": "Does Brad know Python?",
+    "status": 200,
+    "reply": "The verified record does not establish that Bradley Matera currently knows or has used Python, but it does show that he has worked on a project that includes a Python worker, indicating some familiarity with the language.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "directAnswer": "UNKNOWN",
+    "factState": "UNKNOWN",
+    "subIntent": "SKILL_EVIDENCE",
+    "agent": {
+      "outcome": "accepted",
+      "rewritten": "Does Brad know Python?"
+    },
+    "expect": {
+      "contains": [
+        "python"
+      ]
+    },
+    "pass": true
+  },
+  {
+    "id": "alias-continuation",
+    "q": "What technology does it use?",
+    "status": 200,
+    "reply": "ProjectHub (Scout) uses deterministic query understanding, BM25/RRF retrieval, and evidence tools.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "directAnswer": null,
+    "factState": "TRUE",
+    "subIntent": "SKILL_EVIDENCE",
+    "agent": {
+      "outcome": "accepted",
+      "rewritten": "What technology does ProjectHub (Scout) use?"
+    },
+    "expect": {
+      "contains": [
+        "javascript"
+      ]
+    },
+    "pass": false
+  },
+  {
+    "id": "entity-switch",
+    "q": "Now tell me about CheeseMath.",
+    "status": 200,
+    "reply": "I couldn't generate a reliable answer right now. Please try again or rephrase your question.",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "directAnswer": null,
+    "factState": "TRUE",
+    "subIntent": "PROFILE_SUMMARY",
+    "agent": null,
+    "expect": {
+      "contains": [
+        "cheese"
+      ]
+    },
+    "pass": false
+  },
+  {
+    "id": "long-topic-switch",
+    "q": "Tell me about the Interactive Pokedex instead.",
+    "status": 200,
+    "reply": "I couldn't generate a reliable answer right now. Please try again or rephrase your question.",
+    "proseSource": "TECHNICAL_ERROR",
+    "provider": "cloudflare",
+    "directAnswer": null,
+    "factState": "TRUE",
+    "subIntent": "PROFILE_SUMMARY",
+    "agent": null,
+    "expect": {
+      "contains": [
+        "pokedex"
+      ]
+    },
+    "pass": false
+  },
+  {
+    "id": "enumeration",
+    "q": "What are Bradley's skills?",
+    "status": 200,
+    "reply": "Bradley Matera has used or knows AWS, JavaScript, and has a B.S. in Web Development.",
+    "proseSource": "MODEL_GENERATION",
+    "provider": "cloudflare",
+    "directAnswer": null,
+    "factState": "TRUE",
+    "subIntent": "GENERAL",
+    "agent": {
+      "outcome": "accepted",
+      "rewritten": "What are Bradley's skills?"
+    },
+    "expect": {
+      "ok": true
+    },
+    "pass": true
+  }
+]
