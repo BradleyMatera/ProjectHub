@@ -17,9 +17,23 @@
 - **Netlify production:** `bradleymatera.dev` serving the merged Gatsby master with the new pin (deploy state ready; verified via live bundle)
 - **Live chain smoke** (`/.netlify/functions/recruiter-chat` → prod API → Cloudflare 8B): known-skill grounded YES, unknown-skill bounded UNKNOWN, project facet grounded, arithmetic exact (`30`), project enumeration + follow-up handled — all MODEL_GENERATION
 
-## Next feature: `feat/scout-action-runtime`
+## Active feature: `feat/scout-action-runtime` → PR #33
 
-Branch from `develop e74ac22b`, published at `ebed168`. Action Runtime V1 substrate: `lib/tool-registry.js` (CapabilityDescriptor catalog), `lib/tool-executor.js` (ToolExecutor + PermissionPolicy + ActionAudit + WorkflowState + typed ToolResult provenance), `lib/tool-capabilities.js` (calculator wrapping the arithmetic engine as COMPUTED_FACT; knowledge_lookup/entity_lookup/content_search as TENANT_EVIDENCE; send_notification as the mock side-effect/confirmation-gate proof). 24 tests in `test/action-runtime.test.js`; suite 1476/1476. **Substrate only — not wired into the request path yet.** Next step: model-facing tool selection (ToolPlanner) + executor integration into the chat pipeline.
+Branch from `develop e74ac22b`; DEV-verified published head `72d59e2` (deploy manifest fix `6bf5592`, swap mkdir fix `72d59e2`).
+
+**Productization V1 delivered on this branch:**
+
+- **Domain-package contract** (`lib/domain-package.js`): `validateDomainPackage` (errors vs warnings + fix hints), `loadDomainPackage` (file/object/`'general'`/legacy bare-knowledge), `isCapabilityAllowed` (deny wins). Contract documented in `docs/domain-packages.md`.
+- **General Scout mode**: `SCOUT_DOMAIN_PACKAGE=general` → empty knowledge, calculator-only capabilities; first-class mode, not missing data.
+- **Shipped packages** (`data/packages/`): `recruiter-alpha` (sources `data/recruiter-knowledge.json`), `rivera-home-electric` (service business, inline), `northstar-desk` (SaaS product, inline). All deny `send_notification`.
+- **Action runtime** (`lib/tool-registry.js`, `tool-executor.js`, `tool-capabilities.js`): capability descriptors + permission scopes + provenance + side-effect/confirmation metadata; executor gating; ActionAudit; WorkflowState.
+- **Runtime integration** (`lib/lite-agent.js`): `configureToolRuntime` + `runCapabilityFacts` — calculator runs through the shared read-only executor (package-gated, audited, deadline-bounded); identical computed facts into the evidence packet.
+- **Operator inspection**: `scripts/validate-package.js`, `scripts/inspect-package.js`, `/health` `buildEnv.package` + `recentActions`.
+- **Deploy**: `manual-deploy-dev.js` whitelists `data/packages/`; swap mkdir -ps nested parents (fixed after first failed swap, rollback restored cleanly).
+
+**Verification:** suite 1513/1513; DEV deploy `72d59e2` verified live (`/health` → `legacy-knowledge` package mode — backward-compat bare-knowledge path); general + rivera modes boot-verified locally.
+
+**PR #33:** open to `develop`. Next: review → merge → staging mirror → release PR to master.
 
 ---
 
