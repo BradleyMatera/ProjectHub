@@ -93,6 +93,12 @@ const SCOUT_AGENT_MODE = process.env.SCOUT_AGENT_MODE || (SCOUT_AGENT_ENGINE_ENA
 const DIRECT_KB_ENABLED = process.env.SCOUT_DIRECT_KB_ENABLED === 'true';
 const FEATURE_PREVIEW_ENABLED = process.env.FEATURE_PREVIEW_ENABLED === 'true';
 const KNOWLEDGE_FILE = path.join(__dirname, process.env.KNOWLEDGE_FILE || 'data/recruiter-knowledge.json');
+const { loadDomainPackage, isCapabilityAllowed } = require('./lib/domain-package');
+// SCOUT_DOMAIN_PACKAGE selects the runtime's domain package: a .package.json
+// path, a bare knowledge file (legacy), or 'general' for General Scout mode.
+const SCOUT_PACKAGE_SOURCE = process.env.SCOUT_DOMAIN_PACKAGE || KNOWLEDGE_FILE;
+let domainPackageManifest = null;
+let domainPackageWarnings = [];
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 
 // Build provenance — set by the deploy script into data/deploy-source.json
@@ -235,7 +241,14 @@ app.get('/health', async (req, res) => {
       cloudflareModel: inferenceHealth.cloudflareModel,
       localFallbackModel: inferenceHealth.localFallbackModel,
       deadlineMs: inferenceHealth.requestDeadlineMs,
-      generationTimeoutMs: inferenceHealth.generationTimeoutMs
+      generationTimeoutMs: inferenceHealth.generationTimeoutMs,
+      package: domainPackageManifest ? {
+        id: domainPackageManifest.id,
+        name: domainPackageManifest.name,
+        mode: domainPackageManifest.id === 'general-scout' ? 'general' : 'domain',
+        legacy: Boolean(domainPackageManifest.legacy),
+        warnings: domainPackageWarnings.length
+      } : null
     },
     uptimeSeconds: Math.floor(process.uptime()),
     // This-restart stats
@@ -535,7 +548,15 @@ async function fetchKnowledge() {
     return knowledgeCache;
   }
   try {
-    const json = JSON.parse(fs.readFileSync(KNOWLEDGE_FILE, 'utf8'));
+    const pkgResult = loadDomainPackage(SCOUT_PACKAGE_SOURCE, { baseDir: __dirname });
+    if (!pkgResult.ok) {
+      console.error('[domain-package] load failed:', pkgResult.errors.map(e => `${e.path}: ${e.message}`).join('; '));
+      return knowledgeCache; // fail closed — keep the last valid package
+    }
+    domainPackageManifest = pkgResult.manifest;
+    domainPackageWarnings = pkgResult.warnings;
+    for (const w of pkgResult.warnings) console.warn(`[domain-package] WARN ${w.path}: ${w.message}`);
+    const json = pkgResult.knowledge || {};
 
     // Rebuild the BM25 index FIRST so no concurrent call can return a
     // knowledgeCache while ragChunks/bm25Index are still null. Then publish
