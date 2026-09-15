@@ -46,13 +46,16 @@ const runtimeInputs = [
   'data/free-tier-limits.json',
   'data/recruiter-knowledge.json',
   'data/scout-runtime-knowledge.json',
-  'data/scout-identity.json'
+  'data/scout-identity.json',
+  'data/packages/recruiter-alpha.package.json',
+  'data/packages/rivera-home-electric.package.json',
+  'data/packages/northstar-desk.package.json'
 ];
 const files = new Map();
 const dependencies = new Set();
 function collect(file) {
   if (files.has(file)) return;
-  if (!/^(server-gemini\.js|lib\/[a-z0-9-]+\.js|data\/[a-z0-9-]+\.json)$/.test(file)) {
+  if (!/^(server-gemini\.js|lib\/[a-z0-9-]+\.js|data\/[a-z0-9-]+\.json|data\/packages\/[a-z0-9-]+\.package\.json)$/.test(file)) {
     throw new Error(`Unaudited runtime path: ${file}`);
   }
   const entry = git(['ls-tree', commitSha, '--', file]);
