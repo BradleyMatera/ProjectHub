@@ -1,0 +1,41 @@
+{
+  "review": {
+    "id": 5192385924,
+    "reviewedCommit": "4ed431c",
+    "reviewer": "copilot-pull-request-reviewer",
+    "state": "COMMENTED",
+    "verdict": "COMMENTED (no changes recommended)",
+    "filesReviewed": "64/68",
+    "visibleComments": 0,
+    "suppressedFindings": 2
+  },
+  "findings": [
+    {
+      "n": 1,
+      "source": "suppressed",
+      "file": "package.json:1",
+      "issue": "Pinned playwright 1.62.1 'very likely not a published release'.",
+      "reproduction": "npm view playwright@1.62.1 version -> 1.62.1 (published and installable; CI install step passed).",
+      "classification": "FALSE_POSITIVE",
+      "fix": "none"
+    },
+    {
+      "n": 2,
+      "source": "suppressed",
+      "file": "lib/source-preparation.js:21",
+      "issue": "String-pronoun fallback parsed only the subject token and defaulted object/possessive to them/their — incorrect if ever reached for 'she/her'; getSubjectPronouns already normalizes string forms, so the branch was dead code with wrong semantics.",
+      "reproduction": "code inspection — getSubjectPronouns always returns an object post-normalization, so the string branch could only mis-serve if ever triggered.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "removed the dead string branch; normalizeSourceVoice reads the normalized object directly",
+      "tests": ["review-5192195572 P10"]
+    }
+  ],
+  "summary": {
+    "total": 2,
+    "confirmedBug": 1,
+    "falsePositive": 1,
+    "alreadyFixed": 0,
+    "regressionSuite": "test/review-5192195572.test.js (14 tests, all passing)",
+    "deterministicFloor": "1376/1376"
+  }
+}

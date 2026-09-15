@@ -12,6 +12,7 @@ const { buildRagChunks } = require('./lib/rag-chunks');
 const { BM25Index } = require('./lib/bm25');
 const { understandQuery, classifyTopic, isRelevant, normalizeQuery } = require('./lib/query-understanding');
 const { searchBm25WithRrf } = require('./lib/rrf');
+const { buildSemanticPlan, planTurn, buildSemanticCacheKey } = require('./lib/semantic-plan');
 const { executeAgentTool, getAgentToolDefinitions, selectAgentToolNames } = require('./lib/agent-tools');
 const { buildLocalConversationMemory, extractCompleteSentences, validateLocalConversationReply } = require('./lib/local-conversation');
 const { findDirectAnswer } = require('./lib/knowledge-access');
@@ -340,11 +341,15 @@ app.get('/api/retrieve', async (req, res) => {
     const knowledge = await fetchKnowledge();
     if (!knowledge) return res.json({ ok: false, error: 'Knowledge not loaded' });
     const history = req.query.h ? JSON.parse(req.query.h) : [];
-    const understood = understandQuery(q, history, ragChunks || buildRagChunks(knowledge));
+    // Same resolve→plan→legs pipeline as /api/chat. This endpoint has no
+    // persisted session state; discourse state is derived from the supplied
+    // history only.
+    const { resolvedQuestion: resolvedQ, plan: semanticPlan } = planTurn({
+      question: q, history, knowledge
+    });
+    const understood = understandQuery(resolvedQ || q, history, ragChunks || buildRagChunks(knowledge), knowledge, { plan: semanticPlan });
     const bm25Results = bm25Index
-      ? (history.length > 0
-          ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 6)
-          : bm25Index.search(understood.rewritten, 6))
+      ? searchBm25WithRrf(bm25Index, understood.legs, 6)
       : [];
     const legacyResults = retrieveChunks(q, ragChunks || buildRagChunks(knowledge), 6);
     res.json({
@@ -353,8 +358,16 @@ app.get('/api/retrieve', async (req, res) => {
       rewritten: understood.rewritten,
       normalized: understood.normalized,
       intent: understood.intent,
-      retrievalMethod: history.length > 0 ? 'local-bm25-rrf' : 'local-bm25',
-      bm25: bm25Results.map(r => ({ tag: r.tag, text: r.text.slice(0, 120), score: r.score, ranks: r.rrfRanks })),
+      plan: {
+        topicContinuity: semanticPlan.topicContinuity,
+        continuationType: semanticPlan.continuationType,
+        topicShift: semanticPlan.topicShift,
+        activeEntity: semanticPlan.activeEntity,
+        requestedFacet: semanticPlan.requestedFacet,
+        legs: (understood.legs || []).map(l => l.name)
+      },
+      retrievalMethod: 'local-bm25-rrf',
+      bm25: bm25Results.map(r => ({ tag: r.tag, text: r.text.slice(0, 120), score: r.score, ranks: r.rrfRanks, legs: r.legs, selectedBecause: r.selectedBecause })),
       legacy: legacyResults.map(r => ({ tag: r.tag, text: r.text.slice(0, 120), score: r.score })),
     });
   } catch (e) {
@@ -573,25 +586,30 @@ async function fetchKnowledge() {
         assistantNames: [assistantName],
         projectNames
       });
-      // Configure completeness-check with subject names
+      // Configure completeness-check with subject names and pronouns
       try {
         const completenessCheck = require('./lib/completeness-check');
         completenessCheck.configureSubjectNames([...subjectParts, ...aliases]);
+        completenessCheck.configureSubjectPronouns(json);
       } catch (e) {
         console.error('[completeness-check] Configuration failed:', e.message);
       }
       // Configure grounding-validator stopwords with subject names
       try {
         const groundingValidator = require('./lib/grounding-validator');
-        groundingValidator.configureStopwords([...subjectParts, ...aliases]);
+        const gvPr = knowledgeAccess.getSubjectPronouns(json) || {};
+        groundingValidator.configureStopwords([...subjectParts, ...aliases,
+          gvPr.subject, gvPr.object, gvPr.possessive].filter(Boolean));
         groundingValidator.configureAssistantName(assistantName);
       } catch (e) {
         console.error('[grounding-validator] Configuration failed:', e.message);
       }
-      // Configure local-conversation stopwords with subject names
+      // Configure local-conversation stopwords with subject names and pronouns
       try {
         const localConversation = require('./lib/local-conversation');
-        localConversation.configureStopwords([...subjectParts, ...aliases]);
+        const lcPr = knowledgeAccess.getSubjectPronouns(json) || {};
+        localConversation.configureStopwords([...subjectParts, ...aliases,
+          lcPr.subject, lcPr.object, lcPr.possessive].filter(Boolean));
       } catch (e) {
         console.error('[local-conversation] Configuration failed:', e.message);
       }
@@ -599,6 +617,7 @@ async function fetchKnowledge() {
       try {
         const queryUnderstanding = require('./lib/query-understanding');
         queryUnderstanding.configureSubjectNames([...subjectParts, ...aliases]);
+        queryUnderstanding.configureSubjectPronouns(json);
       } catch (e) {
         console.error('[query-understanding] Configuration failed:', e.message);
       }
@@ -863,7 +882,8 @@ function buildPrompt(knowledge, question, history, provider) {
   const pronouns = knowledgeAccess.getSubjectPronouns(knowledge);
   const subj = pronouns.subject || 'they';
   const poss = pronouns.possessive || 'their';
-  let context = `You are ${assistantName}, the assistant for ${name}. You're an approachable recruiter-side helper in a chat widget on the portfolio site. You answer questions about ${name} from verified facts. You are NOT ${name}, but you represent them honestly and warmly.\n\n`;
+  const audienceFrame = knowledge?.agent?.audience ? `${knowledge.agent.audience}-side` : 'site';
+  let context = `You are ${assistantName}, the assistant for ${name}. You're an approachable ${audienceFrame} helper in a chat widget on the site. You answer questions about ${name} from verified facts. You are NOT ${name}, but you represent them honestly and warmly.\n\n`;
   context += `${name} is a ${title} based in ${location}. They go by ${preferredName}.\n\n`;
 
   // RAG context — shared with the grounded fallback so answers stay aligned
@@ -933,24 +953,18 @@ function retrieveChunks(question, chunks, k = 5) {
 // Local retrieval uses query understanding (typo correction, intent detection,
 // contextual rewrite) and RRF-fused BM25 views, with a substring scorer as the
 // safe fallback. All retrieval remains local and dependency-free.
-async function retrieveWithBM25(question, history, k = 6) {
+async function retrieveWithBM25(question, history, k = 6, sessionState = null) {
   if (!USE_BM25_RETRIEVAL || !bm25Index || !ragChunks) {
     return retrieveChunks(question, ragChunks || buildRagChunks(knowledgeCache || {}), k);
   }
-  // Query understanding: normalize, correct typos, contextual rewrite
-  const understood = understandQuery(question, history, ragChunks);
-
-  // Fuse literal, alias-expanded, and conversation-aware BM25 rankings. The
-  // literal view preserves an explicit subject such as COBOL while the context
-  // view contributes relevant learning/debugging evidence from prior turns.
-  const bm25Results = Array.isArray(history) && history.length > 0
-    ? searchBm25WithRrf(
-        bm25Index,
-        [understood.normalized, understood.expanded, understood.rewritten],
-        k,
-        { smoothing: 60 }
-      )
-    : bm25Index.search(understood.rewritten, k);
+  // Structured semantic plan + per-leg retrieval, via the shared
+  // resolve→plan pipeline. History contributes only resolved referents —
+  // never raw prior-turn words.
+  const { resolvedQuestion: resolvedQ, plan: semanticPlan } = planTurn({
+    question, history, knowledge: knowledgeCache, sessionState
+  });
+  const understood = understandQuery(resolvedQ || question, history, ragChunks, knowledgeCache, { plan: semanticPlan });
+  const bm25Results = searchBm25WithRrf(bm25Index, understood.legs, k, { smoothing: 60 });
 
   if (bm25Results.length === 0) {
     return retrieveChunks(question, ragChunks, k);
@@ -974,7 +988,12 @@ async function callGenerativeRag(knowledge, question, groundedReply, history, ti
   const pronouns = require('./lib/knowledge-access').getSubjectPronouns(knowledge);
   const pronounSubj = pronouns.subject || 'they';
   const pronounPoss = pronouns.possessive || 'their';
-  const system = `A recruiter is asking about a job candidate named ${subjectName}. You are ${agentName}, ${agentPersona}. You are not ${subjectName}. Use ONLY the verified facts below to answer.\n\nVerified facts: ${truncateWords(source, 180)}${memory.stance ? `\n\nPrior stance to preserve: ${memory.stance}` : ''}\n\nCore behavior:\n- Answer the actual question directly and naturally.\n- Remember recent turns, resolve pronouns, and preserve the prior stance.\n- For a follow-up, build on the prior verified answer without repeating it word-for-word.\n- Every factual claim must directly paraphrase a verified fact. Never invent a contrast, cause, method, benefit, or work habit.\n- If a requested fact is unavailable, say that briefly and give the closest verified information.\n- Third person only (${pronounSubj}/${pronounPoss}).\n- Use one or two concise, complete sentences ending in punctuation.\n- Sound warm and conversational, not like a resume or sales pitch.\n- Never start with "Certainly", "Absolutely", "Great question", "As an AI", or "I would be happy".\n- Never add facts, employers, degrees, metrics, or years of experience not listed above.\n- Do not overstate the experience level beyond what the verified facts support.`;
+  const askerAudience = knowledge?.agent?.audience || 'user';
+  const subjectRole = knowledge?.agent?.subjectRole;
+  const askerFrame = subjectRole
+    ? `A ${askerAudience} is asking about a ${subjectRole} named ${subjectName}.`
+    : `A ${askerAudience} is asking about ${subjectName}.`;
+  const system = `${askerFrame} You are ${agentName}, ${agentPersona}. You are not ${subjectName}. Use ONLY the verified facts below to answer.\n\nVerified facts: ${truncateWords(source, 180)}${memory.stance ? `\n\nPrior stance to preserve: ${memory.stance}` : ''}\n\nCore behavior:\n- Answer the actual question directly and naturally.\n- Remember recent turns, resolve pronouns, and preserve the prior stance.\n- For a follow-up, build on the prior verified answer without repeating it word-for-word.\n- Every factual claim must directly paraphrase a verified fact. Never invent a contrast, cause, method, benefit, or work habit.\n- If a requested fact is unavailable, say that briefly and give the closest verified information.\n- Third person only (${pronounSubj}/${pronounPoss}).\n- Use one or two concise, complete sentences ending in punctuation.\n- Sound warm and conversational, not like a resume or sales pitch.\n- Never start with "Certainly", "Absolutely", "Great question", "As an AI", or "I would be happy".\n- Never add facts, employers, degrees, metrics, or years of experience not listed above.\n- Do not overstate the experience level beyond what the verified facts support.`;
   const user = memory.text ? `${memory.text}\nUser: ${truncateWords(question, 40)}\n${agentName}:` : truncateWords(question, 40);
 
   const controller = new AbortController();
@@ -1424,11 +1443,16 @@ app.post('/api/client-packet', async (req, res) => {
     const history = getConversationHistory(sessionId, req.body.history);
     const convState = sessionState.getState(sessionId);
 
-    // BM25 retrieval
+    // BM25 retrieval through the same resolve→plan→legs pipeline as
+    // /api/chat. No persisted session state here; discourse state is derived
+    // from the supplied history.
     const chunks = ragChunks || buildRagChunks(knowledge);
-    const understood = understandQuery(userMessage, history, chunks);
+    const { resolvedQuestion: clientResolved, plan: clientPlan } = planTurn({
+      question: userMessage, history, knowledge
+    });
+    const understood = understandQuery(clientResolved || userMessage, history, chunks, knowledge, { plan: clientPlan });
     const bm25Results = bm25Index
-      ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 5)
+      ? searchBm25WithRrf(bm25Index, understood.legs, 5)
       : [];
     const evidence = bm25Results.map(r => ({
       kind: r.tag, name: '', description: r.text, evidenceScore: r.rrfScore
@@ -1620,6 +1644,9 @@ app.post('/api/chat', async (req, res) => {
   let policy = { mode: 'UNKNOWN' };
   let resolvedMessage = '';
   let queryRewritten = false;
+  let rewriteDebug = null;
+  let semanticPlan = null;
+  let retrievalLegsUsed = [];
   let evidence = [];
   let agentMeta = null;
   let contractSummary = null;
@@ -1648,15 +1675,58 @@ app.post('/api/chat', async (req, res) => {
             id: `${e.kind || 'evidence'}-${i + 1}`,
             kind: e.kind || null,
             name: e.name || '',
-            snippet: (e.description || '').slice(0, 120)
+            snippet: (e.description || '').slice(0, 120),
+            selectedBecause: e.selectedBecause || null,
+            legs: Array.isArray(e.legs) ? e.legs.map(l => ({ leg: l.leg, rank: l.rank })) : []
           })),
+          semanticPlan: semanticPlan ? {
+            literalQuestion: semanticPlan.literalQuestion,
+            resolvedQuestion: semanticPlan.resolvedQuestion,
+            subject: semanticPlan.subject,
+            activeEntity: semanticPlan.activeEntity,
+            activeEntitySource: semanticPlan.activeEntitySource,
+            priorActiveEntity: semanticPlan.priorActiveEntity,
+            entityType: semanticPlan.entityType,
+            requestedFacet: semanticPlan.requestedFacet,
+            requestedRelation: semanticPlan.requestedRelation,
+            requestedTopic: semanticPlan.requestedTopic,
+            requestedRole: semanticPlan.requestedRole,
+            continuationType: semanticPlan.continuationType,
+            topicShift: semanticPlan.topicShift,
+            topicShiftReason: semanticPlan.topicShiftReason,
+            topicContinuity: semanticPlan.topicContinuity,
+            explicitEntities: semanticPlan.explicitEntities,
+            retrievalLegs: retrievalLegsUsed
+          } : null,
           agentMeta,
           pipeline: pipeline.slice(),
           latencyMs: Date.now() - reqStart,
           deadlineFired,
           failureStage: obj.error ? (obj.failureStage || 'UNKNOWN') : null,
           generationCalls: agentMeta?.generationCalls || [],
-          proseSource: obj.proseSource || null
+          proseSource: obj.proseSource || null,
+          discourse: (() => {
+            const frame = sessionState.getState(sessionId)?.discourseFrame;
+            if (!frame) return null;
+            return {
+              frame: {
+                intent: frame.intent || null,
+                subject: frame.subject || null,
+                createdAtTurn: frame.createdAtTurn ?? null,
+                updatedAtTurn: frame.updatedAtTurn ?? null
+              },
+              alternatives: (frame.alternatives || []).map(a => ({
+                name: a.name,
+                type: a.type || 'unknown',
+                source: a.source || 'user',
+                turnIndex: a.turnIndex ?? null,
+                confidence: a.confidence || null,
+                active: a.active !== false
+              })),
+              resolvedSet: rewriteDebug?.referentContext || null,
+              resolutionReason: rewriteDebug?.referentType || null
+            };
+          })()
         };
       }
       return origJson(obj);
@@ -1722,23 +1792,58 @@ app.post('/api/chat', async (req, res) => {
     // Classify the conversational act FIRST. Greetings, small talk, request-to-say,
     // and clarification do not require candidate evidence and must not be rewritten
     // into candidate queries by anaphora resolution.
-    const NO_RETRIEVAL_MODES = new Set(['GREETING', 'USER_PROFILE_UPDATE', 'USER_PROFILE_QUERY', 'THANKS', 'FAREWELL', 'HELP', 'CONVERSATIONAL', 'SMALL_TALK', 'REQUEST_TO_SAY', 'CLARIFY_PREVIOUS_ASSISTANT']);
-    policy = classifyResponsePolicy(userMessage, history, knowledge);
+    const NO_RETRIEVAL_MODES = new Set(['GREETING', 'USER_PROFILE_UPDATE', 'USER_PROFILE_QUERY', 'THANKS', 'FAREWELL', 'HELP', 'CONVERSATIONAL', 'SMALL_TALK', 'REQUEST_TO_SAY', 'CLARIFY_PREVIOUS_ASSISTANT', 'CLARIFICATION']);
+    policy = classifyResponsePolicy(userMessage, history, knowledge, preGenerationState);
 
     if (SCOUT_AGENT_ENGINE_ENABLED && !NO_RETRIEVAL_MODES.has(policy.mode)) {
       const rewrite = rewriteQuery(userMessage, preGenerationState, knowledge, history);
+      rewriteDebug = rewrite;
       if (rewrite && rewrite.rewritten_ && rewrite.rewritten !== userMessage) {
         resolvedMessage = rewrite.rewritten;
         queryRewritten = true;
         pipeline.push('query-rewrite');
       }
-      policy = classifyResponsePolicy(resolvedMessage, history, knowledge);
+      policy = classifyResponsePolicy(resolvedMessage, history, knowledge, preGenerationState);
     }
     pipeline.push(`policy:${policy.mode}`);
     // expose policy for diagnostics
     policy = Object.assign({}, policy);
 
-    const cacheKey = normalizeQuery(resolvedMessage, knowledge);
+    // Commit the current turn's semantic discourse state (frame + alternatives)
+    // for the NEXT turn — server-owned, user-sourced, never assistant-derived.
+    // Runs before cache/direct-KB early returns so a cache-hit turn still
+    // contributes its semantic state to the session.
+    sessionState.commitDiscourseTurn(sessionId, userMessage, policy, knowledge);
+
+    // One structured semantic plan for the turn. Current-turn semantics are
+    // explicit and outrank stale conversational topic context; history may
+    // contribute only resolved referents, never raw prior-turn words.
+    const planned = planTurn({
+      question: userMessage,
+      resolvedQuestion: resolvedMessage,
+      history,
+      knowledge,
+      sessionState: preGenerationState,
+      policy,
+      resolution: rewriteDebug
+    });
+    semanticPlan = planned.plan;
+
+    // Semantic cache key: resolved question + CURRENT target entity +
+    // requested facet/role — distinct semantic plans must not share an
+    // answer entry, and historical entities never enter the key. Fields are
+    // appended only when present so plain questions keep their canonical key.
+    const cacheKey = buildSemanticCacheKey({
+      plan: semanticPlan,
+      resolvedQuestion: resolvedMessage,
+      normalize: q2 => normalizeQuery(q2, knowledge)
+    });
+    // Arithmetic-bearing questions must not share a cache entry:
+    // normalizeQuery strips operator characters, so "3 - 5" and "-3 + 5"
+    // would collapse to the same key and serve each other's computed answer.
+    const exprKeyed = /[-+*/%^×÷−]/.test(resolvedMessage)
+      ? `${cacheKey}|expr:${resolvedMessage.trim().toLowerCase().replace(/\s+/g, ' ')}`
+      : cacheKey;
 
     // Direct KB short-circuit (opt-in): if the question matches a non-adversarial
     // directAnswer record, return it immediately. RAG-first mode keeps this OFF so
@@ -1778,7 +1883,7 @@ app.post('/api/chat', async (req, res) => {
         contract: directContract
       };
       if (!hasHistory && !gateDebug) {
-        responseCache.set(cacheKey, { ts: Date.now(), payload: directPayload });
+        responseCache.set(exprKeyed, { ts: Date.now(), payload: directPayload });
       }
       rememberConversation(sessionId, userMessage, directReply);
       sessionState.updateState(sessionId, userMessage, directReply, knowledge, null);
@@ -1788,7 +1893,7 @@ app.post('/api/chat', async (req, res) => {
       }
     }
 
-    const cached = !hasHistory && !gateDebug ? responseCache.get(cacheKey) : null;
+    const cached = !hasHistory && !gateDebug ? responseCache.get(exprKeyed) : null;
     if (cached && (Date.now() - cached.ts) < RESPONSE_CACHE_MS) {
       clearTimeout(deadlineTimer);
       pipeline.push('cache-hit');
@@ -1829,9 +1934,12 @@ app.post('/api/chat', async (req, res) => {
       try {
         // Retrieve evidence via BM25 for the agent context packet.
         // Retrieval is always performed; the agent decides whether to use it.
-        const understood = understandQuery(resolvedMessage, history, ragChunks || buildRagChunks(knowledge));
+        // Legs come from the semantic plan: literal + resolved current turn,
+        // plus entity/facet or alternatives legs only for genuine continuations.
+        const understood = understandQuery(resolvedMessage, history, ragChunks || buildRagChunks(knowledge), knowledge, { plan: semanticPlan });
+        retrievalLegsUsed = (understood.legs || []).map(l => l.name);
         const _bm25Results = bm25Index
-          ? searchBm25WithRrf(bm25Index, [understood.normalized, understood.expanded, understood.rewritten], 10)
+          ? searchBm25WithRrf(bm25Index, understood.legs, 10)
           : [];
         evidence = _bm25Results.map(r => ({
           kind: r.tag || r.chunk?.kind || 'evidence',
@@ -1841,7 +1949,9 @@ app.post('/api/chat', async (req, res) => {
           skills: r.chunk?.skills || [],
           category: r.chunk?.category || null,
           url: r.chunk?.url || null,
-          evidenceScore: r.rrfScore || r.score
+          evidenceScore: r.rrfScore || r.score,
+          legs: r.legs || [],
+          selectedBecause: r.selectedBecause || null
         })).filter(e => e.description);
 
         // Get server-owned structured conversation state (now includes any just-
@@ -1852,6 +1962,7 @@ app.post('/api/chat', async (req, res) => {
         // Policy contract from classifyResponsePolicy is injected to guide generation
         const policyContract = {
           mode: policy.mode,
+          policyMode: policy.mode,
           ...policy,
         };
         delete policyContract.contract; // flatten — no nested contract object
@@ -2109,7 +2220,7 @@ app.post('/api/chat', async (req, res) => {
     if (agentMeta) payload.agent = agentMeta;
     if (agentEvents) payload.agentEvents = agentEvents;
     if (!hasHistory && !gateDebug) {
-      responseCache.set(cacheKey, { ts: Date.now(), payload });
+      responseCache.set(exprKeyed, { ts: Date.now(), payload });
       if (responseCache.size > RESPONSE_CACHE_LIMIT) {
         responseCache.delete(responseCache.keys().next().value);
       }

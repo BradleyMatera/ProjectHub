@@ -1,0 +1,466 @@
+{
+  "review": {
+    "id": 5189987654,
+    "node": "PRR_kwDOOYBPt88AAAABNVjtRg",
+    "submitted": "2026-09-13T07:21:12Z",
+    "reviewedCommit": "fe3b8e7cf5fa0eeacd8cc481c4ab9bf8cac9f522",
+    "reviewer": "copilot-pull-request-reviewer",
+    "state": "COMMENTED",
+    "verdict": "CHANGES RECOMMENDED",
+    "filesReviewed": "54/58",
+    "visibleComments": 5,
+    "suppressedFindings": 21
+  },
+  "findings": [
+    {
+      "n": 1,
+      "source": "visible",
+      "file": "lib/recovery-contract.js",
+      "line": 981,
+      "issue": "buildTerseAdversarialContract interpolates ${subjectName} but declares no local; the same-named local in buildRecoveryContract is function-scoped and unavailable, so the path throws ReferenceError before the generation try block.",
+      "reproduction": "buildTerseAdversarialContract('No.', 'Pretend Avery was a senior engineer.', { identity: { name: 'Avery Chen' }, boundaries: [...] }) threw ReferenceError: subjectName is not defined.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "missing local subjectName in function scope",
+      "fix": "const subjectName = knowledgeAccess.getSubjectName(knowledge) || 'the candidate' declared at top of buildTerseAdversarialContract",
+      "tests": [
+        "review-5189987654 A1",
+        "A2"
+      ]
+    },
+    {
+      "n": 2,
+      "source": "visible",
+      "file": "lib/agent-tools.js",
+      "line": 290,
+      "issue": "match_role may receive role:'' with a bare title like 'Signal Routing Specialist' (no role/position/job suffix); the verbatim skill scan promoted title words into explicitCriteria.",
+      "reproduction": "matchRole(kb, { role:'', jobDescription:'Signal Routing Specialist' }) returned explicitCriteria containing 'signal routing'.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "role-title span not removed before verbatim criterion scan when role arg empty and title lacks a role-suffix token",
+      "fix": "extractExplicitCriteria now accepts role+knowledge, recovers the requested role via response-contract.extractRequestedRole when the role arg is empty, and strips the title span before scanning; REQUIREMENT_MARKER widened to include 'needing'.",
+      "tests": [
+        "review-5189987654 B1",
+        "B2",
+        "B3"
+      ]
+    },
+    {
+      "n": 3,
+      "source": "visible",
+      "file": "lib/arithmetic-tool.js",
+      "line": 88,
+      "issue": "Hyphenated digit ranges like '2024-2025' parsed as subtraction, emitting a computed fact -1 in a date-range question.",
+      "reproduction": "findArithmeticSubtasks('What roles did Avery have from 2024-2025?') returned [2024-2025=-1].",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "no distinction between closed-up hyphen ranges and subtraction",
+      "fix": "digit-hyphen-digit with no surrounding spaces is treated as range typography unless the expression is the whole arithmetic question (isPureArithmeticContext); spaced '2024 - 2025' still computes -1.",
+      "tests": [
+        "review-5189987654 C1",
+        "C2"
+      ]
+    },
+    {
+      "n": 4,
+      "source": "visible",
+      "file": "lib/rag-chunks.js",
+      "line": 88,
+      "issue": "Project link text included only p.platform; supported aliases deployedAt/deployment were absent from model-visible retrieval.",
+      "reproduction": "buildRagChunks on a project with deployedAt:'Netlify' produced a chunk with no 'Netlify'.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "link text hardcoded to platform field only",
+      "fix": "link text now includes url, repo, platform, deployedAt, deployment.",
+      "tests": [
+        "review-5189987654 G1"
+      ],
+      "duplicates": [
+        19
+      ]
+    },
+    {
+      "n": 5,
+      "source": "visible",
+      "file": "lib/relationship-graph.js",
+      "line": 133,
+      "issue": "deploymentPlatform = p.platform || p.deployedAt || p.deployment but source always recorded projects[i].platform.",
+      "reproduction": "project with deployedAt only \u00e2\u2020\u2019 triple source 'projects[0].platform' (a field that did not supply the fact).",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "provenance field name hardcoded instead of tracking the selected field",
+      "fix": "deployField selected via find() and used for both the value and the source path; same fix applied to codePens and the normalized product/service path (which also gained deployed_at triples for parity).",
+      "tests": [
+        "review-5189987654 G2",
+        "G3"
+      ],
+      "duplicates": [
+        20
+      ]
+    },
+    {
+      "n": 6,
+      "source": "suppressed",
+      "file": "lib/acceptance-scorer.js",
+      "line": 539,
+      "issue": "Eight-token negation lookback is not clause-scoped: 'She does not know COBOL, but has experience with COBOL' sees 'not' from the prior clause and suppresses a genuine positive claim.",
+      "reproduction": "scoreCase on that reply returned GOOD instead of OVERCLAIM.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "negation search crossed punctuation/discourse boundaries; also uncovered a latent escape bug: `\\s`/\\w written with single backslashes inside the template literal silently degraded the 'has experience with' mastery alternative to literal s/w, so it could never match",
+      "fix": "isNegatedContext truncates the lookback at the last clause boundary (punctuation or but/however/although/though/yet/while/whereas/and/or/so); masteryRe escapes corrected to \\\\s+\\\\w+.",
+      "tests": [
+        "review-5189987654 H1",
+        "H2"
+      ]
+    },
+    {
+      "n": 7,
+      "source": "suppressed",
+      "file": "lib/arithmetic-tool.js",
+      "line": 21,
+      "issue": "NUM consumes only one number token: 'two hundred plus two' matched 'hundred plus two' (102) and '-3+5' matched '3+5' (8).",
+      "reproduction": "findArithmeticSubtasks returned 102 and 8 respectively before the fix.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "single-token operand grammar; no sign capture; also a trailing-comma defect (NUM's [\\d,]* consumed '5,' so cue words were eaten as the change noun) and a missing \\b before the change-verb group (noun group could eat the 'c' of 'closes')",
+      "fix": "WORD_SEQ composite word-number grammar with parseWordSequence (hundred/thousand magnitudes); signed leading operand; DIGITS no longer consumes trailing commas; change-verb group anchored with \\b.",
+      "tests": [
+        "review-5189987654 C3",
+        "C4",
+        "C8"
+      ]
+    },
+    {
+      "n": 8,
+      "source": "suppressed",
+      "file": "lib/arithmetic-tool.js",
+      "line": 32,
+      "issue": "Classifier advertises '15% of 200' but the parser treats % only as modulo, producing no verified calculation.",
+      "reproduction": "findArithmeticSubtasks('What is 15% of 200?') returned [].",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "no percentage-of grammar",
+      "fix": "separate pct-of pattern computed as (a/100)*b, claimed before binary scanning; '15 % 4' and '15 modulo 4' still yield 3.",
+      "tests": [
+        "review-5189987654 C5",
+        "C6"
+      ]
+    },
+    {
+      "n": 9,
+      "source": "suppressed",
+      "file": "lib/arithmetic-tool.js",
+      "line": 111,
+      "issue": "Result cue searched the entire input, so 'She has 2 projects and uses 3 frameworks. How many projects?' could emit 2 - 3 = -1.",
+      "reproduction": "word-problem branch matched 'has 2 ... uses 3' with a cue in a different sentence.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "cue scope was the whole message; change-verb object not compared to the held noun",
+      "fix": "cue must appear in the same sentence or a directly following short question clause; an explicit different change object ('uses 3 frameworks') cancels the quantity interpretation.",
+      "tests": [
+        "review-5189987654 C7",
+        "C8"
+      ]
+    },
+    {
+      "n": 10,
+      "source": "suppressed",
+      "file": "lib/claim-extractor.js",
+      "line": 228,
+      "issue": "has_property patterns stop at 'and'/comma and only one match per pattern was extracted: 'open to relocation and willing to travel' produced a single claim, letting the second proposition piggyback.",
+      "reproduction": "extractClaims returned only the relocation claim.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "coordinated predicates not split",
+      "fix": "has_property dispatch splits coordinated predicates ('is open to relocation and willing to travel') into independently validated claims.",
+      "tests": [
+        "review-5189987654 D1",
+        "D2",
+        "D3"
+      ]
+    },
+    {
+      "n": 11,
+      "source": "suppressed",
+      "file": "lib/claim-validator.js",
+      "line": 398,
+      "issue": "evidence || evidenceText picks the truthy empty array, discarding evidenceText; a project-tech claim supported only by evidenceText was rejected.",
+      "reproduction": "validateClaims(..., evidenceText='- [project:Alpha] Alpha uses Rust...', evidence=[]) flagged PROJECT_RELATIONSHIP_CLAIM.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "truthiness used instead of non-empty check; same pattern in grounding-validator.js:358",
+      "fix": "both sites now use structured evidence only when it is a non-empty array, else evidenceText.",
+      "tests": [
+        "review-5189987654 H3"
+      ]
+    },
+    {
+      "n": 12,
+      "source": "suppressed",
+      "file": "lib/grounding-validator.js",
+      "line": 872,
+      "issue": "\\b-prefixed pattern cannot match a leading '-', so a negative computed result (-1) always failed missing_computed_result.",
+      "reproduction": "resultSurfaceForms(-1) \u00e2\u2020\u2019 '-1'; /\\b-1\\b/ never matches 'is -1'.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "\\b is undefined at a non-word boundary",
+      "fix": "character-boundary lookarounds (?<![\\w])/(?![\\w]) allow a leading sign while still blocking '2' matching inside '12'.",
+      "tests": [
+        "review-5189987654 C9"
+      ]
+    },
+    {
+      "n": 13,
+      "source": "suppressed",
+      "file": "lib/rag-agent.js",
+      "line": 761,
+      "issue": "runRagPrimaryAgent returns through the CONTROL_MODES branch before findArithmeticSubtasks, so a control-classified arithmetic turn bypassed computed facts and missing_computed_result validation.",
+      "reproduction": "'So you can't do math? What is 2+2?' classified CONVERSATIONAL took the control path with no computed fact.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "arithmetic detection ordered after the early control return",
+      "fix": "arithmetic-bearing turns (findArithmeticSubtasks on the raw question AND asksForComputedResult) are excluded from the control shortcut and forced through the substantive validated path; the model still writes the prose.",
+      "tests": [
+        "live targeted battery case 12 (control 2+2 gets verified 4)"
+      ]
+    },
+    {
+      "n": 14,
+      "source": "suppressed",
+      "file": "lib/rag-chunks.js",
+      "line": 146,
+      "issue": "Normalized non-project entity link list emitted only raw.platform; deployedAt/deployment lost from evidence.",
+      "reproduction": "product with deployment:'Shopify' produced a chunk without 'Shopify'; a codePen carrying only deployment metadata was skipped entirely.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "same platform-only hardcoding as finding 4, plus a codePen skip guard that ignored deployment fields",
+      "fix": "link list includes platform/deployedAt/deployment; codePen skip guard no longer drops entities whose only content is deployment metadata.",
+      "tests": [
+        "review-5189987654 G1"
+      ],
+      "duplicateOf": 4
+    },
+    {
+      "n": 15,
+      "source": "suppressed",
+      "file": "lib/relationship-graph.js",
+      "line": 192,
+      "issue": "CodePen branch recorded codePens[i].platform as source even when the value came from deployedAt/deployment.",
+      "reproduction": "codePen with deployment:'CodePen.io' \u00e2\u2020\u2019 source 'codePens[0].platform'.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "same hardcoded provenance as finding 5",
+      "fix": "cpDeployField via find() names the actual source field.",
+      "tests": [
+        "review-5189987654 G2"
+      ],
+      "duplicateOf": 5
+    },
+    {
+      "n": 16,
+      "source": "suppressed",
+      "file": "lib/relationship-graph.js",
+      "line": 354,
+      "issue": "Subject-level goals/availability/preferences were indexed only when objects; canonical schema stores availability as a string, so explicit declarations never became has_property evidence.",
+      "reproduction": "availability:'Available for remote work' produced no has_property triple.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "section loop skipped non-object values",
+      "fix": "string and array-of-strings sections index each entry as a separate property unit with preserved source path and meta.value.",
+      "tests": [
+        "review-5189987654 D7",
+        "D8"
+      ]
+    },
+    {
+      "n": 17,
+      "source": "suppressed",
+      "file": "lib/relationship-validator.js",
+      "line": 932,
+      "issue": "When frame-word filtering emptied propWords, the branch marked the claim supported with no evidence: 'Avery is open to the role' passed on an empty KB.",
+      "reproduction": "validateRelationships('Avery is open to the role.', emptyKbGraph) returned valid.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "absence of verifiable content treated as support",
+      "fix": "empty-content properties are unsupported unless a coherent authored property explicitly proves the claim.",
+      "tests": [
+        "review-5189987654 D4"
+      ]
+    },
+    {
+      "n": 18,
+      "source": "suppressed",
+      "file": "lib/relationship-validator.js",
+      "line": 914,
+      "issue": "meta.property === objNorm accepted a claim on key existence alone: goals:{relocation:'Not open to relocation'} supported 'Avery is open to relocation'.",
+      "reproduction": "positive claim validated true against a negated authored value.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "key match bypassed authored value and polarity",
+      "fix": "has_property validation now requires the authored value (meta.value / object text) to affirm the predicate; negated values reject; derivational matching in coherentUnitSupports now also checks the negation word list.",
+      "tests": [
+        "review-5189987654 D5",
+        "D6"
+      ]
+    },
+    {
+      "n": 19,
+      "source": "suppressed",
+      "file": "lib/response-contract.js",
+      "line": 1155,
+      "issue": "m3/m4 future-capability targets captured through end of question: 'Could he become a data engineer requiring Python?' yielded target containing 'requiring Python'.",
+      "reproduction": "extractRequestedRole returned 'data engineer requiring python'.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "cleanTarget removed only trailing role nouns/manner words, not requirement suffixes",
+      "fix": "requirement-boundary vocabulary (requiring/requires/needing/needs/must have/with experience in/with knowledge of/looking for/etc.) now terminates the captured target in cleanRole and cleanTarget.",
+      "tests": [
+        "review-5189987654 B4"
+      ]
+    },
+    {
+      "n": 20,
+      "source": "suppressed",
+      "file": "lib/response-contract.js",
+      "line": 1121,
+      "issue": "Hiring/recruiting branch only treated at/with/requiring/requires as boundaries and returned the capture without stripping a requirement suffix: 'hiring for a frontend role needing React' stored 'frontend role needing react' as requestedRole.",
+      "reproduction": "extractRequestedRole returned 'frontend role needing react'.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "incomplete boundary marker set; suffix not stripped on this shape",
+      "fix": "boundary list expanded to the shared requirement vocabulary; 'role needing X' \u00e2\u2020\u2019 'frontend' (the 'role' noun is also dropped since it is syntax, not title).",
+      "tests": [
+        "review-5189987654 B4"
+      ],
+      "duplicateOf": 19
+    },
+    {
+      "n": 21,
+      "source": "suppressed",
+      "file": "lib/response-planner.js",
+      "line": 350,
+      "issue": "'service' in both has_skill and uses_tech facet noun lists made 'What services does Morgan offer?' enumerate JavaScript/React as offered services.",
+      "reproduction": "facet values included technologies before the fix.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "facet noun ambiguity resolved without regard to the request predicate",
+      "fix": "offering verbs (offer/provide/sell) route 'services' to the services collection; tech relations no longer selected for offering predicates.",
+      "tests": [
+        "review-5189987654 F1"
+      ]
+    },
+    {
+      "n": 22,
+      "source": "suppressed",
+      "file": "lib/response-planner.js",
+      "line": 536,
+      "issue": "Attribute fallback searched only products and projects, missing services/CodePens/other normalized collections (e.g. a service's duration).",
+      "reproduction": "'What duration does Atlas Consulting have?' returned unsupported.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "hardcoded collection list",
+      "fix": "fallback resolves the named entity via normalizeKnowledgeEntities across all collections and reads top-level fields plus attributes/properties.",
+      "tests": [
+        "review-5189987654 F3"
+      ],
+      "duplicates": [
+        23
+      ]
+    },
+    {
+      "n": 23,
+      "source": "suppressed",
+      "file": "lib/response-planner.js",
+      "line": 508,
+      "issue": "Named-entity attribute queries returned early when the attribute wasn't a top-level collection, never reaching the entity-attribute fallback ('What price does Northstar Desk have?').",
+      "reproduction": "facet returned matched:false.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "early return before entity-attribute resolution when entitySubject present",
+      "fix": "entity-attribute path stays open when entitySubject resolves; name-part matching repaired so 'Morgan Vale' does not split into subject 'Morgan' + verb 'Vale'.",
+      "tests": [
+        "review-5189987654 F2"
+      ],
+      "duplicateOf": 22
+    },
+    {
+      "n": 24,
+      "source": "suppressed",
+      "file": "lib/response-planner.js",
+      "line": 362,
+      "issue": "'publishin' typo (missing g) meant a captured 'publishing' verb could not select the publications facet.",
+      "reproduction": "'What is Morgan publishing?' did not match the publications facet.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "typo in verb group",
+      "fix": "corrected to 'publishing'; shape C also accepts is/are/was/were so 'What is X publishing' resolves.",
+      "tests": [
+        "review-5189987654 F4"
+      ]
+    },
+    {
+      "n": 25,
+      "source": "suppressed",
+      "file": "lib/tech-claim-validator.js",
+      "line": 278,
+      "issue": "Fallback accepted a technology merely for being in the global knownTechnologies set even when absent from scoped evidence \u00e2\u20ac\u201d cross-project overclaim.",
+      "reproduction": "Project Alpha uses Rust accepted when only Project Beta used Rust.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "global set used as evidence",
+      "fix": "removed the global-override return; global set remains usable for alias recognition only.",
+      "tests": [
+        "review-5189987654 E3"
+      ]
+    },
+    {
+      "n": 26,
+      "source": "suppressed",
+      "file": "lib/tech-claim-validator.js",
+      "line": 269,
+      "issue": "Early phrase match accepted a technology appearing in negated/unverified evidence ('Rust is not documented' supported 'uses Rust').",
+      "reproduction": "isTechInEvidence('Rust', 'Rust is not documented.', ['Rust']) returned true.",
+      "classification": "CONFIRMED_BUG",
+      "rootCause": "phrase presence checked before polarity/coherence",
+      "fix": "evidence is split into clauses and checked for affirmative, non-negated mentions; 'does not know COBOL, but has experience with JavaScript' no longer supports COBOL.",
+      "tests": [
+        "review-5189987654 E1",
+        "E2",
+        "E4"
+      ]
+    }
+  ],
+  "summary": {
+    "total": 26,
+    "confirmedBug": 26,
+    "falsePositive": 0,
+    "alreadyFixed": 0,
+    "duplicateRootCause": "findings 14, 15, 20, 23 share root causes with 4, 5, 19, 22 respectively and are covered by the same fixes",
+    "regressionSuite": "test/review-5189987654.test.js (43 tests, all passing)",
+    "deterministicFloor": "1335/1335",
+    "liveQualification": "4 additional confirmed bugs (LQ1-LQ4) fixed; dev 22/22 targeted battery; eval:local-api 22/23 (1 intermittent INFERENCE_UNAVAILABLE + cascade); 132-turn gate parity with fe3b8e7 baseline once 35 rate-limit (HTTP 429) turns excluded"
+  },
+  "liveQualification": {
+    "note": "Post-review findings discovered during dev runtime qualification of the reviewed fixes (commits 07e2760, 8645f1e, ddf4506). Not part of the Copilot review; reproduced against the live dev backend.",
+    "findings": [
+      {
+        "n": "LQ1",
+        "file": "lib/rag-agent.js",
+        "issue": "answer.length < 3 treated correct computed results ('-1', '30') as parse failure; the repair regenerated the identical correct JSON which was rejected again, yielding INFERENCE_UNAVAILABLE for 'What is 2024 - 2025?' and 'What is 15% of 200?'.",
+        "classification": "CONFIRMED_BUG",
+        "fix": "bare answers matching a contract computedFacts surface form bypass the length check on both primary and repair; computed-completeness validation still applies",
+        "tests": [
+          "I1"
+        ]
+      },
+      {
+        "n": "LQ2",
+        "file": "lib/response-planner.js + lib/relationship-graph.js",
+        "issue": "'What roles did Bradley have from 2024-2025?' resolved the facet subject to entity 'brad' when the contract's framing subject was a company (determineSubject picks ranked-fact sourceEntity), producing supported:false and prompting/validating 'not documented' answers for documented roles.",
+        "classification": "CONFIRMED_BUG",
+        "rootCause": "graph ignored declared subjectAliases and subject name parts; a token resolving to graph.subjectNorm was excluded from subject references; subjectNameParts came only from the framing subject",
+        "fix": "subjectAliases now consumes knowledge.subjectAliases and subject name parts; resolveEntity maps subject aliases to subjectNorm; trySubject/shape-C treat resolved===subjectNorm as a subject reference; name parts drawn from all known subject names",
+        "tests": [
+          "I2",
+          "I3"
+        ]
+      },
+      {
+        "n": "LQ3",
+        "file": "lib/canonical-entities.js",
+        "issue": "entity registry indexed experience companies but not role titles, so a facet-supported role enumeration was rejected entity_not_grounded on verbatim documented titles including compound 'A / B' titles",
+        "classification": "CONFIRMED_BUG",
+        "fix": "exp.role/exp.title join the registry with both sides of a compound title grounded independently",
+        "tests": [
+          "I4"
+        ]
+      },
+      {
+        "n": "LQ4",
+        "file": "lib/acceptance-scorer.js",
+        "issue": "isNegatedContext's 8-word window missed the negation in long disclaimers ('not documented ... currently possesses'), producing a false OVERCLAIM in eval:local-api unknown-tech-2",
+        "classification": "CONFIRMED_BUG",
+        "fix": "negation scans the whole pre-match clause; 'not only'/'not just' idioms stripped",
+        "tests": [
+          "I5"
+        ]
+      }
+    ]
+  }
+}

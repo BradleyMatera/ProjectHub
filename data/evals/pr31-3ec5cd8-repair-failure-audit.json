@@ -1,0 +1,147 @@
+{
+ "qualification": "repair-failure audit for PR #31 gate run on 3ec5cd8",
+ "runtimeSourceCommit": "3ec5cd882f48cbe8c9e6e422ea78d1bdfad0fcd3",
+ "note": "Candidate text is not preserved in the diagnostics; classification is based on recorded validationReasons, response contracts, and knowledge-base verification.",
+ "items": [
+  {
+   "question": "i just want a little quantum computing in simple terms and then talk about brad ok?",
+   "conversation": "Persistent general knowledge request",
+   "turn": 4,
+   "observedRejections": {
+    "PRIMARY": [
+     "fabricated_entity:Imagine"
+    ],
+    "FACTUAL_REPAIR": [
+     "stance_mismatch:expected_affirm"
+    ]
+   },
+   "rootCause": "CONTRACT_MISMATCH",
+   "detail": "General-knowledge sub-request (quantum computing) received an evidence-grounded contract; repair then failed an expected_affirm stance. A scope-decline or split-handling path should apply. Not a validator false positive.",
+   "genericFix": "None applied in this pass; arithmetic/general-reasoning tool now covers the computable subset of such mixed requests."
+  },
+  {
+   "question": "That's not a Roast lol",
+   "conversation": "Skeptical recruiter and roast",
+   "turn": 4,
+   "observedRejections": {
+    "PRIMARY": [
+     "expanded_overclaim:expertise in",
+     "relationship_overclaim:has_expertise|profile"
+    ],
+    "FACTUAL_REPAIR": [
+     "expanded_overclaim:expertise in",
+     "leaked_relation_syntax",
+     "unsupported_relationship:subject|denial_of_existence|production"
+    ]
+   },
+   "rootCause": "MODEL_FAILED_CONTRACT",
+   "detail": "Conversational tone-feedback turn; the model kept generating overclaiming/roast prose instead of a plain acknowledgment, and the repair leaked internal relation syntax. Validator rejections were correct."
+  },
+  {
+   "question": "Which of those is the strongest fit?",
+   "conversation": "Archived prompt-only recruiter sequence",
+   "turn": 4,
+   "observedRejections": {
+    "PRIMARY": [
+     "entity_not_grounded:Ethics Engine",
+     "entity_not_grounded:Ethics",
+     "unsupported_tech_claim:contributions",
+     "fabricated_entity:Ethics"
+    ],
+    "FACTUAL_REPAIR": [
+     "fabricated_occupation:targeting any entry"
+    ]
+   },
+   "rootCause": "COREFERENCE_FAILURE",
+   "detail": "Referent \"those\" was not grounded to the previously listed options; the model invented entity names (Ethics Engine). Validator correctly rejected fabricated entities."
+  },
+  {
+   "question": "So he can't do LeetCode. Can he learn on the job?",
+   "conversation": "Archived prompt-only recruiter sequence",
+   "turn": 12,
+   "observedRejections": {
+    "PRIMARY": [
+     "future_capability_wrong_frame"
+    ],
+    "FACTUAL_REPAIR": [
+     "future_capability_wrong_frame"
+    ]
+   },
+   "rootCause": "CONTRACT_MISMATCH",
+   "detail": "extractRequestedRole parsed the manner phrase \"on the job\" as target role \"on the\", producing an unsatisfiable contract.",
+   "genericFix": "FIXED: manner-phrase targets are rejected; requestedTopic now resolves to the prior topic (leetcode)."
+  },
+  {
+   "question": "Did he lead anyone in the Army?",
+   "conversation": "Archived prompt-only recruiter sequence",
+   "turn": 21,
+   "observedRejections": {
+    "PRIMARY": [
+     "stance_mismatch:contract_qualify"
+    ]
+   },
+   "rootCause": "MODEL_FAILED_CONTRACT",
+   "detail": "Open-world contract required a qualified stance (leadership not documented); the candidate answered with a hard stance instead. Only one generation attempt was recorded. Validator correct; leading documentation-absence phrasing now parses as QUALIFY."
+  },
+  {
+   "question": "Has he worked with databases?",
+   "conversation": "Archived prompt-only recruiter sequence",
+   "turn": 26,
+   "observedRejections": {
+    "PRIMARY": [
+     "entity_not_grounded:Render",
+     "unsupported_tech_claim:PostgreSQL",
+     "unsupported_relationship:Bradley Matera|has_experience|PostgreSQL",
+     "fabricated_entity:PostgreSQL",
+     "fabricated_entity:Render"
+    ]
+   },
+   "rootCause": "MODEL_FAILED_CONTRACT",
+   "detail": "Model asserted undocumented PostgreSQL/Render instead of naming the documented database skill (DynamoDB). Validator rejections were correct."
+  },
+  {
+   "question": "has he published anything?",
+   "conversation": "Archived prompt-only recruiter sequence",
+   "turn": 32,
+   "observedRejections": {
+    "PRIMARY": [
+     "unsupported_relationship:Bradley|deployed_on|development process",
+     "stance_mismatch:contract_qualify"
+    ],
+    "FACTUAL_REPAIR": [
+     "stance_mismatch:contract_qualify"
+    ]
+   },
+   "rootCause": "CONTRACT_MISMATCH",
+   "detail": "The contract required QUALIFY although blogCatalog documents 64 published posts; every candidate asserting publication was stance-rejected.",
+   "genericFix": "FIXED: assessPrimaryFacet resolves the publications facet to the blog collection, sets factState TRUE, and supplies titles as facet facts."
+  },
+  {
+   "question": "is he good at costumer serivice?",
+   "conversation": "Archived prompt-only recruiter sequence",
+   "turn": 36,
+   "observedRejections": {
+    "PRIMARY": [
+     "entity_not_grounded:Veterans Court",
+     "entity_not_grounded:Drug Court",
+     "fabricated_entity:Veterans",
+     "fabricated_entity:Court",
+     "fabricated_entity:Drug"
+    ],
+    "FACTUAL_REPAIR": [
+     "current_temporal:Unsupported current employment claim"
+    ]
+   },
+   "rootCause": "EVIDENCE_SELECTION_FAILURE",
+   "detail": "Veterans Court / Drug Court case-manager experience exists in the knowledge base but was not in the retrieved evidence packet, so entity grounding rejected the (KB-true) references. Typo \"costumer serivice\" likely degraded retrieval."
+  }
+ ],
+ "counts": {
+  "MODEL_FAILED_CONTRACT": 3,
+  "CONTRACT_MISMATCH": 3,
+  "COREFERENCE_FAILURE": 1,
+  "EVIDENCE_SELECTION_FAILURE": 1,
+  "VALIDATOR_FALSE_POSITIVE": 0,
+  "DEADLINE_EXHAUSTION": 0
+ }
+}
