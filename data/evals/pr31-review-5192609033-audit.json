@@ -1,0 +1,173 @@
+{
+  "review": {
+    "id": 5192609033,
+    "reviewedCommit": "f98336e",
+    "reviewer": "copilot-pull-request-reviewer",
+    "state": "COMMENTED",
+    "verdict": "NEEDS A CLOSER LOOK",
+    "visibleComments": 0,
+    "suppressedFindings": 13
+  },
+  "findings": [
+    {
+      "n": 1,
+      "source": "suppressed",
+      "file": "lib/acceptance-scorer.js:718",
+      "issue": "rankedWeakness hard-coded his/her/their; 'Zir biggest weakness is Rust' bypassed overclaim under UNKNOWN.",
+      "reproduction": "scoreCase NEGATIVE_ASSESSMENT 'Zir biggest weakness is Rust.' -> GOOD.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "rankedWeakness alternation built from naPossAlt (all configured pronoun forms + his/her/their).",
+      "tests": ["review-5192195572 S1"]
+    },
+    {
+      "n": 2,
+      "source": "suppressed",
+      "file": "lib/agent-tools.js:306",
+      "issue": "Bare slash title 'React/TypeScript developer' not recognized as a role; the slash term and title words leaked into explicit criteria.",
+      "reproduction": "match_role 'We need a React/TypeScript developer for this team.' -> explicitCriteria ['react typescript developer','React/TypeScript','React'].",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Slash-joined title spans (<term>/<term> <title-word>) are stripped from criteriaText before marker, slash, and skill scans.",
+      "tests": ["review-5192195572 S2"]
+    },
+    {
+      "n": 3,
+      "source": "suppressed",
+      "file": "lib/arithmetic-tool.js:193",
+      "issue": "Any clause starting with 'what'/'now' satisfied the word-problem continuation cue; 'What is the role?' produced a 3-1 fact.",
+      "reproduction": "findArithmeticSubtasks('Avery has 3 tickets and closes 1. What is the role?') -> [{3 - 1 = 2}].",
+      "classification": "CONFIRMED_BUG",
+      "fix": "what/now continuation requires the held noun or quantitative result wording (left/remaining/total/etc.); how many/how much unchanged.",
+      "tests": ["review-5192195572 S3"]
+    },
+    {
+      "n": 4,
+      "source": "suppressed",
+      "file": "lib/arithmetic-tool.js:151",
+      "issue": "Slash dates '1/2/2024' matched the '1 / 2' prefix and emitted 0.5 as an arithmetic fact.",
+      "reproduction": "findArithmeticSubtasks('What is 1/2/2024?') -> [{1 / 2 = 0.5}].",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Unspaced N/N preceded or followed by another '/digit' component is excluded as date typography.",
+      "tests": ["review-5192195572 S4"]
+    },
+    {
+      "n": 5,
+      "source": "suppressed",
+      "file": "lib/claim-extractor.js:258",
+      "issue": "'being a <type>' pattern had no subject-bound context requirement; 'The role requires being a developer' emitted is_type.",
+      "reproduction": "extractClaims('The role requires being a developer with React experience.') -> is_type 'developer'.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Pattern requires a preceding for/of/as ('known for being a mentor' still matches).",
+      "tests": ["review-5192195572 S5"]
+    },
+    {
+      "n": 6,
+      "source": "suppressed",
+      "file": "lib/claim-validator.js:37",
+      "issue": "CURRENT_EMPLOYMENT_RE unqualified 'with' branches treated 'works with React' and 'is a developer with React' as current employment.",
+      "reproduction": "validateClaims(['Morgan works with React on Atlas.']) -> CURRENT_TEMPORAL_CLAIM.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "'with' removed from unqualified branches; only 'is currently|now with' (explicit temporal) retains it.",
+      "tests": ["review-5192195572 S6"]
+    },
+    {
+      "n": 7,
+      "source": "suppressed",
+      "file": "lib/evidence-relations.js:227",
+      "issue": "Rendered chunk 'Project Atlas: Maps Tech: React' failed — the post-colon tail 'Maps' was rejected as a bare name extension.",
+      "reproduction": "evidenceSupportsTechnologyRelation(['Atlas'],'React','Project Atlas: Maps Tech: React') -> false.",
+      "classification": "CONFIRMED_BUG",
+      "independence": "Independently reproducible on pre-fix code: 'Project Atlas: Maps Tech: React' -> false (embedded label never extracted) and 'Project Atlas: Maps. Tech: React' -> false (colon tail rejected as name extension). Distinct root cause from finding 8 (boolean subjectSeen scoping).",
+      "fix": "A tail after a subject-label colon is label content, not a name extension; embedded label fields in the tail are extracted; unpunctuated personal-name guard retained in the cue branch.",
+      "tests": ["review-5192195572 S7"]
+    },
+    {
+      "n": 8,
+      "source": "suppressed",
+      "file": "lib/evidence-relations.js:194",
+      "issue": "subjectSeen was a boolean; a 'Tech:' label after a different-entity clause still attached to the earlier subject.",
+      "reproduction": "evidenceSupportsTechnologyRelation(['Atlas'],'Vue','Atlas uses React. Beta is a dashboard. Tech: Vue.') -> true.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "subjectSeen replaced by currentSubject tracking; a clause headed by a different entity clears the label context.",
+      "tests": ["review-5192195572 S8"]
+    },
+    {
+      "n": 9,
+      "source": "suppressed",
+      "file": "lib/grounding-validator.js:473",
+      "issue": "A leading QUALIFY was accepted under a definite AFFIRM/DENY contract.",
+      "reproduction": "validateAnswer('There is no verified evidence of that.', ..., requiredStance AFFIRM) produced no stance_mismatch.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Both definite-stance mismatch checks now include actual === 'QUALIFY'.",
+      "tests": ["review-5192195572 S9"]
+    },
+    {
+      "n": 10,
+      "source": "suppressed",
+      "file": "lib/rag-agent.js:303",
+      "issue": "Selected evidence kept original text/description; validation merged e.text and could ground on text truncated out of the model prompt.",
+      "reproduction": "source inspection: rendered.push({...item, renderedText}) left e.text = full untruncated text.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Selected items carry text/description/renderedText all equal to the rendered (truncated) prompt text.",
+      "tests": ["review-5192195572 S10"]
+    },
+    {
+      "n": 11,
+      "source": "suppressed",
+      "file": "lib/recovery-contract.js:890",
+      "issue": "skillMatch hard-coded he|she|they|the subject; 'Does ze have React experience?' skipped fact-specific expansion.",
+      "reproduction": "buildTerseYesNoContract('yes','Does ze have React experience?') -> YES_NO_EXPAND with empty keyFacts.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Subject alternation built from normalized tenant pronouns + identity name + aliases (regex-escaped).",
+      "tests": ["review-5192195572 S11"]
+    },
+    {
+      "n": 12,
+      "source": "suppressed",
+      "file": "lib/response-contract.js:1124",
+      "issue": "'looking for a position as data scientist requiring Python' captured 'position as data scientist' as the role.",
+      "reproduction": "extractRequestedRole(...) -> 'position as data scientist'.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Role cleanup strips a leading 'role|position|job as' wrapper.",
+      "tests": ["review-5192195572 S12"]
+    },
+    {
+      "n": 13,
+      "source": "suppressed",
+      "file": "lib/response-policy-classifier.js:1099",
+      "issue": "'Is X a documented gap?' failed — the pattern required the article directly before the gap term.",
+      "reproduction": "classifyResponsePolicy('Is Rust a documented gap?') -> OUT_OF_SCOPE instead of SKILL_EVIDENCE.",
+      "classification": "CONFIRMED_BUG",
+      "fix": "Optional documented/listed/allowed between article and gap term.",
+      "tests": ["review-5192195572 S13"]
+    }
+  ],
+  "summary": {
+    "suppressedFindings": 13,
+    "confirmedBug": 13,
+    "falsePositive": 0,
+    "alreadyFixed": 0,
+    "duplicateRootCause": 0,
+    "note": "13/13 independently confirmed. Findings 7 and 8 share a file but have distinct reproductions and distinct root causes (colon-label tail rejection vs boolean subjectSeen scoping)."
+  },
+  "verification": {
+    "targeted": "node --test test/review-5192195572.test.js -> 32/32",
+    "full": "npm test -> 1394/1394",
+    "evalRetrieval": "Recall@6 1.000 (40/40), MRR@6 0.942",
+    "diffCheck": "git diff --check clean",
+    "syntax": "node --check server-gemini.js clean"
+  },
+  "liveQualification": {
+    "deployedCommit": "269c03e5c386fb0ddb16a6095add70cbb82b652c",
+    "devHealth": "https://dev.projecthub-chat.bradleymatera.dev/health 200 verified by deploy script",
+    "battery": "21/22 scripted checks; sole failure role-req was TECHNICAL_ERROR model variance — 5/5 direct retries passed MODEL_GENERATION",
+    "localApiEval": "23/23 GOOD against dev backend",
+    "providerModelBudget": "Cloudflare Workers AI @cf/meta/llama-3.1-8b-instruct-fast, 15s budget — unchanged (verified by deploy script)"
+  },
+  "reviewGate": {
+    "status": "REVIEW_NOT_PERFORMED_QUOTA_EXHAUSTED",
+    "attemptedReviews": [5192739062, 5192751852, 5192754775, 5193145488],
+    "attemptedOnCommits": ["3b8305ad587a21f9e528c1266f004bdf4ebb8c2b", "f9e0acc"],
+    "copilotResponse": "Copilot was unable to review this pull request because the user who requested the review has reached their quota limit.",
+    "note": "External review-gate block. Not a clean review, not approval, not 'no findings'. One completed clean review on the then-current HEAD is still required before READY_FOR_DEVELOP_MERGE_REVIEW."
+  }
+}

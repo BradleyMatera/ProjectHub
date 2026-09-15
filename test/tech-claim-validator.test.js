@@ -257,6 +257,17 @@ test('X with Y conjunction context extracts both technologies', () => {
   assert.ok(expressClaim, 'Express should be flagged as unsupported');
 });
 
+// --- Multi-word / compound technology names ---
+
+test('compound tech claim with known leading word is supported when evidence contains the full phrase', () => {
+  const answer = 'Maria has used GitHub Actions for CI.';
+  const evidence = 'Nebula Engine repo uses GitHub Actions for its CI workflow.';
+  const knownTechnologies = new Set(['github', 'docker', 'nodejs']);
+  const result = validateTechClaims(answer, evidence, knownTechnologies);
+  const gaClaim = result.unsupportedTechs.find(t => t.technology.toLowerCase() === 'github actions');
+  assert.equal(gaClaim, undefined, 'GitHub Actions should be supported when evidence contains the full phrase and GitHub is known');
+});
+
 // --- Canonicalization tests ---
 
 test('canonicalize strips punctuation and lowercases', () => {

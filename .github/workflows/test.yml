@@ -51,6 +51,12 @@ jobs:
       - name: Check analytics bundle syntax
         run: node --check analytics/dist/analytics.iife.js
 
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run full unit test suite
+        run: npm test
+
       - name: Run cost ledger unit tests
         run: npm run test:ledger
 
