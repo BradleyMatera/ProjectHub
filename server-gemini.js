@@ -12,7 +12,7 @@ const { buildRagChunks } = require('./lib/rag-chunks');
 const { BM25Index } = require('./lib/bm25');
 const { understandQuery, classifyTopic, isRelevant, normalizeQuery } = require('./lib/query-understanding');
 const { searchBm25WithRrf } = require('./lib/rrf');
-const { buildSemanticPlan } = require('./lib/semantic-plan');
+const { buildSemanticPlan, planTurn, buildSemanticCacheKey } = require('./lib/semantic-plan');
 const { executeAgentTool, getAgentToolDefinitions, selectAgentToolNames } = require('./lib/agent-tools');
 const { buildLocalConversationMemory, extractCompleteSentences, validateLocalConversationReply } = require('./lib/local-conversation');
 const { findDirectAnswer } = require('./lib/knowledge-access');
@@ -341,10 +341,13 @@ app.get('/api/retrieve', async (req, res) => {
     const knowledge = await fetchKnowledge();
     if (!knowledge) return res.json({ ok: false, error: 'Knowledge not loaded' });
     const history = req.query.h ? JSON.parse(req.query.h) : [];
-    const semanticPlan = buildSemanticPlan({
-      question: q, resolvedQuestion: q, history, knowledge
+    // Same resolve→plan→legs pipeline as /api/chat. This endpoint has no
+    // persisted session state; discourse state is derived from the supplied
+    // history only.
+    const { resolvedQuestion: resolvedQ, plan: semanticPlan } = planTurn({
+      question: q, history, knowledge
     });
-    const understood = understandQuery(q, history, ragChunks || buildRagChunks(knowledge), knowledge, { plan: semanticPlan });
+    const understood = understandQuery(resolvedQ || q, history, ragChunks || buildRagChunks(knowledge), knowledge, { plan: semanticPlan });
     const bm25Results = bm25Index
       ? searchBm25WithRrf(bm25Index, understood.legs, 6)
       : [];
@@ -954,13 +957,13 @@ async function retrieveWithBM25(question, history, k = 6, sessionState = null) {
   if (!USE_BM25_RETRIEVAL || !bm25Index || !ragChunks) {
     return retrieveChunks(question, ragChunks || buildRagChunks(knowledgeCache || {}), k);
   }
-  // Structured semantic plan + per-leg retrieval. History contributes only
-  // resolved referents — never raw prior-turn words.
-  const semanticPlan = buildSemanticPlan({
-    question, resolvedQuestion: question, history,
-    knowledge: knowledgeCache, sessionState
+  // Structured semantic plan + per-leg retrieval, via the shared
+  // resolve→plan pipeline. History contributes only resolved referents —
+  // never raw prior-turn words.
+  const { resolvedQuestion: resolvedQ, plan: semanticPlan } = planTurn({
+    question, history, knowledge: knowledgeCache, sessionState
   });
-  const understood = understandQuery(question, history, ragChunks, knowledgeCache, { plan: semanticPlan });
+  const understood = understandQuery(resolvedQ || question, history, ragChunks, knowledgeCache, { plan: semanticPlan });
   const bm25Results = searchBm25WithRrf(bm25Index, understood.legs, k, { smoothing: 60 });
 
   if (bm25Results.length === 0) {
@@ -1440,12 +1443,14 @@ app.post('/api/client-packet', async (req, res) => {
     const history = getConversationHistory(sessionId, req.body.history);
     const convState = sessionState.getState(sessionId);
 
-    // BM25 retrieval through the same semantic-plan legs as /api/chat
+    // BM25 retrieval through the same resolve→plan→legs pipeline as
+    // /api/chat. No persisted session state here; discourse state is derived
+    // from the supplied history.
     const chunks = ragChunks || buildRagChunks(knowledge);
-    const clientPlan = buildSemanticPlan({
-      question: userMessage, resolvedQuestion: userMessage, history, knowledge
+    const { resolvedQuestion: clientResolved, plan: clientPlan } = planTurn({
+      question: userMessage, history, knowledge
     });
-    const understood = understandQuery(userMessage, history, chunks, knowledge, { plan: clientPlan });
+    const understood = understandQuery(clientResolved || userMessage, history, chunks, knowledge, { plan: clientPlan });
     const bm25Results = bm25Index
       ? searchBm25WithRrf(bm25Index, understood.legs, 5)
       : [];
@@ -1679,6 +1684,8 @@ app.post('/api/chat', async (req, res) => {
             resolvedQuestion: semanticPlan.resolvedQuestion,
             subject: semanticPlan.subject,
             activeEntity: semanticPlan.activeEntity,
+            activeEntitySource: semanticPlan.activeEntitySource,
+            priorActiveEntity: semanticPlan.priorActiveEntity,
             entityType: semanticPlan.entityType,
             requestedFacet: semanticPlan.requestedFacet,
             requestedRelation: semanticPlan.requestedRelation,
@@ -1811,7 +1818,7 @@ app.post('/api/chat', async (req, res) => {
     // One structured semantic plan for the turn. Current-turn semantics are
     // explicit and outrank stale conversational topic context; history may
     // contribute only resolved referents, never raw prior-turn words.
-    semanticPlan = buildSemanticPlan({
+    const planned = planTurn({
       question: userMessage,
       resolvedQuestion: resolvedMessage,
       history,
@@ -1820,19 +1827,17 @@ app.post('/api/chat', async (req, res) => {
       policy,
       resolution: rewriteDebug
     });
+    semanticPlan = planned.plan;
 
-    // Semantic cache key: literal question + resolved entity + requested
-    // facet/role — distinct semantic plans must not share an answer entry.
-    // Fields are appended only when present so plain questions keep their
-    // canonical key.
-    const planKeyParts = [
-      semanticPlan?.activeEntity?.name,
-      semanticPlan?.requestedFacet || semanticPlan?.requestedTopic,
-      semanticPlan?.requestedRole
-    ].filter(Boolean).map(v => String(v).toLowerCase());
-    const cacheKey = planKeyParts.length
-      ? `${normalizeQuery(resolvedMessage, knowledge)}|${planKeyParts.join('|')}`
-      : normalizeQuery(resolvedMessage, knowledge);
+    // Semantic cache key: resolved question + CURRENT target entity +
+    // requested facet/role — distinct semantic plans must not share an
+    // answer entry, and historical entities never enter the key. Fields are
+    // appended only when present so plain questions keep their canonical key.
+    const cacheKey = buildSemanticCacheKey({
+      plan: semanticPlan,
+      resolvedQuestion: resolvedMessage,
+      normalize: q2 => normalizeQuery(q2, knowledge)
+    });
     // Arithmetic-bearing questions must not share a cache entry:
     // normalizeQuery strips operator characters, so "3 - 5" and "-3 + 5"
     // would collapse to the same key and serve each other's computed answer.

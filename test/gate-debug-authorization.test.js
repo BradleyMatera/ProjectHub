@@ -24,6 +24,8 @@ function harness(serverFlag, direct = false) {
     getStanceContext: () => '',
     understandQuery: () => ({}),
     buildSemanticPlan: () => null,
+    planTurn: ({ question }) => ({ resolvedQuestion: question, plan: null }),
+    buildSemanticCacheKey: ({ resolvedQuestion }) => String(resolvedQuestion || ''),
     ragChunks: [],
     bm25Index: null,
     runRagPrimaryAgent: async () => ({ reply: 'Generated fixture.', model: 'fixture-model', steps: [], proseSource: 'MODEL_GENERATION' }),

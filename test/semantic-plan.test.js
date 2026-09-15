@@ -16,10 +16,12 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { buildSemanticPlan, buildRetrievalLegs } = require('../lib/semantic-plan');
+const { buildSemanticPlan, planTurn, buildRetrievalLegs, buildSemanticCacheKey } = require('../lib/semantic-plan');
 const { understandQuery, normalizeQuery, expandQueryAliases } = require('../lib/query-understanding');
 const { buildResponseContract } = require('../lib/response-contract');
 const { evaluateCompleteness } = require('../lib/completeness-check');
+const { buildRelationshipGraph, resolveEntity } = require('../lib/relationship-graph');
+const { assessPrimaryFacet } = require('../lib/response-planner');
 
 // ---------- synthetic tenants ----------
 
@@ -330,4 +332,167 @@ test('LC-INV: long history never shrinks current-turn semantics', () => {
   assert.equal(a.requestedTopic, b.requestedTopic);
   assert.equal(a.topicContinuity === 'shift' || a.topicContinuity === 'standalone', true);
   assert.equal(b.topicContinuity, a.topicContinuity);
+});
+
+// ---------- subject-vs-entity collision matrix ----------
+
+// Tenant whose preferred name collides with a project name.
+const TENANT_NAME_COLLISION = {
+  identity: { name: 'Avery Stone', preferredName: 'Avery' },
+  agent: { name: 'Scout' },
+  pronouns: { subject: 'ze', object: 'zir', possessive: 'zir' },
+  projects: [{ name: 'Avery', tech: ['Go'], description: 'Go CLI.' }],
+  skills: { languages: ['Python'] }
+};
+
+// Tenant whose surname collides with an employer.
+const TENANT_SURNAME_COLLISION = {
+  identity: { name: 'Morgan Vale' },
+  agent: { name: 'Scout' },
+  experience: [{ company: 'Vale', role: 'Engineer', summary: 'Built services.' }],
+  projects: [{ name: 'Atlas', description: 'Data pipeline.' }],
+  skills: { languages: ['Go'] }
+};
+
+test('COLL-1: project "Avery" beats tenant first name "Avery Stone"', () => {
+  const graph = buildRelationshipGraph(TENANT_NAME_COLLISION);
+  assert.equal(resolveEntity(graph, 'avery'), 'avery');
+  const facet = assessPrimaryFacet({
+    question: 'What tech does Avery use?', knowledge: TENANT_NAME_COLLISION, graph, subjectName: 'Avery Stone'
+  });
+  assert.equal(facet.matched, true);
+  assert.equal(facet.subject, 'Avery');
+  assert.notEqual(facet.subject, 'Avery Stone');
+  const { plan } = planTurn({ question: 'What tech does Avery use?', history: [], knowledge: TENANT_NAME_COLLISION });
+  assert.equal(plan.activeEntity?.name, 'Avery');
+  assert.equal(plan.activeEntitySource, 'current-turn');
+});
+
+test('COLL-2: full subject name still resolves to the tenant', () => {
+  const { plan } = planTurn({
+    question: 'What skills does Avery Stone have?', history: [], knowledge: TENANT_NAME_COLLISION
+  });
+  assert.equal(plan.activeEntity, null);
+  assert.deepEqual(plan.explicitEntities, []);
+});
+
+test('COLL-3: configured pronouns still resolve to the tenant', () => {
+  const { plan } = planTurn({
+    question: 'What skills does ze have?', history: [], knowledge: TENANT_NAME_COLLISION
+  });
+  assert.equal(plan.activeEntity, null);
+  assert.deepEqual(plan.explicitEntities, []);
+});
+
+test('COLL-4: surname collision — company "Vale" beats tenant surname', () => {
+  const graph = buildRelationshipGraph(TENANT_SURNAME_COLLISION);
+  assert.equal(resolveEntity(graph, 'vale'), 'vale');
+  const facet = assessPrimaryFacet({
+    question: 'What did Vale ship?', knowledge: TENANT_SURNAME_COLLISION, graph, subjectName: 'Morgan Vale'
+  });
+  // Not asserted as subject — 'Vale' is the company, not Morgan.
+  if (facet.matched) assert.notEqual(facet.subject, 'Morgan Vale');
+  const { plan } = planTurn({
+    question: 'Tell me about Vale', history: [], knowledge: TENANT_SURNAME_COLLISION
+  });
+  assert.equal(plan.activeEntity?.name, 'Vale');
+  assert.equal(plan.activeEntitySource, 'current-turn');
+});
+
+test('COLL-5: local-business service name colliding with owner name', () => {
+  const kb = {
+    identity: { name: 'Harbor Plumbing Co' },
+    owner: 'Sam Harbor',
+    agent: { name: 'Scout' },
+    services: [{ name: 'Harbor Inspection', price: '$200' }]
+  };
+  const graph = buildRelationshipGraph(kb);
+  const r = resolveEntity(graph, 'harbor inspection');
+  assert.notEqual(r, graph.subjectNorm);
+});
+
+test('COLL-6: explicit entity switch sets current target, not the prior one', () => {
+  const history = historyOf([['Tell me about Atlas', 'Atlas is a data pipeline.']]);
+  const { resolvedQuestion, plan } = planTurn({
+    question: 'What tech does Beta use?', history, knowledge: TENANT_SURNAME_COLLISION
+  });
+  assert.equal(plan.topicShift, true);
+  assert.equal(plan.topicShiftReason, 'explicit-entity');
+  assert.equal(plan.priorActiveEntity?.name, 'Atlas');
+  assert.equal(plan.activeEntity?.name, 'Beta');
+  // No leg may carry the stale entity.
+  const legs = buildRetrievalLegs({
+    plan, normalize: q => normalizeQuery(q, TENANT_SURNAME_COLLISION), expand: expandQueryAliases
+  });
+  for (const leg of legs) assert.ok(!leg.query.includes('atlas'), `stale entity in leg ${leg.name}`);
+  // Cache key carries the current target, never the prior one.
+  const key = buildSemanticCacheKey({ plan, resolvedQuestion });
+  assert.ok(key.includes('beta'));
+  assert.ok(!key.includes('atlas'));
+});
+
+test('COLL-7: pronoun continuation keeps the prior target', () => {
+  const history = historyOf([['Tell me about Atlas', 'Atlas is a data pipeline.']]);
+  const { plan } = planTurn({
+    question: 'What about its deployment?', history, knowledge: TENANT_SURNAME_COLLISION
+  });
+  assert.equal(plan.continuationType, 'referent');
+  assert.equal(plan.activeEntity?.name, 'Atlas');
+  assert.equal(plan.activeEntitySource, 'history');
+  const legs = buildRetrievalLegs({
+    plan, normalize: q => normalizeQuery(q, TENANT_SURNAME_COLLISION), expand: expandQueryAliases
+  });
+  assert.ok(legs.some(l => l.name === 'entity_facet' && l.query.toLowerCase().includes('atlas')));
+});
+
+test('COLL-8: assistant-mentioned entity never becomes authoritative', () => {
+  const history = historyOf([['What projects exist?', 'There is Atlas and Zephyr. Zephyr is the newer one.']]);
+  const { plan } = planTurn({
+    question: 'What tech does it use?', history, knowledge: TENANT_SURNAME_COLLISION
+  });
+  // 'Zephyr' appeared only in assistant text. Structured referent
+  // resolution may legitimately pick a discourse-presented entity for 'it',
+  // but an assistant-only name that was never user-established nor resolved
+  // into the current turn must not become the current target.
+  assert.notEqual(plan.activeEntity?.name, 'Zephyr');
+  for (const e of plan.explicitEntities) assert.notEqual(e.name, 'Zephyr');
+});
+
+test('COLL-9: equivalent questions share a semantic cache key across history', () => {
+  const h1 = historyOf([['Tell me about Atlas', 'Atlas is a pipeline.']]);
+  const h2 = historyOf(Array.from({ length: 20 }, (_, i) => [`thing ${i}?`, `answer ${i}.`]));
+  const q = 'What skills does ze have?';
+  const k1 = buildSemanticCacheKey(planTurn({ question: q, history: h1, knowledge: TENANT_NAME_COLLISION }));
+  const k2 = buildSemanticCacheKey(planTurn({ question: q, history: h2, knowledge: TENANT_NAME_COLLISION }));
+  assert.equal(k1, k2);
+});
+
+test('COLL-10: different entity targets produce different cache keys', () => {
+  const a = planTurn({ question: 'What tech does Atlas use?', history: [], knowledge: TENANT_SURNAME_COLLISION });
+  const b = planTurn({ question: 'What tech does Vale use?', history: [], knowledge: TENANT_SURNAME_COLLISION });
+  const ka = buildSemanticCacheKey(a);
+  const kb = buildSemanticCacheKey(b);
+  assert.notEqual(ka, kb);
+});
+
+test('COLL-11: question-word tokens are never minted as entities', () => {
+  for (const q of ['What tech does Beta use?', 'Which of them is faster?', 'How does Atlas deploy?']) {
+    const { plan } = planTurn({ question: q, history: [], knowledge: TENANT_SURNAME_COLLISION });
+    for (const e of plan.explicitEntities) {
+      assert.ok(!/^(what|which|who|how|does|is)$/i.test(e.name), `question word minted: ${e.name}`);
+    }
+  }
+});
+
+test('COLL-12: role question after unrelated long history keeps role semantics', () => {
+  const history = historyOf(Array.from({ length: 15 }, (_, i) => [`turn ${i} about cooking`, `cooking answer ${i}`]));
+  const { plan } = planTurn({
+    question: 'Is she a good fit for a backend role?', history, knowledge: TENANT_PROFESSIONAL
+  });
+  const legs = buildRetrievalLegs({
+    plan, normalize: q => normalizeQuery(q, TENANT_PROFESSIONAL), expand: expandQueryAliases
+  });
+  const qs = legQueries(legs);
+  assert.ok(!qs.includes('cooking'), 'stale topic leaked into legs');
+  if (plan.requestedRole) assert.ok(legs.some(l => l.name === 'role'));
 });
