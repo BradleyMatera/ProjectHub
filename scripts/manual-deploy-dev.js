@@ -209,7 +209,10 @@ node "$TX/verify.js" baseline "$TX"
 paths=(${replaced.map(p => `'${p}'`).join(' ')})
 for item in "\${paths[@]}"; do
   [ ! -L "$ROOT/$item" ]
-  if [ -e "$ROOT/$item" ]; then cp -a "$ROOT/$item" "$TX/backup/$item"; fi
+  if [ -e "$ROOT/$item" ]; then
+    mkdir -p "$(dirname "$TX/backup/$item")"
+    cp -a "$ROOT/$item" "$TX/backup/$item"
+  fi
 done
 touched=()
 rollback() {
@@ -221,10 +224,12 @@ rollback() {
   systemctl stop "$SERVICE" || rollback_failed=1
   for ((i=\${#touched[@]}-1; i>=0; i--)); do
     item=\${touched[$i]}
+    mkdir -p "$(dirname "$TX/failed/$item")"
     if [ -e "$ROOT/$item" ] || [ -L "$ROOT/$item" ]; then
       mv -T "$ROOT/$item" "$TX/failed/$item" || { rollback_failed=1; continue; }
     fi
     if [ -e "$TX/backup/$item" ]; then
+      mkdir -p "$(dirname "$TX/restore/$item")" "$(dirname "$ROOT/$item")"
       cp -a "$TX/backup/$item" "$TX/restore/$item" &&
         mv -T "$TX/restore/$item" "$ROOT/$item" || rollback_failed=1
     fi
@@ -251,6 +256,7 @@ trap 'rollback 129' HUP
 systemctl stop "$SERVICE"
 for item in "\${paths[@]}"; do
   touched+=("$item")
+  mkdir -p "$(dirname "$TX/retired/$item")" "$(dirname "$ROOT/$item")"
   if [ -e "$ROOT/$item" ]; then mv -T "$ROOT/$item" "$TX/retired/$item"; fi
   mv -T "$TX/next/$item" "$ROOT/$item"
 done
