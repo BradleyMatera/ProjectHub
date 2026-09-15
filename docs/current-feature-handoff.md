@@ -1,6 +1,31 @@
 # Scout Feature Handoff
 
-**Updated:** 2026-09-15 — `fix/post-integration-semantic-reliability` (PR #31 open, base `develop`, not merged). Canonical-identity architecture pass:
+**Updated:** 2026-09-15 — **RELEASE COMPLETE.** PR #31 merged to `develop`, promoted to `master`, deployed to production, and verified end-to-end through the live recruiter chain. Active work moved to `feat/scout-action-runtime`.
+
+## Release record (durable identifiers)
+
+- **PR #31 merge SHA:** `e74ac22b` (merge commit on `develop`; tree identical to qualified feature tree `fa352f0`'s runtime `654d25e` — zero merge drift)
+- **New develop SHA:** `e74ac22b` — CI `Test and Verify` success on the merge result
+- **ProjectHub-dev staging source:** `STAGING-SOURCE.json` sourceCommit `e74ac22b`, `sourceBranch develop`; staging `ProjectHub.js` byte-identical to develop tree
+- **DEV backend:** `dev.projecthub-chat.bradleymatera.dev` `/health` → `sourceBranch develop`, `sourceCommit e74ac22b`, cloudflare, `@cf/meta/llama-3.1-8b-instruct-fast`, 15000ms
+- **Release PR:** #32 — exact-tree release commit `4cc5de1` (tree `92b4d14` == qualified develop tree, parented from `master b071e4e`)
+- **Production master SHA:** `7d01170830949a0ef85da58bab6a0a2b266b0e9c` (merge commit of PR #32; tree verified identical to qualified develop tree)
+- **Prod backend:** `projecthub-chat.bradleymatera.dev` `/health` → `sourceBranch master`, `sourceCommit 7d01170`, cloudflare, `@cf/meta/llama-3.1-8b-instruct-fast`, 15000ms — deployed via `deploy-gcp.sh`, source and backend SHAs agree
+- **GitHub Pages:** `pages.yml` success on `7d01170`; live `ProjectHub.js` byte-identical to production master tree
+- **Gatsby release:** PR `BradleyMatera/gatsby-starter-minimal-blog#4` (branch `chore/projecthub-pin-7d01170`, pin commit `3c744b2`) merged → Gatsby master `62082a945cfeb4b09606e81bd5ab14b6f463b9c5`
+- **Production pin:** live bundle serves `https://bradleymatera.github.io/ProjectHub/ProjectHub.js?v=7d01170830949a0ef85da58bab6a0a2b266b0e9c` (cache-busting param, not commit-addressed)
+- **Netlify production:** `bradleymatera.dev` serving the merged Gatsby master with the new pin (deploy state ready; verified via live bundle)
+- **Live chain smoke** (`/.netlify/functions/recruiter-chat` → prod API → Cloudflare 8B): known-skill grounded YES, unknown-skill bounded UNKNOWN, project facet grounded, arithmetic exact (`30`), project enumeration + follow-up handled — all MODEL_GENERATION
+
+## Next feature: `feat/scout-action-runtime`
+
+Branch from `develop e74ac22b`, published at `ebed168`. Action Runtime V1 substrate: `lib/tool-registry.js` (CapabilityDescriptor catalog), `lib/tool-executor.js` (ToolExecutor + PermissionPolicy + ActionAudit + WorkflowState + typed ToolResult provenance), `lib/tool-capabilities.js` (calculator wrapping the arithmetic engine as COMPUTED_FACT; knowledge_lookup/entity_lookup/content_search as TENANT_EVIDENCE; send_notification as the mock side-effect/confirmation-gate proof). 24 tests in `test/action-runtime.test.js`; suite 1476/1476. **Substrate only — not wired into the request path yet.** Next step: model-facing tool selection (ToolPlanner) + executor integration into the chat pipeline.
+
+---
+
+## Historical: PR #31 pre-merge record
+
+**Updated:** 2026-09-15 — `fix/post-integration-semantic-reliability` (merged via `e74ac22b`). Canonical-identity architecture pass:
 
 - Frozen/qualified DEV runtime: `654d25e625b15c3fb043e442fcfcfb813bf71aa9`
 - Exact-SHA CI `Test and Verify` run `34922407613` **success** on `654d25e`.
@@ -24,7 +49,7 @@ Verification on `654d25e`:
 - `eval:local-api` (DEV): **19/23 GOOD (82.6%)**, p50 723ms, p95 1974ms, 0 rate limits, 0 provider errors, 2 inference-unavailable. Non-GOOD: `negative-assessment` (GENERIC — semantically correct grounded DSA-gap answer missing scorer keywords), `memory-follow-up-a` (INFERENCE_UNAVAILABLE), `memory-follow-up-b` (CONTEXT_ERROR cascade of A's failure), `skill-frame` (INFERENCE_UNAVAILABLE, same as baseline). Not tuned to scorer.
 - 132-turn live gate (DEV, `--delay 4.0 --diagnose`): **100/132 turns, 20/33 conversations**, zero 429s (baseline `b883209`: 101/132, 20/33). Classes: GENERATION 18, VALIDATION 11, NEAR_DUPLICATE 2, OTHER 1 (was 15/14/1/1). Delta: 11 fixed, 12 new, 20 unchanged. All 12 new failures manually inspected: validators correctly rejecting model fabrications (`unsupported_tech_claim`, `fabricated_occupation`, `forbidden_claim:struggle`, `entity_not_grounded`, `unsupported_relationship`), scorer-phrase misses on semantically reasonable replies, and model variance — no semantic, retrieval, or validator regression. Primary rejections 32 (was 34); rejected repairs 15 (was 17).
 
-Next: Bradley's integration decision on PR #31. Do not merge; `develop`, `master`, `ProjectHub-dev` unchanged.
+Outcome: PR #31 merged to `develop` as `e74ac22b` and promoted to production `master 7d01170` — see release record above.
 
 ---
 
