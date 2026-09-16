@@ -4,13 +4,20 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
 
+const fs = require('fs');
+const os = require('os');
+
 const {
-  PACKAGE_SCHEMA_VERSION, GENERAL_PACKAGE,
-  validateDomainPackage, loadDomainPackage, isCapabilityAllowed
+  PACKAGE_SCHEMA_VERSION, GENERAL_PACKAGE, LEGACY_CAPABILITY_POLICY,
+  INVALID_PACKAGE_MANIFEST,
+  validateDomainPackage, loadDomainPackage, transitionPackageState,
+  isCapabilityAllowed, publicActionRuntimeSummary, resolveKnowledgeSource
 } = require('../lib/domain-package');
 const { buildToolRegistry } = require('../lib/tool-capabilities');
 const { ToolExecutor, PermissionPolicy } = require('../lib/tool-executor');
 const { normalizeKnowledgeEntities } = require('../lib/knowledge-entities');
+const { buildRagChunks } = require('../lib/rag-chunks');
+const { BM25Index } = require('../lib/bm25');
 
 const PACKAGES_DIR = path.join(__dirname, '..', 'data', 'packages');
 const registry = buildToolRegistry();
@@ -70,12 +77,21 @@ describe('Domain package validator', () => {
     assert.equal(r.ok, false);
   });
 
-  it('warns on unknown capability ids', () => {
+  it('rejects unknown capability ids when the registry is known', () => {
     const p = validPkg();
     p.capabilities = { allow: ['does_not_exist'] };
     const r = validateDomainPackage(p, { knownCapabilities });
-    assert.equal(r.ok, true);
-    assert.ok(r.warnings.some(w => /unknown capability/.test(w.message)));
+    assert.equal(r.ok, false);
+    assert.ok(r.errors.some(e => /unknown capability/.test(e.message)));
+  });
+
+  it('rejects a package.runtime key — not part of the V1 contract', () => {
+    for (const runtime of [{}, { deadlineMs: 14999 }, { deadlineMs: 15000 }, { deadlineMs: 15001 }, { deadlineMs: '15000' }, { deadlineMs: -1 }, { deadlineMs: null }, 'anything']) {
+      const p = validPkg(); p.runtime = runtime;
+      const r = validateDomainPackage(p);
+      assert.equal(r.ok, false, JSON.stringify(runtime));
+      assert.ok(r.errors.some(e => e.path === 'runtime'), JSON.stringify(runtime));
+    }
   });
 
   it('warns on side-effecting capability without a confirmation policy', () => {
@@ -247,8 +263,9 @@ describe('Package capability gating + executor integration', () => {
     assert.equal(isCapabilityAllowed(GENERAL_PACKAGE, 'send_notification'), false);
   });
 
-  it('a manifest with no capabilities section permits registry defaults', () => {
-    assert.equal(isCapabilityAllowed({ id: 'x', name: 'X' }, 'calculator'), true);
+  it('a manifest with no capabilities section permits nothing (fail closed)', () => {
+    assert.equal(isCapabilityAllowed({ id: 'x', name: 'X' }, 'calculator'), false);
+    assert.equal(isCapabilityAllowed({ id: 'x', name: 'X' }, 'knowledge_lookup'), false);
   });
 
   it('calculator executes identically under every package', async () => {
