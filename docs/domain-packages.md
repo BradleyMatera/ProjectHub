@@ -24,9 +24,25 @@ SCOUT_DOMAIN_PACKAGE=general node server-gemini.js
 KNOWLEDGE_FILE=data/recruiter-knowledge.json node server-gemini.js
 ```
 
-The active package (id, name, mode, warning count) is reported on `GET /health`
-under `buildEnv.package`. Invalid packages fail closed: the server keeps the
-last valid package and logs `ERROR` lines naming the offending paths.
+The active package (id, name, mode, warning count, load status, staleness,
+knowledge hash) is reported on `GET /health` under `buildEnv.package`, and
+`buildEnv.actionRuntime` exposes safe aggregates only (registered/enabled
+capability counts, audit buffer size) — never action history, arguments,
+results, or tenant data.
+
+### Package-identity-bound cache transitions
+
+`transitionPackageState` decides what the runtime may do on every (re)load:
+
+| Decision | Condition | Effect |
+|----------|-----------|--------|
+| `publish` | requested package validates | swap knowledge, rebuild BM25/RAG, clear response cache, reconfigure tool runtime |
+| `retain-stale` | **same** source key + resolved knowledge path, refresh failed | keep last validated snapshot, report `stale`/`status: "stale"` on health |
+| `drop` | requested source changed and is invalid, or first load fails | clear ALL tenant state: knowledge snapshot, RAG/BM25, response cache, readiness, capability manifest (→ deny-all `package-error`) |
+
+A configuration switch that fails can never keep serving the previous
+tenant's knowledge. Health reports the true state; staleness is never
+silently treated as current.
 
 ## Package shape
 
@@ -53,6 +69,16 @@ last valid package and logs `ERROR` lines naming the offending paths.
 }
 ```
 
+There is **no `runtime` key** in the V1 contract. A package may never raise
+the global Scout deadline (≤15000 ms), disable validation, select providers,
+grant permission scopes, or move security boundaries — the key is a hard
+validation error, not an ignored knob.
+
+`knowledge.source` is resolved relative to the package file and **confined
+to approved roots** (the package's own directory and `<base>/data` by
+default). Absolute paths, `..` traversal outside the roots, and symlink
+escapes are rejected.
+
 Canonical runtime identity (name, pronouns, aliases) lives in
 `knowledge.identity` — the same structure the Core has always consumed.
 `identity` at the manifest level is informational only.
@@ -60,8 +86,10 @@ Canonical runtime identity (name, pronouns, aliases) lives in
 ## Validation contract
 
 `lib/domain-package.js` exports `validateDomainPackage(pkg, {knownCapabilities})`,
-`loadDomainPackage(source, {baseDir, knownCapabilities})`, and
-`isCapabilityAllowed(manifest, capabilityId)`.
+`loadDomainPackage(source, {baseDir, knownCapabilities, approvedRoots})`,
+`transitionPackageState(activeIdentity, loadResult)`,
+`isCapabilityAllowed(manifest, capabilityId)`, and
+`publicActionRuntimeSummary({registry, manifest, auditEntries, configured})`.
 
 **Errors (do not load):**
 
@@ -69,16 +97,24 @@ Canonical runtime identity (name, pronouns, aliases) lives in
 - `kind` other than `domain-package`
 - `knowledge` non-object, or `knowledge.source` mixed with inline sections
 - capability in both `allow` and `deny`, or duplicated
+- `runtime` key present (not part of the V1 contract)
+- allow-listed capability ids unknown to the registry — an id that cannot
+  execute is a contract error, not noise
 - collection sections (`projects`, `services`, `products`, `faq`,
-  `boundaries`, `directAnswers`, `subjectAliases`, …) that are not arrays
-- non-scalar knowledge keys that are bare scalars
+  `boundaries`, `directAnswers`, `subjectAliases`, `systemFacts`, …) that
+  are not arrays
+- known object sections (`identity`, `contact`, `business`, …) that are not
+  objects — custom sections are free-form JSON and are not type-pinned
 - duplicate entity names across collections
 - `subjectAliases` colliding with an entity name or entity alias
+- `knowledge.source` escaping approved roots (absolute path, `..` traversal,
+  symlink escape)
 
-**Warnings (load anyway):** unknown capability ids, side-effecting capabilities
-without a `policies.confirmation` block, workflow steps that are neither
-builtin (`resolve`/`retrieve`/`compare`/`generate`/`validate`) nor allowed
-capabilities, ambiguous entity aliases shared across collections.
+**Warnings (load anyway):** unknown top-level manifest keys, side-effecting
+capabilities without a `policies.confirmation` block, workflow steps that are
+neither builtin (`resolve`/`retrieve`/`compare`/`generate`/`validate`) nor
+allowed capabilities, ambiguous entity aliases shared across collections
+(contextual disambiguation handles them — recruiter data relies on this).
 
 ## CLI
 
@@ -104,3 +140,21 @@ the operator inspection surface.
 All shipped packages allow the four read-only capabilities
 (`calculator`, `knowledge_lookup`, `entity_lookup`, `content_search`) and deny
 `send_notification`. General Scout allows `calculator` only.
+
+## Capability semantics (fail closed)
+
+`isCapabilityAllowed` permits a capability **only** when it appears in
+`capabilities.allow`. Missing `capabilities`, missing `allow`, or
+`allow: []` enables nothing; `deny` always wins. Side effects additionally
+require a permission scope, a confirmation token, and a registered handler —
+package data alone can never make a side effect executable, grant scopes, or
+register code.
+
+Legacy bare-knowledge files (no `packageVersion`) load with the explicit
+`LEGACY_CAPABILITY_POLICY` — the same four read-only capabilities, with
+`send_notification` denied — rather than silently inheriting global access.
+
+Packages may declare `knowledge.systemFacts` — tenant-scoped "what this app
+covers" facts added to RAG evidence. The Core injects only neutral runtime
+facts from `data/scout-runtime-knowledge.json`; scope claims belong to the
+package that owns them.
