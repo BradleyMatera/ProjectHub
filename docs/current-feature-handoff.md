@@ -19,19 +19,19 @@
 
 ## Active feature: `feat/scout-action-runtime` → PR #33
 
-Branch from `develop e74ac22b`; DEV-verified published head `72d59e2` (deploy manifest fix `6bf5592`, swap mkdir fix `72d59e2`).
+Branch from `develop e74ac22b`; DEV-verified published head `c20d9a11f62d04127c332665931a7df1ba2843e3` (hardening pass `b6979e4`, docs/report `c20d9a1`).
 
 **Productization V1 delivered on this branch:**
 
-- **Domain-package contract** (`lib/domain-package.js`): `validateDomainPackage` (errors vs warnings + fix hints), `loadDomainPackage` (file/object/`'general'`/legacy bare-knowledge), `isCapabilityAllowed` (deny wins). Contract documented in `docs/domain-packages.md`.
+- **Domain-package contract** (`lib/domain-package.js`): `validateDomainPackage` (errors vs warnings + fix hints), `loadDomainPackage` (file/object/`'general'`/legacy bare-knowledge, path-confined `knowledge.source`), `transitionPackageState` (publish/retain-stale/drop), `isCapabilityAllowed` (**fail closed** — explicit allow-list only, deny wins), `publicActionRuntimeSummary`. Contract documented in `docs/domain-packages.md`; hardening record in `docs/scout-productization-v1-hardening-report.md`.
 - **General Scout mode**: `SCOUT_DOMAIN_PACKAGE=general` → empty knowledge, calculator-only capabilities; first-class mode, not missing data.
 - **Shipped packages** (`data/packages/`): `recruiter-alpha` (sources `data/recruiter-knowledge.json`), `rivera-home-electric` (service business, inline), `northstar-desk` (SaaS product, inline). All deny `send_notification`.
 - **Action runtime** (`lib/tool-registry.js`, `tool-executor.js`, `tool-capabilities.js`): capability descriptors + permission scopes + provenance + side-effect/confirmation metadata; executor gating; ActionAudit; WorkflowState.
 - **Runtime integration** (`lib/lite-agent.js`): `configureToolRuntime` + `runCapabilityFacts` — calculator runs through the shared read-only executor (package-gated, audited, deadline-bounded); identical computed facts into the evidence packet.
-- **Operator inspection**: `scripts/validate-package.js`, `scripts/inspect-package.js`, `/health` `buildEnv.package` + `recentActions`.
+- **Operator inspection**: `scripts/validate-package.js`, `scripts/inspect-package.js`, `/health` `buildEnv.package` (incl. `status`/`stale`/`knowledgeHash`) + `buildEnv.actionRuntime` aggregates — **no public action history**.
 - **Deploy**: `manual-deploy-dev.js` whitelists `data/packages/`; swap mkdir -ps nested parents (fixed after first failed swap, rollback restored cleanly).
 
-**Verification:** suite 1513/1513; DEV deploy `72d59e2` verified live (`/health` → `legacy-knowledge` package mode — backward-compat bare-knowledge path); general + rivera modes boot-verified locally.
+**Verification:** suite 1565/1565; retrieval eval Recall@6=1.000 (40/40); DEV deploy `c20d9a1` verified live (`/health` → `legacy-knowledge` mode, `status: active`, actionRuntime aggregates only); general + rivera modes boot-verified locally.
 
 **PR #33:** open to `develop`. Next: review → merge → staging mirror → release PR to master.
 
