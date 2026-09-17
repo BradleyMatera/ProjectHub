@@ -165,6 +165,6 @@ remains calculator-only.
   review.
 - Copilot review 5222017585 (commit `b6979e4`): quota exhausted — not a code
   review.
-- A single fresh Copilot review was requested on the pass-2 frozen head;
-  its recorded outcome is reported in the PR thread. Neither prior review
-  should be cited as coverage.
+- Copilot review 5235097347 (commit `25c656b`, pass-2 frozen head, submitted
+  2026-09-17T11:39:15Z): quota exhausted — not a code review. No substantive
+  external review of this branch has occurred; no findings are claimed.
