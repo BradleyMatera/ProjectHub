@@ -1,106 +1,170 @@
-# Scout Productization V1 — Hardening Report
+# Scout Productization V1 — Hardening Report (Pass 2)
 
-Scope: PR #33 branch `feat/scout-action-runtime`. Hardening pass over the V1
-domain-package contract and action runtime before develop integration.
+Scope: PR #33 branch `feat/scout-action-runtime`. Second hardening pass over
+the V1 domain-package contract and action runtime, driven by independent
+inspection of the pushed implementation. Supersedes the pass-1 wording;
+pass-1 claims that were aspirational at the time (executor-side capability
+enforcement, real confirmation grants, positive stale identity proof) are now
+implemented and tested.
 
 ## Blocker resolutions
 
-### 1. Capability contract — fail closed
+### 1. Capability policy enforced at the execution boundary
 
-`isCapabilityAllowed` previously returned `true` when `capabilities` was
-absent or non-restrictive (fail-open). Now:
+Pass 1 gated capabilities in `lite-agent` before calling `execute()` — a
+caller bypassing the agent could execute a package-denied capability.
 
-- A capability executes only when explicitly present in `capabilities.allow`.
-- `deny` always wins; checked before `allow`.
-- Missing `capabilities`, missing `allow`, or `allow: []` enables nothing.
-- Allow-listed ids unknown to the registry are validation **errors**, not
-  warnings — an id that can never execute is a broken contract.
-- General Scout allows `calculator` only.
-- Legacy bare-knowledge files load with the explicit
-  `LEGACY_CAPABILITY_POLICY` (the four read-only capabilities, notification
-  denied) — not an implicit global allow.
-- Side effects additionally require permission scope + confirmation token +
-  registered handler; package data can never grant scopes or register code.
+Now `ToolExecutor.execute()` itself runs the full gate order:
 
-### 2. Package reload / cross-tenant stale cache
+```
+registered? → capabilityPolicy(toolId) → tenant availability →
+permission scope → confirmation grant → arg schema → deadline → handler
+```
 
-Old behavior: invalid package load returned `knowledgeCache` and called it
-fail closed — the previous tenant kept serving across a config switch.
+The active package manifest is injected as a tenant-neutral
+`capabilityPolicy` function (built from `isCapabilityAllowed` on
+`domainPackageManifest`, which is `INVALID_PACKAGE_MANIFEST`/deny-all in
+invalid state). lite-agent still pre-checks to avoid pointless calls, but it
+is no longer the only gate. A denied attempt returns a typed
+`CAPABILITY_NOT_ALLOWED` refusal, is audited, and never runs the handler.
 
-New behavior (`transitionPackageState` + `fetchKnowledge` rewrite):
+Fail-closed semantics (from pass 1, unchanged): only explicit
+`capabilities.allow` membership enables a capability; `deny` always wins;
+missing/empty `allow` enables nothing; General Scout = calculator only;
+legacy bare-knowledge files get the explicit `LEGACY_CAPABILITY_POLICY`.
 
-- Identity tracked per load: `sourceKey`, `manifestId`, resolved
-  `knowledgePath`, `knowledgeHash` (sha256-16), status, staleness, load time.
-- `publish` — validated package swaps knowledge, rebuilds BM25/RAG, clears
-  response cache, reconfigures tool runtime + all knowledge-bound modules.
-- `retain-stale` — allowed only when requested `sourceKey` AND resolved
-  `knowledgePath` are provably unchanged; health reports `status: "stale"`.
-- `drop` — source change + invalid (or first-load failure) clears ALL tenant
-  state: knowledge snapshot, ragChunks, bm25Index, responseCache, readiness,
-  capability manifest → deny-all `package-error`; knowledge-bound modules are
-  reconfigured with empty knowledge so prior tenant names/aliases are
-  dropped.
-- Catastrophic load errors follow the same rule: retain only on identical
-  source, otherwise drop.
+### 2. Truthy-string confirmation removed — confirmation grants
 
-### 3. Public /health action surface
+Pass-1 `confirmationSatisfied` accepted any truthy `confirmationToken`.
+Replaced by `ConfirmationGrantVerifier` (`lib/confirmation-grants.js`):
 
-`buildEnv.recentActions` (last 5 audit entries — chronology, args, results)
-removed. `publicActionRuntimeSummary` exposes only:
+- `issue({toolId, args, principal})` → grant bound to tool id, normalized
+  arg digest (sha256-16 of canonical JSON), principal, issuance, expiry,
+  nonce. No raw args are stored in or recoverable from the grant.
+- `consume(...)` is one-time: replay returns `GRANT_ALREADY_CONSUMED`.
+- Tool A grant cannot authorize tool B; args A grant cannot authorize args B;
+  expired grants rejected; principal mismatch rejected.
+- No verifier injected → all side effects refuse by default. The default
+  production runtime therefore has **no executable `action:write`
+  capability** — `send_notification` is denied in every shipped manifest and
+  additionally unconfirmable without a verifier.
+- No confirmation value appears in `ToolResult.forModel()` or audit output.
 
-`{ enabled, registeredCapabilities, enabledCapabilities, auditBuffered }`
+### 3. Handler errors sanitized at the boundary
 
-`buildEnv.package` additionally reports `status`, `stale`, `knowledgeHash` —
-truthful load-state reporting required by the transition contract. No new
-unauthenticated endpoint for audit detail; ActionAudit stays internal
-(bounded, in-memory, operator-local).
+`ToolExecutor` no longer stores `String(err.message)` in the ToolResult or
+audit. Model-facing results get a stable `EXECUTION_ERROR` category plus a
+generic message. Audit entries store the typed category only. Detailed
+diagnostics route to an optional injected `diagnostics` sink — operator-side,
+not model context. Test coverage proves a `SUPER_SECRET_MARKER_123` thrown by
+a handler appears nowhere in `forModel()`, audit serialization, or the public
+health projection.
 
-### 4. `runtime` key — removed from V1 contract
+### 4. retain-stale requires positive identity proof
 
-`runtime` is a hard validation error. Packages can never raise the global
-deadline (≤15000 ms), disable validation, pick providers, grant scopes, or
-move security boundaries. If a bounded runtime-config contract is needed
-later it will be a separate schema — unknown keys are already warned.
+Pass-1 treated `knowledgePath == null` as proving sameness — a malformed
+replacement package could retain the previous tenant.
 
-## Additional hardening
+Identity is now split:
 
-- `knowledge.source` confined to approved roots (package dir + `<base>/data`
-  default); absolute paths, `..` escapes, and symlink escapes rejected.
-- Runtime-fact split: `data/scout-runtime-knowledge.json` neutralized;
-  recruiter scope claims moved to `recruiter-knowledge.json` `systemFacts`.
-  `buildRagChunks` supports `knowledge.systemFacts` and no longer emits a
-  filler "the candidate" identity chunk for empty knowledge.
-- `publications` added to `COLLECTION_TYPES`/`ENTITY_SECTIONS` — a generic
-  entity collection, required by the schema-quality goal (non-recruiter
-  packages are not bound to recruiter knowledge shapes).
-- Custom knowledge sections are free-form; only known sections are
-  type-pinned.
-- Unknown top-level manifest keys warn (typo surface, not a fail).
+- **Package/config identity:** `sourceKey`, `packageFileRealPath`,
+  `configHash` (sha256-16 over the normalized package object), `manifestId`,
+  `knowledgeSourceRealPath`.
+- **Knowledge content identity:** `knowledgeHash`.
 
-## Action-runtime audit (items 1–22)
+`retain-stale` is permitted **only** when package/config identity is
+positively established as unchanged — same config fingerprint, same manifest
+id, same resolved external knowledge source — and the failure is in the
+knowledge content layer (e.g. backing file temporarily unreadable). Malformed
+package JSON, changed manifest id, changed knowledge source declaration, or
+any edited-into-invalid inline package all `drop`. Null/unknown fields never
+count as proof. Legacy bare-knowledge files are both config and knowledge;
+if one becomes malformed there is no config identity to prove, so it drops.
+
+### 5. Invalid state no longer gets the 15-minute cache fast path
+
+The fetch fast path now requires `packageCacheUsable`:
+`activePackageIdentity.status === 'active'` AND `knowledgeReady` AND
+`stale === false`. Dropped/invalid/stale state re-attempts the load on the
+next request, so an operator fix recovers immediately instead of waiting out
+the cache window. Covered by an A→invalid-B→fixed-B integration test.
+
+### 6. Server validates against the real capability registry
+
+`fetchKnowledge`/`loadDomainPackage` in `server-gemini.js` now passes
+`knownCapabilities: toolRegistry` — the live `ToolRegistry`, not a CLI list.
+An allow-listed capability unknown to the registry is a runtime validation
+error: the package does not publish, drop semantics apply, and the capability
+is never executable.
+
+### 7. Package-file source security completed
+
+Pass 1 confined `knowledge.source` only. Now the package file itself must
+resolve (realpath, symlink-safe) inside an approved root:
+
+- Default approved root: `<base>/data` — covers `data/packages/*` and legacy
+  `data/recruiter-knowledge.json` without breaking deployments.
+- Additional runtime roots via `SCOUT_PACKAGE_ROOTS` (path.delimiter list)
+  or the `packageRoots` loader option.
+- Traversal (`../`), absolute paths outside roots, and symlink escapes are
+  rejected before the file is opened.
+- Operator CLIs (`validate-package.js`, `inspect-package.js`) load with
+  explicit `trustedOperator: true` — operator trust is a declared mode, not
+  an accident.
+
+### 8. Core vs deployment runtime facts
+
+`data/scout-runtime-knowledge.json` is now architecture-only: tenant-neutral
+statements about what Scout is (orchestration/intelligence runtime; retrieval
+optional; model-authored prose; capability/evidence/validation architecture).
+No "RAG-first" claim, no provider, model, host, or billing statements.
+
+`lib/deployment-facts.js` generates deployment facts from actual runtime
+config (`provider`, `model`, `deadlineMs`, rate limit) plus an optional
+`data/deployment-facts.json` declaration file whose entries are provider-gated
+(`when.provider`). A General Scout/Ollama deployment exposes no Cloudflare
+claims; the current ProjectHub deployment still answers accurately about its
+configured `@cf/meta/llama-3.1-8b-instruct-fast` model and free-tier facts.
+
+### 9. Health surface (unchanged contract, restated)
+
+`buildEnv.recentActions` stays removed. Public action surface is aggregates
+only: `{ enabled, registeredCapabilities, enabledCapabilities,
+auditBuffered }`. Package block reports `id/name/mode/legacy/warnings/
+status/stale/knowledgeHash`.
+
+## Action-runtime audit (items 1–20)
 
 Verified structurally and via `test/package-hardening.test.js` +
-`test/action-runtime.test.js`: unknown tool refused; not-allowed refused;
-tenant-unavailable refused; missing scope refused; side effect without
-confirmation refused; confirmation requires `canConfirm` (no static bypass);
-args validated pre-handler; deadline uses remaining budget within the 15 s
-product cap; timeouts typed `EXECUTION_ERROR`; provenance stays typed
-(`COMPUTED_FACT`, `TENANT_EVIDENCE`, `TOOL_RESULT`); ToolResult.forModel
-hides internals; no deterministic prose fallback on tool failure; package
-data cannot register handlers or grant scopes; workflows declarative only;
-no eval/dynamic-require/shell interpolation from package data.
+`test/action-runtime.test.js`: package allow policy enforced inside the
+executor; registry existence enforced; tenant availability enforced;
+permission scopes enforced; side effects unexecutable under default runtime
+(no verifier); grants cannot replay; grants bound to capability + arg digest
++ principal; args validated pre-handler; remaining deadline enforced;
+handler failure contained and sanitized; timeouts produce typed
+`EXECUTION_ERROR`, never prose; results keep typed provenance; tool output is
+evidence, not authored prose; package data cannot register handlers, grant
+scopes, or load code; workflows declarative only; no eval/dynamic require/
+shell interpolation from package data; audit holds no raw secrets or grant
+values; denied/failed actions audited as typed events; General Scout policy
+remains calculator-only.
 
 ## Evidence
 
-- `npm test`: 1565/1565 pass (floor was 1513; +52 package/hardening tests)
+- `npm test`: 1601/1601 pass (previous floor 1565; +36 pass-2 tests)
 - `npm run eval-retrieval`: Recall@6 = 1.000 (40/40), MRR@6 = 0.942
-- `node --check server-gemini.js`: clean; `git diff --check`: clean
+- `node --check` on all touched files: clean; `git diff --check`: clean
 - `npm run workspace:check`: READY
 - Package CLIs: all shipped packages VALID; `general` VALID
+- Frozen runtime SHA + exact-SHA CI + DEV verification: see PR #33 body and
+  the commit history for the deployed head recorded at freeze time.
 
-## Review state
+## Review state (accurate history)
 
-Copilot review request submitted via API on head `b6979e4`; no reviewer
-attached (previous review 5205522750 was quota-exhausted, not a code
-review). All changed files independently inspected in-session; findings
-above are the result.
+- Copilot review 5205522750 (commit `72d59e2`): quota exhausted — not a code
+  review.
+- Copilot review 5222017585 (commit `b6979e4`): quota exhausted — not a code
+  review.
+- A single fresh Copilot review was requested on the pass-2 frozen head;
+  its recorded outcome is reported in the PR thread. Neither prior review
+  should be cited as coverage.

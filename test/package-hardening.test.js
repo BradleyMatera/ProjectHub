@@ -12,6 +12,7 @@ const {
   isCapabilityAllowed, publicActionRuntimeSummary, resolveKnowledgeSource
 } = require('../lib/domain-package');
 const { buildToolRegistry } = require('../lib/tool-capabilities');
+const { ToolRegistry } = require('../lib/tool-registry');
 const { ToolExecutor, PermissionPolicy } = require('../lib/tool-executor');
 const { normalizeKnowledgeEntities } = require('../lib/knowledge-entities');
 const { buildRagChunks } = require('../lib/rag-chunks');
@@ -142,7 +143,7 @@ function makeMiniRuntime(baseDir) {
     responseCache: new Set(), chunks: [], bm25: null
   };
   state.refresh = (source) => {
-    const result = loadDomainPackage(source, { baseDir });
+    const result = loadDomainPackage(source, { baseDir, packageRoots: [baseDir] });
     const decision = transitionPackageState(state.active, result);
     if (decision.action === 'retain-stale') {
       state.active = decision.active;
@@ -176,19 +177,66 @@ describe('Package identity-bound cache transitions', () => {
     write('switchable.package.json', pkg('switchable', 'Switchable', { source: 'k1.json' }));
   }
 
-  it('A valid → same source corrupt → retain-stale (snapshot kept, flagged)', () => {
+  it('A valid → same package file malformed → drop, NOT retain (identity unprovable)', () => {
+    setup();
+    const rt = makeMiniRuntime(dir);
+    rt.refresh('alpha.package.json');
+    write('alpha.package.json', 'this is not json{{{');
+    const r = rt.refresh('alpha.package.json');
+    assert.equal(r.decision.action, 'drop');
+    assert.deepEqual(r.state.knowledge, {});
+    assert.equal(r.state.ready, false);
+    assert.equal(r.state.manifest.id, 'package-error');
+  });
+
+  it('A valid → same pathname but different tenant + invalid → drop with zero A evidence', () => {
+    setup();
+    const rt = makeMiniRuntime(dir);
+    rt.refresh('alpha.package.json');
+    // Tenant B written over the same package pathname, but invalid
+    write('alpha.package.json', pkg('copperline-gym', 'Copperline Gym', 'not-an-object'));
+    const r = rt.refresh('alpha.package.json');
+    assert.equal(r.decision.action, 'drop');
+    const flat = JSON.stringify(r.state.chunks);
+    assert.ok(!flat.includes('Atlas Bakery'));
+    assert.ok(!flat.includes('Ana Sol'));
+  });
+
+  it('A valid external-source package → same config, knowledge temporarily corrupt → retain-stale', () => {
     setup();
     const rt = makeMiniRuntime(dir);
     let r = rt.refresh('alpha.package.json');
     assert.equal(r.decision.action, 'publish');
-    assert.equal(r.state.ready, true);
     const snapshot = r.state.knowledge;
-    write('alpha.package.json', 'this is not json{{{');
+    // Package file bytes unchanged; only the backing knowledge file breaks
+    write('alpha-k.json', '{corrupt json[');
     r = rt.refresh('alpha.package.json');
     assert.equal(r.decision.action, 'retain-stale');
     assert.equal(r.state.knowledge, snapshot); // last validated snapshot retained
     assert.equal(r.state.active.stale, true);
     assert.equal(r.state.active.status, 'stale');
+  });
+
+  it('A valid → same path, changed manifest id + invalid config → drop', () => {
+    setup();
+    const rt = makeMiniRuntime(dir);
+    rt.refresh('alpha.package.json');
+    write('alpha.package.json', { packageVersion: 1, id: 'different-tenant', name: 'Different', knowledge: 'bad' });
+    const r = rt.refresh('alpha.package.json');
+    assert.equal(r.decision.action, 'drop');
+    assert.equal(r.state.ready, false);
+  });
+
+  it('inline package valid → invalid edit → drop (config fingerprint changed)', () => {
+    setup();
+    const rt = makeMiniRuntime(dir);
+    const inline = { packageVersion: 1, kind: 'domain-package', id: 'inl', name: 'Inline', knowledge: tenantKnowledge('Ro Ban', 'Kite School', 'Lessons') };
+    let r = rt.refresh(inline);
+    assert.equal(r.decision.action, 'publish');
+    const edited = { ...inline, knowledge: 'broken' };
+    r = rt.refresh(edited);
+    assert.equal(r.decision.action, 'drop');
+    assert.equal(r.state.ready, false);
   });
 
   it('A valid → B invalid switch → drop (no tenant leak)', () => {
@@ -332,11 +380,12 @@ describe('knowledge.source path security', () => {
     write(siblingDir, 'secret.json', tenantKnowledge('Eve', 'Outside Corp', 'Secrets'));
   }
   const escapeRef = file => `../${path.basename(siblingDir)}/${file}`;
+  const load = name => loadDomainPackage(path.join(dir, name), { packageRoots: [dir] });
 
   it('rejects ../ traversal outside approved roots', () => {
     setup();
     write(dir, 'evil.package.json', pkg('evil', 'Evil', { source: escapeRef('secret.json') }));
-    const r = loadDomainPackage(path.join(dir, 'evil.package.json'));
+    const r = load('evil.package.json');
     assert.equal(r.ok, false);
     assert.ok(r.errors.some(e => /outside the approved roots/.test(e.message)), JSON.stringify(r.errors));
   });
@@ -344,7 +393,7 @@ describe('knowledge.source path security', () => {
   it('rejects absolute knowledge.source', () => {
     setup();
     write(dir, 'abs.package.json', pkg('abs', 'Abs', { source: path.join(dir, 'inside.json') }));
-    const r = loadDomainPackage(path.join(dir, 'abs.package.json'));
+    const r = load('abs.package.json');
     assert.equal(r.ok, false);
     assert.ok(r.errors.some(e => /absolute/.test(e.message)));
   });
@@ -352,7 +401,7 @@ describe('knowledge.source path security', () => {
   it('accepts a nested source inside the package root', () => {
     setup();
     write(dir, 'nested.package.json', pkg('harbor-fleet', 'Harbor Fleet', { source: 'sub/nested.json' }));
-    const r = loadDomainPackage(path.join(dir, 'nested.package.json'));
+    const r = load('nested.package.json');
     assert.equal(r.ok, true, JSON.stringify(r.errors));
     assert.equal(r.knowledge.identity.company, 'Harbor Fleet');
   });
@@ -360,14 +409,14 @@ describe('knowledge.source path security', () => {
   it('rejects doubled traversal that exits and re-enters', () => {
     setup();
     write(dir, 'evil2.package.json', pkg('evil2', 'Evil2', { source: `sub/../../${path.basename(siblingDir)}/secret.json` }));
-    const r = loadDomainPackage(path.join(dir, 'evil2.package.json'));
+    const r = load('evil2.package.json');
     assert.equal(r.ok, false);
   });
 
   it('rejects backslash traversal (Windows-style separators)', () => {
     setup();
     write(dir, 'evil3.package.json', pkg('evil3', 'Evil3', { source: `..\\${path.basename(siblingDir)}\\secret.json` }));
-    const r = loadDomainPackage(path.join(dir, 'evil3.package.json'));
+    const r = load('evil3.package.json');
     // On Windows this resolves outside the root (confinement error); on
     // POSIX the literal filename does not exist (read error). Either fails.
     assert.equal(r.ok, false);
@@ -376,9 +425,9 @@ describe('knowledge.source path security', () => {
   it('approves an explicitly configured extra root', () => {
     setup();
     write(dir, 'evil.package.json', pkg('evil', 'Evil', { source: escapeRef('secret.json') }));
-    const denied = loadDomainPackage(path.join(dir, 'evil.package.json'));
+    const denied = loadDomainPackage(path.join(dir, 'evil.package.json'), { packageRoots: [dir] });
     assert.equal(denied.ok, false);
-    const allowed = loadDomainPackage(path.join(dir, 'evil.package.json'), { approvedRoots: [dir, siblingDir] });
+    const allowed = loadDomainPackage(path.join(dir, 'evil.package.json'), { packageRoots: [dir], approvedRoots: [dir, siblingDir] });
     assert.equal(allowed.ok, true, JSON.stringify(allowed.errors));
     assert.equal(allowed.knowledge.identity.company, 'Outside Corp');
   });
@@ -389,6 +438,71 @@ describe('knowledge.source path security', () => {
     assert.ok(r.path && r.path.endsWith('inside.json'));
     const bad = resolveKnowledgeSource(dir, escapeRef('secret.json'), { baseDir: dir });
     assert.ok(bad.error);
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Package-file source confinement (blocker 7 — runtime trust boundary)
+// ──────────────────────────────────────────────────────────────────────────
+
+describe('package-file source security', () => {
+  let dir;
+  let outsideDir;
+  const write = (base, name, obj) => fs.writeFileSync(path.join(base, name), JSON.stringify(obj));
+
+  function setup() {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scout-pkgsrc-'));
+    write(dir, 'ok.package.json', pkg('harbor-fleet', 'Harbor Fleet', tenantKnowledge('Nia Park', 'Harbor Fleet', 'Hull Survey')));
+    outsideDir = fs.mkdtempSync(path.join(os.tmpdir(), 'scout-outside-'));
+    write(outsideDir, 'outside.package.json', pkg('outside-tenant', 'Outside', tenantKnowledge('Eve', 'Outside Corp', 'Secrets')));
+  }
+
+  it('rejects a package file outside the default data root', () => {
+    setup();
+    const r = loadDomainPackage(path.join(dir, 'ok.package.json'), { baseDir: dir });
+    assert.equal(r.ok, false);
+    assert.ok(r.errors.some(e => /outside the approved package roots/.test(e.message)), JSON.stringify(r.errors));
+  });
+
+  it('accepts a package file inside an explicitly approved root', () => {
+    setup();
+    const r = loadDomainPackage(path.join(dir, 'ok.package.json'), { baseDir: dir, packageRoots: [dir] });
+    assert.equal(r.ok, true, JSON.stringify(r.errors));
+    assert.equal(r.manifest.id, 'harbor-fleet');
+  });
+
+  it('rejects ../ traversal to a package file outside approved roots', () => {
+    setup();
+    const rel = path.join('..', path.basename(outsideDir), 'outside.package.json');
+    const r = loadDomainPackage(rel, { baseDir: dir, packageRoots: [dir] });
+    assert.equal(r.ok, false);
+    assert.ok(r.errors.some(e => /outside the approved package roots/.test(e.message)));
+  });
+
+  it('rejects a package symlink escaping approved roots', () => {
+    setup();
+    const link = path.join(dir, 'linked.package.json');
+    try {
+      fs.symlinkSync(path.join(outsideDir, 'outside.package.json'), link);
+    } catch {
+      return; // platform without symlink permission — nothing to prove here
+    }
+    const r = loadDomainPackage(link, { baseDir: dir, packageRoots: [dir] });
+    assert.equal(r.ok, false);
+    assert.ok(r.errors.some(e => /symlink|outside/.test(e.message)), JSON.stringify(r.errors));
+  });
+
+  it('shipped packages load under the default data root from the repo', () => {
+    const r = loadDomainPackage(path.join(PACKAGES_DIR, 'rivera-home-electric.package.json'), { baseDir: path.join(__dirname, '..') });
+    assert.equal(r.ok, true);
+    assert.equal(r.manifest.id, 'rivera-home-electric');
+  });
+
+  it('trustedOperator bypasses confinement for operator-selected files', () => {
+    setup();
+    const r = loadDomainPackage(path.join(outsideDir, 'outside.package.json'), { trustedOperator: true });
+    assert.equal(r.ok, true, JSON.stringify(r.errors));
+    assert.equal(r.manifest.id, 'outside-tenant');
   });
 });
 
@@ -550,5 +664,312 @@ describe('General Scout proof', () => {
     }
     assert.ok(chunks.every(c => c.runtimeFact === true), 'general mode may only carry neutral runtime facts');
     assert.equal(r.knowledge.directAnswers, undefined);
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Executor-enforced capability policy (blocker 1 — boundary, not call-site)
+// ──────────────────────────────────────────────────────────────────────────
+
+describe('Executor-level capability policy', () => {
+  const KB2 = tenantKnowledge('Test User', 'Test Co', 'Test Service');
+  const allowOnly = (...ids) => id => ids.includes(id);
+  const ex = (capabilityPolicy, opts = {}) => new ToolExecutor(registry, {
+    policy: readPolicy(), capabilityPolicy, ...opts
+  });
+
+  it('CAP-NOT-ALLOWED: direct executor call to a package-denied capability refuses', async () => {
+    // A caller that skips lite-agent entirely still cannot execute a denied
+    // capability — the executor enforces the package policy itself.
+    const e = ex(allowOnly('knowledge_lookup'));
+    const r = await e.execute('calculator', { expression: '2+2' }, { knowledge: KB2 });
+    assert.equal(r.status, 'refused');
+    assert.equal(r.errorType, 'CAPABILITY_NOT_ALLOWED');
+  });
+
+  it('allowed capability executes through the injected policy', async () => {
+    const e = ex(allowOnly('calculator'));
+    const r = await e.execute('calculator', { expression: '2+2' }, { knowledge: KB2 });
+    assert.equal(r.ok, true);
+  });
+
+  it('deny wins when a policy allows then denies', async () => {
+    // Simulate manifest allow+deny on the same id through the real gate
+    const manifest = { capabilities: { allow: ['calculator'], deny: ['calculator'] } };
+    const e = ex(id => isCapabilityAllowed(manifest, id));
+    const r = await e.execute('calculator', { expression: '2+2' }, {});
+    assert.equal(r.errorType, 'CAPABILITY_NOT_ALLOWED');
+  });
+
+  it('missing capabilities / allow:[] refuse everything', async () => {
+    for (const manifest of [{}, { capabilities: {} }, { capabilities: { allow: [] } }]) {
+      const e = ex(id => isCapabilityAllowed(manifest, id));
+      const r = await e.execute('calculator', { expression: '2+2' }, {});
+      assert.equal(r.errorType, 'CAPABILITY_NOT_ALLOWED', JSON.stringify(manifest));
+    }
+  });
+
+  it('General Scout policy permits calculator only, at the executor', async () => {
+    const e = ex(id => isCapabilityAllowed(GENERAL_PACKAGE, id));
+    assert.equal((await e.execute('calculator', { expression: '2+2' }, {})).ok, true);
+    assert.equal((await e.execute('knowledge_lookup', { section: 'skills' }, { knowledge: KB2 })).errorType, 'CAPABILITY_NOT_ALLOWED');
+  });
+
+  it('legacy policy at the executor: read-only set enabled, notification refused', async () => {
+    const e = ex(id => isCapabilityAllowed({ capabilities: LEGACY_CAPABILITY_POLICY }, id));
+    assert.equal((await e.execute('calculator', { expression: '2+2' }, {})).ok, true);
+    assert.equal((await e.execute('send_notification', { recipient: 'a', subject: 'b', body: 'c' }, { knowledge: KB2 })).errorType, 'CAPABILITY_NOT_ALLOWED');
+  });
+
+  it('invalid package manifest (deny-all) refuses everything', async () => {
+    const e = ex(id => isCapabilityAllowed(INVALID_PACKAGE_MANIFEST, id));
+    for (const cap of ['calculator', 'knowledge_lookup', 'send_notification']) {
+      const r = await e.execute(cap, cap === 'calculator' ? { expression: '1+1' } : {}, {});
+      assert.equal(r.errorType, 'CAPABILITY_NOT_ALLOWED', cap);
+    }
+  });
+
+  it('a throwing policy gate fails closed', async () => {
+    const e = ex(() => { throw new Error('policy boom'); });
+    const r = await e.execute('calculator', { expression: '2+2' }, {});
+    assert.equal(r.errorType, 'CAPABILITY_NOT_ALLOWED');
+  });
+
+  it('denied attempts are audited and do not silently return []', async () => {
+    const e = ex(allowOnly('knowledge_lookup'));
+    const r = await e.execute('calculator', { expression: '2+2' }, {});
+    assert.equal(r.ok, false);
+    assert.equal(r.errorType, 'CAPABILITY_NOT_ALLOWED');
+    const last = e.audit.entries().at(-1);
+    assert.equal(last.status, 'refused');
+    assert.equal(last.errorType, 'CAPABILITY_NOT_ALLOWED');
+    assert.equal(last.tool, 'calculator');
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Confirmation grants (blocker 2 — no truthy-string bypass)
+// ──────────────────────────────────────────────────────────────────────────
+
+describe('ConfirmationGrantVerifier', () => {
+  const { ConfirmationGrantVerifier } = require('../lib/confirmation-grants');
+  const writeArgs = { recipient: 'a@b.co', subject: 's', body: 'b' };
+  const writer = () => {
+    const reg = new ToolRegistry();
+    reg.register(require('../lib/tool-capabilities').sendNotificationTool(() => ({ queued: true })));
+    return reg;
+  };
+  const exWith = (verifier, opts = {}) => new ToolExecutor(writer(), {
+    policy: new PermissionPolicy({ scopes: ['action:write'], canConfirm: true }),
+    confirmationVerifier: verifier, ...opts
+  });
+
+  it('missing grant rejected', async () => {
+    const r = await exWith(new ConfirmationGrantVerifier()).execute('send_notification', writeArgs, {});
+    assert.equal(r.errorType, 'CONFIRMATION_REQUIRED');
+  });
+
+  it('arbitrary string rejected — no truthy bypass', async () => {
+    const e = exWith(new ConfirmationGrantVerifier());
+    for (const fake of ['yes', 'confirm-1', 'true', { id: 'forged' }]) {
+      const r = await e.execute('send_notification', writeArgs, { confirmationGrant: fake });
+      assert.equal(r.errorType, 'CONFIRMATION_REQUIRED', JSON.stringify(fake));
+    }
+  });
+
+  it('no verifier injected at all → side effects always refused', async () => {
+    const e = new ToolExecutor(writer(), {
+      policy: new PermissionPolicy({ scopes: ['action:write'], canConfirm: true })
+    });
+    const r = await e.execute('send_notification', writeArgs, { confirmationToken: 'anything' });
+    assert.equal(r.errorType, 'CONFIRMATION_REQUIRED');
+  });
+
+  it('grant for tool A cannot authorize tool B', async () => {
+    const v = new ConfirmationGrantVerifier();
+    const grant = v.issue({ toolId: 'other_tool', args: writeArgs });
+    const r = await exWith(v).execute('send_notification', writeArgs, { confirmationGrant: grant });
+    assert.equal(r.errorType, 'CONFIRMATION_REQUIRED');
+  });
+
+  it('grant for args A cannot authorize args B', async () => {
+    const v = new ConfirmationGrantVerifier();
+    const grant = v.issue({ toolId: 'send_notification', args: { ...writeArgs, body: 'original' } });
+    const r = await exWith(v).execute('send_notification', { ...writeArgs, body: 'changed' }, { confirmationGrant: grant });
+    assert.equal(r.errorType, 'CONFIRMATION_REQUIRED');
+  });
+
+  it('expired grant rejected', async () => {
+    let now = 1000000;
+    const v = new ConfirmationGrantVerifier({ now: () => now, ttlMs: 1000 });
+    const grant = v.issue({ toolId: 'send_notification', args: writeArgs });
+    now += 2000;
+    const r = await exWith(v).execute('send_notification', writeArgs, { confirmationGrant: grant });
+    assert.equal(r.errorType, 'CONFIRMATION_REQUIRED');
+  });
+
+  it('consumed grant cannot replay', async () => {
+    const v = new ConfirmationGrantVerifier();
+    const e = exWith(v);
+    const grant = v.issue({ toolId: 'send_notification', args: writeArgs });
+    const first = await e.execute('send_notification', writeArgs, { confirmationGrant: grant });
+    assert.equal(first.ok, true);
+    const replay = await e.execute('send_notification', writeArgs, { confirmationGrant: grant });
+    assert.equal(replay.errorType, 'CONFIRMATION_REQUIRED');
+  });
+
+  it('principal binding: grant issued for session A fails for session B', async () => {
+    const v = new ConfirmationGrantVerifier();
+    const grant = v.issue({ toolId: 'send_notification', args: writeArgs, principal: 'session-a' });
+    const wrong = await exWith(v).execute('send_notification', writeArgs, { confirmationGrant: grant, sessionId: 'session-b' });
+    assert.equal(wrong.errorType, 'CONFIRMATION_REQUIRED');
+    const right = await exWith(v).execute('send_notification', writeArgs, { confirmationGrant: grant, sessionId: 'session-a' });
+    assert.equal(right.ok, true);
+  });
+
+  it('no confirmation value appears in audit or model output', async () => {
+    const v = new ConfirmationGrantVerifier();
+    const e = exWith(v);
+    const grant = v.issue({ toolId: 'send_notification', args: writeArgs });
+    const res = await e.execute('send_notification', writeArgs, { confirmationGrant: grant });
+    const flat = JSON.stringify(e.audit.entries()) + JSON.stringify(res.forModel());
+    assert.ok(!flat.includes(grant.id), 'grant id must not leak');
+    assert.ok(!flat.includes('confirmationGrant'));
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Handler error sanitization (blocker 3)
+// ──────────────────────────────────────────────────────────────────────────
+
+describe('Handler error sanitization', () => {
+  it('SUPER_SECRET_MARKER never reaches model, audit, or public projection', async () => {
+    const reg = new ToolRegistry();
+    reg.register({
+      id: 'leaky', name: 'Leaky', permissionScope: 'compute',
+      handler: () => { throw new Error('SUPER_SECRET_MARKER_123'); }
+    });
+    const diagnostics = [];
+    const e = new ToolExecutor(reg, {
+      policy: new PermissionPolicy({ scopes: ['compute'] }),
+      diagnostics: entry => diagnostics.push(entry)
+    });
+    const res = await e.execute('leaky', {}, {});
+    assert.equal(res.status, 'error');
+    assert.ok(!JSON.stringify(res.forModel()).includes('SUPER_SECRET_MARKER_123'));
+    assert.ok(!JSON.stringify(e.audit.entries()).includes('SUPER_SECRET_MARKER_123'));
+    const pub = publicActionRuntimeSummary({ registry: reg, manifest: null, auditEntries: e.audit.entries(), configured: true });
+    assert.ok(!JSON.stringify(pub).includes('SUPER_SECRET_MARKER_123'));
+    // operator sink may hold the internal detail — deliberately separate
+    assert.equal(diagnostics.length, 1);
+    assert.ok(diagnostics[0].message.includes('SUPER_SECRET_MARKER_123'));
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Invalid-state cache fast path (blocker 5)
+// ──────────────────────────────────────────────────────────────────────────
+
+describe('Invalid-state cache behavior', () => {
+  const { packageCacheUsable } = require('../lib/domain-package');
+
+  it('packageCacheUsable requires active + non-stale + ready', () => {
+    const active = { status: 'active', stale: false };
+    assert.equal(packageCacheUsable(active, true), true);
+    assert.equal(packageCacheUsable({ status: 'active', stale: true }, true), false);
+    assert.equal(packageCacheUsable({ status: 'invalid', stale: false }, false), false);
+    assert.equal(packageCacheUsable({ status: 'stale', stale: true }, true), false);
+    assert.equal(packageCacheUsable(null, true), false);
+    assert.equal(packageCacheUsable(active, false), false);
+  });
+
+  it('invalid B switch → fix B → next fetch publishes B with B evidence only', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scout-recover-'));
+    const write = (name, obj) => fs.writeFileSync(path.join(dir, name), typeof obj === 'string' ? obj : JSON.stringify(obj));
+    write('a.package.json', pkg('atlas-bakery', 'Atlas Bakery', tenantKnowledge('Ana Sol', 'Atlas Bakery', 'Sourdough Subscription')));
+    write('b.package.json', pkg('broken', 'Broken', 'not-an-object'));
+    const rt = makeMiniRuntime(dir);
+    rt.refresh('a.package.json');
+    assert.equal(rt.ready, true);
+    // Switch to invalid B → drop; invalid state is NOT cache-usable
+    let r = rt.refresh('b.package.json');
+    assert.equal(r.decision.action, 'drop');
+    assert.equal(packageCacheUsable(rt.active, rt.ready), false);
+    // Operator fixes B; the next refresh republishes promptly
+    write('b.package.json', pkg('copperline-gym', 'Copperline Gym', tenantKnowledge('Bo Kim', 'Copperline Gym', 'Climbing Membership')));
+    r = rt.refresh('b.package.json');
+    assert.equal(r.decision.action, 'publish');
+    assert.equal(rt.ready, true);
+    assert.equal(rt.knowledge.identity.company, 'Copperline Gym');
+    const flat = JSON.stringify(rt.chunks);
+    assert.ok(flat.includes('Copperline Gym'));
+    assert.ok(!flat.includes('Atlas Bakery'));
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Runtime registry validation (blocker 6)
+// ──────────────────────────────────────────────────────────────────────────
+
+describe('Runtime known-capability validation', () => {
+  it('ToolRegistry (not just Map) is accepted as knownCapabilities', () => {
+    const p = validPkg();
+    p.capabilities = { allow: ['calculator', 'nonexistent_cap'] };
+    const r = validateDomainPackage(p, { knownCapabilities: registry });
+    assert.equal(r.ok, false);
+    assert.ok(r.errors.some(e => /unknown capability/.test(e.message)));
+  });
+
+  it('unknown-capability package does not publish through the loading path', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scout-caps-'));
+    fs.writeFileSync(path.join(dir, 'bad.package.json'), JSON.stringify({
+      ...validPkg(), capabilities: { allow: ['made_up_capability'] }
+    }));
+    const rt = makeMiniRuntime(dir);
+    const result = loadDomainPackage(path.join(dir, 'bad.package.json'), {
+      baseDir: dir, packageRoots: [dir], knownCapabilities: registry
+    });
+    assert.equal(result.ok, false);
+    const decision = transitionPackageState(rt.active, result);
+    assert.equal(decision.action, 'drop');
+    const manifest = INVALID_PACKAGE_MANIFEST;
+    assert.equal(isCapabilityAllowed(manifest, 'made_up_capability'), false);
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Core vs deployment runtime facts (blocker 8)
+// ──────────────────────────────────────────────────────────────────────────
+
+describe('Runtime facts architecture', () => {
+  const { buildDeploymentFacts } = require('../lib/deployment-facts');
+  const coreFacts = require('../data/scout-runtime-knowledge.json');
+
+  it('core facts are architecture-only: no RAG-first, no provider claims', () => {
+    const flat = JSON.stringify(coreFacts);
+    assert.ok(!/RAG-first/i.test(flat));
+    for (const banned of ['@cf/meta', 'GitHub Pages', 'GCP', 'Bradley', 'Matera', 'recruiter', 'ProjectHub']) {
+      assert.ok(!flat.includes(banned), `deployment/tenant claim in core facts: ${banned}`);
+    }
+  });
+
+  it('General Scout + Ollama config produces no Cloudflare model claim', () => {
+    const facts = buildDeploymentFacts({ provider: 'ollama', model: 'qwen2.5:1.5b', deadlineMs: 15000 });
+    const chunks = buildRagChunks({}, { deploymentFacts: facts });
+    const flat = JSON.stringify(chunks);
+    assert.ok(!flat.includes('@cf/meta'), 'Cloudflare model leaked into an ollama deployment');
+    assert.ok(flat.includes('ollama'), 'configured provider absent');
+  });
+
+  it('Cloudflare deployment exposes its configured model and gated facts', () => {
+    const declared = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'deployment-facts.json'), 'utf8')).facts;
+    const facts = buildDeploymentFacts({
+      provider: 'cloudflare', model: '@cf/meta/llama-3.1-8b-instruct-fast', deadlineMs: 15000, rateLimitPerMinute: 20
+    }, declared);
+    const flat = JSON.stringify(facts);
+    assert.ok(flat.includes('@cf/meta/llama-3.1-8b-instruct-fast'));
+    assert.ok(flat.includes('10,000 neurons'));
+    const ollamaFacts = buildDeploymentFacts({ provider: 'ollama', model: 'qwen2.5:1.5b' }, declared);
+    assert.ok(!JSON.stringify(ollamaFacts).includes('Cloudflare Workers AI'));
   });
 });

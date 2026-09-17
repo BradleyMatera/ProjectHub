@@ -93,16 +93,21 @@ const SCOUT_AGENT_MODE = process.env.SCOUT_AGENT_MODE || (SCOUT_AGENT_ENGINE_ENA
 const DIRECT_KB_ENABLED = process.env.SCOUT_DIRECT_KB_ENABLED === 'true';
 const FEATURE_PREVIEW_ENABLED = process.env.FEATURE_PREVIEW_ENABLED === 'true';
 const KNOWLEDGE_FILE = path.join(__dirname, process.env.KNOWLEDGE_FILE || 'data/recruiter-knowledge.json');
-const { loadDomainPackage, transitionPackageState, isCapabilityAllowed, publicActionRuntimeSummary, INVALID_PACKAGE_MANIFEST } = require('./lib/domain-package');
+const { loadDomainPackage, transitionPackageState, packageCacheUsable, isCapabilityAllowed, publicActionRuntimeSummary, INVALID_PACKAGE_MANIFEST } = require('./lib/domain-package');
 const { buildToolRegistry } = require('./lib/tool-capabilities');
 const { ToolExecutor, PermissionPolicy } = require('./lib/tool-executor');
+const { buildDeploymentFacts } = require('./lib/deployment-facts');
 const { configureToolRuntime } = require('./lib/lite-agent');
-// Shared read-only action runtime. Capability calls are package-gated,
-// permission-checked, deadline-bounded, and audited. Read-only scopes only —
-// no side-effecting capability is enabled in this deployment.
+// Shared read-only action runtime. The executor is the security boundary:
+// it enforces the ACTIVE package's capability policy on every call via an
+// injected resolver, plus scopes, deadline, and audit. No confirmation
+// verifier is injected in this deployment — side-effecting capabilities
+// refuse by construction, no matter what a package or caller supplies.
 const toolRegistry = buildToolRegistry();
 const sharedToolExecutor = new ToolExecutor(toolRegistry, {
-  policy: new PermissionPolicy({ scopes: ['compute', 'knowledge:read', 'search:read', 'entity:read'] })
+  policy: new PermissionPolicy({ scopes: ['compute', 'knowledge:read', 'search:read', 'entity:read'] }),
+  capabilityPolicy: (toolId) => isCapabilityAllowed(domainPackageManifest, toolId),
+  diagnostics: (entry) => console.error('[tool-diagnostic]', entry.tool, entry.errorType, entry.message)
 });
 // SCOUT_DOMAIN_PACKAGE selects the runtime's domain package: a .package.json
 // path, a bare knowledge file (legacy), or 'general' for General Scout mode.
@@ -570,6 +575,40 @@ app.get('/api/knowledge-health', async (req, res) => {
 let activePackageIdentity = null;
 let toolRuntimeConfigured = false;
 
+// Bounded retry for non-active package states. An invalid/dropped package
+// retries promptly (operator fixes recover without waiting for the normal
+// cache TTL) while avoiding a disk reload on every request.
+const PACKAGE_RETRY_MS = 5000;
+let lastPackageAttemptAt = 0;
+
+// Deployment-scoped runtime facts: generated from THIS process's actual
+// configuration plus the deployment's declared fact file. Provider-gated
+// facts (e.g. Cloudflare allocation details) emit only when that provider
+// is genuinely configured — a Scout deployment on another provider never
+// inherits this deployment's claims.
+const DEPLOYMENT_FACTS = (() => {
+  const ih = configuredInferenceHealth();
+  const resolvedProvider = ih.provider === 'cloudflare' ? 'cloudflare'
+    : ih.provider === 'ollama' ? 'ollama'
+    : (localModelRouter.isCloudflarePrimary() ? 'cloudflare' : 'ollama');
+  let declared = [];
+  try {
+    declared = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'deployment-facts.json'), 'utf8')).facts || [];
+  } catch { /* no declared deployment facts — generated facts still apply */ }
+  return buildDeploymentFacts({
+    provider: resolvedProvider,
+    model: resolvedProvider === 'cloudflare' ? ih.cloudflareModel : ih.localFallbackModel,
+    deadlineMs: ih.requestDeadlineMs,
+    rateLimitPerMinute: parseInt(process.env.RATE_LIMIT_MAX || '20', 10)
+  }, declared);
+})();
+
+// Runtime package-file roots: package sources must live under an approved
+// root (default <app>/data); deployments may authorize extra roots via
+// SCOUT_PACKAGE_ROOTS (path.delimiter-separated).
+const SCOUT_PACKAGE_ROOTS = (process.env.SCOUT_PACKAGE_ROOTS || '')
+  .split(path.delimiter).map(s => s.trim()).filter(Boolean);
+
 // Configure every knowledge-bound module (entity names, subject names,
 // pronouns, stopwords). Called on publish AND on drop (with empty
 // knowledge) so no prior tenant's names survive a package switch.
@@ -682,12 +721,23 @@ function clearTenantPackageState(reason) {
 
 async function fetchKnowledge() {
   const now = Date.now();
-  if (knowledgeCache && activePackageIdentity && !activePackageIdentity.stale &&
+  // Normal fast path requires a positively-active published package. A
+  // dropped/invalid package state (empty knowledge) never rides the cache
+  // TTL — it retries so a corrected package recovers promptly.
+  if (packageCacheUsable(activePackageIdentity, knowledgeReady) &&
       (now - knowledgeCacheAt) < KNOWLEDGE_CACHE_MS) {
     return knowledgeCache;
   }
+  if (lastPackageAttemptAt && (now - lastPackageAttemptAt) < PACKAGE_RETRY_MS) {
+    return knowledgeCache; // bounded retry — see PACKAGE_RETRY_MS
+  }
+  lastPackageAttemptAt = now;
   try {
-    const pkgResult = loadDomainPackage(SCOUT_PACKAGE_SOURCE, { baseDir: __dirname });
+    const pkgResult = loadDomainPackage(SCOUT_PACKAGE_SOURCE, {
+      baseDir: __dirname,
+      knownCapabilities: toolRegistry,
+      packageRoots: SCOUT_PACKAGE_ROOTS.length ? SCOUT_PACKAGE_ROOTS : undefined
+    });
     const decision = transitionPackageState(activePackageIdentity, pkgResult);
     for (const w of pkgResult.warnings || []) console.warn(`[domain-package] WARN ${w.path}: ${w.message}`);
 
@@ -717,7 +767,7 @@ async function fetchKnowledge() {
     // knowledgeCache while ragChunks/bm25Index are still null. Then publish
     // the cache and clear stale response entries.
     try {
-      ragChunks = buildRagChunks(json);
+      ragChunks = buildRagChunks(json, { deploymentFacts: DEPLOYMENT_FACTS });
       bm25Index = new BM25Index(ragChunks);
       console.log(`[retrieval] BM25 index built: ${ragChunks.length} chunks`);
     } catch (e) {
@@ -735,20 +785,17 @@ async function fetchKnowledge() {
     return json;
   } catch (err) {
     console.error('Failed to fetch knowledge:', err.message);
-    // Catastrophic load error: retain only if the requested source is the
-    // one already active; a source change drops tenant state instead of
-    // serving the previous tenant's knowledge.
-    const requestedKey = (typeof SCOUT_PACKAGE_SOURCE === 'string' && SCOUT_PACKAGE_SOURCE !== 'general')
-      ? path.resolve(__dirname, SCOUT_PACKAGE_SOURCE) : 'general';
-    if (activePackageIdentity && activePackageIdentity.status === 'active' &&
-        activePackageIdentity.sourceKey === requestedKey) {
-      activePackageIdentity = { ...activePackageIdentity, status: 'stale', stale: true, lastError: err.message };
-      return knowledgeCache;
-    }
+    // Catastrophic load error: no load result means package identity cannot
+    // be positively proven unchanged — drop tenant state rather than serve
+    // a possibly-superseded package. The bounded retry re-publishes the
+    // same package on the next attempt once the fault clears.
     clearTenantPackageState(`load error: ${err.message}`);
-    if (activePackageIdentity) {
-      activePackageIdentity = { sourceKey: requestedKey, manifestId: null, knowledgePath: null, knowledgeHash: null, status: 'invalid', stale: false, loadedAt: null, lastError: err.message };
-    }
+    activePackageIdentity = {
+      sourceKey: typeof SCOUT_PACKAGE_SOURCE === 'string' ? SCOUT_PACKAGE_SOURCE : 'inline-object',
+      packageFileRealPath: null, packageConfigHash: null, manifestId: null,
+      knowledgeSourceRealPath: null, knowledgeHash: null,
+      status: 'invalid', stale: false, loadedAt: null, lastError: err.message
+    };
     return knowledgeCache;
   }
 }

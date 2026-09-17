@@ -37,12 +37,22 @@ results, or tenant data.
 | Decision | Condition | Effect |
 |----------|-----------|--------|
 | `publish` | requested package validates | swap knowledge, rebuild BM25/RAG, clear response cache, reconfigure tool runtime |
-| `retain-stale` | **same** source key + resolved knowledge path, refresh failed | keep last validated snapshot, report `stale`/`status: "stale"` on health |
-| `drop` | requested source changed and is invalid, or first load fails | clear ALL tenant state: knowledge snapshot, RAG/BM25, response cache, readiness, capability manifest (→ deny-all `package-error`) |
+| `retain-stale` | **same** package/config identity — identical `configHash`, `manifestId`, and resolved knowledge source — but the backing knowledge content fails to load | keep last validated snapshot, report `stale`/`status: "stale"` on health |
+| `drop` | requested source changed and is invalid, package file unparseable, manifest id changed, knowledge source declaration changed, or first load fails | clear ALL tenant state: knowledge snapshot, RAG/BM25, response cache, readiness, capability manifest (→ deny-all `package-error`) |
+
+Identity is proven, never assumed: package/config identity (`sourceKey`,
+`packageFileRealPath`, `configHash`, `manifestId`, `knowledgeSourceRealPath`)
+is tracked separately from knowledge-content identity (`knowledgeHash`).
+Null/unknown fields are never treated as proof of sameness — a malformed
+package file at a known pathname drops rather than retains. Legacy
+bare-knowledge files are config *and* knowledge; a malformed legacy file has
+no provable config identity, so it drops.
 
 A configuration switch that fails can never keep serving the previous
 tenant's knowledge. Health reports the true state; staleness is never
-silently treated as current.
+silently treated as current. Dropped/invalid state is not served by the
+knowledge-cache fast path — the loader retries on the next request, so an
+operator fix recovers immediately.
 
 ## Package shape
 
@@ -79,6 +89,14 @@ to approved roots** (the package's own directory and `<base>/data` by
 default). Absolute paths, `..` traversal outside the roots, and symlink
 escapes are rejected.
 
+The package file itself is confined the same way: runtime loads resolve its
+real path inside `<base>/data` by default, plus any roots listed in
+`SCOUT_PACKAGE_ROOTS` (path-delimiter) or the `packageRoots` loader option.
+Symlink escapes are rejected before the file is opened. Operator CLIs
+(`validate-package.js`, `inspect-package.js`) declare `trustedOperator`
+explicitly — operator-selected paths are a deliberate trust mode, not a hole
+in the runtime boundary.
+
 Canonical runtime identity (name, pronouns, aliases) lives in
 `knowledge.identity` — the same structure the Core has always consumed.
 `identity` at the manifest level is informational only.
@@ -86,8 +104,9 @@ Canonical runtime identity (name, pronouns, aliases) lives in
 ## Validation contract
 
 `lib/domain-package.js` exports `validateDomainPackage(pkg, {knownCapabilities})`,
-`loadDomainPackage(source, {baseDir, knownCapabilities, approvedRoots})`,
+`loadDomainPackage(source, {baseDir, knownCapabilities, approvedRoots, packageRoots, trustedOperator})`,
 `transitionPackageState(activeIdentity, loadResult)`,
+`packageCacheUsable(identity, ready)`,
 `isCapabilityAllowed(manifest, capabilityId)`, and
 `publicActionRuntimeSummary({registry, manifest, auditEntries, configured})`.
 
@@ -145,16 +164,36 @@ All shipped packages allow the four read-only capabilities
 
 `isCapabilityAllowed` permits a capability **only** when it appears in
 `capabilities.allow`. Missing `capabilities`, missing `allow`, or
-`allow: []` enables nothing; `deny` always wins. Side effects additionally
-require a permission scope, a confirmation token, and a registered handler —
-package data alone can never make a side effect executable, grant scopes, or
+`allow: []` enables nothing; `deny` always wins. The policy is enforced
+inside `ToolExecutor` (injected as `capabilityPolicy`), not only at agent
+call sites — a denied attempt returns a typed `CAPABILITY_NOT_ALLOWED`
+refusal and never reaches the handler.
+
+Side effects additionally require a permission scope, a registered handler,
+and a **one-time confirmation grant** verified by an injected
+`ConfirmationGrantVerifier` (`lib/confirmation-grants.js`). Grants are bound
+to the tool id, a normalized argument digest, an optional principal, an
+expiry, and a nonce — a truthy string is never accepted, and a consumed
+grant cannot replay. With no verifier injected, side effects always refuse;
+the default runtime therefore has no executable `action:write` capability.
+Package data alone can never make a side effect executable, grant scopes, or
 register code.
+
+Handler exceptions are sanitized at the executor: model-facing results and
+the audit trail carry a stable typed error category and a generic message —
+never raw exception text. Detailed diagnostics go only to an explicitly
+injected operator sink.
 
 Legacy bare-knowledge files (no `packageVersion`) load with the explicit
 `LEGACY_CAPABILITY_POLICY` — the same four read-only capabilities, with
 `send_notification` denied — rather than silently inheriting global access.
 
 Packages may declare `knowledge.systemFacts` — tenant-scoped "what this app
-covers" facts added to RAG evidence. The Core injects only neutral runtime
-facts from `data/scout-runtime-knowledge.json`; scope claims belong to the
-package that owns them.
+covers" facts added to RAG evidence. The Core injects only neutral
+architecture facts from `data/scout-runtime-knowledge.json` (tenant-neutral;
+retrieval is described as optional, never as Scout's identity). Deployment
+facts — configured provider/model, deadline, gated hosting/billing facts —
+are generated at runtime by `lib/deployment-facts.js` from actual config plus
+the provider-gated declarations in `data/deployment-facts.json`; an Ollama
+deployment never sees a Cloudflare claim. Scope claims belong to the package
+that owns them.

@@ -17,7 +17,9 @@ if (!target) {
 const registry = buildToolRegistry();
 const knownCapabilities = new Map(registry.list().map(d => [d.id, d]));
 const resolved = target === 'general' ? 'general' : path.resolve(process.cwd(), target);
-const result = loadDomainPackage(resolved, { baseDir: process.cwd(), knownCapabilities });
+// Operator CLI: the file path is chosen by the operator, so package-source
+// confinement is bypassed explicitly (trustedOperator) rather than silently.
+const result = loadDomainPackage(resolved, { baseDir: process.cwd(), knownCapabilities, trustedOperator: true });
 
 for (const w of result.warnings) {
   console.warn(`WARN  ${w.path}: ${w.message}${w.fix ? ` — fix: ${w.fix}` : ''}`);

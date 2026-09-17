@@ -46,6 +46,7 @@ const runtimeInputs = [
   'data/free-tier-limits.json',
   'data/recruiter-knowledge.json',
   'data/scout-runtime-knowledge.json',
+  'data/deployment-facts.json',
   'data/scout-identity.json',
   'data/packages/recruiter-alpha.package.json',
   'data/packages/rivera-home-electric.package.json',

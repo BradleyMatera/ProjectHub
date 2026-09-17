@@ -1,51 +1,37 @@
 {
- "version": "1.1.0",
+ "version": "2.0.0",
  "lastVerified": "2026-09-16",
+ "notes": "CORE facts only — tenant-neutral architecture truths valid for every Scout deployment and every domain package. Deployment-scoped facts (configured provider, model, deadline, hosting, provider allocations) are generated separately by lib/deployment-facts.js from actual configuration. Tenant-scoped scope claims live in each package's knowledge.systemFacts.",
  "facts": [
   {
-   "id": "scout-runtime-architecture",
+   "id": "scout-core-architecture",
    "tag": "scout-runtime",
-   "text": "Scout is a RAG-first conversational assistant runtime. For substantive questions, it rewrites the conversation-aware query, runs local BM25/RRF retrieval over verified tenant knowledge, selects a small set of relevant evidence, sends that grounded evidence to the configured generative model, and then runs factual validation before returning the answer. Structured tools may enrich the evidence but do not replace RAG as the primary answer context."
+   "text": "Scout is a portable conversational intelligence and orchestration runtime. Deterministic components classify, route, resolve context and coreference, gather evidence, and enforce validation; the configured generative model writes the normal visible answer from a semantic response contract and verified evidence. Capabilities such as retrieval, tenant-knowledge access, computation, memory, and workflows are optional and may or may not be enabled in a given deployment or domain package. Retrieval is used when relevant and available; it is not what defines Scout."
   },
   {
-   "id": "scout-runtime-local-vs-cloud",
+   "id": "scout-core-validation",
    "tag": "scout-runtime",
-   "text": "This deployment does not run the primary language model locally. Query/session handling, BM25/RRF retrieval, evidence selection, relationship checks, factual validation, telemetry, and persistence run in the Scout backend process. Normal generative inference on the current dev and production configuration is hosted by Cloudflare Workers AI using @cf/meta/llama-3.1-8b-instruct-fast. Ollama is only an optional fallback when explicitly configured."
+   "text": "Generated answers are validated before they are shown: claims are checked against evidence and entity relationships, unsupported or overclaimed statements are rejected, and bounded generative recovery may repair a failed answer. If validation cannot produce a supported answer, the response fails closed rather than inventing facts."
   },
   {
-   "id": "scout-runtime-model",
+   "id": "scout-core-provenance",
    "tag": "scout-runtime",
-   "text": "Scout uses the model @cf/meta/llama-3.1-8b-instruct-fast for normal generative inference, hosted by Cloudflare Workers AI. This is the model Scout uses in the current dev and production configuration unless an administrator explicitly reconfigures the inference provider."
+   "text": "Evidence in Scout is typed by provenance: tenant knowledge evidence, computed facts, tool results, user input, and general reasoning are kept distinct so validators can tell what kind of support a claim has."
   },
   {
-   "id": "scout-runtime-free",
+   "id": "scout-core-packages",
    "tag": "scout-runtime",
-   "text": "This chat is free because the current Scout deployment keeps its normal generative inference inside Cloudflare Workers AI's included free allocation, the public widget is served from GitHub Pages, and the chat backend runs on a free-tier GCP VM. The model still consumes measurable tokens and neurons, so 'free' means the usage is within the included allocation and free-tier limits, not that the AI has no cost. Scout should not claim that the AI is free because it is a machine-learning model, that conversations are anonymous, or that no personal data is collected."
+   "text": "A Scout application is Scout Core plus a domain package: tenant identity, tenant knowledge, policies, capability allow/deny lists, and optional workflows. Scout Core with no domain package is General Scout — a first-class configuration with conversation, computation, and session state, where domain-specific claims resolve as unknown instead of being invented."
   },
   {
-   "id": "scout-runtime-cloudflare-cap",
+   "id": "scout-core-capabilities",
    "tag": "scout-runtime",
-   "text": "The daily cap and the cooldown are different controls. The daily cap is Cloudflare Workers AI's 10,000 neurons per day on the free allocation, resetting at 00:00 UTC. This is an account-level, shared allocation, not a separate 10,000-neuron allowance for each visitor. If the free allocation is exhausted, Cloudflare can reject inference with a rate/allocation error; this deployment does not intentionally switch to a paid-only model as an automatic fallback."
+   "text": "Executable capabilities are governed by a bounded action runtime: the active package's allow-list is enforced at the execution boundary, permission scopes are checked, side-effecting actions require a verified one-time confirmation grant, arguments are validated, every call is deadline-bounded, and every attempt is audited. Package data can never grant scopes, register handlers, or raise the request deadline."
   },
   {
-   "id": "scout-runtime-neurons",
+   "id": "scout-core-telemetry",
    "tag": "scout-runtime",
-   "text": "For @cf/meta/llama-3.1-8b-instruct-fast, this deployment uses Cloudflare's published neuron rates of 4,119 neurons per million input tokens and 34,868 neurons per million output tokens to estimate usage when the provider does not return an actual neuron count. Cloudflare's public Workers AI paid-usage reference is $0.011 per 1,000 neurons beyond the included allocation on Workers Paid. A metered-value estimate is not the same as an actual billed charge."
-  },
-  {
-   "id": "scout-runtime-rate-controls",
-   "tag": "scout-runtime",
-   "text": "Scout's application-level request protection is separate from Cloudflare's daily AI allocation. The server currently defaults to 20 chat requests per minute per IP address unless configuration overrides it. This is a rolling request-rate control, not a video-game cooldown. There is no documented per-user daily chat cap in Scout's current runtime facts; the important daily model budget is the shared Workers AI neuron allocation."
-  },
-  {
-   "id": "scout-runtime-telemetry",
-   "tag": "scout-runtime",
-   "text": "Scout telemetry can report the prose source, provider, model, provider-call count, input and output tokens, actual or estimated neurons, model latency, repair attempts, retrieval candidate count, selected evidence count, browser-session totals, and backend daily usage when available. MODEL_GENERATION means a model authored the visible answer from retrieved evidence; DIRECT_KB means verified knowledge supplied the answer without a generative model call; TECHNICAL_ERROR means generation or factual validation failed closed."
-  },
-  {
-   "id": "scout-runtime-hosting",
-   "tag": "scout-runtime",
-   "text": "The public widget is served from GitHub Pages. The chat backend runs separately and calls Cloudflare Workers AI for normal generative inference. The architecture is designed to keep model context small by retrieving only relevant evidence instead of sending the entire knowledge base for every question."
+   "text": "Scout telemetry can report the prose source, provider, model, provider-call count, input and output tokens, actual or estimated usage units, model latency, repair attempts, retrieval candidate count, selected evidence count, and session totals when available. MODEL_GENERATION means a model authored the visible answer; DIRECT_KB means verified knowledge supplied the answer without a generative model call; TECHNICAL_ERROR means generation or factual validation failed closed."
   }
  ]
 }

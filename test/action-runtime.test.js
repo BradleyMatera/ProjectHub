@@ -10,6 +10,7 @@ const { ToolRegistry } = require('../lib/tool-registry');
 const {
   ToolExecutor, PermissionPolicy, ActionAudit, WorkflowState, ERROR_TYPES
 } = require('../lib/tool-executor');
+const { ConfirmationGrantVerifier } = require('../lib/confirmation-grants');
 const {
   buildToolRegistry, calculatorTool, knowledgeLookupTool,
   entityLookupTool, contentSearchTool, sendNotificationTool, KNOWLEDGE_SECTIONS
@@ -29,7 +30,10 @@ function executor(registry, opts = {}) {
       canConfirm: opts.canConfirm ?? false
     }),
     audit: opts.audit,
-    deadlineMs: opts.deadlineMs ?? 15000
+    deadlineMs: opts.deadlineMs ?? 15000,
+    capabilityPolicy: opts.capabilityPolicy,
+    confirmationVerifier: opts.confirmationVerifier,
+    diagnostics: opts.diagnostics
   });
 }
 
@@ -86,29 +90,35 @@ test('EXEC-2: permission denied without scope', async () => {
   assert.equal(res.errorType, ERROR_TYPES.PERMISSION_DENIED);
 });
 
-test('EXEC-3: admin scope bypasses individual scopes', async () => {
+test('EXEC-3: admin scope bypasses individual scopes (still needs a valid grant)', async () => {
+  const verifier = new ConfirmationGrantVerifier();
   const ex = executor(buildToolRegistry(), {
-    policy: new PermissionPolicy({ scopes: ['admin'], canConfirm: true })
+    policy: new PermissionPolicy({ scopes: ['admin'], canConfirm: true }),
+    confirmationVerifier: verifier
   });
-  const res = await ex.execute('send_notification',
-    { recipient: 'a@b.co', subject: 's', body: 'b' },
-    { knowledge: KB, confirmationToken: 'tok-1' });
+  const args = { recipient: 'a@b.co', subject: 's', body: 'b' };
+  const grant = verifier.issue({ toolId: 'send_notification', args });
+  const res = await ex.execute('send_notification', args, { knowledge: KB, confirmationGrant: grant });
   assert.equal(res.status, 'ok');
 });
 
-test('EXEC-4: side-effecting tool refused without confirmation token', async () => {
+test('EXEC-4: side-effecting tool refused without a confirmation grant', async () => {
+  const verifier = new ConfirmationGrantVerifier();
   const ex = executor(buildToolRegistry(), {
-    policy: new PermissionPolicy({ scopes: ['action:write'], canConfirm: true })
+    policy: new PermissionPolicy({ scopes: ['action:write'], canConfirm: true }),
+    confirmationVerifier: verifier
   });
   const res = await ex.execute('send_notification',
     { recipient: 'a@b.co', subject: 's', body: 'b' }, { knowledge: KB });
   assert.equal(res.errorType, ERROR_TYPES.CONFIRMATION_REQUIRED);
 });
 
-test('EXEC-5: confirmation without canConfirm is refused', async () => {
-  const res = await executor().execute('send_notification',
-    { recipient: 'a@b.co', subject: 's', body: 'b' },
-    { knowledge: KB, confirmationToken: 'tok' });
+test('EXEC-5: a grant without canConfirm authorization is refused', async () => {
+  const verifier = new ConfirmationGrantVerifier();
+  const args = { recipient: 'a@b.co', subject: 's', body: 'b' };
+  const grant = verifier.issue({ toolId: 'send_notification', args });
+  const res = await executor(buildToolRegistry(), { confirmationVerifier: verifier }).execute(
+    'send_notification', args, { knowledge: KB, confirmationGrant: grant });
   assert.equal(res.errorType, ERROR_TYPES.CONFIRMATION_REQUIRED);
 });
 
@@ -129,16 +139,23 @@ test('EXEC-7: insufficient deadline budget refuses before execution', async () =
   assert.equal(res.errorType, ERROR_TYPES.DEADLINE_EXCEEDED);
 });
 
-test('EXEC-8: execution error is contained, not thrown', async () => {
+test('EXEC-8: execution error is contained, sanitized, and operator-sinked', async () => {
   const r = new ToolRegistry();
   r.register({
     id: 'boom', name: 'Boom', permissionScope: 'compute',
-    handler: () => { throw new Error('kaboom'); }
+    handler: () => { throw new Error('kaboom SECRET-XYZ'); }
   });
-  const res = await executor(r).execute('boom', {}, {});
+  const diagnostics = [];
+  const res = await executor(r, { diagnostics: e => diagnostics.push(e) }).execute('boom', {}, {});
   assert.equal(res.status, 'error');
   assert.equal(res.errorType, ERROR_TYPES.EXECUTION_ERROR);
-  assert.match(res.error, /kaboom/);
+  // Raw handler text never reaches the model-facing error or the audit trail
+  assert.ok(!res.error.includes('SECRET-XYZ'));
+  assert.ok(!res.error.includes('kaboom'));
+  assert.ok(!JSON.stringify(res.forModel()).includes('SECRET-XYZ'));
+  // An explicitly injected operator sink MAY receive the internal detail
+  assert.equal(diagnostics.length, 1);
+  assert.equal(diagnostics[0].tool, 'boom');
 });
 
 test('EXEC-9: tool timeout produces EXECUTION_ERROR', async () => {
@@ -185,14 +202,15 @@ test('CAP-5: content_search degrades safely without an index', async () => {
   assert.deepEqual(res.data.hits, []);
 });
 
-test('CAP-6: send_notification executes with confirmation and returns TOOL_RESULT', async () => {
+test('CAP-6: send_notification executes with a verified one-time grant and returns TOOL_RESULT', async () => {
   let delivered = null;
   const registry = new ToolRegistry();
   registry.register(sendNotificationTool(args => { delivered = args; return { queued: true }; }));
-  const ex = executor(registry, { canConfirm: true });
-  const res = await ex.execute('send_notification',
-    { recipient: 'ops@x.co', subject: 's', body: 'b' },
-    { knowledge: KB, confirmationToken: 'confirm-1' });
+  const verifier = new ConfirmationGrantVerifier();
+  const ex = executor(registry, { canConfirm: true, confirmationVerifier: verifier });
+  const args = { recipient: 'ops@x.co', subject: 's', body: 'b' };
+  const grant = verifier.issue({ toolId: 'send_notification', args });
+  const res = await ex.execute('send_notification', args, { knowledge: KB, confirmationGrant: grant });
   assert.equal(res.status, 'ok');
   assert.equal(res.provenance, 'TOOL_RESULT');
   assert.equal(delivered.recipient, 'ops@x.co');
