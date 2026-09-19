@@ -19,7 +19,7 @@
 
 ## Active feature: `feat/scout-action-runtime` → PR #33
 
-Branch from `develop e74ac22b`; DEV-verified published head `c20d9a11f62d04127c332665931a7df1ba2843e3` (hardening pass `b6979e4`, docs/report `c20d9a1`).
+Branch from `develop e74ac22b`; frozen qualified runtime `57f7bda25c4c5a9f9662f6990fd5c8e31bf47f31` (tree `ab514d61dbbe0487e0ec55a6107dffadb4a5ad23`, parent `d5e82c9`) — exact-SHA CI run `35409822487` attempt 1 SUCCESS; DEV-deployed and verified (`sourceCommit` matches, cloudflare / llama-3.1-8b-fast / 15s / lite). Final execution-contract pass: executor-owned tenant gate + fail-closed capability defaults + grant-consumed-last + abortable side effects (EXECUTION_STATUS_UNKNOWN, idempotency keys) + redacted diagnostics + profile-gated deployment facts. Suite 1621/1621; Recall@6 1.000, MRR@6 0.942.
 
 **Productization V1 delivered on this branch:**
 
