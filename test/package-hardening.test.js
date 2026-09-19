@@ -123,7 +123,11 @@ describe('Fail-closed capability gate', () => {
     p.capabilities = { allow: ['send_notification'] };
     const m = { ...p };
     assert.equal(isCapabilityAllowed(m, 'send_notification'), true); // gate open…
-    const executor = new ToolExecutor(registry, { policy: readPolicy() });
+    // Inject the manifest's real policy — the executor must still refuse on
+    // scope/availability even when the package itself allows the capability.
+    const executor = new ToolExecutor(registry, {
+      policy: readPolicy(), capabilityPolicy: id => isCapabilityAllowed(m, id)
+    });
     const r = await executor.execute('send_notification', { to: 'a@b.c', message: 'x' }, { knowledge: p.knowledge });
     assert.equal(r.ok, false); // …but scope/availability still refuse
     assert.ok(['PERMISSION_DENIED', 'TENANT_UNAVAILABLE', 'CONFIRMATION_REQUIRED'].includes(r.errorType));
@@ -545,7 +549,8 @@ describe('Public health projection', () => {
 
   it('audit entries record arg KEYS only — never values, tokens, or payloads', async () => {
     const executor = new ToolExecutor(registry, {
-      policy: new PermissionPolicy({ scopes: ['compute'], canConfirm: true })
+      policy: new PermissionPolicy({ scopes: ['compute'], canConfirm: true }),
+      unscopedCapabilities: true // audit hygiene test — not exercising package policy
     });
     await executor.execute('calculator', { expression: 'secret-token-123 + 1' }, { confirmationToken: 'tok-abc' });
     const entries = executor.audit.entries();
@@ -626,7 +631,10 @@ describe('General Scout proof', () => {
   });
 
   it('general mode: compute available with typed provenance, tenant tools denied', async () => {
-    const executor = new ToolExecutor(registry, { policy: readPolicy() });
+    const executor = new ToolExecutor(registry, {
+      policy: readPolicy(),
+      capabilityPolicy: id => isCapabilityAllowed(GENERAL_PACKAGE, id)
+    });
     const calc = await executor.execute('calculator', { expression: '7*8' }, { knowledge: {} });
     assert.equal(calc.ok, true);
     assert.equal(calc.provenance, 'COMPUTED_FACT');
@@ -759,43 +767,48 @@ describe('ConfirmationGrantVerifier', () => {
     reg.register(require('../lib/tool-capabilities').sendNotificationTool(() => ({ queued: true })));
     return reg;
   };
+  // send_notification's tenant gate requires notifications.enabled — the
+  // confirmation gate is only reachable with that tenant context supplied.
+  const WRITE_KB = { notifications: { enabled: true } };
   const exWith = (verifier, opts = {}) => new ToolExecutor(writer(), {
     policy: new PermissionPolicy({ scopes: ['action:write'], canConfirm: true }),
+    unscopedCapabilities: true, // these tests exercise the grant gate, not package policy
     confirmationVerifier: verifier, ...opts
   });
 
   it('missing grant rejected', async () => {
-    const r = await exWith(new ConfirmationGrantVerifier()).execute('send_notification', writeArgs, {});
+    const r = await exWith(new ConfirmationGrantVerifier()).execute('send_notification', writeArgs, { knowledge: WRITE_KB });
     assert.equal(r.errorType, 'CONFIRMATION_REQUIRED');
   });
 
   it('arbitrary string rejected — no truthy bypass', async () => {
     const e = exWith(new ConfirmationGrantVerifier());
     for (const fake of ['yes', 'confirm-1', 'true', { id: 'forged' }]) {
-      const r = await e.execute('send_notification', writeArgs, { confirmationGrant: fake });
+      const r = await e.execute('send_notification', writeArgs, { knowledge: WRITE_KB, confirmationGrant: fake });
       assert.equal(r.errorType, 'CONFIRMATION_REQUIRED', JSON.stringify(fake));
     }
   });
 
   it('no verifier injected at all → side effects always refused', async () => {
     const e = new ToolExecutor(writer(), {
-      policy: new PermissionPolicy({ scopes: ['action:write'], canConfirm: true })
+      policy: new PermissionPolicy({ scopes: ['action:write'], canConfirm: true }),
+      unscopedCapabilities: true
     });
-    const r = await e.execute('send_notification', writeArgs, { confirmationToken: 'anything' });
+    const r = await e.execute('send_notification', writeArgs, { knowledge: WRITE_KB, confirmationToken: 'anything' });
     assert.equal(r.errorType, 'CONFIRMATION_REQUIRED');
   });
 
   it('grant for tool A cannot authorize tool B', async () => {
     const v = new ConfirmationGrantVerifier();
     const grant = v.issue({ toolId: 'other_tool', args: writeArgs });
-    const r = await exWith(v).execute('send_notification', writeArgs, { confirmationGrant: grant });
+    const r = await exWith(v).execute('send_notification', writeArgs, { knowledge: WRITE_KB, confirmationGrant: grant });
     assert.equal(r.errorType, 'CONFIRMATION_REQUIRED');
   });
 
   it('grant for args A cannot authorize args B', async () => {
     const v = new ConfirmationGrantVerifier();
     const grant = v.issue({ toolId: 'send_notification', args: { ...writeArgs, body: 'original' } });
-    const r = await exWith(v).execute('send_notification', { ...writeArgs, body: 'changed' }, { confirmationGrant: grant });
+    const r = await exWith(v).execute('send_notification', { ...writeArgs, body: 'changed' }, { knowledge: WRITE_KB, confirmationGrant: grant });
     assert.equal(r.errorType, 'CONFIRMATION_REQUIRED');
   });
 
@@ -804,7 +817,7 @@ describe('ConfirmationGrantVerifier', () => {
     const v = new ConfirmationGrantVerifier({ now: () => now, ttlMs: 1000 });
     const grant = v.issue({ toolId: 'send_notification', args: writeArgs });
     now += 2000;
-    const r = await exWith(v).execute('send_notification', writeArgs, { confirmationGrant: grant });
+    const r = await exWith(v).execute('send_notification', writeArgs, { knowledge: WRITE_KB, confirmationGrant: grant });
     assert.equal(r.errorType, 'CONFIRMATION_REQUIRED');
   });
 
@@ -812,18 +825,18 @@ describe('ConfirmationGrantVerifier', () => {
     const v = new ConfirmationGrantVerifier();
     const e = exWith(v);
     const grant = v.issue({ toolId: 'send_notification', args: writeArgs });
-    const first = await e.execute('send_notification', writeArgs, { confirmationGrant: grant });
+    const first = await e.execute('send_notification', writeArgs, { knowledge: WRITE_KB, confirmationGrant: grant });
     assert.equal(first.ok, true);
-    const replay = await e.execute('send_notification', writeArgs, { confirmationGrant: grant });
+    const replay = await e.execute('send_notification', writeArgs, { knowledge: WRITE_KB, confirmationGrant: grant });
     assert.equal(replay.errorType, 'CONFIRMATION_REQUIRED');
   });
 
   it('principal binding: grant issued for session A fails for session B', async () => {
     const v = new ConfirmationGrantVerifier();
     const grant = v.issue({ toolId: 'send_notification', args: writeArgs, principal: 'session-a' });
-    const wrong = await exWith(v).execute('send_notification', writeArgs, { confirmationGrant: grant, sessionId: 'session-b' });
+    const wrong = await exWith(v).execute('send_notification', writeArgs, { knowledge: WRITE_KB, confirmationGrant: grant, sessionId: 'session-b' });
     assert.equal(wrong.errorType, 'CONFIRMATION_REQUIRED');
-    const right = await exWith(v).execute('send_notification', writeArgs, { confirmationGrant: grant, sessionId: 'session-a' });
+    const right = await exWith(v).execute('send_notification', writeArgs, { knowledge: WRITE_KB, confirmationGrant: grant, sessionId: 'session-a' });
     assert.equal(right.ok, true);
   });
 
@@ -831,7 +844,7 @@ describe('ConfirmationGrantVerifier', () => {
     const v = new ConfirmationGrantVerifier();
     const e = exWith(v);
     const grant = v.issue({ toolId: 'send_notification', args: writeArgs });
-    const res = await e.execute('send_notification', writeArgs, { confirmationGrant: grant });
+    const res = await e.execute('send_notification', writeArgs, { knowledge: WRITE_KB, confirmationGrant: grant });
     const flat = JSON.stringify(e.audit.entries()) + JSON.stringify(res.forModel());
     assert.ok(!flat.includes(grant.id), 'grant id must not leak');
     assert.ok(!flat.includes('confirmationGrant'));
@@ -852,6 +865,7 @@ describe('Handler error sanitization', () => {
     const diagnostics = [];
     const e = new ToolExecutor(reg, {
       policy: new PermissionPolicy({ scopes: ['compute'] }),
+      unscopedCapabilities: true,
       diagnostics: entry => diagnostics.push(entry)
     });
     const res = await e.execute('leaky', {}, {});
@@ -860,9 +874,24 @@ describe('Handler error sanitization', () => {
     assert.ok(!JSON.stringify(e.audit.entries()).includes('SUPER_SECRET_MARKER_123'));
     const pub = publicActionRuntimeSummary({ registry: reg, manifest: null, auditEntries: e.audit.entries(), configured: true });
     assert.ok(!JSON.stringify(pub).includes('SUPER_SECRET_MARKER_123'));
-    // operator sink may hold the internal detail — deliberately separate
+    // The DEFAULT diagnostics record is safe: category + opaque fingerprint,
+    // no raw exception text — hosted logs cannot leak the marker.
     assert.equal(diagnostics.length, 1);
-    assert.ok(diagnostics[0].message.includes('SUPER_SECRET_MARKER_123'));
+    assert.equal(diagnostics[0].tool, 'leaky');
+    assert.ok(!('message' in diagnostics[0]), 'default diagnostics must not carry raw handler text');
+    assert.ok(diagnostics[0].errorFingerprint);
+    assert.ok(!JSON.stringify(diagnostics).includes('SUPER_SECRET_MARKER_123'));
+    // Only an explicit development opt-in exposes raw text — and it still
+    // never reaches model or audit surfaces.
+    const rawSink = [];
+    const raw = new ToolExecutor(reg, {
+      policy: new PermissionPolicy({ scopes: ['compute'] }),
+      unscopedCapabilities: true,
+      diagnostics: entry => rawSink.push(entry),
+      rawDiagnostics: true
+    });
+    await raw.execute('leaky', {}, {});
+    assert.ok(rawSink[0].message.includes('SUPER_SECRET_MARKER_123'));
   });
 });
 
@@ -971,5 +1000,87 @@ describe('Runtime facts architecture', () => {
     assert.ok(flat.includes('10,000 neurons'));
     const ollamaFacts = buildDeploymentFacts({ provider: 'ollama', model: 'qwen2.5:1.5b' }, declared);
     assert.ok(!JSON.stringify(ollamaFacts).includes('Cloudflare Workers AI'));
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Deployment-profile fact isolation (final pass — blocker F)
+// ──────────────────────────────────────────────────────────────────────────
+
+describe('Deployment profile gating', () => {
+  const { buildDeploymentFacts, resolveDeclaredFacts } = require('../lib/deployment-facts');
+  const FACTS_FILE = path.join(__dirname, '..', 'data', 'deployment-facts.json');
+  const CFG = { provider: 'ollama', model: 'qwen2.5:1.5b', deadlineMs: 15000 };
+
+  it('no profile selected → declared topology facts are never emitted', () => {
+    const { profile, facts } = resolveDeclaredFacts({ env: {}, defaultFile: FACTS_FILE });
+    assert.equal(profile, null);
+    assert.deepEqual(facts, []);
+    const flat = JSON.stringify(buildDeploymentFacts(CFG, facts));
+    for (const banned of ['GitHub Pages', 'GCP', 'Cloudflare Workers AI', 'neurons', '@cf/meta']) {
+      assert.ok(!flat.includes(banned), `unselected profile leaked hosted fact: ${banned}`);
+    }
+    // Generated config facts still describe the actual deployment.
+    assert.ok(flat.includes('ollama') && flat.includes('15000'));
+  });
+
+  it('buildInfo-stamped projecthub-hosted profile → hosted facts emit', () => {
+    const { profile, facts } = resolveDeclaredFacts({
+      env: {},
+      buildInfo: { deploymentProfile: 'projecthub-hosted' },
+      defaultFile: FACTS_FILE
+    });
+    assert.equal(profile, 'projecthub-hosted');
+    const flat = JSON.stringify(buildDeploymentFacts(
+      { provider: 'cloudflare', model: '@cf/meta/llama-3.1-8b-instruct-fast', deadlineMs: 15000 }, facts));
+    assert.ok(flat.includes('GitHub Pages'));
+    assert.ok(flat.includes('GCP'));
+    assert.ok(flat.includes('10,000 neurons'));
+  });
+
+  it('SCOUT_DEPLOYMENT_PROFILE env selects the profile', () => {
+    const { profile, facts } = resolveDeclaredFacts({
+      env: { SCOUT_DEPLOYMENT_PROFILE: 'projecthub-hosted' },
+      defaultFile: FACTS_FILE
+    });
+    assert.equal(profile, 'projecthub-hosted');
+    assert.ok(facts.length > 0);
+  });
+
+  it('hosted profile + non-cloudflare provider → provider-gated facts suppressed', () => {
+    const { facts } = resolveDeclaredFacts({
+      env: { SCOUT_DEPLOYMENT_PROFILE: 'projecthub-hosted' },
+      defaultFile: FACTS_FILE
+    });
+    const flat = JSON.stringify(buildDeploymentFacts(CFG, facts));
+    assert.ok(flat.includes('GitHub Pages'), 'ungated topology fact should emit under the selected profile');
+    assert.ok(!flat.includes('Cloudflare Workers AI'), 'cloudflare-gated fact must stay gated');
+  });
+
+  it('unknown profile fails closed → generated facts only', () => {
+    const { profile, facts } = resolveDeclaredFacts({
+      env: { SCOUT_DEPLOYMENT_PROFILE: 'does-not-exist' },
+      defaultFile: FACTS_FILE
+    });
+    assert.equal(profile, 'does-not-exist');
+    assert.deepEqual(facts, []);
+  });
+
+  it('explicit SCOUT_DEPLOYMENT_FACTS_FILE loads operator-selected facts', () => {
+    const { profile, facts } = resolveDeclaredFacts({
+      env: { SCOUT_DEPLOYMENT_FACTS_FILE: FACTS_FILE },
+      defaultFile: null
+    });
+    assert.ok(facts.length > 0);
+    assert.equal(profile, 'projecthub-hosted'); // declared in the file
+  });
+
+  it('General Scout + Ollama + no profile → no hosted claims in the chunk index', () => {
+    const { facts } = resolveDeclaredFacts({ env: {}, defaultFile: FACTS_FILE });
+    const chunks = buildRagChunks({}, { deploymentFacts: buildDeploymentFacts(CFG, facts) });
+    const flat = JSON.stringify(chunks);
+    for (const banned of ['GitHub Pages', 'GCP', 'Cloudflare Workers AI', '@cf/meta', 'neurons']) {
+      assert.ok(!flat.includes(banned), `hosted claim reached General Scout index: ${banned}`);
+    }
   });
 });

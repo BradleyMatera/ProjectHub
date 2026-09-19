@@ -85,7 +85,12 @@ const buildInfo = {
   sourceBranch: currentBranch,
   sourceCommit: commitSha,
   deployedAt: new Date().toISOString(),
-  generatedBy: production ? 'deploy-gcp' : 'manual-deploy-dev'
+  generatedBy: production ? 'deploy-gcp' : 'manual-deploy-dev',
+  // Explicit deployment-profile selection: stamps this deploy as the
+  // ProjectHub hosted deployment so the runtime may emit the declared
+  // 'projecthub-hosted' facts (GitHub Pages widget, GCP VM, Cloudflare
+  // allocation). A bare checkout has no stamp → generated facts only.
+  deploymentProfile: 'projecthub-hosted'
 };
 const marker = Buffer.from(JSON.stringify(buildInfo, null, 2) + '\n');
 const manifest = Object.fromEntries([...files].map(([file, bytes]) => [

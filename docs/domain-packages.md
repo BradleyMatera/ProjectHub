@@ -167,7 +167,23 @@ All shipped packages allow the four read-only capabilities
 `allow: []` enables nothing; `deny` always wins. The policy is enforced
 inside `ToolExecutor` (injected as `capabilityPolicy`), not only at agent
 call sites — a denied attempt returns a typed `CAPABILITY_NOT_ALLOWED`
-refusal and never reaches the handler.
+refusal and never reaches the handler. An executor built **without** an
+injected policy fails closed too; running unscoped requires the explicit
+`unscopedCapabilities: true` or `ALLOW_ALL_INTERNAL_POLICY` opt-in.
+
+Executor gate order is fixed: registered → package capability →
+**tenant availability** (always evaluated — omitting `context.knowledge`
+cannot widen access, knowledge-gated tools refuse) → permission scope →
+argument schema → deadline budget → **confirmation grant** (consumed last,
+immediately before the side effect begins, so an args/deadline failure
+never burns a live grant) → handler.
+
+Handlers execute under an `AbortController` — `context.signal` aborts on
+tool timeout, and the timeout timer is always cleared. Side-effecting
+descriptors must declare `idempotent` and `supportsAbort`; a side-effect
+timeout returns `EXECUTION_STATUS_UNKNOWN` (the adapter may have committed)
+rather than a false "failed", and is never auto-retried. Side-effect
+handlers receive a stable per-execution `context.idempotencyKey`.
 
 Side effects additionally require a permission scope, a registered handler,
 and a **one-time confirmation grant** verified by an injected
@@ -181,8 +197,10 @@ register code.
 
 Handler exceptions are sanitized at the executor: model-facing results and
 the audit trail carry a stable typed error category and a generic message —
-never raw exception text. Detailed diagnostics go only to an explicitly
-injected operator sink.
+never raw exception text. Diagnostics sinks receive a safe record (tool,
+category, timeout flag, duration, opaque error fingerprint); raw exception
+text is emitted only under the explicit development-only `rawDiagnostics`
+option, which hosted deployments must not enable.
 
 Legacy bare-knowledge files (no `packageVersion`) load with the explicit
 `LEGACY_CAPABILITY_POLICY` — the same four read-only capabilities, with
@@ -195,5 +213,10 @@ retrieval is described as optional, never as Scout's identity). Deployment
 facts — configured provider/model, deadline, gated hosting/billing facts —
 are generated at runtime by `lib/deployment-facts.js` from actual config plus
 the provider-gated declarations in `data/deployment-facts.json`; an Ollama
-deployment never sees a Cloudflare claim. Scope claims belong to the package
-that owns them.
+deployment never sees a Cloudflare claim. Declared topology facts
+additionally require an explicit deployment-profile selection —
+`SCOUT_DEPLOYMENT_PROFILE`, the deploy pipeline's stamped
+`deploy-source.json` `deploymentProfile` (`projecthub-hosted`), or an
+explicit `SCOUT_DEPLOYMENT_FACTS_FILE`. A bare checkout with no selection
+emits generated config facts only — never GitHub Pages / GCP / hosted
+claims. Scope claims belong to the package that owns them.

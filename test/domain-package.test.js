@@ -269,9 +269,12 @@ describe('Package capability gating + executor integration', () => {
   });
 
   it('calculator executes identically under every package', async () => {
-    const executor = new ToolExecutor(registry, { policy: readPolicy() });
     for (const id of ['recruiter-alpha', 'rivera-home-electric', 'northstar-desk']) {
       const { manifest, knowledge } = load(id);
+      // Inject THIS package's policy — the executor enforces it itself.
+      const executor = new ToolExecutor(registry, {
+        policy: readPolicy(), capabilityPolicy: cap => isCapabilityAllowed(manifest, cap)
+      });
       assert.ok(isCapabilityAllowed(manifest, 'calculator'));
       const result = await executor.execute('calculator', { expression: '2+2' }, { knowledge });
       assert.equal(result.ok, true, id);
@@ -281,8 +284,10 @@ describe('Package capability gating + executor integration', () => {
   });
 
   it('knowledge_lookup returns package-local facts only', async () => {
-    const executor = new ToolExecutor(registry, { policy: readPolicy() });
     const rivera = load('rivera-home-electric');
+    const executor = new ToolExecutor(registry, {
+      policy: readPolicy(), capabilityPolicy: id => isCapabilityAllowed(rivera.manifest, id)
+    });
     const result = await executor.execute('knowledge_lookup', { section: 'boundaries' }, { knowledge: rivera.knowledge });
     assert.equal(result.ok, true);
     assert.equal(result.data.found, true);
@@ -292,8 +297,10 @@ describe('Package capability gating + executor integration', () => {
   });
 
   it('denied capabilities are gated before execution', async () => {
-    const executor = new ToolExecutor(registry, { policy: readPolicy() });
     const rivera = load('rivera-home-electric');
+    const executor = new ToolExecutor(registry, {
+      policy: readPolicy(), capabilityPolicy: id => isCapabilityAllowed(rivera.manifest, id)
+    });
     // Package-level gate must refuse before the executor even runs.
     assert.equal(isCapabilityAllowed(rivera.manifest, 'send_notification'), false);
     // And the executor's own permission gate also refuses it (knowledge lacks notifications.enabled).
@@ -304,12 +311,19 @@ describe('Package capability gating + executor integration', () => {
 
 describe('Tool runtime integration (lite-agent wiring)', () => {
   const { configureToolRuntime, runCapabilityFacts } = require('../lib/lite-agent');
-  const executor = new ToolExecutor(registry, { policy: readPolicy() });
+  // Live-manifest resolver, mirroring the server's injection: the executor
+  // evaluates the CURRENT package's policy on every call.
+  let activeManifest = null;
+  const executor = new ToolExecutor(registry, {
+    policy: readPolicy(),
+    capabilityPolicy: id => isCapabilityAllowed(activeManifest, id)
+  });
   const load = id => loadDomainPackage(path.join(PACKAGES_DIR, `${id}.package.json`));
+  const useRuntime = manifest => { activeManifest = manifest; configureToolRuntime({ executor, manifest }); };
 
   it('capability calls through the executor are audited', async () => {
     const { manifest, knowledge } = load('recruiter-alpha');
-    configureToolRuntime({ executor, manifest });
+    useRuntime(manifest);
     const before = executor.audit.entries().length;
     const data = await runCapabilityFacts('calculator', { expression: '5*6' }, { knowledge });
     assert.ok(data.facts.length >= 1);
@@ -321,7 +335,7 @@ describe('Tool runtime integration (lite-agent wiring)', () => {
 
   it('package-denied capabilities return empty, no execution', async () => {
     const { manifest, knowledge } = load('rivera-home-electric');
-    configureToolRuntime({ executor, manifest });
+    useRuntime(manifest);
     const before = executor.audit.entries().length;
     const data = await runCapabilityFacts('send_notification', { to: 'a@b.c', message: 'x' }, { knowledge });
     assert.deepEqual(data, []);
@@ -329,7 +343,7 @@ describe('Tool runtime integration (lite-agent wiring)', () => {
   });
 
   it('General Scout gates knowledge tools but runs compute', async () => {
-    configureToolRuntime({ executor, manifest: GENERAL_PACKAGE });
+    useRuntime(GENERAL_PACKAGE);
     const calc = await runCapabilityFacts('calculator', { expression: '1+1' }, { knowledge: {} });
     assert.ok(calc.facts.length >= 1);
     const lookup = await runCapabilityFacts('knowledge_lookup', { section: 'skills' }, { knowledge: {} });
@@ -342,7 +356,7 @@ describe('Tool runtime integration (lite-agent wiring)', () => {
       { fallback: () => ({ facts: require('../lib/arithmetic-tool').findArithmeticSubtasks('3+3') }) });
     assert.ok(data.facts.length >= 1);
     // restore for other suites
-    configureToolRuntime({ executor, manifest: GENERAL_PACKAGE });
+    useRuntime(GENERAL_PACKAGE);
   });
 });
 
@@ -355,10 +369,21 @@ describe('General Scout mode', () => {
   });
 
   it('empty knowledge does not produce entities or facts', async () => {
-    const executor = new ToolExecutor(registry, { policy: readPolicy() });
+    // This test exercises empty-knowledge handler behavior, not package
+    // gating — General Scout itself denies knowledge_lookup (proven above).
+    const executor = new ToolExecutor(registry, {
+      policy: readPolicy(), unscopedCapabilities: true
+    });
     const r = loadDomainPackage('general');
     const result = await executor.execute('knowledge_lookup', { section: 'skills' }, { knowledge: r.knowledge });
     assert.equal(result.data.found, false);
     assert.equal(result.data.data, null);
+    // …and under the real General Scout policy the call refuses outright.
+    const gated = new ToolExecutor(registry, {
+      policy: readPolicy(),
+      capabilityPolicy: id => isCapabilityAllowed(GENERAL_PACKAGE, id)
+    });
+    const refused = await gated.execute('knowledge_lookup', { section: 'skills' }, { knowledge: r.knowledge });
+    assert.equal(refused.errorType, 'CAPABILITY_NOT_ALLOWED');
   });
 });

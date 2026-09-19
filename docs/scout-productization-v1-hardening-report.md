@@ -1,4 +1,4 @@
-# Scout Productization V1 — Hardening Report (Pass 2)
+# Scout Productization V1 — Hardening Report (Passes 2 + 3)
 
 Scope: PR #33 branch `feat/scout-action-runtime`. Second hardening pass over
 the V1 domain-package contract and action runtime, driven by independent
@@ -149,13 +149,77 @@ shell interpolation from package data; audit holds no raw secrets or grant
 values; denied/failed actions audited as typed events; General Scout policy
 remains calculator-only.
 
+## Pass 3 — execution-contract completion
+
+Independent inspection of the pass-2 pushed source found six remaining
+runtime-boundary issues; all are fixed and tested.
+
+### A. tenantAvailability is no longer bypassable
+
+Pass-2 code ran the tenant gate only `if (context.knowledge)` — omitting
+knowledge skipped availability entirely. The executor now evaluates
+`isAvailableForTenant(descriptor, context.knowledge ?? null)` on every call:
+knowledge-gated tools (knowledge_lookup, entity_lookup, content_search,
+send_notification) fail closed with `TENANT_UNAVAILABLE` when no tenant
+context exists; `tenantAvailability: true` tools (calculator) stay
+available.
+
+### B. Missing capabilityPolicy fails closed
+
+`no capabilityPolicy → allow` is removed. An executor with no injected
+policy denies every capability; deliberate standalone/internal executors
+must opt in explicitly via `unscopedCapabilities: true` or the exported
+`ALLOW_ALL_INTERNAL_POLICY`. The server continues injecting the live
+package-policy resolver.
+
+### C. Confirmation grant consumed last
+
+Gate order is now registry → capability → tenant → permission → **args →
+deadline → confirmation** → handler. A grant is consumed only when the
+execution is actually authorized to proceed — invalid args or an
+insufficient deadline refuse without burning the grant (tested: same grant
+succeeds afterward with the exact issued args).
+
+### D. Cancellation + ambiguous side-effect semantics
+
+Handlers run under an `AbortController`; `context.signal` aborts on tool
+timeout and the timer is always cleared. Side-effecting descriptors must
+declare `idempotent` + `supportsAbort` (registration-time validation).
+A timed-out side effect returns `EXECUTION_STATUS_UNKNOWN` — the adapter
+may have committed — never a false "failed", and the executor never
+auto-retries a side effect. Side-effect handlers receive a stable
+per-execution `context.idempotencyKey`.
+
+### E. Diagnostics redaction by default
+
+The diagnostics sink now receives a safe record — `{tool, errorType,
+timedOut, durationMs, errorFingerprint}` (sha256-16 of the raw message,
+one-way correlation only). Raw handler exception text is emitted only when
+`rawDiagnostics: true` is explicitly set — a development-only option, off
+in the hosted path. `SUPER_SECRET_MARKER_123` is absent from model output,
+audit, health, and default diagnostics.
+
+### F. Deployment-profile boundary for declared facts
+
+`data/deployment-facts.json` declares `profile: "projecthub-hosted"` and
+loads only when explicitly selected: `SCOUT_DEPLOYMENT_PROFILE` env, the
+deploy pipeline's stamped `deploy-source.json` `deploymentProfile` (added
+in `manual-deploy-dev.js`), or an explicit `SCOUT_DEPLOYMENT_FACTS_FILE`.
+No selection → generated config facts only. A bare checkout / isolated
+General Scout boot emits no GitHub Pages / GCP / Cloudflare claims.
+Unknown profiles fail closed. Provider-gated facts still require the
+configured provider.
+
 ## Evidence
 
-- `npm test`: 1601/1601 pass (previous floor 1565; +36 pass-2 tests)
+- `npm test`: 1621/1621 pass (floors: 1565 → 1601 → 1621)
 - `npm run eval-retrieval`: Recall@6 = 1.000 (40/40), MRR@6 = 0.942
 - `node --check` on all touched files: clean; `git diff --check`: clean
 - `npm run workspace:check`: READY
 - Package CLIs: all shipped packages VALID; `general` VALID
+- `npm audit`: 4 advisories (2 moderate, 2 high — dompurify, nanoid,
+  postcss, qs) — pre-existing dependency state, unchanged by this work;
+  below the configured CI high-severity failure threshold.
 - Frozen runtime SHA + exact-SHA CI + DEV verification: see PR #33 body and
   the commit history for the deployed head recorded at freeze time.
 
@@ -166,5 +230,10 @@ remains calculator-only.
 - Copilot review 5222017585 (commit `b6979e4`): quota exhausted — not a code
   review.
 - Copilot review 5235097347 (commit `25c656b`, pass-2 frozen head, submitted
-  2026-09-17T11:39:15Z): quota exhausted — not a code review. No substantive
-  external review of this branch has occurred; no findings are claimed.
+  2026-09-17T11:39:15Z): quota exhausted — not a code review.
+- Pass 3: no further Copilot request was made (three confirmed quota
+  exhaustions). Recorded as
+  `EXTERNAL_COPILOT_REVIEW_UNAVAILABLE_QUOTA` — an external advisory
+  limitation, not a code review and not a findings claim. Branch readiness
+  rests on pushed-source inspection, the deterministic suite, exact-SHA CI,
+  DEV qualification, and Bradley's own review workflow.

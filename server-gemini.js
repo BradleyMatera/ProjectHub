@@ -96,18 +96,21 @@ const KNOWLEDGE_FILE = path.join(__dirname, process.env.KNOWLEDGE_FILE || 'data/
 const { loadDomainPackage, transitionPackageState, packageCacheUsable, isCapabilityAllowed, publicActionRuntimeSummary, INVALID_PACKAGE_MANIFEST } = require('./lib/domain-package');
 const { buildToolRegistry } = require('./lib/tool-capabilities');
 const { ToolExecutor, PermissionPolicy } = require('./lib/tool-executor');
-const { buildDeploymentFacts } = require('./lib/deployment-facts');
+const { buildDeploymentFacts, resolveDeclaredFacts } = require('./lib/deployment-facts');
 const { configureToolRuntime } = require('./lib/lite-agent');
 // Shared read-only action runtime. The executor is the security boundary:
 // it enforces the ACTIVE package's capability policy on every call via an
 // injected resolver, plus scopes, deadline, and audit. No confirmation
 // verifier is injected in this deployment — side-effecting capabilities
 // refuse by construction, no matter what a package or caller supplies.
+// Diagnostics receive the SAFE record only (category, timeout, duration,
+// opaque fingerprint) — raw handler exception text never reaches logs here.
 const toolRegistry = buildToolRegistry();
 const sharedToolExecutor = new ToolExecutor(toolRegistry, {
   policy: new PermissionPolicy({ scopes: ['compute', 'knowledge:read', 'search:read', 'entity:read'] }),
   capabilityPolicy: (toolId) => isCapabilityAllowed(domainPackageManifest, toolId),
-  diagnostics: (entry) => console.error('[tool-diagnostic]', entry.tool, entry.errorType, entry.message)
+  diagnostics: (entry) => console.error('[tool-diagnostic]', entry.tool, entry.errorType,
+    `timedOut=${entry.timedOut}`, `ms=${entry.durationMs}`, `fp=${entry.errorFingerprint}`)
 });
 // SCOUT_DOMAIN_PACKAGE selects the runtime's domain package: a .package.json
 // path, a bare knowledge file (legacy), or 'general' for General Scout mode.
@@ -591,10 +594,15 @@ const DEPLOYMENT_FACTS = (() => {
   const resolvedProvider = ih.provider === 'cloudflare' ? 'cloudflare'
     : ih.provider === 'ollama' ? 'ollama'
     : (localModelRouter.isCloudflarePrimary() ? 'cloudflare' : 'ollama');
-  let declared = [];
-  try {
-    declared = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'deployment-facts.json'), 'utf8')).facts || [];
-  } catch { /* no declared deployment facts — generated facts still apply */ }
+  // Declared topology facts load ONLY under an explicit deployment-profile
+  // selection (SCOUT_DEPLOYMENT_PROFILE, the deploy pipeline's stamped
+  // deploy-source.json deploymentProfile, or SCOUT_DEPLOYMENT_FACTS_FILE).
+  // A bare checkout — e.g. isolated General Scout on Ollama — gets only
+  // facts generated from its actual runtime configuration.
+  const { facts: declared } = resolveDeclaredFacts({
+    buildInfo,
+    defaultFile: path.join(__dirname, 'data', 'deployment-facts.json')
+  });
   return buildDeploymentFacts({
     provider: resolvedProvider,
     model: resolvedProvider === 'cloudflare' ? ih.cloudflareModel : ih.localFallbackModel,

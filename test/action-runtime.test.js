@@ -8,7 +8,8 @@ const assert = require('node:assert/strict');
 
 const { ToolRegistry } = require('../lib/tool-registry');
 const {
-  ToolExecutor, PermissionPolicy, ActionAudit, WorkflowState, ERROR_TYPES
+  ToolExecutor, PermissionPolicy, ActionAudit, WorkflowState, ERROR_TYPES,
+  ALLOW_ALL_INTERNAL_POLICY
 } = require('../lib/tool-executor');
 const { ConfirmationGrantVerifier } = require('../lib/confirmation-grants');
 const {
@@ -31,9 +32,12 @@ function executor(registry, opts = {}) {
     }),
     audit: opts.audit,
     deadlineMs: opts.deadlineMs ?? 15000,
-    capabilityPolicy: opts.capabilityPolicy,
+    // These tests exercise the executor's other gates, not package policy —
+    // they explicitly opt into the unscoped internal policy.
+    capabilityPolicy: opts.capabilityPolicy || ALLOW_ALL_INTERNAL_POLICY,
     confirmationVerifier: opts.confirmationVerifier,
-    diagnostics: opts.diagnostics
+    diagnostics: opts.diagnostics,
+    rawDiagnostics: opts.rawDiagnostics
   });
 }
 
@@ -153,9 +157,27 @@ test('EXEC-8: execution error is contained, sanitized, and operator-sinked', asy
   assert.ok(!res.error.includes('SECRET-XYZ'));
   assert.ok(!res.error.includes('kaboom'));
   assert.ok(!JSON.stringify(res.forModel()).includes('SECRET-XYZ'));
-  // An explicitly injected operator sink MAY receive the internal detail
+  // The operator sink receives the SAFE record — category, timeout, duration,
+  // opaque fingerprint — never raw exception text by default.
   assert.equal(diagnostics.length, 1);
   assert.equal(diagnostics[0].tool, 'boom');
+  assert.equal(diagnostics[0].errorType, ERROR_TYPES.EXECUTION_ERROR);
+  assert.ok(diagnostics[0].errorFingerprint);
+  assert.ok(!('message' in diagnostics[0]), 'raw handler text must not reach default diagnostics');
+});
+
+test('EXEC-8b: raw diagnostics require explicit development opt-in', async () => {
+  const r = new ToolRegistry();
+  r.register({
+    id: 'boom', name: 'Boom', permissionScope: 'compute',
+    handler: () => { throw new Error('kaboom SECRET-XYZ'); }
+  });
+  const diagnostics = [];
+  await executor(r, { diagnostics: e => diagnostics.push(e), rawDiagnostics: true }).execute('boom', {}, {});
+  // Explicit opt-in is the only path raw handler text may take — and it is
+  // a development-only diagnostic, still never model context or audit.
+  assert.equal(diagnostics.length, 1);
+  assert.ok(diagnostics[0].message.includes('SECRET-XYZ'));
 });
 
 test('EXEC-9: tool timeout produces EXECUTION_ERROR', async () => {
@@ -260,4 +282,189 @@ test('SECTIONS: knowledge_lookup enum matches tenant sections', () => {
   const tool = knowledgeLookupTool();
   assert.deepEqual(tool.inputSchema.properties.section.enum, KNOWLEDGE_SECTIONS);
   assert.ok(KNOWLEDGE_SECTIONS.includes('boundaries'));
+});
+
+// ── Execution-contract hardening (final pass) ────────────────────────
+
+test('TENANT-1: omitting context.knowledge cannot bypass tenantAvailability', async () => {
+  const ex = executor();
+  // Knowledge-gated tools fail CLOSED when the caller supplies no tenant
+  // context — the gate is always evaluated, never skipped.
+  for (const [toolId, args] of [
+    ['knowledge_lookup', { section: 'skills' }],
+    ['entity_lookup', { name: 'Atlas API' }],
+    ['content_search', { query: 'python' }]
+  ]) {
+    const res = await ex.execute(toolId, args, {}); // no knowledge key at all
+    assert.equal(res.errorType, ERROR_TYPES.TENANT_UNAVAILABLE, toolId);
+  }
+  // A truthy-but-empty knowledge object is a DIFFERENT case — an existing
+  // (empty) tenant context, not a missing one.
+  const withEmpty = await ex.execute('knowledge_lookup', { section: 'skills' }, { knowledge: {} });
+  assert.notEqual(withEmpty.errorType, ERROR_TYPES.TENANT_UNAVAILABLE);
+});
+
+test('TENANT-2: calculator stays available without tenant knowledge', async () => {
+  const res = await executor().execute('calculator', { expression: '2+2' }, {});
+  assert.equal(res.status, 'ok');
+});
+
+test('TENANT-3: send_notification unavailable without tenant context even with scope', async () => {
+  const ex = executor(buildToolRegistry(), {
+    policy: new PermissionPolicy({ scopes: ['action:write'], canConfirm: true }),
+    confirmationVerifier: new ConfirmationGrantVerifier()
+  });
+  const args = { recipient: 'a@b.co', subject: 's', body: 'b' };
+  const grant = ex.confirmationVerifier.issue({ toolId: 'send_notification', args });
+  const res = await ex.execute('send_notification', args, { confirmationGrant: grant });
+  assert.equal(res.errorType, ERROR_TYPES.TENANT_UNAVAILABLE);
+  // Tenant gate ran before confirmation — the grant is still live.
+  const retry = await ex.execute('send_notification', args, { knowledge: KB, confirmationGrant: grant });
+  assert.equal(retry.status, 'ok');
+});
+
+test('POLICY-1: missing capabilityPolicy fails closed by default', async () => {
+  const ex = new ToolExecutor(buildToolRegistry(), {
+    policy: new PermissionPolicy({ scopes: ['compute', 'knowledge:read'] })
+  });
+  const res = await ex.execute('calculator', { expression: '2+2' }, { knowledge: KB });
+  assert.equal(res.errorType, ERROR_TYPES.CAPABILITY_NOT_ALLOWED);
+});
+
+test('POLICY-2: explicit unscoped opt-ins both work', async () => {
+  for (const opts of [{ unscopedCapabilities: true }, { capabilityPolicy: ALLOW_ALL_INTERNAL_POLICY }]) {
+    const ex = new ToolExecutor(buildToolRegistry(), {
+      policy: new PermissionPolicy({ scopes: ['compute'] }), ...opts
+    });
+    const res = await ex.execute('calculator', { expression: '2+2' }, {});
+    assert.equal(res.status, 'ok', JSON.stringify(opts));
+  }
+});
+
+test('GRANT-ORDER-1: invalid args refuse before consuming the grant', async () => {
+  const verifier = new ConfirmationGrantVerifier();
+  const ex = executor(buildToolRegistry(), {
+    policy: new PermissionPolicy({ scopes: ['action:write'], canConfirm: true }),
+    confirmationVerifier: verifier
+  });
+  const goodArgs = { recipient: 'a@b.co', subject: 's', body: 'b' };
+  // Grant issued for the VALID arg set; first call sends bad args that fail
+  // schema validation — the grant must NOT be consumed.
+  const grant = verifier.issue({ toolId: 'send_notification', args: goodArgs });
+  const bad = await ex.execute('send_notification', { recipient: 'a@b.co' }, { knowledge: KB, confirmationGrant: grant });
+  assert.equal(bad.errorType, ERROR_TYPES.INVALID_ARGUMENTS);
+  const retry = await ex.execute('send_notification', goodArgs, { knowledge: KB, confirmationGrant: grant });
+  assert.equal(retry.status, 'ok');
+});
+
+test('GRANT-ORDER-2: insufficient deadline refuses before consuming the grant', async () => {
+  const verifier = new ConfirmationGrantVerifier();
+  const ex = executor(buildToolRegistry(), {
+    policy: new PermissionPolicy({ scopes: ['action:write'], canConfirm: true }),
+    confirmationVerifier: verifier
+  });
+  const args = { recipient: 'a@b.co', subject: 's', body: 'b' };
+  const grant = verifier.issue({ toolId: 'send_notification', args });
+  const tight = await ex.execute('send_notification', args, { knowledge: KB, confirmationGrant: grant, remainingMs: 1 });
+  assert.equal(tight.errorType, ERROR_TYPES.DEADLINE_EXCEEDED);
+  const retry = await ex.execute('send_notification', args, { knowledge: KB, confirmationGrant: grant });
+  assert.equal(retry.status, 'ok');
+});
+
+test('GRANT-ORDER-3: grant consumed exactly once on success, replay refused', async () => {
+  const verifier = new ConfirmationGrantVerifier();
+  const ex = executor(buildToolRegistry(), {
+    policy: new PermissionPolicy({ scopes: ['action:write'], canConfirm: true }),
+    confirmationVerifier: verifier
+  });
+  const args = { recipient: 'a@b.co', subject: 's', body: 'b' };
+  const grant = verifier.issue({ toolId: 'send_notification', args });
+  assert.equal((await ex.execute('send_notification', args, { knowledge: KB, confirmationGrant: grant })).status, 'ok');
+  assert.equal(
+    (await ex.execute('send_notification', args, { knowledge: KB, confirmationGrant: grant })).errorType,
+    ERROR_TYPES.CONFIRMATION_REQUIRED
+  );
+});
+
+test('ABORT-1: read-only timeout aborts the handler signal and reports EXECUTION_ERROR', async () => {
+  const r = new ToolRegistry();
+  let sawAbort = false;
+  r.register({
+    id: 'slow', name: 'Slow', permissionScope: 'compute', timeoutMs: 25,
+    handler: (args, context) => new Promise(res => {
+      context.signal.addEventListener('abort', () => { sawAbort = true; });
+      setTimeout(res, 500);
+    })
+  });
+  const res = await executor(r).execute('slow', {}, { remainingMs: 5000 });
+  assert.equal(res.errorType, ERROR_TYPES.EXECUTION_ERROR);
+  await new Promise(res2 => setTimeout(res2, 10));
+  assert.equal(sawAbort, true, 'executor must abort the handler signal on timeout');
+});
+
+test('ABORT-2: side-effect timeout is EXECUTION_STATUS_UNKNOWN, aborted, and never retried', async () => {
+  const r = new ToolRegistry();
+  let calls = 0;
+  let sawAbort = false;
+  let sawKey = null;
+  r.register({
+    id: 'slow_write', name: 'Slow Write', permissionScope: 'action:write',
+    sideEffect: true, requiresConfirmation: true,
+    idempotent: false, supportsAbort: true,
+    timeoutMs: 25,
+    inputSchema: { type: 'object', properties: { note: { type: 'string' } }, required: ['note'] },
+    handler: (args, context) => new Promise(res => {
+      calls += 1;
+      sawKey = context.idempotencyKey;
+      context.signal.addEventListener('abort', () => { sawAbort = true; });
+      setTimeout(res, 500);
+    })
+  });
+  const verifier = new ConfirmationGrantVerifier();
+  const ex = executor(r, {
+    policy: new PermissionPolicy({ scopes: ['action:write'], canConfirm: true }),
+    confirmationVerifier: verifier
+  });
+  const args = { note: 'hello' };
+  const grant = verifier.issue({ toolId: 'slow_write', args });
+  const res = await ex.execute('slow_write', args, { knowledge: KB, confirmationGrant: grant, remainingMs: 5000 });
+  assert.equal(res.errorType, ERROR_TYPES.EXECUTION_STATUS_UNKNOWN);
+  assert.equal(res.status, 'error');
+  assert.ok(!res.error.includes('failed'), 'ambiguous side effect must not be reported as a clean failure');
+  await new Promise(res2 => setTimeout(res2, 10));
+  assert.equal(sawAbort, true, 'side-effect handler must receive abort');
+  assert.equal(calls, 1, 'no automatic retry of an ambiguous side effect');
+  assert.ok(/^exec-/.test(sawKey), 'side-effect handler must receive a stable idempotency key');
+});
+
+test('ABORT-3: fast success leaves no dangling timer and no abort', async () => {
+  const r = new ToolRegistry();
+  let sawAbort = false;
+  r.register({
+    id: 'fast', name: 'Fast', permissionScope: 'compute', timeoutMs: 500,
+    handler: (args, context) => {
+      context.signal.addEventListener('abort', () => { sawAbort = true; });
+      return { done: true };
+    }
+  });
+  const res = await executor(r).execute('fast', {}, {});
+  assert.equal(res.status, 'ok');
+  await new Promise(res2 => setTimeout(res2, 50)); // outlive the tool budget
+  assert.equal(sawAbort, false);
+});
+
+test('REG-5: side-effecting tools must declare execution semantics', () => {
+  const r = new ToolRegistry();
+  assert.throws(
+    () => r.register({
+      id: 'w1', name: 'W', handler: () => {}, sideEffect: true,
+      requiresConfirmation: true // missing idempotent/supportsAbort
+    }),
+    /idempotent and supportsAbort/
+  );
+  // Declared descriptors register fine.
+  r.register(sendNotificationTool(() => ({ queued: true })));
+  const d = r.get('send_notification');
+  assert.equal(d.idempotent, false);
+  assert.equal(d.supportsAbort, true);
 });

@@ -1,7 +1,8 @@
 {
  "version": "1.0.0",
- "lastVerified": "2026-09-16",
- "notes": "Deployment-scoped runtime facts for the ProjectHub deployment of Scout. Facts with a `provider` field are emitted only when that provider is actually configured; ungated facts describe this deployment's topology. Other deployments declare their own file or omit it. Generated config facts (provider/model/deadline/rate-limit) come from lib/deployment-facts.js, not this file.",
+ "lastVerified": "2026-09-18",
+ "profile": "projecthub-hosted",
+ "notes": "Deployment-scoped runtime facts for the ProjectHub hosted deployment of Scout. This file's declared facts emit ONLY when the deployment explicitly selects the 'projecthub-hosted' profile (SCOUT_DEPLOYMENT_PROFILE, deploy-source.json deploymentProfile, or an explicit SCOUT_DEPLOYMENT_FACTS_FILE). Facts with a `provider` field emit only when that provider is actually configured. Generated config facts (provider/model/deadline/rate-limit) come from lib/deployment-facts.js, not this file.",
  "facts": [
   {
    "id": "deployment-cloudflare-inference",
