@@ -3,13 +3,22 @@
   "sourceOfTruth": "GitHub",
   "workspaces": [
     {
-      "branch": "fix/post-integration-semantic-reliability",
-      "purpose": "PR #31 tenant-neutrality and anti-overfit cleanup on Scout/ProjectHub",
+      "branch": "feat/scout-action-runtime",
+      "purpose": "Scout Productization V1 — domain-package contract, General Scout mode, shipped packages (recruiter-alpha, rivera-home-electric, northstar-desk), action runtime wired into lite agent; PR #33 open to develop",
       "status": "github-backed-active",
+      "remote": "origin/feat/scout-action-runtime",
+      "checkpoint": "57f7bda25c4c5a9f9662f6990fd5c8e31bf47f31",
+      "checkpointSemantics": "published-head-dev-qualified",
+      "note": "Active Scout workspace, branched from develop e74ac22b (post-PR31 release). Resume this exact GitHub branch on any PC, IDE, or coding agent. Fetch origin first; do not recreate it from master or develop. Publish committed work back to this branch before switching environments."
+    },
+    {
+      "branch": "fix/post-integration-semantic-reliability",
+      "purpose": "PR #31 tenant-neutrality and anti-overfit cleanup on Scout/ProjectHub — RELEASED",
+      "status": "released",
       "remote": "origin/fix/post-integration-semantic-reliability",
       "checkpoint": "654d25e625b15c3fb043e442fcfcfb813bf71aa9",
       "checkpointSemantics": "last-qualified-runtime",
-      "note": "Active Scout workspace. Resume this exact GitHub branch on any PC, IDE, or coding agent. Fetch origin first; do not recreate it from master or develop. Publish committed work back to this branch before switching environments. 'checkpoint' records the last runtime SHA that passed deterministic floor + DEV deployment + qualification gates — it is intentionally NOT a live HEAD pointer (updating it would self-invalidate on every commit)."
+      "note": "RELEASED. Merged to develop as e74ac22b (PR #31), promoted to production master 7d01170830949a0ef85da58bab6a0a2b266b0e9c (release PR #32), deployed to prod backend and verified through the live recruiter chain. Retained for history; do not resume feature work here."
     }
   ]
 }

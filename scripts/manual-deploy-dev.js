@@ -46,13 +46,17 @@ const runtimeInputs = [
   'data/free-tier-limits.json',
   'data/recruiter-knowledge.json',
   'data/scout-runtime-knowledge.json',
-  'data/scout-identity.json'
+  'data/deployment-facts.json',
+  'data/scout-identity.json',
+  'data/packages/recruiter-alpha.package.json',
+  'data/packages/rivera-home-electric.package.json',
+  'data/packages/northstar-desk.package.json'
 ];
 const files = new Map();
 const dependencies = new Set();
 function collect(file) {
   if (files.has(file)) return;
-  if (!/^(server-gemini\.js|lib\/[a-z0-9-]+\.js|data\/[a-z0-9-]+\.json)$/.test(file)) {
+  if (!/^(server-gemini\.js|lib\/[a-z0-9-]+\.js|data\/[a-z0-9-]+\.json|data\/packages\/[a-z0-9-]+\.package\.json)$/.test(file)) {
     throw new Error(`Unaudited runtime path: ${file}`);
   }
   const entry = git(['ls-tree', commitSha, '--', file]);
@@ -81,7 +85,12 @@ const buildInfo = {
   sourceBranch: currentBranch,
   sourceCommit: commitSha,
   deployedAt: new Date().toISOString(),
-  generatedBy: production ? 'deploy-gcp' : 'manual-deploy-dev'
+  generatedBy: production ? 'deploy-gcp' : 'manual-deploy-dev',
+  // Explicit deployment-profile selection: stamps this deploy as the
+  // ProjectHub hosted deployment so the runtime may emit the declared
+  // 'projecthub-hosted' facts (GitHub Pages widget, GCP VM, Cloudflare
+  // allocation). A bare checkout has no stamp → generated facts only.
+  deploymentProfile: 'projecthub-hosted'
 };
 const marker = Buffer.from(JSON.stringify(buildInfo, null, 2) + '\n');
 const manifest = Object.fromEntries([...files].map(([file, bytes]) => [
@@ -206,7 +215,10 @@ node "$TX/verify.js" baseline "$TX"
 paths=(${replaced.map(p => `'${p}'`).join(' ')})
 for item in "\${paths[@]}"; do
   [ ! -L "$ROOT/$item" ]
-  if [ -e "$ROOT/$item" ]; then cp -a "$ROOT/$item" "$TX/backup/$item"; fi
+  if [ -e "$ROOT/$item" ]; then
+    mkdir -p "$(dirname "$TX/backup/$item")"
+    cp -a "$ROOT/$item" "$TX/backup/$item"
+  fi
 done
 touched=()
 rollback() {
@@ -218,10 +230,12 @@ rollback() {
   systemctl stop "$SERVICE" || rollback_failed=1
   for ((i=\${#touched[@]}-1; i>=0; i--)); do
     item=\${touched[$i]}
+    mkdir -p "$(dirname "$TX/failed/$item")"
     if [ -e "$ROOT/$item" ] || [ -L "$ROOT/$item" ]; then
       mv -T "$ROOT/$item" "$TX/failed/$item" || { rollback_failed=1; continue; }
     fi
     if [ -e "$TX/backup/$item" ]; then
+      mkdir -p "$(dirname "$TX/restore/$item")" "$(dirname "$ROOT/$item")"
       cp -a "$TX/backup/$item" "$TX/restore/$item" &&
         mv -T "$TX/restore/$item" "$ROOT/$item" || rollback_failed=1
     fi
@@ -248,6 +262,7 @@ trap 'rollback 129' HUP
 systemctl stop "$SERVICE"
 for item in "\${paths[@]}"; do
   touched+=("$item")
+  mkdir -p "$(dirname "$TX/retired/$item")" "$(dirname "$ROOT/$item")"
   if [ -e "$ROOT/$item" ]; then mv -T "$ROOT/$item" "$TX/retired/$item"; fi
   mv -T "$TX/next/$item" "$ROOT/$item"
 done

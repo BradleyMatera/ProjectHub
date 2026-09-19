@@ -1,0 +1,31 @@
+{
+ "version": "1.0.0",
+ "lastVerified": "2026-09-18",
+ "profile": "projecthub-hosted",
+ "notes": "Deployment-scoped runtime facts for the ProjectHub hosted deployment of Scout. This file's declared facts emit ONLY when the deployment explicitly selects the 'projecthub-hosted' profile (SCOUT_DEPLOYMENT_PROFILE, deploy-source.json deploymentProfile, or an explicit SCOUT_DEPLOYMENT_FACTS_FILE). Facts with a `provider` field emit only when that provider is actually configured. Generated config facts (provider/model/deadline/rate-limit) come from lib/deployment-facts.js, not this file.",
+ "facts": [
+  {
+   "id": "deployment-cloudflare-inference",
+   "tag": "scout-deployment",
+   "provider": "cloudflare",
+   "text": "This deployment does not run the primary language model locally. Query/session handling, retrieval, evidence selection, relationship checks, factual validation, telemetry, and persistence run in the Scout backend process; normal generative inference is hosted by Cloudflare Workers AI. A local provider is only an optional fallback when explicitly configured."
+  },
+  {
+   "id": "deployment-cloudflare-allocation",
+   "tag": "scout-deployment",
+   "provider": "cloudflare",
+   "text": "This deployment keeps its normal generative inference inside Cloudflare Workers AI's included free allocation of 10,000 neurons per day, resetting at 00:00 UTC — an account-level shared allocation, not a per-visitor allowance. If the free allocation is exhausted, the provider can reject inference with a rate/allocation error; this deployment does not intentionally switch to a paid-only model as an automatic fallback."
+  },
+  {
+   "id": "deployment-cloudflare-cost",
+   "tag": "scout-deployment",
+   "provider": "cloudflare",
+   "text": "This chat is free to visitors because this deployment's inference stays inside the provider's included free allocation and the hosting uses free-tier services. The model still consumes measurable tokens and provider usage units, so 'free' means within the included allocation, not costless. Cloudflare's public Workers AI paid-usage reference is $0.011 per 1,000 neurons beyond the included allocation on Workers Paid. A metered-value estimate is not the same as an actual billed charge."
+  },
+  {
+   "id": "deployment-hosting",
+   "tag": "scout-deployment",
+   "text": "In this deployment, the public widget is served from GitHub Pages and the chat backend runs separately on a free-tier GCP VM that calls the configured inference provider. The architecture keeps model context small by retrieving only relevant evidence instead of sending the entire knowledge base for every question."
+  }
+ ]
+}

@@ -1,0 +1,111 @@
+{
+  "packageVersion": 1,
+  "kind": "domain-package",
+  "id": "rivera-home-electric",
+  "name": "Rivera Home Electric",
+  "description": "Local service business Scout application: answers service, pricing, warranty, service-area, and scheduling questions for a residential electrical contractor.",
+  "identity": {
+    "applicationName": "Rivera Home Electric Assistant",
+    "assistantName": "Scout"
+  },
+  "knowledge": {
+    "identity": {
+      "name": "Jordan Rivera",
+      "preferredName": "Jordan",
+      "title": "Owner and Master Electrician",
+      "company": "Rivera Home Electric",
+      "location": "Austin, TX",
+      "pronouns": { "subject": "she", "object": "her", "possessive": "her" },
+      "shortPitch": "Jordan Rivera is the owner and master electrician of Rivera Home Electric, a residential electrical contractor serving the Austin metro area."
+    },
+    "subjectAliases": ["Jordan Rivera", "Jordan", "Rivera Home Electric", "the company", "the electrician"],
+    "summary": "Rivera Home Electric is a licensed residential electrical contractor in Austin, TX. It performs panel upgrades, EV charger installs, whole-home rewires, and smart panel installs with written workmanship warranties.",
+    "services": [
+      {
+        "name": "Panel Upgrade",
+        "type": "Electrical Service",
+        "description": "Replacement of a residential electrical panel, including permitting, utility coordination, and load calculation.",
+        "aliases": ["panel replacement", "breaker panel upgrade", "service panel upgrade"],
+        "attributes": {
+          "priceRange": "$2,800-$4,500",
+          "duration": "1 day",
+          "warranty": "5-year workmanship warranty; manufacturer warranty on the panel itself",
+          "permitIncluded": true
+        }
+      },
+      {
+        "name": "EV Charger Install",
+        "type": "Electrical Service",
+        "description": "Level 2 home EV charger installation with dedicated circuit and load management where required.",
+        "aliases": ["EV charger", "car charger install"],
+        "attributes": {
+          "priceRange": "$900-$2,200",
+          "duration": "half day",
+          "warranty": "3-year workmanship warranty",
+          "permitIncluded": true
+        }
+      },
+      {
+        "name": "Whole-Home Rewire",
+        "type": "Electrical Service",
+        "description": "Full replacement of branch circuit wiring in older homes, quoted after an on-site assessment.",
+        "aliases": ["rewire", "home rewiring"],
+        "attributes": {
+          "priceRange": "quoted per home after assessment",
+          "duration": "3-10 days",
+          "warranty": "10-year workmanship warranty",
+          "permitIncluded": true
+        }
+      },
+      {
+        "name": "Smart Panel Install",
+        "type": "Electrical Service",
+        "description": "Installation of a smart load-management panel with per-circuit monitoring.",
+        "aliases": ["smart panel", "load management panel"],
+        "attributes": {
+          "priceRange": "$4,000-$7,000",
+          "duration": "1-2 days",
+          "warranty": "5-year workmanship warranty",
+          "permitIncluded": true
+        }
+      }
+    ],
+    "business": {
+      "serviceArea": "Austin metro: Austin, Round Rock, Cedar Park, Pflugerville, and Dripping Springs",
+      "hours": "Monday-Friday 7:30am-5:30pm CT; Saturday by appointment",
+      "booking": "Estimates are scheduled through the contact form or by phone; no online instant booking",
+      "availability": "Standard appointments within 5-10 business days",
+      "license": "Texas TECL licensed electrical contractor",
+      "insured": true
+    },
+    "skills": ["Residential wiring", "Code compliance (NEC)", "Load calculation", "EV charger installation", "Solar-ready panel prep"],
+    "boundaries": [
+      { "topic": "emergency service", "claim": "Rivera Home Electric does not offer 24/7 emergency call-outs", "category": "availability" },
+      { "topic": "commercial work", "claim": "Rivera Home Electric is residential-only; it does not bid commercial projects", "category": "scope" }
+    ],
+    "directAnswers": [
+      { "question": "Does Rivera Home Electric do commercial work?", "answer": "No — Rivera Home Electric is a residential-only electrical contractor." },
+      { "question": "What areas does Rivera Home Electric serve?", "answer": "The Austin metro: Austin, Round Rock, Cedar Park, Pflugerville, and Dripping Springs." }
+    ],
+    "faq": [
+      { "q": "Is the estimate free?", "a": "Yes, standard estimates are free inside the service area." },
+      { "q": "Are permits included?", "a": "Yes, permitting is included in quoted service prices." }
+    ],
+    "knowledgeCompleteness": {
+      "services": { "complete": true, "authoritative": true },
+      "business": { "complete": true, "authoritative": true }
+    }
+  },
+  "capabilities": {
+    "allow": ["calculator", "knowledge_lookup", "entity_lookup", "content_search"],
+    "deny": ["send_notification"]
+  },
+  "policies": {
+    "confirmation": "no side-effecting capabilities are enabled for this tenant",
+    "worldModel": "closed-world for services and business sections; open-world otherwise"
+  },
+  "presentation": {
+    "headerTitle": "Scout",
+    "headerSubtitle": "Rivera Home Electric · Customer assistant"
+  }
+}
